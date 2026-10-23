@@ -1,4 +1,3 @@
-import { typeGlyphPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
@@ -13,11 +12,9 @@ import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCa
 import { drawFavoriteLaurels, drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
 
-// One generation row, nine types per row, then diagonal support cards and Overall.
-export const SIMPLIFIED_CHART_LAYOUT = {
+const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
-  // Painted gaps are 44px: after the generation discs and before the crown.
   typeTop: 308, typeColumns: 9, rowHeight: 176,
   generationTop: 104, generationCircle: 40,
   supportWidth: 224, supportHeight: 164, supportBadgeHeight: 25.6,
@@ -25,12 +22,10 @@ export const SIMPLIFIED_CHART_LAYOUT = {
   supportTops: [708, 759.6, 811.2], favoriteTop: 708,
 };
 
-/** Only the validated generation, type, special and overall pointer cells. */
 export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promise<Blob> {
   await document.fonts.ready;
   const urls = new Set([
     ...snapshot.summary.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
-    ...TYPES18.map(typeGlyphPath),
     ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.leaf, FAVORITE_ORNAMENTS.crown,
   ]);
@@ -45,8 +40,6 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const edge = top + height;
     const paint = split ? badgePaint(ctx, fill, left, top, width, height)
       : badgePaint(ctx, fill, left, edge - badgeHeight / 2, width, badgeHeight);
-    // Bounds describe the outside ink, including the generation's gray guard.
-    // Inset the path so its painted outside stays within the frame bounds.
     const inset = (L.stroke + (split ? 1 : 0)) / 2;
     const radius = L.radius - inset;
     const x = left + inset, y = top + inset, right = left + width - inset;
@@ -90,8 +83,7 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const cx = L.left + (index % L.typeColumns + 0.5) * L.column;
     const top = L.typeTop + Math.floor(index / L.typeColumns) * L.rowHeight;
     const box = tile(byKey.get(cellKey(type, 'favorite'))!, cx, top, TYPE_COLORS[type]);
-    drawTypeBadge(ctx, type, images.get(typeGlyphPath(type))!, cx - L.tileWidth / 2,
-      box.edge - box.badgeHeight / 2, box.badgeHeight);
+    drawTypeBadge(ctx, type, cx - L.tileWidth / 2, box.edge - box.badgeHeight / 2, box.badgeHeight);
   });
   const special = [
     { key: cellKey('starter', 'favorite'), axis: 'starter' },

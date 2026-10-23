@@ -56,11 +56,15 @@ The tools:
   live site and prints the scores, the lab metrics, the real-user field data
   for the origin, and the findings. It needs `PAGESPEED_API_KEY` in the
   environment settings. Google may run a newer Lighthouse than
-  `lighthouse.mjs`, so its numbers are the reference. A Vercel preview needs a
-  Vercel login, so Google can load one only through a share link (the Vercel
-  connection's `get_access_to_vercel_url` makes one that lasts 23 hours; keep
-  it out of commits). The link adds a redirect, so compare two previews with
-  each other, never a preview with the live site. `lighthouse.mjs` runs the
+  `lighthouse.mjs`, so its numbers are the reference. This project's previews
+  are public after Vercel Authentication was disabled on 15 October 2026.
+  Verify a direct HTTP 200 without a login redirect before testing.
+  Compare a preview of current production code with the candidate preview,
+  never a preview with the live site. Previews seed demo Pokémon and a demo
+  league; production starts empty. Record both commits, build modes, seeded
+  inputs, actual URLs, fetch times, and Lighthouse versions. Keep an actual
+  production baseline separate from this controlled comparison.
+  `lighthouse.mjs` runs the
   same Lighthouse version and throttling here without a deploy. Google's runs vary: one desktop run of the dex measured
   238 ms of blocking time and the next 0 ms, with four times the script time
   on the slower machine. Run 3 or more and read the median. Google answers a
@@ -88,7 +92,7 @@ A change can raise the score without a faster page. These guards stop that.
 | Accessibility, best practices, and SEO: no score drop and no audit that passed before and fails now. | Speed bought with a worse page. "Serves images with appropriate resolution" is in best practices. |
 | Every image must stay at least as sharp as before on the screen. | Smaller image copies that look blurry. |
 | After load, each page must match production in pixels and text, phone and desktop. | Any change that people can see. A difference is not a failure: it means Michael decides before it ships. |
-| `scripts/check-speed-test-detection.mjs`, in `ci-local.sh`, fails when shipped code mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. | A page that serves a test a lighter page than people get. |
+| `scripts/check-speed-test-detection.mjs`, in `ci-local.sh`, fails when shipped code mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. One file is exempt: `src/lib/automation.ts` reads `navigator.webdriver` only to mark beacons so the server stores nothing. `e2e/automation-flag.spec.ts` proves the page sends the same requests with and without the flag. | A page that serves a test a lighter page than people get. |
 | `lab.mjs`: INP of each tap step must not get worse. | Startup work moved into the first tap. |
 
 ## Merge bar
@@ -120,7 +124,7 @@ Lighthouse findings left open on purpose:
 
 | Finding | Why it stays |
 |---|---|
-| Google's phone runs sometimes draw the first frame about 2 s after the page has loaded, on the hub and the Pokédex (October 9) | It lifts Speed Index from about 1.8 s to 4.1 s in those runs. The page has loaded by 0.4 s and the main thread is idle by 0.5 s; in a local trace of the live hub the renderer painted at 1.5 s and the browser showed the frame at 2.4 s. `example.com` never shows it. It is not the page code's timing, the fallback font faces, or the viewport tag; it reproduces only against the live site, not on a local server. Real visitors are not affected: the origin's field FCP is 693 ms at p75. |
+| Google's phone runs sometimes draw the first frame about 2 s after the page has loaded, on the hub and the Pokédex | Partly explained on 13 October: under Lighthouse, when a page's linked stylesheet arrives after about 170 ms, Chrome holds the first frame until about 1.3 or 2.3 s. Proof: the stylesheet served instantly gives a first paint at 0.18 s; the same stylesheet 250 ms late gives 1.3-2.3 s; a page with no stylesheet paints at 0.15 s. The app's code, fonts, `rel=expect` and the boot scripts are not involved, and a plain browser is not affected. A requested animation frame does not help (an earlier test that said so was confounded). The hub's stylesheet is inline since 13 October, with Michael's approval: on the live network, Lighthouse phone runs went from a score of 65-66 to 81-89 and a Speed Index of 5.6-5.8 s to 1.6-1.9 s (5 runs each). The cost, in `lab.mjs` on a throttled phone: the main screenshot finishes 9% later (4040 to 4408 ms), because without a pending stylesheet Chrome no longer holds the other screenshots back. Low-priority hints on those screenshots did not help. But Google's own PageSpeed Insights runs after the deploy still drew the first frame late in 3 of 5 phone runs (2365, 2447 and 1297 ms, after the load event at 343-870 ms), with no request pending: the linked stylesheet is one trigger, not the only one, in Google's environment (`psi.mjs --page hub --runs 5`, 13 October; median score 82, Speed Index 2.7 s). In the late runs, the report form's idle prefetch starts at the same moment as the first frame, so the page gets no frame or idle time until then. The Pokédex still links its stylesheet; inlining it there is not measured yet. The October 13 plain-browser cases did not reproduce that particular delay; the origin then reported about 0.7 s FCP at p75. This does not rule out the later iPhone card-paint regression documented below. |
 | "Image elements do not have explicit width and height" on the hub screenshots | Each screenshot's shadow would show as an empty frame while the image loads. CLS is already 0. |
 | PageSpeed's robots.txt and llms.txt checks fail on the favorites page only ("Failed to fetch"), so its SEO score reads 92 | Google's runs only; no local tool reproduces it. The sprite prefetch (1,474 requests on the first load before October 8) is the likely cause, not a proven one. Googlebot reads robots.txt on its own, so search is not affected. Serving Google's run without the prefetch would serve a test a different page, which this repo forbids. |
 | "Improve image delivery": compression of the hub's back shots | These are UI screenshots with small text and sprites at quality 86. A lower quality saves about 20–30 KiB and risks visible artifacts. |
@@ -128,3 +132,89 @@ Lighthouse findings left open on purpose:
 
 The first plan, with earlier targets and a phase list, is on the unmerged
 branch `codex/performance-program-plan`. This page replaces its targets.
+
+## Homepage card-paint regression, 15 October
+
+The final correction is merged in PR 218, production `f23bc760`.
+Michael confirms the candidate is clearly faster on his iPhone.
+The [final investigation](handoff/homepage-early-paint-2026-10-15.md) records the
+commit history, full evidence and remaining limits. PR 214 was an earlier,
+insufficient correction; do not report its measurements as the final release.
+
+The 9 October sharpness change increased screenshot pixels fourfold and
+transfer from 275,970 to 739,180 bytes on affected phones. Later format work
+reduced all six screenshots to 325,347 bytes. A gate then kept every card and
+caption hidden until every screenshot decoded. Initial JavaScript could
+still compete with those images and prevent the ready cards from painting.
+Waiting for decoding alone therefore did not explain the longer delay.
+
+The final release gives the six original-dimension screenshots first use of
+the network and starts app modules after their load/decode barrier. An early
+interaction can start handlers sooner. The parser barrier and service-worker
+miss handling preserve normal startup. All four cards and their captions
+appear together; no screenshot, feature or image resolution was removed.
+
+Five quiet cold runs per connection measured complete-card medians 774 → 635 ms
+on fast mobile and 2,771 → 2,312 ms on slow 4G, with separate sample ranges.
+The matched ten-run Google mobile comparison measured FCP 1,852.5 → 913 ms,
+Speed Index 2,473.75 → 913 ms and score 86.5 → 89. LCP 3,721.75 → 3,751 ms stayed
+effectively flat. The final live three-run mobile medians were score 89,
+FCP 912 ms, LCP 3,751 ms and Speed Index 912 ms. These do not establish 0.2-second
+mobile FCP or the field targets above.
+
+The complete 989-case CI plan passed: 950 successful cases and 39 expected skips.
+All 12 live cold/new-tab checks passed. Six-configuration differential
+verification found zero regressions and zero changed screens in 44 visual
+comparisons. Two WebKit gym-export assertions also failed on the base, with
+byte-identical before/after PNGs; the absolute verdict remained FAIL. All raw
+failures, complete Google JSON, screenshots and prescriptions are preserved
+on the evidence branch linked from the investigation. An animation frame or
+DOM presence alone is not proof of composited complete paint.
+
+## Further optimization batch, 15 October
+
+See [the four-group audit and final measurements](handoff/performance-avenues-2026-10-15.md).
+The retained application is `47ef7b1b` versus the shipped homepage baseline
+`f23bc760`. It keeps original-dimension Dex intro AVIF with WebP fallback,
+parallel independent UI/terms catalogs, file sharing before optional export
+metadata, and decoded League sprites scoped to one mounted card. The three
+intro screenshots fall 133,722 → 95,625 bytes (28.5%); no performance budget
+ceiling increases. Optional tool-name prefetch and debug splitting are
+removed from this batch after mixed measurements and a local CPU audit
+failure. Their individual causal contribution remains unproven.
+
+Final CI passes all 997 browser cases (958 successful, 39 expected skips),
+including one passing retry. Final paired Lighthouse passes all guards.
+The six-configuration comparison finds zero regressions and zero changed
+screens across 44 comparisons; its raw FAIL retains two unchanged WebKit
+assertions. The final 20 cold-card cases pass: 602 → 600 ms on fast mobile,
+2,494 → 2,302 ms on slow 4G, with overlapping ranges.
+
+Google results remain mixed: final-preview mobile homepage score 89 → 84
+with separated slower timing ranges. A distinct identical-application
+control also reproduces observed late paint on both URLs. Its first-party
+resources match, but preview-toolbar delivery is not fully verified. This
+does not erase the candidate negative or establish a clean Google pass.
+Full metrics, resource prescriptions, remaining opportunities and limitations
+are in the handoff. No 0.2-second FCP or universal improvement is claimed.
+
+## Mobile-only composed homepage artwork, 19 October
+
+[The implementation and full measurement handoff](handoff/home-mobile-artwork-2026-10-19.md)
+records three composed DPR-3 images on small touch phones and the six originals
+with independent hover on desktop. Incoming artwork must decode before a resize
+replaces the outgoing artwork. Inter, captions, routes, and the shared initial
+loading state stay intact. Regenerate with `node scripts/home-artwork/refresh.mjs`
+after screenshot, layout, renderer, or font inputs change; ordinary builds
+validate the generated inputs and require no capture tools.
+
+Five quiet cold samples per arm/profile measure slow-4G complete-card readiness
+2,184 → 1,567 ms, with separated ranges. Fast medians are 562 → 616 ms, with
+overlapping ranges; no fast-network gain is established. These are DOM/decode
+proxies, not physical iPhone paint times. Three matched Google homepage mobile
+runs have median score 89 → 98 and LCP 3,751 → 2,401 ms, with overlapping LCP
+ranges and a changed LCP image. Desktop score stays 100; modeled LCP rises
+721 → 761 ms. Local canonical Lighthouse preserves its exit-1 identity guard
+for the selected composition, and local lab records DOM growth of 32%.
+The handoff retains every negative, full Google reports, unscored insights,
+resource prescriptions, source identities, and proportional CI receipts.

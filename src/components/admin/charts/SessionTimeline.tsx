@@ -13,22 +13,11 @@ import { applyPlayheadMilestone, applySessionChip } from './sessionChip';
 import { FUNNEL_OFFSET_PX, milestoneFill, plotSittings, type ChartMilestone } from './sessionMilestones';
 
 export type { TimelinePoint };
-export type { ChartMilestone };
 
-/** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
 const SCRUB_THUMB_PX = 22;
 const CHART_PAD_L = 6;
 const CHART_PAD_R = 6;
 
-/**
- * Bespoke session-history diff timeline. Each session is placed by timestamp (so
- * spacing is elapsed time) and shows its insertions up in green and deletions
- * down in red — never netted, so a session that swapped members reads as both. A
- * line tracks the running size on the same axis. Subtle verticals mark each
- * midnight; stronger ones mark Saturday→Sunday. Event dots ride a rail on top;
- * a red playhead marks the scrubbed session; the slider scrubs and the readout
- * states the count, date, duration, and the diff on one line.
- */
 export function SessionTimeline({
   points,
   index,
@@ -54,15 +43,11 @@ export function SessionTimeline({
   rightChip?: ReactNode;
   milestones?: ChartMilestone[];
   tz?: string;
-  /** Snapshot under the chart. The scrubber then moves into the admin bar's
-   *  ribbon row, on the nav. */
   children?: ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const slot = useContext(RangeSlotContext);
   const [W, setW] = useState(320);
-  // Playhead follows the finger immediately. Snapshot `index` is a React
-  // transition, so a heavy dex/league child cannot stall the thumb.
   const [playhead, setPlayhead] = useState(index);
   const playheadRef = useRef(index);
   const dragging = useRef(false);
@@ -273,7 +258,6 @@ export function SessionTimeline({
         })}
         {plots.map((plot, i) => {
           if (!plot.feedback) return null;
-          // Left of an export diamond; the funnel dot sits to its right.
           const bx = x(points[i].t) - (plot.diamond ? FUNNEL_OFFSET_PX : 0);
           return (
             <g key={`fb-${i}`} data-testid="session-feedback-mark">

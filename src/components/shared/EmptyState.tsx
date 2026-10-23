@@ -2,14 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-/**
- * Psyduck holding its head, as a line drawing: a 64-unit box, a 2-unit
- * stroke, and round caps and joins, like the app's outline icons. The box
- * grows with its rem size and the stroke stays 2 units (see `pathScale.ts`).
- * The face (bill, eyes and jaw) is the "Traced bill" drawing; the crown, the
- * fanned hair and the spiked, webbed hands are traced from the official art.
- */
-function PsyduckArt({ className }: { className?: string }) {
+export function PsyduckArt({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 64 64"
@@ -42,13 +35,6 @@ export interface EmptyStateAction {
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
-/**
- * The empty state of a list: a quiet picture, a title that names the cause,
- * one line of body, and a button only when the person can fix it here.
- *
- * The title is the darkest thing, then the body, then the picture. Every size
- * is in rem, so the root font size scales the whole block on every screen.
- */
 export function EmptyState({ title, body, action, testId, className }: {
   title: ReactNode;
   body: ReactNode;
@@ -78,13 +64,6 @@ export function EmptyState({ title, body, action, testId, className }: {
   );
 }
 
-/**
- * A title that repeats the search words, from a template such as
- * `No Pokémon match “{query}”`. The catalog holds each language's own quotes
- * around `{query}`. The words and their quotes stay together on one line, so a
- * line never starts with a closing quote. A search longer than 16 characters is
- * cut to 15 and "…", so the run fits a 320 px screen.
- */
 export function QueryTitle({ template, query }: { template: string; query: string }) {
   const [head, tail = ''] = template.split('{query}');
   const open = /[\p{Pi}\p{Ps}"']\s?$/u.exec(head)?.[0] ?? '';

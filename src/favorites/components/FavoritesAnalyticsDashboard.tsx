@@ -17,7 +17,6 @@ import { pickerIndexDomain } from '../stats/pickerIndexDomain';
 type Dimension = 'type' | 'color' | 'shape' | 'evolution';
 type Sort = 'count' | 'deviation' | 'label';
 const TEXT = 'text-xs';
-/** Match the Dex detailed-stats title without changing the shared Dex panel. */
 function ChartTitle({ text }: { text: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
   const [stretch, setStretch] = useState(1);
@@ -77,7 +76,6 @@ function Distribution({ dimension, stats, onOpen, activeKey }: { dimension: Dime
   </Card>;
 }
 
-/** Live choices use the same validated selector-option baseline as the Full export. */
 export default function FavoritesAnalyticsDashboard({ fills, active = true }: { fills: Readonly<Record<string, number>>; active?: boolean }) {
   const t = useT();
   const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);

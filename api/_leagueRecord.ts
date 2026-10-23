@@ -1,34 +1,17 @@
 import {mergeAttention,type AttentionPayload} from './_attention.js';
-/**
- * The gym leader maker's per-browser record, and the pure merge that builds
- * it from one beacon. Mirrors the dex builder's ClientRecord (see _shared.ts)
- * in shape and in sessionization, so the dashboard reads both the same way
- * and a person who uses both tools is the intersection of two hashes.
- *
- * Nothing here touches Redis, so src/lib/leagueRecord.test.ts can drive it.
- * league.ts owns the endpoint. The leading underscore keeps Vercel from
- * serving this file as a route.
- */
-
 import { alignSessionMs, isSubsetRegression, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, sanitizeRecordingFields, type RecordingFields } from './_sessionize.js';
 
-/** A quiet gap longer than this between two beacons starts a new session. */
 export const LEAGUE_SESSION_GAP_MS = 30 * 60_000;
-/** Keep at most this many sessions per record (most recent wins). */
-export const LEAGUE_MAX_SESSIONS = 50;
+const LEAGUE_MAX_SESSIONS = 50;
 
 export const LEAGUE_CLIENTS_KEY = 'league:clients';
 export const LEAGUE_VERSION_KEY = 'league:clients:ver';
 
-export const LEAGUE_BEACON_KINDS = ['progress', 'export'] as const;
+const LEAGUE_BEACON_KINDS = ['progress', 'export'] as const;
 export type LeagueBeaconKind = (typeof LEAGUE_BEACON_KINDS)[number];
 export const LEAGUE_EXPORT_KINDS = ['card', 'league'] as const;
 export type LeagueExportKind = (typeof LEAGUE_EXPORT_KINDS)[number];
 
-/**
- * What a league looks like at one moment, in counts. Intent only, like the
- * store: no card contents, no names — those are the user's.
- */
 export interface LeagueSummary {
   /** Cards (of CARD_COUNT) holding at least one evolution line. */
   cards: number;
@@ -44,28 +27,12 @@ export interface LeagueSummary {
   leagueNamed: boolean;
 }
 
-/** Lines one card may seat. */
-export const SEATS_PER_CARD = 6;
-/** Stages one evolution branch may have. */
+const SEATS_PER_CARD = 6;
 const MAX_STAGES = 5;
-/** Widest plausible Pokemon or powerup-form id. Shape-checked, not matched
- *  against a species list: the API has no business tracking which Pokemon the
- *  app ships, the same reason parseLocale only checks a locale's shape. */
 const MAX_POKEMON_ID = 99_999;
-/** Rows a card can have. Bounds `boundaries`, which name a row. */
 const MAX_ROW = 20;
-/**
- * The endgame boss's card row, the last one. Must equal `BOSS_ROW` in
- * src/league/model/constants.ts; src/lib/leaguePicks.test.ts pins the two.
- */
 export const LEAGUE_BOSS_ROW = 11;
 
-/**
- * One seated evolution line.
- *
- * Short keys because a progress beacon carries this on every debounced write
- * and Redis stores it per browser.
- */
 export interface LeagueLineShape {
   /** Member ids, base form first. One branch of a chain, never a whole tree. */
   b: number[];
@@ -136,19 +103,9 @@ export interface LeagueRecord extends RecordingFields {
   maxSessionMs: number;
   sessionMs: number[];
   sessionLog: LeagueSessionEntry[];
-  /** Deepest league ever reached: most cards with a line, most seats. */
   maxCards: number;
   maxSeats: number;
   latest: LeagueSummary;
-  /**
-   * The structure of the user's current league: which lines sit on which
-   * card, which stages they dragged, their powerups and legendaries.
-   *
-   * Latest only, the way ClientRecord keeps `latestIds` — a per-session copy
-   * would multiply the record by its session count for a view that only ever
-   * asks "what does their league look like". Absent on every record written
-   * before the field existed, and on any beacon that omits it.
-   */
   latestCards?: LeagueCardShape[];
   exportsCard: number;
   exportsLeague: number;
@@ -159,7 +116,6 @@ export interface LeagueRecord extends RecordingFields {
   tz?: string;
   lang?: string;
   locale?: string;
-  /** Locale pinned in the language picker. See ClientRecord.switched. */
   switched?: string;
   device?: string;
   os?: string;
@@ -179,26 +135,9 @@ export function isLeagueExportKind(s: unknown): s is LeagueExportKind {
   return typeof s === 'string' && (LEAGUE_EXPORT_KINDS as readonly string[]).includes(s);
 }
 
-/**
- * Trainer cards in a league: 8 gyms, 4 Elite Four, the champion, the endgame
- * boss.
- *
- * MUST equal `SLOT_COUNT` in src/league/model/constants.ts, which is what the
- * app actually renders. It said 11 while the app rendered 14, and parseSummary
- * clamps rather than rejects — so every league with more than 11 filled cards
- * was silently recorded as exactly 11, and its seats as 66 rather than 84.
- * src/lib/leagueRecord.test.ts pins the two together so the drift cannot
- * return quietly.
- */
 export const CARD_COUNT = 14;
-/** Six lines per card. */
-export const SEAT_MAX = 6 * CARD_COUNT;
+const SEAT_MAX = 6 * CARD_COUNT;
 
-/**
- * Team size of each league slot (0-based). Must equal
- * `TEAM_SIZES[slotRow(i) - 1]` in src/league/model/constants.ts.
- * src/lib/leagueRecord.test.ts pins the two together.
- */
 export const CARD_TEAM_SIZES = [2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6] as const;
 
 function fullGymsInCards(cards: LeagueCardShape[] | undefined): number {
@@ -216,13 +155,6 @@ function hasCardStructure(record: LeagueRecord): boolean {
   return record.sessionLog.some((s) => s.cards !== undefined);
 }
 
-/**
- * Peak number of fully filled gyms this browser ever reached.
- *
- * A gym is full when its seated lines meet that slot's team size, not when
- * the card merely holds a line (`maxCards`). Records stored before the
- * beacon carried card structure fall back to `maxCards`.
- */
 export function peakFullGyms(record: LeagueRecord): number {
   if (!hasCardStructure(record)) return record.maxCards;
   let peak = fullGymsInCards(record.latestCards);
@@ -238,7 +170,6 @@ function clampInt(v: unknown, max: number): number | null {
   return Math.max(0, Math.min(max, Math.round(v)));
 }
 
-/** Sanitize a client-sent summary; null when it is not one. */
 export function parseSummary(v: unknown): LeagueSummary | null {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
   const o = v as Record<string, unknown>;
@@ -251,13 +182,11 @@ export function parseSummary(v: unknown): LeagueSummary | null {
   return { cards, seats, typed, named, aces, leagueNamed: o.leagueNamed === true };
 }
 
-/** A positive integer id within `max`, or null. */
 function idOrNull(v: unknown, max: number): number | null {
   if (typeof v !== 'number' || !Number.isInteger(v) || v < 1 || v > max) return null;
   return v;
 }
 
-/** An integer in [lo, hi], or null. */
 function intInRange(v: unknown, lo: number, hi: number): number | null {
   if (typeof v !== 'number' || !Number.isInteger(v) || v < lo || v > hi) return null;
   return v;
@@ -298,8 +227,6 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
             .slice(0, branch.length)
             .map((r) => intInRange(r, 1, MAX_ROW + 1))
             .filter((r): r is number => r !== null);
-          // Only a complete set of boundaries describes the line; a partial
-          // one would say a stage moved without saying where to.
           if (bd.length === branch.length) line.bd = bd;
         }
         lines.push(line);
@@ -307,8 +234,6 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
     }
 
     const card: LeagueCardShape = { i, l: lines };
-    // A type name, shape-checked and bounded. Never matched against a type
-    // list: which types the app ships is not the API's business.
     if (typeof c.t === 'string' && /^[a-z]{1,16}$/.test(c.t)) card.t = c.t;
     const ace = intInRange(c.ace, 1, SEATS_PER_CARD);
     if (ace !== null) card.ace = ace;
@@ -363,26 +288,13 @@ export interface LeagueBeaconInput {
   ua: { device: string; os: string; browser: string };
   lang?: string;
   locale?: string;
-  /** Locale pinned in the language picker. Forward-only once set. */
   switched?: string;
   page?: string;
-  /** External referrer host, host-only, already validated. Stored forward-only. */
   referrer?: string;
-  /**
-   * True when `now` is the client's capture time. False (or omitted) when `now`
-   * is the server's arrival stamp — an old bundle that sent no `ts`. Arrival
-   * stamps are what turned a delayed first-sitting keepalive into a phantom
-   * later session.
-   */
   capturedKnown?: boolean;
-  /** Funnel event names to attach to this sitting. Already sanitized. */
   events?: string[];
 }
 
-/**
- * Merge one beacon into a record (or seed one). Pure given `existing`, so it
- * can be re-run after a lost CAS race, and unit-tested without Redis.
- */
 function memberIds(cards?: LeagueCardShape[]): number[] {
   return (cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
 }
@@ -470,9 +382,6 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
         LEAGUE_SESSION_GAP_MS,
       );
 
-      // Old client: arrival-stamped, would open a new sitting, board is a
-      // strict subset of the stored league. A delayed keepalive from the first
-      // sitting, not a user wiping their team.
       if (
         target.kind === 'insert' &&
         !b.capturedKnown &&

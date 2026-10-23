@@ -15,15 +15,12 @@ import {
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 
-// --- Evolution clusters ---
-
 interface EvolutionCluster {
   chainId: number;
-  members: Pokemon[];        // sorted by stage then id
-  representative: Pokemon;   // lowest national dex ID in the chain
+  members: Pokemon[];
+  representative: Pokemon;
 }
 
-/** Group Pokemon IDs into evolution-chain clusters. */
 function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
   const chainMap = new Map<number, Pokemon[]>();
   for (const id of pokemonIds) {
@@ -37,37 +34,16 @@ function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
   const clusters: EvolutionCluster[] = [];
   for (const [chainId, members] of chainMap) {
     members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
-    // Representative = lowest national dex ID in the chain
     const representative = members.reduce((best, m) => m.id < best.id ? m : best);
     clusters.push({ chainId, members, representative });
   }
   return clusters;
 }
 
-// --- Adjacency grouping ---
-
-// Victini (#494) leads the National Dex for Gen 5 but is a pre-release mythical,
-// not the real Unova opener (Snivy, #495). So we exclude it from the Gen-5
-// baseline — making Snivy the 0-point — and score Victini itself at -1 so, when
-// present, it sorts ahead of every regional opener.
 const VICTINI_ID = 494;
 
-// Alternate forms (Galarian/Alolan/Mega/Gigantamax/…) use national IDs ≥ 10000.
-// They must NOT count toward a generation's baseline: e.g. Gen 8 carries 42 such
-// form entries that all sort after the real species, which would pad the tail and
-// pull a late-dex line like Dreepy (#885, ~79% through real Gen 8) back to ~55%.
-// Excluding them keeps the 0..1 range spanning only the true national-dex species.
 const ALT_FORM_ID_FLOOR = 10000;
 
-// Per-generation index over the national dex. A Pokémon's "home regional"
-// position is just its rank within its own generation's slice of the national
-// dex, rebased so the generation's first member sits at 0 and its last at 1 —
-// so e.g. Treecko (the first Gen-3 Pokémon) reads as the Hoenn opener, on par
-// with Bulbasaur in Kanto, and Snivy as the Unova opener. This replaces
-// hand-maintained regional dex orderings (which were national-number-ordered
-// subsets and so mis-ranked every region's true opener). `chainOrder` is the
-// same slice deduped to evolution chains, used to keep nationally-adjacent lines
-// together ("package deal" antijank).
 interface GenIndex {
   ids: number[];
   idToPos: Map<number, number>;
@@ -79,8 +55,8 @@ function genIndexFor(gen: number): GenIndex | null {
   if (!_genIndex) {
     const byGen = new Map<number, Pokemon[]>();
     for (const p of getAllPokemon()) {
-      if (p.id >= ALT_FORM_ID_FLOOR) continue; // alt forms don't define dex depth
-      if (p.id === VICTINI_ID) continue; // scored separately (see getRegionalPercentile)
+      if (p.id >= ALT_FORM_ID_FLOOR) continue;
+      if (p.id === VICTINI_ID) continue;
       const arr = byGen.get(p.generation);
       if (arr) arr.push(p);
       else byGen.set(p.generation, [p]);
@@ -104,27 +80,17 @@ function genIndexFor(gen: number): GenIndex | null {
   return _genIndex.get(gen) ?? null;
 }
 
-/**
- * Ordered sequence of unique chain IDs as they appear in a generation's slice of
- * the national dex. Used to determine which chains are neighbors in their home
- * dex (so adjacent lines stay grouped).
- */
 function buildDexChainSequence(gen: number): { dexChainOrder: number[]; chainToPos: Map<number, number> } | null {
   const gi = genIndexFor(gen);
   if (!gi) return null;
   return { dexChainOrder: gi.chainOrder, chainToPos: gi.chainToPos };
 }
 
-/**
- * Group clusters that are adjacent in their original regional dex into super-clusters.
- * Adjacent chains must stay in an unbroken sequence.
- */
 function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[][] {
   if (clusters.length === 0) return [];
 
   const presentChains = new Set(clusters.map((c) => c.chainId));
 
-  // For each cluster, find its position in its generation's regional dex chain sequence
   const clusterDexInfo = new Map<number, { gen: number; pos: number }>();
   const dexCache = new Map<number, ReturnType<typeof buildDexChainSequence>>();
 
@@ -142,7 +108,6 @@ function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[]
     }
   }
 
-  // Sort clusters by (generation, dex position) so adjacent ones are next to each other
   const sorted = [...clusters].sort((a, b) => {
     const aInfo = clusterDexInfo.get(a.chainId);
     const bInfo = clusterDexInfo.get(b.chainId);
@@ -153,7 +118,6 @@ function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[]
     return aInfo.pos - bInfo.pos;
   });
 
-  // Group consecutive clusters that are truly adjacent in the same dex
   const superClusters: EvolutionCluster[][] = [];
   let currentGroup: EvolutionCluster[] = [sorted[0]];
 
@@ -192,9 +156,6 @@ function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[]
   return superClusters;
 }
 
-// --- Cluster sorting functions ---
-
-/** Sort clusters by representative's national dex ID, with adjacency grouping. */
 function sortClustersNational(ids: number[]): Pokemon[] {
   const clusters = buildClusters(ids);
   const superClusters = groupAdjacentClusters(clusters);
@@ -204,7 +165,6 @@ function sortClustersNational(ids: number[]): Pokemon[] {
   return superClusters.flatMap((sc) => sc.flatMap((c) => c.members));
 }
 
-/** Sort clusters by regional dex percentile, with adjacency grouping. */
 function sortClustersRegional(ids: number[]): Pokemon[] {
   const clusters = buildClusters(ids);
   const superClusters = groupAdjacentClusters(clusters);
@@ -223,10 +183,6 @@ function sortClustersRegional(ids: number[]): Pokemon[] {
   return tagged.flatMap((t) => t.superCluster.flatMap((c) => c.members));
 }
 
-/**
- * Sort clusters by representative's primary type, then national dex.
- * NO adjacency grouping — evo lines stay bundled but neighbor chains can split.
- */
 function sortClustersType(ids: number[]): Pokemon[] {
   const clusters = buildClusters(ids);
   const typeOrder = new Map(TYPE_NAMES.map((t, i) => [t, i]));
@@ -241,12 +197,8 @@ function sortClustersType(ids: number[]): Pokemon[] {
   return clusters.flatMap((c) => c.members);
 }
 
-/** Home-region depth of a line's representative: its rank within its own
- *  generation's national-dex slice, rebased so the generation's first member is
- *  0 and its last is 1. (Ties across generations — e.g. every region's opener at
- *  0 — are broken by national id, i.e. earliest generation first.) */
 function getRegionalPercentile(rep: Pokemon): number {
-  if (rep.id === VICTINI_ID) return -1; // precedes every regional opener
+  if (rep.id === VICTINI_ID) return -1;
   const gi = genIndexFor(rep.generation);
   if (!gi || gi.ids.length <= 1) return 0;
   const pos = gi.idToPos.get(rep.id);
@@ -254,9 +206,6 @@ function getRegionalPercentile(rep: Pokemon): number {
   return pos / (gi.ids.length - 1);
 }
 
-// --- Bucket assignment ---
-
-/** Build a reverse map: pokemonId → sectionId */
 export function buildIdToSection(sections: Record<string, number[]>): Map<number, string> {
   const map = new Map<number, string>();
   for (const groupId of BUILD_GROUP_IDS) {
@@ -267,41 +216,20 @@ export function buildIdToSection(sections: Record<string, number[]>): Map<number
   return map;
 }
 
-/**
- * 15 ordered buckets:
- *  0: Starter SECTION (build page order)
- *  1: Middle (sorted by selected sort option)
- *  2: Other fossils not in fossil section
- *  3: Fossil SECTION (build page order)
- *  4: Other official starters not in starter section
- *  5: Non-legendary Paradox Pokemon
- *  6: Other pseudo-legendaries not in pseudo section
- *  7: Pseudo-legendary SECTION (build page order)
- *  8: Ultra Beasts
- *  9: Legendary Paradox Pokemon
- * 10: Other sub-legendaries
- * 11: Other restricted legendaries
- * 12: Legendary SECTION (build page order)
- * 13: Other mythicals not in mythical section
- * 14: Mythical SECTION (build page order)
- */
 const NUM_BUCKETS = 15;
 
-// Section-based bucket indices (build page order preserved)
 const SECTION_BUCKETS = new Set([0, 3, 7, 12, 14]);
 
 function assignBucket(id: number, section: string | undefined): number {
   const p = getPokemonById(id);
   if (!p) return 1;
 
-  // Section-based buckets
   if (section === 'starter') return 0;
   if (section === 'mythical') return 14;
   if (section === 'legendary') return 12;
   if (section === 'pseudo-legendary') return 7;
   if (section === 'fossil') return 3;
 
-  // Category-based "other" buckets
   if (p.isMythical) return 13;
   if (RESTRICTED_LEGENDARY_IDS.has(id)) return 11;
   if (SUB_LEGENDARY_IDS.has(id)) return 10;
@@ -312,10 +240,9 @@ function assignBucket(id: number, section: string | undefined): number {
   if (STARTER_IDS.has(id)) return 4;
   if (FOSSIL_IDS.has(id)) return 2;
 
-  return 1; // middle
+  return 1;
 }
 
-// Map bucket index → section ID for section-based buckets
 const BUCKET_TO_SECTION: Record<number, string> = {
   0: 'starter',
   3: 'fossil',
@@ -324,16 +251,8 @@ const BUCKET_TO_SECTION: Record<number, string> = {
   14: 'mythical',
 };
 
-// --- Main sorting ---
-
 type ClusterSorter = (ids: number[]) => Pokemon[];
 
-/**
- * Partition all placed Pokemon into 15 ordered buckets, then sort each bucket.
- * - Section buckets (0, 3, 7, 12, 14): preserve build page order
- * - Middle bucket (1): sorted by the provided middleSorter
- * - Other category buckets: cluster-sorted by the provided otherSorter
- */
 function sortWithBuckets(
   sections: Record<string, number[]>,
   middleSorter: ClusterSorter,
@@ -349,7 +268,6 @@ function sortWithBuckets(
   const result: Pokemon[] = [];
   for (let i = 0; i < NUM_BUCKETS; i++) {
     if (SECTION_BUCKETS.has(i)) {
-      // Section bucket: preserve build page order, filter to only IDs assigned to this bucket
       const sectionId = BUCKET_TO_SECTION[i];
       const bucketSet = new Set(buckets[i]);
       for (const id of sections[sectionId] ?? []) {
@@ -359,19 +277,15 @@ function sortWithBuckets(
         }
       }
     } else if (i === 1) {
-      // Middle bucket: use the primary sorter
       result.push(...middleSorter(buckets[i]));
     } else {
-      // Other category bucket: cluster-sorted
       result.push(...otherSorter(buckets[i]));
     }
   }
   return result;
 }
 
-/** Sort IDs by build page order (preserving placement sequence). */
 function sortByBuildOrder(ids: number[], sections: Record<string, number[]>): Pokemon[] {
-  // Build a position map: id → global position across all build groups
   const posMap = new Map<number, number>();
   let pos = 0;
   for (const groupId of BUILD_GROUP_IDS) {
@@ -382,7 +296,6 @@ function sortByBuildOrder(ids: number[], sections: Record<string, number[]>): Po
 
   const idSet = new Set(ids);
   const result: Pokemon[] = [];
-  // Iterate in build order, pick only those in the provided id set
   for (const groupId of BUILD_GROUP_IDS) {
     for (const id of sections[groupId] ?? []) {
       if (idSet.has(id)) {
@@ -394,7 +307,6 @@ function sortByBuildOrder(ids: number[], sections: Record<string, number[]>): Po
   return result;
 }
 
-/** Collect all placed Pokemon IDs across all sections, in build page order. */
 function collectAllIds(sections: Record<string, number[]>): number[] {
   const ids: number[] = [];
   for (const groupId of BUILD_GROUP_IDS) {
@@ -405,21 +317,12 @@ function collectAllIds(sections: Record<string, number[]>): number[] {
   return ids;
 }
 
-/**
- * Reconcile a persisted custom order against the current dex contents.
- * - Drops IDs no longer in the dex.
- * - Inserts new IDs adjacent to existing line-mates (preserving stage order
- *   within the chain). If no line-mate is present, appends to the end.
- * This keeps evolution lines bundled and matches the user's intent that new
- * pokemon land roughly where they belong without destroying manual placement.
- */
 function reconcileCustomOrder(
   customOrder: number[],
   currentIds: number[],
 ): number[] {
   const currentSet = new Set(currentIds);
 
-  // 1. Drop removed, dedupe.
   const seen = new Set<number>();
   let next: number[] = [];
   for (const id of customOrder) {
@@ -429,14 +332,12 @@ function reconcileCustomOrder(
     }
   }
 
-  // 2. Insert new IDs.
   for (const newId of currentIds) {
     if (seen.has(newId)) continue;
 
     const newPokemon = getPokemonById(newId);
     if (!newPokemon) continue;
 
-    // Find all existing line-mates in the current `next` array.
     const chainId = newPokemon.evolutionChainId;
     const anchorIndices: number[] = [];
     for (let i = 0; i < next.length; i++) {
@@ -445,8 +346,6 @@ function reconcileCustomOrder(
     }
 
     if (anchorIndices.length > 0) {
-      // Sort all line-mates (existing + new) by (stage, id) and splice back in
-      // at the position of the first existing anchor.
       const lineIds = [...anchorIndices.map((i) => next[i]), newId];
       const lineObjs = lineIds
         .map((id) => getPokemonById(id))
@@ -454,8 +353,6 @@ function reconcileCustomOrder(
         .sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
       const sortedLineIds = lineObjs.map((p) => p.id);
 
-      // Insert index in the "without line" array = count of non-line items
-      // before the first anchor in the original next[].
       let insertIdx = 0;
       for (let i = 0; i < anchorIndices[0]; i++) {
         const p = getPokemonById(next[i]);
@@ -500,23 +397,26 @@ export function useViewSort(
   );
 
   return useMemo(
-    () => computeViewSort(sections, sortOption, groupSpecialAtEnd, customOrder),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => {
+      const snapshot: Record<string, number[]> = {};
+      for (const part of sectionsKey.split('|')) {
+        if (!part) continue;
+        const [groupId, ids] = part.split(':');
+        snapshot[groupId] = ids.split(',').map(Number);
+      }
+      const order = customKey === 'null' ? null : customKey ? customKey.split(',').map(Number) : [];
+      return computeViewSort(snapshot, sortOption, groupSpecialAtEnd, order);
+    },
     [sectionsKey, sortOption, groupSpecialAtEnd, customKey],
   );
 }
 
-/** Pure build of the View-page order from the current sections + sort settings.
- *  The hook wraps this in useMemo; drag handlers call it directly to predict
- *  whether a reorder is representable in the active sort. */
 export function computeViewSort(
   sections: Record<string, number[]>,
   sortOption: ViewSortOption,
   groupSpecialAtEnd: boolean = true,
   customOrder: number[] | null = null,
 ): Pokemon[] {
-  // Custom: render the reconciled customOrder verbatim. The grouping toggle
-  // does NOT apply here — custom is fully freeform.
   if (sortOption === 'custom' && customOrder) {
     const allIds = collectAllIds(sections);
     const reconciled = reconcileCustomOrder(customOrder, allIds);
@@ -525,10 +425,6 @@ export function computeViewSort(
       .filter((p): p is Pokemon => !!p);
   }
 
-  // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
-  // Starters from the user's "starter" section are always pinned to the front,
-  // preserving the user's build-page order within that section. In regional sort,
-  // Victini (#494) is placed ahead of the starters when present (per-user request).
   if (!groupSpecialAtEnd) {
     const allIds = collectAllIds(sections);
     const allIdSet = new Set(allIds);
@@ -577,16 +473,12 @@ export function computeViewSort(
 
   switch (sortOption) {
     case 'regional':
-      // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
       return sortWithBuckets(sections, sortClustersRegional, sortClustersNational);
     case 'national':
-      // Middle + Other buckets: national dex + adjacency
       return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
     case 'type':
-      // Middle: type sort (no adjacency); Other buckets: type sort (no adjacency)
       return sortWithBuckets(sections, sortClustersType, sortClustersType);
     case 'build-order':
-      // Middle: build page order; Other buckets: national dex + adjacency
       return sortWithBuckets(
         sections,
         (ids) => sortByBuildOrder(ids, sections),

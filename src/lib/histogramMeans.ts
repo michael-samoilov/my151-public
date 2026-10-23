@@ -1,7 +1,6 @@
-export interface MeanRun { text: string; bold: boolean }
-export interface HistogramTextMetrics { width: number; left: number; right: number; ascent: number; descent: number }
-export type HistogramMeasure = (text: string, bold?: boolean, middle?: boolean) => HistogramTextMetrics;
-/** Shared SVG/canvas annotation geometry. Every diamond stays at its true x on one rail. */
+interface MeanRun { text: string; bold: boolean }
+interface HistogramTextMetrics { width: number; left: number; right: number; ascent: number; descent: number }
+type HistogramMeasure = (text: string, bold?: boolean, middle?: boolean) => HistogramTextMetrics;
 export function histogramMeans(
  yours: number, options: number, width: number, position: (value: number) => number,
  labels: { yours: string; options: string; exact: string }, measure: HistogramMeasure,
@@ -29,7 +28,6 @@ export function histogramMeans(
     labelX: fits ? labelX : index === 0 ? bounds.left + w : bounds.right - w, labelRail: fits ? 0 : index + 1 };
   });
 }
-/** Measure the annotation height and only interrupt connectors where an x tick has ink. */
 export function histogramMeanLayout(
  means: ReturnType<typeof histogramMeans>, ticks: number[], position: (value: number) => number,
  measure: HistogramMeasure,

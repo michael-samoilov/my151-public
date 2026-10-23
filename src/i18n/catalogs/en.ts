@@ -1,53 +1,50 @@
-/**
- * The English catalog is the source of truth for every user-facing string, and
- * the type oracle for the whole i18n layer: `MessageKey` is `keyof typeof en`,
- * and each message's placeholder set is derived from its own text, so
- * `t('nav.analyticsLocked', { count })` fails to compile if the argument is
- * misspelled or missing. Every other locale is typed as `Messages`, which makes
- * `tsc -b` the key-parity gate — a missing or misspelled key fails the build.
- *
- * Conventions:
- *  - Keys are namespaced by surface and kept in sorted order (a unit test
- *    enforces both, so a merge conflict can't silently duplicate one).
- *  - Placeholders are `{name}`. Inline ICU is deliberately unsupported: nested
- *    braces make the template-literal type parser both slow and wrong.
- *  - Counted messages use sibling `_one` / `_other` keys resolved through
- *    `Intl.PluralRules`. Locales that need more categories (`_many` in fr,
- *    `_few` in some Slavic languages) may add them; locales that need fewer
- *    (ja, ko, zh supply only `_other`) may omit them.
- *
- * Not covered by design: `src/components/admin/AdminPage.tsx`. It sits behind
- * `?admin`, only the owner ever sees it, and translating it would add ~13% to
- * the corpus for no user-visible benefit.
- */
 import { enData } from './en.data';
 
-/** Hand-authored UI copy. Data-module strings live in the generated en.data.ts. */
 export const enUi = {
-  // The footer's Acknowledgements panel. Only the chrome is here: the credited
-  // names, credit lines and license texts stay in English in every locale
-  // (src/data/acknowledgements.ts).
+  'ack.alsoCredited': 'Also credited through',
+  'ack.artistCount_one': '{count} artist',
+  'ack.artistCount_other': '{count} artists',
   'ack.artists': 'Artists',
   'ack.back': 'Back',
-  'ack.baseBy': 'base sprite by {name}',
+  'ack.bundleSprites_one': '{count} fan-made sprite in the app is credited through this project.',
+  'ack.bundleSprites_other': '{count} fan-made sprites in the app are credited through this project.',
   'ack.by': 'by {name}',
+  'ack.compiledBy': 'compiled by {name}',
   'ack.count_one': '{count} credit',
   'ack.count_other': '{count} credits',
   'ack.credit': 'Credit',
+  'ack.generation': 'Generation {gen}',
   'ack.group.code': 'Code',
   'ack.group.data': 'Data',
   'ack.group.fonts': 'Fonts',
-  'ack.group.icons': 'Icons and art',
-  'ack.group.sprites': 'Sprites',
+  'ack.group.interfaceIcons': 'Interface icons',
+  'ack.group.pokemonArt': 'Pokémon icons and art',
+  'ack.group.spriteArtists': 'Additional sprites',
+  'ack.group.spriteSources': 'Sprite projects',
   'ack.intro': 'my151 is a free, non-profit fan site, built with the work of the people and projects below. Thank you.',
   'ack.license': 'License',
+  'ack.licenseCount_one': '{count} license',
+  'ack.licenseCount_other': '{count} licenses',
   'ack.loadFailed': 'The license text did not load.',
   'ack.loading': 'Loading…',
+  'ack.notConfirmed': 'Artist not confirmed',
   'ack.open': 'Open {site}',
-  'ack.spriteList': 'Sprites chosen for my151',
+  'ack.packageCount_one': '{count} package',
+  'ack.packageCount_other': '{count} packages',
+  'ack.packageTexts_one': 'License text of {count} package',
+  'ack.packageTexts_other': 'License texts of {count} packages',
+  'ack.packages': 'Packages',
+  'ack.packagesFailed': 'The package list did not load.',
+  'ack.sharedSprites': 'A sprite with more than one artist counts for each of them.',
+  'ack.spritesOwn_one': '{count} sprite from their own uploads',
+  'ack.spritesOwn_other': '{count} sprites from their own uploads',
+  'ack.sprites_one': '{count} sprite',
+  'ack.sprites_other': '{count} sprites',
   'ack.title': 'Acknowledgements',
   'ack.usedFor': 'Used for',
-  'ack.with': 'with {name}',
+  'ack.usedGen9Pack': "The source of {files} of the app's fan-made sprites, for newer forms and Mega Evolutions.",
+  'ack.usedPokeapi': "The source of {official} official sprites from the games, and {smogon} sprites by Smogon Sprite Project artists. We also use it for {own} additional fan-made sprites.",
+  'ack.usedSmogon': "Its artists drew {drawn} of the app's fan-made sprites. {delivered} of them reach the app through PokéAPI.",
   'advisor.allTypes': 'All 18 types covered',
   'advisor.categoryMissing': 'No {category} assigned yet',
   'advisor.categoryPresent': '{category} represented',
@@ -79,12 +76,9 @@ export const enUi = {
   'analytics.evoLevel.heading': 'Evolution Level Distribution',
   'analytics.excludeSpecial': 'No Starters/Legendaries',
   'analytics.gen.heading': 'Generation Origin',
-  // A regional dex's toggle: only the Pokémon that dex's generation introduced.
   'analytics.genOnly': 'Gen {gen} only',
   'analytics.noMatchup': 'No matchup data available.',
-  // Stands in for an average when there is nothing to average.
   'analytics.notAvailable': 'N/A',
-  // The other side of the genOnly toggle: the dex's full list.
   'analytics.regionalDex': 'Regional Dex',
   'analytics.shape.heading': 'Body Shape',
   'analytics.tip': 'Tip: Press chart bars to see which Pokémon are driving trends in your dex',
@@ -100,16 +94,13 @@ export const enUi = {
   'browser.chip.gen': 'Gen',
   'browser.chip.mechanics': 'Mechanics',
   'browser.chip.places': 'Places',
-  // The spoken name of the X on a filter chip, read after the chip's own name.
   'browser.chip.remove': 'Remove filter',
   'browser.chip.shape': 'Shape',
   'browser.chip.stages': 'Stages',
   'browser.chip.type': 'Type',
-  // Followed by the dex count, as in "My dex 37/151".
   'browser.myDex': 'My dex',
   'browser.myFavorites': 'My favorites',
   'browser.clear': 'Clear',
-  // The spoken name of the icon-only X that closes the desktop pane.
   'browser.close': 'Close',
   'browser.closeAsk.addAction': 'Add',
   'browser.closeAsk.add_one': 'Add {count} Pokémon to {section}?',
@@ -147,9 +138,7 @@ export const enUi = {
   'browser.modeHint.any': 'show any match',
   'browser.results_one': '{count} found',
   'browser.results_other': '{count} found',
-  // The team-scope chip's fallback name, when the host gives it none.
   'browser.scope': 'Scope',
-  // The spoken name of the X that empties the search field.
   'browser.search.clear': 'Clear search',
   'browser.search.placeholder': 'Search by name or number...',
   'browser.sheet.archetypes': 'Archetypes',
@@ -168,22 +157,14 @@ export const enUi = {
   'browser.stage.3': '3+ Stage',
   'browser.stageChip': '{stages} stage',
   'browser.subgroupGeneration': 'Generation {gen}',
-  // Shown instead of the results when a query matches more than the browser will
-  // draw at once. Phrased around the query rather than a character count: in
-  // Chinese a single character can already be a perfectly narrow search.
   'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
   'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
-  // The phone's selection sheet: its title reads "Adding to: Forest", with the
-  // section name in its own colour, and its close control is named after it.
   'builder.addingTo': 'Adding to: ',
   'builder.addingToLabel': 'Adding to {section}',
   'builder.browse': 'Browse Pokémon',
-  // The build page's settings menu: one action, which asks once to confirm.
   'builder.clearAll': 'Clear All',
   'builder.clearConfirm': 'Are you sure?',
-  // The red X on a builder tile. One press can remove the whole evolution
-  // line.
   'builder.remove': 'Remove {name}',
   'builder.settings': 'Settings',
   'chart.header.evolution': 'STAGE',
@@ -202,9 +183,16 @@ export const enUi = {
   'chart.header.weakerHere1': 'WEAKER',
   'chart.header.weakerHere2': '← HERE',
   'common.dismiss': 'Dismiss',
+  'common.skipToMain': 'Skip to main content',
+  'dnd.cancelled': 'Dragging was cancelled. Draggable item {id} was dropped.',
+  'dnd.dropped': 'Draggable item {id} was dropped.',
+  'dnd.droppedOver': 'Draggable item {id} was dropped over droppable area {over}',
+  'dnd.instructions': 'To pick up a draggable item, press the space bar. While dragging, use the arrow keys to move the item. Press space again to drop the item in its new position, or press escape to cancel.',
+  'dnd.movedOver': 'Draggable item {id} was moved over droppable area {over}.',
+  'dnd.notOver': 'Draggable item {id} is no longer over a droppable area.',
+  'dnd.pickedUp': 'Picked up draggable item {id}.',
+  'dnd.roleDescription': 'draggable',
   'export.dexTitle': 'Custom Pokédex',
-  // The export pane that the Pokédex, league, trainer card, and favorites
-  // exports share.
   'export.cancel': 'Cancel',
   'export.close': 'Close export',
   'export.moreSettings': 'More settings below',
@@ -214,9 +202,6 @@ export const enUi = {
   'export.preview.unavailable': 'Preview unavailable',
   'export.save': 'Save image',
   'export.title': 'Export',
-  // The one-time survey after an export. Each tool gets whole sentences, so a
-  // locale can inflect the tool's name. `{ordinal}` is `exportSurvey.ordinal_*`,
-  // picked by the locale's ordinal rule: 151st in English, 151. in German.
   'exportSurvey.accept': "Sure, I'll help",
   'exportSurvey.ask.card': 'Would you take about a minute to share your perspective? As someone who completed a gym leader card, your take helps me improve the experience for the next person.',
   'exportSurvey.ask.league': 'Would you take about a minute to share your perspective? As someone who completed a full league, your take helps me improve the experience for the next person.',
@@ -251,7 +236,6 @@ export const enUi = {
   'exportSurvey.skip': 'Not now',
   'exportSurvey.thanks': 'Thanks — your note helps.',
   'exportSurvey.title': 'Quick question',
-  // The league and trainer card export settings.
   'leagueExport.detail.badgeName': 'Badge Name',
   'leagueExport.detail.leagueName': 'League Name',
   'leagueExport.detail.theme': 'Theme',
@@ -270,7 +254,6 @@ export const enUi = {
   'leagueExport.teams': 'Teams',
   'dex.national': 'National Dex',
   'drilldown.bstTitle': 'BST {from}–{to}',
-  // The short label of a neighboring level range, beside the title.
   'drilldown.evoLevelLabel': 'Lv {from}–{to}',
   'drilldown.evoLevelTitle': 'Evolves at Lv {from}–{to}',
   'drilldown.generationTitle': 'Generation {gen}',
@@ -280,7 +263,6 @@ export const enUi = {
   'drilldown.lineLengthTitle': '{length}-Stage Lines',
   'drilldown.matchupSubtitle': '{count} Pokémon with non-neutral matchups',
   'drilldown.matchupTitle': '{type} Matchup',
-  // The button that removes the lines marked in a drill-down.
   'drilldown.remove_one': 'Remove {count} Pokemon',
   'drilldown.remove_other': 'Remove {count} Pokemon',
   'drilldown.shapeTitle': '{shape} Shape',
@@ -288,17 +270,14 @@ export const enUi = {
   'drilldown.stageTitle': '{length}-Stage / Stage {stage}',
   'drilldown.subtitle_one': '{pokemon} Pokémon across {count} line',
   'drilldown.subtitle_other': '{pokemon} Pokémon across {count} lines',
-  // A type matchup drill-down's group headings. Each type advantage doubles
-  // the damage, so +2 means four times. The sign is part of the message.
   'drilldown.tier.gain_one': '+{count} doubling of advantage',
   'drilldown.tier.gain_other': '+{count} doublings of advantage',
   'drilldown.tier.loss_one': '−{count} doubling of advantage',
   'drilldown.tier.loss_other': '−{count} doublings of advantage',
   'drilldown.titleWithDex': '{title} — {dex}',
   'drilldown.typeTitle': '{type} Type',
-  'error.body': 'Something in the page failed. Reloading usually fixes it — and a report tells us what broke.',
+  'error.body': 'Something in the page failed. Reloading usually fixes it.',
   'error.reload': 'Reload',
-  'error.report': 'Send report',
   'error.title': 'This part stopped working',
   'faq.dex.a1': 'my151 is smart, it knows that if you choose Bulbasaur, then Venusaur should join your dex too. my151 is smooth and easy to use, providing a "paint-by-numbers" template of Pokédex sections (like regional bird, Pikaclone, pseudo-legendary, and more), so you spend more time making thoughtful choices instead of trying to remember Pokémon. my151 also guides you towards making a balanced and realistic regional Pokédex, by providing detailed analytics into your dex\'s distribution of type, BST, and evolutionary stage, as well as comparisons to official regional Pokédexes.',
   'faq.dex.a2': 'Generation 1 introduced the original 151 Pokémon in the Kanto region. While later generations introduced anywhere from 72-156 new Pokémon, regional dexes usually included Pokémon from prior generations, landing them around 200-400 total. my151 encourages using 151 slots because that is the size that forces real choices, and the size most fans grew up with.',
@@ -383,12 +362,8 @@ export const enUi = {
   'feedback.category.idea': 'Idea',
   'feedback.category.other': 'Other',
   'feedback.category.translation': 'Translation',
-  // The "What gets sent" lines. Each is a whole line, label and value, so a
-  // locale can choose its own colon, order, and words for yes, no, and none.
-  // The placeholders carry raw data that is sent as is and never translated.
   'feedback.context.browser': 'browser: {ua}',
   'feedback.context.browserLanguages': 'browser languages: {languages}',
-  'feedback.context.error': 'error: {error}',
   'feedback.context.favoritePicks_one': '{count} pick',
   'feedback.context.favoritePicks_other': '{count} picks',
   'feedback.context.favoriteSummaries_one': '{count} summary',
@@ -424,8 +399,6 @@ export const enUi = {
   'header.toolNameCore': 'Pokédex Maker',
   'header.toolNameQualifier': 'Custom',
   'home.dex.blurb': 'Make a dex from regional dex archetypes',
-  // Alt text for the screenshots on the hub's tool cards. They show what each
-  // tool makes, so they are content, not decoration.
   'home.dex.buildAlt': 'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
   'home.dex.exportAlt': 'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
   'home.dex.saved': '{progress} entries saved in this browser',
@@ -450,8 +423,6 @@ export const enUi = {
   'intro.cta': 'Choose your starters',
   'intro.dismiss': 'Dismiss intro',
   'intro.headline': 'Build your own {count}',
-  // Alt text for the intro card's three screenshots. Each names one search
-  // phrase the image really shows; see SHOT_ALTS in IntroCard.tsx.
   'intro.shot.complete': 'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',
   'intro.shot.partial': 'A custom Pokédex in progress — 45 of the 151 slots filled, the rest still empty.',
   'intro.shot.sections': 'A Pokémon region template at 95 of 151, its slots grouped into labelled areas such as Starters, Forest and Ocean.',
@@ -461,29 +432,17 @@ export const enUi = {
   'tools.favorites': 'Favorite Pokémon Picker',
   'lang.change': 'Change language',
   'lang.title': 'Language',
-  // The trainer card's signature-pane headings, drawn in capitals. A newline
-  // is where the heading breaks when it stands in two lines. On one line, a
-  // line that ends in a hyphen runs on into the next, and elsewhere a space
-  // joins them, except in Japanese and Chinese, which join with none.
   'league.head.ace': 'Ace\nPokémon',
   'league.head.partner': 'Partner /\nShouldermon',
   'league.head.signature': 'Signature\nPokémon',
-  // What a screen reader says for the ace and partner slots: empty, filled,
-  // and the remove button a filled one carries.
   'league.slot.ace.choose': 'Choose an ace Pokémon',
   'league.slot.ace.filled': 'Ace Pokémon: {name}',
   'league.slot.ace.remove': 'Remove the ace Pokémon',
   'league.slot.partner.choose': 'Choose a partner',
   'league.slot.partner.filled': 'Partner: {name}',
   'league.slot.partner.remove': 'Remove the partner',
-  // The league and gym leader builder: its bars, card, pickers, help, and the
-  // exported pictures. Trainer classes follow the games' own words (see
-  // docs/i18n/sources/league-interface-terms.json). Values the card draws in
-  // capitals are stored in sentence case and set through `localeUppercase`.
   'league.badge.label': 'Badge name',
   'league.badge.mark': 'Badge',
-  // The badge phrase around the name the user types. Where the word goes, and
-  // whether a space separates it, is the locale's own.
   'league.badge.phrase': '{name} Badge',
   'league.badge.placeholder': 'Name',
   'league.badge.remove': 'Remove badge name',
@@ -507,12 +466,10 @@ export const enUi = {
   'league.export.league': 'Export league',
   'league.export.noTheme': 'No theme yet',
   'league.export.rematchTeams': 'Rematch teams',
-  // The exported card's title row: the type badge sits where {type} is.
   'league.export.specialist': '{type} Type Specialist',
   'league.export.storyTeams': 'Story teams',
   'league.export.theme': 'Theme',
   'league.glyph.noBadges': 'No badges',
-  // {undo} is a run kept on one line, so the reset disc never starts a line.
   'league.help.evolve.body': 'Drag a Pokémon up or down its column to change the gym where it evolves. Tap the {undo}',
   'league.help.evolve.title': 'Change when it evolves',
   'league.help.evolve.undo': 'blue {disc} to undo.',
@@ -543,7 +500,6 @@ export const enUi = {
   'league.section.champion': 'Champion',
   'league.section.elite': 'Elite Four',
   'league.section.gyms': 'Gym Leaders',
-  // The selection sheet's title. {target} and {name} are drawn in red.
   'league.sheet.adding': 'Adding to: {target}',
   'league.sheet.addingPlain': 'Adding to {target}',
   'league.sheet.replacing': 'Replacing: {name}',
@@ -555,8 +511,6 @@ export const enUi = {
   'league.target.ace': 'Ace Pokémon',
   'league.target.legend': 'Endgame Boss legendary',
   'league.target.partner': 'Partner / Shouldermon',
-  // Move categories and contest conditions. The other locales take the games'
-  // own words from docs/i18n/sources/game-terms.json, through catalogs/terms.
   'league.category.physical': 'Physical',
   'league.category.special': 'Special',
   'league.category.status': 'Status',
@@ -583,18 +537,12 @@ export const enUi = {
   'league.tm.empty.search.title': 'No moves match “{query}”',
   'league.tm.found_one': '{count} found',
   'league.tm.found_other': '{count} found',
-  // The word under the TM disc. A newline stacks a long word in two lines on
-  // the live card (わざ / マシン); the export has the room and joins it.
   'league.tm.mark': 'TM',
   'league.tm.pick': 'Pick a move',
   'league.tm.remove': 'Remove TM',
   'league.tm.search': 'Search moves',
-  // The TM picker's title. {slot} is drawn in red.
   'league.tm.title': 'TM for: {slot}',
   'league.tm.titlePlain': 'TM for {slot}',
-  // The tool's name in three pieces, so a narrow bar can hide the last two.
-  // Each piece after the first carries its own leading space where the
-  // language sets one.
   'league.tool.head': 'Custom Gym Leader',
   'league.tool.mid': ' & Trainer Card',
   'league.tool.tail': ' Maker',
@@ -635,6 +583,7 @@ export const enUi = {
   'nudge.card.title': 'Trainer card complete',
   'nudge.complete.body': 'Export the league as an image and share it.',
   'nudge.complete.title': 'League ready',
+  'nudge.full.title': 'All 14 teams are full!',
   'nudge.gyms.body': 'Export now, or keep building and export when it is complete.',
   'nudge.gyms.cta': 'Export league',
   'nudge.gyms.title': 'Gym leaders complete',
@@ -648,12 +597,6 @@ export const enUi = {
   'poster.separator': ' · ',
   'promo.league.dismiss': 'Dismiss',
   'promo.league.tip': 'New under Tools: Custom Gym Leader & Trainer Card Maker.',
-  // Section outline labels shorten in two rungs as the outline narrows: the
-  // section name, then sectionShort, then sectionTiny (src/lib/sectionOutlines.ts).
-  // The tiny form must fit an outline one cell wide. A rung equal to the one
-  // before it is skipped, so where English has no shorter word its tiny form
-  // repeats its shortest one, and the other languages still get a rung of their
-  // own.
   'sectionShort.cave-pokemon': 'Cave',
   'sectionShort.early-bird': 'Early Bird',
   'sectionShort.early-bug': 'Early Bug',
@@ -704,8 +647,6 @@ export const enUi = {
   'sort.regional.desc': 'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home dex',
   'sort.type': 'Type',
   'sort.type.desc': 'Groups by each line\'s primary type, then by national dex number within each type.',
-  // The first column's line count, under its name. The other columns show
-  // the bare number.
   'stage.columnLines_one': '{count} line',
   'stage.columnLines_other': '{count} lines',
   'stage.columnTotal_one': '{count} Pokémon',
@@ -780,7 +721,6 @@ export const enUi = {
   'term.type.rock': 'Rock',
   'term.type.steel': 'Steel',
   'term.type.water': 'Water',
-  // The View page's tool bar and the follow-up hints that point at Export.
   'view.customOrderActive': 'Custom order active',
   'view.hint.export.body': 'Tap the download icon to save your dex as an image and share it.',
   'view.hint.export.title': 'Export is right here',
@@ -791,7 +731,9 @@ export const enUi = {
   'viewSettings.close': 'Close settings',
   'viewSettings.customCount': '{count} pokemon',
   'viewSettings.groupSpecial': 'Group special Pokémon at end',
+  'viewSettings.groupSpecialHint': 'Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts, legendaries, and mythicals to the back of the grid. Does not affect Custom ordering.',
   'viewSettings.groupingHeading': 'Grouping',
+  'viewSettings.outlinesHint': 'Outlines groups of Pokémon matching your build-page sections.',
   'viewSettings.reset': 'Reset',
   'viewSettings.resetCustom': 'Reset custom order',
   'viewSettings.showOutlines': 'Show section outlines',
@@ -820,11 +762,6 @@ export const enUi = {
   'viewSettings.title': 'View Settings',
 } as const;
 
-/**
- * The full catalog: hand-authored UI copy plus the generated data-module
- * strings. Spreading two const-asserted objects keeps every value's literal
- * type, which is what makes `ArgsOf` able to read placeholders off the source.
- */
 export const en = { ...enUi, ...enData } as const;
 
 export type MessageKey = keyof typeof en;

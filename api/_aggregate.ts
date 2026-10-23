@@ -1,17 +1,3 @@
-/**
- * The dashboard aggregations that do not care which tool a record comes from.
- *
- * `api/submissions.ts` computed all of these inline against `ClientRecord`,
- * so the gym leader maker's records — the same shape where it matters — had
- * no way to reach them. Here they are typed against `SessionRecord`, the
- * subset both record types satisfy, and the endpoint calls them once per
- * tool.
- *
- * Nothing here touches Redis, so `src/lib/aggregate.test.ts` drives it
- * directly. The leading underscore keeps Vercel from serving this file as a
- * route.
- */
-
 import { FAVORITE_SESSION_GAP_MS } from './_favoriteRecord.js';
 import { CARD_COUNT, LEAGUE_SESSION_GAP_MS } from './_leagueRecord.js';
 import { alignSessionMs } from './_sessionize.js';
@@ -25,12 +11,6 @@ const HOURLY_WINDOW_DAYS = 7;
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/**
- * What every aggregation below needs from a record: when the browser was
- * active, where it was, and what it ran on. `ClientRecord` (the dex builder)
- * and `LeagueRecord` (the gym leader maker) both satisfy it, each with its
- * own extra fields on top.
- */
 interface ActivitySourceCoverage {
   firstTs: number;
   lastTs: number;
@@ -47,23 +27,19 @@ export interface SessionRecord {
   activityCoverageSources?: ActivitySourceCoverage[];
   sessions?: number;
   sessionMs?: number[];
-  /** One entry per session. Only `ts` is read here; each tool adds its own
-   *  build state to the same entry. */
   sessionLog?: { ts: number }[];
   country?: string;
   region?: string;
   tz?: string;
   lang?: string;
   locale?: string;
-  /** Locale pinned in the language picker. Absent when the browser still follows negotiation. */
   switched?: string;
   device?: string;
   os?: string;
   browser?: string;
 }
 
-/** The categorical fields `tallies` can count. */
-export type TallyField = 'country' | 'region' | 'lang' | 'locale' | 'device' | 'os' | 'browser';
+type TallyField = 'country' | 'region' | 'lang' | 'locale' | 'device' | 'os' | 'browser';
 
 export interface SurvivalCurve {
   survival: { t: number; s: number }[];
@@ -71,26 +47,22 @@ export interface SurvivalCurve {
   n: number;
 }
 
-/** UTC midnight (ms) of the day a timestamp falls in. */
 export function dayStart(ts: number): number {
   const d = new Date(ts);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 }
 
-/** UTC hour start (ms) of the hour a timestamp falls in. */
 export function hourStart(ts: number): number {
   return Math.floor(ts / HOUR_MS) * HOUR_MS;
 }
 
-/** Value at quantile q (0..1) of an ascending-sorted array. */
 export function quantile(sortedAsc: number[], q: number): number {
   if (sortedAsc.length === 0) return 0;
   const i = Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length));
   return sortedAsc[i];
 }
 
-/** Fraction of values >= t (the survival function), via binary search. */
-export function survivalAt(sortedAsc: number[], t: number): number {
+function survivalAt(sortedAsc: number[], t: number): number {
   const n = sortedAsc.length;
   if (n === 0) return 0;
   let lo = 0;
@@ -103,13 +75,7 @@ export function survivalAt(sortedAsc: number[], t: number): number {
   return (n - lo) / n;
 }
 
-/**
- * Time survival curve + percentile stats from a set of durations in seconds.
- * Sampled fine-grained where it matters — every 30s for the first 10 minutes,
- * then every 60s out to the 95th percentile, so the long tail cannot flatten
- * the interesting region.
- */
-export function buildTimeCurve(secsRaw: number[]): SurvivalCurve {
+function buildTimeCurve(secsRaw: number[]): SurvivalCurve {
   const secs = secsRaw.slice().sort((a, b) => a - b);
   const tMax = Math.max(60, quantile(secs, 0.95));
   const ticks: number[] = [];
@@ -123,7 +89,6 @@ export function buildTimeCurve(secsRaw: number[]): SurvivalCurve {
   };
 }
 
-/** Count survival curve: one integer tick from 0 to the largest value seen. */
 export function buildDepthCurve(vals: number[]): SurvivalCurve {
   const v = vals.slice().sort((a, b) => a - b);
   const dMax = Math.max(1, v[v.length - 1] ?? 1);
@@ -136,15 +101,6 @@ export function buildDepthCurve(vals: number[]): SurvivalCurve {
   };
 }
 
-/**
- * Depth survival split by device.
- *
- * `all` uses every value; `mobile` and `desktop` use only the values from an
- * entry whose device is that type. Any other device (Tablet, absent) still
- * contributes to `all`, just not to either split. The caller supplies one
- * `value` per record — whatever depth metric it wants split — so this stays
- * agnostic to what a "depth" is.
- */
 export function depthByDevice(
   entries: { device?: string; value: number }[],
 ): Record<'all' | 'mobile' | 'desktop', SurvivalCurve> {
@@ -159,24 +115,16 @@ export function depthByDevice(
   return { all: buildDepthCurve(all), mobile: buildDepthCurve(mobile), desktop: buildDepthCurve(desktop) };
 }
 
-/**
- * Each session's duration in seconds. Prefers the per-session list; falls back
- * to the first-to-last span as one session, which is all a legacy record can
- * offer.
- */
 export function sessionSeconds(r: SessionRecord): number[] {
   if (r.sessionMs && r.sessionMs.length > 0) return r.sessionMs.map((ms) => Math.round(ms / 1000));
   return [Math.round(Math.max(0, r.lastTs - r.firstTs) / 1000)];
 }
 
-/** The timestamps a record was active at: one per session, or first/last for a
- *  legacy record with no session log. */
 export function activeTimestamps(r: SessionRecord): number[] {
   if (r.sessionLog && r.sessionLog.length > 0) return r.sessionLog.map((s) => s.ts);
   return [r.firstTs, r.lastTs];
 }
 
-/** Rolling unique `cid` counts at `now` for gutter / last chart point. */
 export function lastPointLabelCounts(
   records: SessionRecord[],
   now: number,
@@ -238,7 +186,6 @@ export interface ImpliedActivityGrowth {
   monthlyPercent: number | null;
 }
 
-/** Fit an exponential count trend to recorded daily activity, including zero days. */
 export function impliedActivityGrowth(
   series: Pick<DailyActivityPoint, 'day' | 'dau'>[], start: number | null, now: number,
 ): ImpliedActivityGrowth {
@@ -273,7 +220,7 @@ export function impliedActivityGrowth(
   return { ...result, weeklyPercent: percent(7), monthlyPercent: percent(30) };
 }
 
-export interface ActivityCoverage {
+interface ActivityCoverage {
   precision?: 'utc-days' | 'timestamps';
   retainedFrom: number;
   completeThrough: number;
@@ -374,14 +321,6 @@ export function activityGrowth(
   };
 }
 
-/**
- * Dense daily active-users series with a trailing-7-day calendar rolling count.
- *
- * `dau` is distinct browsers that UTC day; `rolling7` is distinct browsers over
- * that day and the prior six (calendar WAU, not a DAU sum). When `now` is given,
- * today's row also carries `label24h` / `label168h`: unique browsers in
- * (now − 24h, now] and (now − 168h, now] for the chart's last point and gutter.
- */
 export function dailyActive(records: SessionRecord[], now?: number, coverage?: ActivityCoverage): DailyActivityPoint[] {
   const sets: Record<number, Set<string>> = {};
   const events: { ts: number; cid: string }[] = [];
@@ -441,10 +380,6 @@ export type HourlyActivityPoint = {
   unique: number;
 };
 
-/**
- * Dense hourly unique-browser series for the last seven UTC days through the
- * current hour. `unique` is distinct `cid`s whose activity fell in that hour.
- */
 export function hourlyActive(records: SessionRecord[], now: number): HourlyActivityPoint[] {
   if (records.length === 0) return [];
   const sets: Record<number, Set<string>> = {};
@@ -463,7 +398,6 @@ export function hourlyActive(records: SessionRecord[], now: number): HourlyActiv
   return out;
 }
 
-/** Returning (active across two calendar days or more) and the remainder as new. */
 export function retention(records: SessionRecord[]): { returning: number; newUsers: number } {
   let returning = 0;
   for (const r of records) {
@@ -472,10 +406,6 @@ export function retention(records: SessionRecord[]): { returning: number; newUse
   return { returning, newUsers: records.length - returning };
 }
 
-/**
- * Session-length drop-off on three bases: each browser's longest session, its
- * first session, and every session pooled.
- */
 export function sessionCurves(records: SessionRecord[]): Record<'longest' | 'first' | 'all', SurvivalCurve> {
   const longest: number[] = [];
   const first: number[] = [];
@@ -489,8 +419,6 @@ export function sessionCurves(records: SessionRecord[]): Record<'longest' | 'fir
   return { longest: buildTimeCurve(longest), first: buildTimeCurve(first), all: buildTimeCurve(all) };
 }
 
-/** Browsers per distinct value of one categorical field. Absent values are
- *  skipped rather than bucketed as "unknown": the caller knows the denominator. */
 export function tallies(records: SessionRecord[], field: TallyField): Record<string, number> {
   const out: Record<string, number> = {};
   for (const r of records) {
@@ -500,18 +428,14 @@ export function tallies(records: SessionRecord[], field: TallyField): Record<str
   return out;
 }
 
-/** The clocks the admin heatmap reads activity on. */
 const HEATMAP_CLOCKS = ['local', 'eastern'] as const;
 export type HeatmapClock = (typeof HEATMAP_CLOCKS)[number];
 
-/** Each clock's zone for a record. Local is the browser's own zone, so a
- *  record without `tz` has none there. Eastern is one zone for every record. */
 const CLOCK_ZONE: Record<HeatmapClock, (r: SessionRecord) => string | undefined> = {
   local: (r) => r.tz,
   eastern: () => 'America/New_York',
 };
 
-/** One formatter per zone; null for a zone Intl does not know. */
 const weekdayHourFormats = new Map<string, Intl.DateTimeFormat | null>();
 
 function weekdayHourFormat(timeZone: string): Intl.DateTimeFormat | null {
@@ -527,8 +451,6 @@ function weekdayHourFormat(timeZone: string): Intl.DateTimeFormat | null {
   return fmt;
 }
 
-/** Hour of the week of `ts` on the zone's wall clock: day of week (0=Sun)
- *  times 24, plus the hour (0-23). */
 function hourOfWeek(ts: number, timeZone: string): number | null {
   const parts = weekdayHourFormat(timeZone)?.formatToParts(ts);
   if (!parts) return null;
@@ -537,12 +459,6 @@ function hourOfWeek(ts: number, timeZone: string): number | null {
   return dow >= 0 && Number.isInteger(hour) ? dow * 24 + hour : null;
 }
 
-/**
- * 7 x 24 day-by-hour counts of browsers, one matrix per clock. A browser
- * counts once in each weekday hour it was active in after `start`, however
- * often it came back to that hour. A browser with no zone for a clock is left
- * out of that clock's matrix.
- */
 export function heatmaps(records: SessionRecord[], start: number | null = null): Record<HeatmapClock, number[][]> {
   const week = () => Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
   const out: Record<HeatmapClock, number[][]> = { local: week(), eastern: week() };
@@ -562,7 +478,6 @@ export function heatmaps(records: SessionRecord[], start: number | null = null):
   return out;
 }
 
-/** One bucket of browsers that share a country, language, pin, and platform. */
 export interface WhoBucket {
   country: string;
   lang: string;
@@ -574,7 +489,6 @@ export interface WhoBucket {
   n: number;
 }
 
-/** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
   activity: DailyActivityPoint[];
@@ -588,14 +502,10 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints: PlatformJoint[];
-  /** Country × browser language × served locale × picker pin. */
   whoBuckets: WhoBucket[];
   heatmaps: Record<HeatmapClock, number[][]>;
 }
 
-/** Every aggregation above. The activity series read every record, so the
- *  chart keeps its history; the rest read only `inRange`, the records active
- *  in the dashboard's date range, which opens after `start`. */
 export function aggregate(
   records: SessionRecord[],
   now: number,
@@ -621,8 +531,7 @@ export function aggregate(
   };
 }
 
-/** Group records so Who can split language, pins, and platform by country. */
-export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
+function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
   const map = new Map<string, WhoBucket>();
   for (const r of records) {
     const country = (r.country ?? '').toUpperCase();
@@ -649,9 +558,6 @@ export interface PlatformJoint {
   n: number;
 }
 
-/** One cohort's size and platform/country mix — the built/incomplete/
- *  completed toggle on the dashboard tallies the same fields three times,
- *  once per slice. */
 export interface Cohort {
   users: number;
   devices: Record<string, number>;
@@ -677,9 +583,6 @@ export function tallyJoints(
   return [...map.values()];
 }
 
-/** Tally one slice of records into a `Cohort`. The caller decides what the
- *  slice is (all records, or filtered by some record-type-specific field like
- *  `completed`); this only knows how to count what is already in the slice. */
 export function tallyCohort(records: SessionRecord[]): Cohort {
   return {
     users: records.length,
@@ -691,15 +594,11 @@ export function tallyCohort(records: SessionRecord[]): Cohort {
   };
 }
 
-/** What `referrerFlow` needs from a record: its browser id and, when known,
- *  the host that first sent it here. Both `ClientRecord` and `LeagueRecord`
- *  satisfy it. */
 export interface Referrable {
   cid: string;
   firstReferrer?: string;
 }
 
-/** One acquisition host's reach across both tools. */
 export interface ReferrerFlowEntry {
   host: string;
   total: number;
@@ -708,25 +607,10 @@ export interface ReferrerFlowEntry {
   favorites?: number;
 }
 
-/** Label for records with no `firstReferrer`: legacy rows, direct visits, and
- *  internal navigation. Kept as a host string so the Sankey treats it like any
- *  other source node. */
 export const UNKNOWN_REFERRER_HOST = 'referrer not known';
 
-/** Named known hosts shown on the referrer Sankey. The unknown bucket is
- *  always appended when it has anyone, so it never competes for a slot. */
 const TOP_REFERRER_HOSTS = 8;
 
-/**
- * Referrer hosts ranked by distinct browsers reached, across both stores.
- *
- * Records with no `firstReferrer` (the field is forward-only; see
- * api/_leagueRecord.ts) count as {@link UNKNOWN_REFERRER_HOST} rather than
- * disappearing from the Sankey. A dex record's cid is split the same way
- * `mergeByCid` does, so a country-split record still counts as one browser.
- * The top 8 named hosts by total reach are kept; the unknown bucket is always
- * included when it has anyone.
- */
 export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[], favoriteRecords?: Referrable[]): ReferrerFlowEntry[] {
   const byHost = (records: Referrable[]) => {
     const out = new Map<string, Set<string>>();
@@ -782,7 +666,6 @@ export interface LeagueGymBucket {
   exports: LeagueExportCounts;
 }
 
-/** Dex builder usage funnel: intro → built → in-line size buckets + completed. */
 export interface DexUsageFunnel {
   opened: number;
   built: number;
@@ -793,9 +676,6 @@ export interface DexUsageFunnel {
   keptPrivate: number;
 }
 
-/** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
- *  in-line gym-completion buckets → export. Full league also peels
- *  non-exporters to Kept private. */
 export interface LeagueUsageFunnel {
   opened: number;
   placed: number;
@@ -808,15 +688,13 @@ export interface LeagueUsageFunnel {
   keptPrivate: number;
 }
 
-export interface SizeTier {
+interface SizeTier {
   label: string;
   min: number;
   max: number;
 }
 
-/** Incomplete dex sizes, in Pokémon. The last bucket also takes a 151 that
- *  never flipped `completed`. */
-export const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
+const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
   { label: '1–30', min: 0, max: 30 },
   { label: '31–60', min: 31, max: 60 },
   { label: '61–90', min: 61, max: 90 },
@@ -824,8 +702,7 @@ export const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
   { label: '121–150', min: 121, max: Number.POSITIVE_INFINITY },
 ];
 
-/** Full-gym counts, in-line from "one gym full". 13 full gyms sit in 9–12. */
-export const LEAGUE_GYM_BUCKETS: readonly SizeTier[] = [
+const LEAGUE_GYM_BUCKETS: readonly SizeTier[] = [
   { label: '1–4 gyms', min: 1, max: 4 },
   { label: '5–8 gyms', min: 5, max: 8 },
   { label: '9–12 gyms', min: 9, max: CARD_COUNT - 1 },
@@ -839,7 +716,7 @@ export interface DexFunnelRow {
   exported: boolean;
 }
 
-export interface LeagueFunnelRow {
+interface LeagueFunnelRow {
   maxCards: number;
   maxSeats: number;
   fullGyms: number;
@@ -887,15 +764,6 @@ function leagueExports(rows: LeagueFunnelRow[]): LeagueExportCounts {
   return exports;
 }
 
-/**
- * Dex usage funnel from per-record peaks. `opened` is the top of funnel
- * (intro shown, or built when the event count is missing or smaller).
- *
- * Incomplete sizes fan out of Built in one column, next to Completed.
- * An incomplete builder who exported still sits in their size bucket, with
- * a branch from that bucket to Exported. Kept private stays a Completed
- * outcome only.
- */
 export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsageFunnel {
   const merged = mergeDexFunnelRows(rows);
   const built = merged.length;
@@ -924,16 +792,6 @@ export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsa
   };
 }
 
-/**
- * League usage funnel from per-record gym peaks.
- *
- * Stages: opened (league-open event, floored at people who placed a
- * Pokémon), placed a Pokémon vs bounced, one gym full vs card not finished,
- * then in-line gym-count buckets. Each exporter leaves their gym bucket
- * toward one export end: league only, both, or gym card only. Full-league
- * people who exported neither peel to Kept private. Incomplete gym buckets
- * do not.
- */
 export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): LeagueUsageFunnel {
   const placedRows = rows.filter(placedAPokemon);
   const placed = placedRows.length;
@@ -962,7 +820,6 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
   };
 }
 
-/** Count a funnel event under either hyphen or underscore keys. */
 export function funnelEventCount(events: Record<string, number> | undefined, name: string): number {
   if (!events) return 0;
   const underscored = name.replace(/-/g, '_');
@@ -970,16 +827,6 @@ export function funnelEventCount(events: Record<string, number> | undefined, nam
   return typeof n === 'number' && Number.isFinite(n) ? n : 0;
 }
 
-/**
- * One record per browser across both tools: the same person's sessions from
- * the dex builder and the gym leader maker in one record, so the "All" slice
- * counts them once and their day is one day.
- *
- * Identity is the bare cid. The dex builder splits a suspected shared browser
- * into `cid::COUNTRY` records (see docs/analytics-accuracy.md), and those
- * splits merge back together here rather than pretending to be separate
- * people the league store never heard of.
- */
 export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
   const byCid = new Map<string, SessionRecord>();
   for (const list of lists) {
@@ -990,8 +837,6 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
         byCid.set(cid, { ...r, cid });
         continue;
       }
-      // The later record wins for the "where are they now" fields; the session
-      // history is the union of both, in time order.
       const newer = r.lastTs >= prev.lastTs ? r : prev;
       const timed = [...timedSessions(prev), ...timedSessions(r)].sort((a, b) => a.ts - b.ts);
       byCid.set(cid, {
@@ -1012,23 +857,11 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
   return [...byCid.values()];
 }
 
-/**
- * A record's sessions as `{ts, ms}` pairs, so two tools' histories can be
- * interleaved by time rather than concatenated.
- *
- * `sessionMs` and `sessionLog` are written in lockstep and both keep the most
- * recent entries, so they align from the END. They can still differ in length
- * by one, on a legacy record whose first-to-last span was back-filled into
- * `sessionMs` before it had a log; end-alignment drops that unpairable entry
- * rather than misdating every session after it.
- */
 function timedSessions(r: SessionRecord): { ts: number; ms: number }[] {
   const log = r.sessionLog ?? [];
   const ms = r.sessionMs ?? [];
   const n = Math.min(log.length, ms.length);
   if (n === 0) {
-    // No pairing to make. One session spanning the record is what a legacy
-    // record supports, and it is what sessionSeconds would have inferred.
     return [{ ts: r.firstTs, ms: Math.max(0, r.lastTs - r.firstTs) }];
   }
   const out: { ts: number; ms: number }[] = [];
@@ -1038,33 +871,19 @@ function timedSessions(r: SessionRecord): { ts: number; ms: number }[] {
   return out;
 }
 
-/** One session on the clock, in ms since the epoch. */
 export type Span = { start: number; end: number };
 
-/** One tool's sessions, as its preview chip counts them. */
 export type ToolUsage = {
-  /** Every session the tool counted, logged or not. */
   sessions: number;
-  /** The summed durations the record keeps (its newest 50 sessions). */
   totalMs: number;
-  /** The logged sessions. Older ones fell out of the log, or predate it. */
   spans: Span[];
 };
 
-/**
- * Two sessions this close are one visit. Each tool joins a beacon to a
- * session within its own gap, and the Dex gap (`SESSION_GAP_MS` in
- * api/_shared.ts, which this module does not import because the admin page
- * bundles it) equals both of these. The widest gap means the total never
- * splits a session a tool joined.
- */
-export const BROWSER_SESSION_GAP_MS = Math.max(LEAGUE_SESSION_GAP_MS, FAVORITE_SESSION_GAP_MS);
+const BROWSER_SESSION_GAP_MS = Math.max(LEAGUE_SESSION_GAP_MS, FAVORITE_SESSION_GAP_MS);
 
 const sumMs = (ms: readonly number[] | undefined) =>
   (ms ?? []).reduce((a, b) => a + (Number.isFinite(b) && b > 0 ? b : 0), 0);
 
-/** Dex and League: each log entry stamps its session's end, and `sessionMs`
- *  pairs with the log from the newest end. */
 export function endStampedUsage(rec: {
   sessions?: number;
   sessionMs?: number[];
@@ -1081,7 +900,6 @@ export function endStampedUsage(rec: {
   return { sessions: rec.sessions ?? rec.sessionMs?.length ?? 0, totalMs: sumMs(rec.sessionMs), spans };
 }
 
-/** Picker: each log entry stores its session's start and end. */
 export function spanUsage(rec: {
   sessions?: number;
   sessionMs?: number[];
@@ -1093,23 +911,6 @@ export function spanUsage(rec: {
   return { sessions: rec.sessions ?? spans.length, totalMs: sumMs(rec.sessionMs), spans };
 }
 
-/**
- * The browser as a whole: every logged session of every tool on one timeline.
- *
- * - Sessions: sessions that overlap, or start within the gap of the visit
- *   before ending, are one visit.
- * - Time: the union of the sessions, so a minute in two tools counts once and
- *   the idle gap between two tools counts not at all.
- * - Unlogged sessions (older than a record's newest 50, or from before the
- *   Dex log existed) have no clock time. All of them precede that tool's
- *   logged ones, so each counts as a visit of its own, with its kept duration.
- * - The result never drops below the busiest tool. A visit in one tool can
- *   bridge two sessions that another tool split, and a record's own sessions
- *   can overlap, so the merge alone could undercount.
- *
- * It never exceeds the sum of the tools either: merging only removes sessions
- * and overlap.
- */
 export function browserTotal(tools: readonly ToolUsage[]): { sessions: number; totalMs: number } {
   const spans = tools.flatMap((t) => t.spans).sort((a, b) => a.start - b.start || a.end - b.end);
   let visits = 0;

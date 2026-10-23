@@ -47,8 +47,6 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
 import { PRODUCTION, build, chromiumPath, compare, holdBrowserLock, median, selfSignedTls, serve } from './lab-server.mjs';
 
-// The version PageSpeed Insights ran on October 8, 2026. Match it when Google
-// moves: `psi.mjs` prints the version Google uses.
 const LIGHTHOUSE_VERSION = '13.5.0';
 
 const args = process.argv.slice(2);
@@ -75,16 +73,13 @@ const METRICS = {
   tbt: 'total-blocking-time',
   cls: 'cumulative-layout-shift',
 };
-// The smallest change a guard counts. Calibrated on two identical builds:
-// smaller differences come and go between runs.
+
 const FLOOR = { fcp: 50, lcp: 50, si: 50, tbt: 30, cls: 0.01, lastVisualChange: 100 };
-// The Lighthouse viewports, for the same-page check.
 const VIEWPORTS = {
   mobile: { viewport: { width: 412, height: 823 }, deviceScaleFactor: 1.75, isMobile: true, hasTouch: true },
   desktop: { viewport: { width: 1350, height: 940 }, deviceScaleFactor: 1 },
 };
 
-/** Installs the pinned Lighthouse once into the user cache, then imports it. */
 async function loadLighthouse() {
   const dir = path.join(process.env.XDG_CACHE_HOME || path.join(homedir(), '.cache'), 'my151-lighthouse', LIGHTHOUSE_VERSION);
   const entry = path.join(dir, 'node_modules/lighthouse/core/index.js');
@@ -101,7 +96,6 @@ async function loadLighthouse() {
   };
 }
 
-/** The parts of one Lighthouse report the guards and the issue list read. */
 function digest(lhr) {
   if (lhr.runtimeError) throw new Error(`Lighthouse could not load ${lhr.requestedUrl}: ${lhr.runtimeError.code}`);
   const audits = lhr.audits;
@@ -132,7 +126,6 @@ async function runLighthouse(lh, port, url, profile) {
   return digest(result.lhr);
 }
 
-/** The settled page: a screenshot, its text, and how sharp each image is. */
 async function snapshot(browser, url, profile) {
   const context = await browser.newContext({ ...VIEWPORTS[profile], ignoreHTTPSErrors: true, serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -160,11 +153,6 @@ async function snapshot(browser, url, profile) {
   return { png, text, images };
 }
 
-/**
- * Counts the pixels where `cand` differs from `base`, skipping pixels where
- * two loads of the base already differ from each other. Runs in the browser,
- * so no image library is needed.
- */
 async function pixelDiff(browser, base, base2, cand) {
   if (base.equals(cand)) return { count: 0 };
   const context = await browser.newContext();
@@ -236,13 +224,11 @@ holdBrowserLock();
       }
     }
 
-    // runs[profile][page][label] = digests
     const runs = {};
     for (const profile of PROFILE_NAMES) {
       for (const pageName of PAGE_NAMES) {
         for (let run = 1; run <= RUNS; run++) {
           process.stdout.write(`\r${profile} ${pageName}: run ${run} of ${RUNS}        `);
-          // Alternate base and candidate, so drift on the machine hits both.
           for (const { label, origin } of targets) {
             const digestOfRun = await runLighthouse(lh, chrome.port, `${origin}${PAGES[pageName]}?notme`, profile);
             (((runs[profile] ??= {})[pageName] ??= {})[label] ??= []).push(digestOfRun);
@@ -256,7 +242,6 @@ holdBrowserLock();
     const fail = (where, what) => guards.push(`FAIL  ${where}: ${what}`);
     const visible = [];
 
-    // 1. Scores and metrics, base → candidate.
     const cols = [...CATEGORIES.map((c) => c.replace('best-practices', 'bp').replace('performance', 'perf').replace('accessibility', 'a11y')), ...Object.keys(METRICS), 'last change'];
     console.log(`\n${BASE ? `Base ${BASE} → working tree.` : URL_TARGET ?? 'Working tree.'} Median of ${RUNS} Lighthouse ${LIGHTHOUSE_VERSION} runs. Times in ms.\n`);
     console.log(`| Page | ${cols.join(' | ')} | LCP element |`);
@@ -266,7 +251,6 @@ holdBrowserLock();
         const where = `${profile} ${pageName}`;
         const { base, candidate } = runs[profile][pageName];
         const cells = [];
-        // `strict`: the score is deterministic, so any drop of the median fails.
         const cell = (samplesOf, metric, showFn, lowerIsBetter, { strict = false, floor = 0 } = {}) => {
           const cand = candidate.map(samplesOf);
           if (!base) return showFn(median(cand));
@@ -293,9 +277,6 @@ holdBrowserLock();
         }
         console.log(`| ${where} | ${cells.join(' | ')} | ${lcpCell.slice(0, 80)} |`);
 
-        // 2. Audits that passed in every base run and fail in every candidate
-        // run. A timing audit such as "Max Potential First Input Delay" can
-        // pass or fail by chance, so a split result is noise, not a change.
         if (base) {
           const failingIn = (digests) => digests.flatMap((d) => Object.keys(d.failing));
           const everBefore = new Set(failingIn(base));
@@ -308,7 +289,6 @@ holdBrowserLock();
       }
     }
 
-    // 3. The issue list for the candidate: what PageSpeed Insights shows.
     console.log('\nOpen findings on the candidate (failing in most runs), largest estimated saving first:\n');
     for (const profile of PROFILE_NAMES) {
       for (const pageName of PAGE_NAMES) {
@@ -327,7 +307,6 @@ holdBrowserLock();
       }
     }
 
-    // 4. Same page: the settled screen, its text, and image sharpness.
     if (BASE) {
       console.log('\nComparing the settled pages, base → candidate.');
       const [b, c] = targets;
@@ -345,9 +324,7 @@ holdBrowserLock();
           if (diff.count === -1) visible.push(`${where}: the page size changed, ${diff.size}`);
           else if (diff.count > 0) visible.push(`${where}: ${diff.count} pixels differ (${diff.box})`);
           if (first.text !== cand.text && first.text === second.text) visible.push(`${where}: the text changed, ${firstTextDifference(first.text, cand.text)}`);
-          // Pair each image with the same-named image at the same position.
-          // An image whose sharpness differs between two loads of the base
-          // depends on timing, so it is skipped.
+
           const nth = (list) => {
             const seen = {};
             return list.map((img) => ({ ...img, key: `${img.name}#${(seen[img.name] = (seen[img.name] ?? 0) + 1)}` }));

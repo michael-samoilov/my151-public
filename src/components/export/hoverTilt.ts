@@ -9,10 +9,8 @@
 
 import type { HoverTiltAxes, HoverTiltBox, HoverTiltPose } from './hover-tilt/hoverTilt';
 
-/** Parked-cursor jitter below this keeps the idle orbit running on desktop. */
 export const POINTER_WAKE_PX = 12;
 
-/** True when the pointer left the seed by at least `slop` px. */
 export function pointerMovedFrom(
   last: { x: number; y: number } | null,
   x: number,
@@ -27,7 +25,6 @@ export function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-/** Inverse of `hoverTiltFromNormalized`: the pointer spot that gives this tilt. */
 export function normalizedForTilt(
   rotateX: number,
   rotateY: number,
@@ -43,7 +40,6 @@ export function normalizedForTilt(
   };
 }
 
-/** True when the pointer is over the painted (transformed) card AABB. */
 export function pointInBox(clientX: number, clientY: number, box: HoverTiltBox, pad = 0): boolean {
   return (
     clientX >= box.left - pad &&
@@ -53,17 +49,12 @@ export function pointInBox(clientX: number, clientY: number, box: HoverTiltBox, 
   );
 }
 
-/**
- * Idle orbit: 10° / 14s circle (sin on X, cos on Y).
- * In-phase sin/sin is a diagonal corner flip, not an orbit.
- */
 export function idleOrbitPose(opts: {
   now: number;
   origin: number;
   idleMsX: number;
   idleMsY: number;
   idleTilt: number;
-  /** The hover mapping, so the light sits where a pointer would for this tilt. */
   axes?: HoverTiltAxes;
 }): HoverTiltPose {
   const t = opts.now - opts.origin;
@@ -71,8 +62,6 @@ export function idleOrbitPose(opts: {
   const ry = (t / Math.max(1, opts.idleMsY)) * Math.PI * 2;
   const rotateX = Math.sin(rx) * opts.idleTilt;
   const rotateY = Math.cos(ry) * opts.idleTilt;
-  // The light sits where a pointer would for this tilt, so a hover or a
-  // finger takes over without the pose or the glare jumping.
   const { nx, ny } = normalizedForTilt(rotateX, rotateY, opts.axes ?? { rotation: opts.idleTilt });
   return {
     rotateX,

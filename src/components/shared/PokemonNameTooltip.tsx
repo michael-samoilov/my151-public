@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { Tooltip, TooltipArrow, TooltipContent, TooltipPortal, TooltipTrigger } from '@/components/ui/tooltip';
-import { useNamesVersion, type PokemonLabel } from '@/i18n';
+import { getLocale, useNamesVersion, type PokemonLabel } from '@/i18n';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { PokemonNameText } from './PokemonNameText';
 
-/** A finger held still this long on a tile shows its name. */
 const HOLD_MS = 450;
-/** A finger that moves farther than this before HOLD_MS is a scroll, not a hold. */
 const HOLD_SLOP_PX = 10;
 
 interface PokemonNameTooltipProps {
   label: PokemonLabel | (() => PokemonLabel);
+  /** A second, muted line under the name, such as the game a form comes from. */
+  detail?: () => string | null;
   children: ReactElement;
   enabled?: boolean;
   touchHold?: boolean;
@@ -29,30 +30,21 @@ export function PokemonNameTooltip({ enabled = true, ...props }: PokemonNameTool
   return enabled ? <ActiveNameTooltip {...props} /> : props.children;
 }
 
-function ActiveNameTooltip({ label, children, touchHold = true, testId = 'pokemon-name-tooltip' }: PokemonNameTooltipProps) {
+function ActiveNameTooltip({ label, detail, children, touchHold = true, testId = 'pokemon-name-tooltip' }: PokemonNameTooltipProps) {
   const [open, setOpen] = useState(false);
   const hold = useTouchHold(setOpen);
   return (
     <Tooltip open={open} onOpenChange={setOpen} disableHoverableContent>
       <TooltipTrigger asChild className="select-none" {...(touchHold ? hold : {})}>{children}</TooltipTrigger>
       <TooltipPortal>
-        <Name label={label} testId={testId} />
+        <Name label={label} detail={detail} testId={testId} />
       </TooltipPortal>
     </Tooltip>
   );
 }
 
-/**
- * Opens the tip after a touch pointer holds still for HOLD_MS, and closes it
- * when that finger lifts. A move past HOLD_SLOP_PX, a scroll, a second finger,
- * or a pointercancel drops a hold that has not opened yet, so scrolls and
- * pinches go on as usual. The click that can follow a hold does not reach the
- * tile, so a hold never picks, opens, or clears.
- */
 function useTouchHold(setOpen: (open: boolean) => void) {
   const stopRef = useRef<(() => void) | null>(null);
-  // Set when a hold opened the tip, and kept until the next press, because
-  // some browsers send no click after a hold.
   const heldRef = useRef(false);
   useEffect(() => () => stopRef.current?.(), []);
 
@@ -94,12 +86,10 @@ function useTouchHold(setOpen: (open: boolean) => void) {
     stopRef.current = stop;
   };
 
-  // The hold, not the platform, answers a long press: no context menu.
   const onContextMenu = (event: MouseEvent) => {
     if (stopRef.current || heldRef.current) event.preventDefault();
   };
 
-  // Capture runs before the tile's own click handler and Radix's.
   const onClickCapture = (event: MouseEvent) => {
     if (!heldRef.current) return;
     heldRef.current = false;
@@ -111,16 +101,25 @@ function useTouchHold(setOpen: (open: boolean) => void) {
   return { onPointerDown, onContextMenu, onClickCapture };
 }
 
-/** Only an open tooltip renders this, so closed tiles skip the names hook. */
-function Name({ label: source, testId }: { label: PokemonLabel | (() => PokemonLabel); testId: string }) {
+function Name({ label: source, detail: detailOf, testId }: {
+  label: PokemonLabel | (() => PokemonLabel);
+  detail?: () => string | null;
+  testId: string;
+}) {
   useNamesVersion();
   const label = typeof source === 'function' ? source() : source;
+  const detail = detailOf?.() ?? null;
+  const cjk = /^(ja|zh-)/.test(getLocale());
+  // The tooltip keeps 1rem from each screen edge, the same gutter its max width leaves.
   return <TooltipContent
     data-testid={testId}
-    aria-label={label.full}
-    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-32px)] whitespace-normal break-words text-left"
+    aria-label={detail ? `${label.full}${cjk ? '（' : ' ('}${detail}${cjk ? '）' : ')'}` : label.full}
+    collisionPadding={getAppliedRootFontSizePx()}
+    className={`z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-2rem)] whitespace-normal break-words ${detail ? 'text-center' : 'text-left'}`}
   >
     <TooltipArrow className="fill-foreground" />
     <span data-i18n-exempt="pokemon-name"><PokemonNameText name={label.full} /></span>
+    {detail && <span data-testid={`${testId}-detail`} data-i18n-exempt="game-title"
+      className="block text-[0.625rem] font-normal leading-tight opacity-70">{detail}</span>}
   </TooltipContent>;
 }

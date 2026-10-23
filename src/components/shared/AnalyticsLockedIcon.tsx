@@ -1,10 +1,3 @@
-/**
- * The Analytics tab's icon while it is locked: lucide's chart-column with
- * lucide's lock badge (from folder-lock) in front of it. The chart strokes stop
- * 1.25 units short of the lock's ink, ends included: the axis at x 10.75, the
- * tall bar at y 13.4 (clear of the shackle's curve), and the third bar at
- * y 9.75 (clear of the shackle's top), so only its top peeks over the lock.
- */
 export function AnalyticsLockedIcon({ className }: { className?: string }) {
   return (
     <svg

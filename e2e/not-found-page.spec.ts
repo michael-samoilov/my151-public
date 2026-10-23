@@ -1,11 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The 404 page (public/404.html, built by docs/design/404-page/build.mjs) is a
-// Gen 1 wild encounter: the encounter line, the scene, "That page does not
-// exist", then a battle menu. One cursor marks the selected entry: it starts
-// on the first, follows the arrow keys (wrapping round), follows the mouse,
-// and Enter or Space opens the entry under it.
-
 const cursors = (page: Page) =>
   page.locator('.menu a').evaluateAll((links) =>
     links.map((a) => getComputedStyle(a, '::before').visibility === 'visible'));

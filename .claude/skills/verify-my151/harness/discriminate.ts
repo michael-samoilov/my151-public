@@ -1,13 +1,10 @@
-// Mutation test for the verifier itself. Inject a known regression into a
-// worktree, build, and run the Blink suite; the named check must fail. A verifier
-// that always says PASS is worse than none, so this proves discrimination. Run
-// from the repo root:
-//   npx tsx .claude/skills/verify-my151/harness/discriminate.ts
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { openBlink } from './lib/engines.ts';
 import { runStandardSuite } from './lib/flows.ts';
-import { addWorktree, buildIn, startPreview } from './lib/servers.ts';
+import { addWorktree, buildIn, startPreview, type Preview } from './lib/servers.ts';
 import { Evidence, type Check } from './lib/evidence.ts';
 
 const PORT = 4182;
@@ -19,8 +16,6 @@ function replace(dir: string, rel: string, find: string, to: string) {
   fs.writeFileSync(file, src.replace(find, to));
 }
 
-// Append after the imports (never prepend before them; a statement before an
-// import breaks the served build). The snippet runs on each load, after mount.
 function append(dir: string, rel: string, snippet: string) {
   const file = path.join(dir, rel);
   fs.writeFileSync(file, `${fs.readFileSync(file, 'utf8')}\n${snippet}\n`);
@@ -44,16 +39,11 @@ const MUTATIONS: Mutation[] = [
     name: 'clipped-chip',
     expectFail: 'render:no-clipped-content',
     expectPassStill: 'boot:react-mounted',
-    // A bordered chip wider than its overflow-hidden column: the shape the render audit exists to catch.
     apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:8px;top:120px;width:60px;height:32px;overflow:hidden;z-index:2147483646;background:#fff'; d.innerHTML = '<span style="display:block;width:120px;height:24px;border:2px solid rgb(51,51,51);box-sizing:border-box">verify-injected-clip</span>'; document.body.appendChild(d); });`),
   },
   {
     name: 'break-persist',
-    // Not oracle:seed-persisted: that reads localStorage back after a reload,
-    // which only exposes a broken partialize if something *writes* first. The
-    // old chrome's boot write provided that flush by accident; the two-bar
-    // chrome does not. The real-placement check performs an actual user write,
-    // so the emptied `sections` hits storage deterministically.
+
     expectFail: 'placement:real-add-grows-store',
     expectPassStill: 'boot:react-mounted',
     apply: (dir) => replace(dir, 'src/store/usePokedexStore.ts', 'sections: state.sections,', 'sections: {},'),
@@ -68,12 +58,12 @@ async function suiteAt(url: string, ev: Evidence, label: string): Promise<Check[
 
 async function runVariant(ev: Evidence, label: string, mutate: ((dir: string) => void) | null): Promise<Check[]> {
   const wt = addWorktree('HEAD');
-  let preview: { stop: () => void } | null = null;
+  let preview: Preview | null = null;
   try {
     if (mutate) mutate(wt.dir);
     await buildIn(wt.dir);
     preview = await startPreview(wt.dir, PORT);
-    return await suiteAt((preview as { url: string }).url, ev, label);
+    return await suiteAt(preview.url, ev, label);
   } finally {
     preview?.stop();
     wt.cleanup();

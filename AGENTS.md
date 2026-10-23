@@ -14,6 +14,16 @@
 - The user-facing task is the coordinator. It is the user's single entry point: accept new work there, delegate bounded implementation or research to workers, monitor them, resolve conflicts, and return one consolidated outcome. Do not make the user chase worker tasks for status or results.
 - Apply every instruction in this file to the root agent and every delegated worker. Include the relevant requirements in each worker assignment.
 
+## Visits to the live site
+
+The admin dashboard counts every browser that visits `my151.app` or `www.my151.app`. Agent work must never count, on any platform.
+
+- Test against a local build or a Vercel preview. Neither records anything.
+- Before you open the live site in a browser, call `protectLiveSite(context)` from `scripts/live-site.ts`. Without Playwright, open `/?notme` first in every new browser context.
+- Keep the automation flag on. The server stores nothing for a browser with `navigator.webdriver` set. Do not use stealth plugins or `--disable-blink-features=AutomationControlled` on the live site.
+- Do not submit the feedback form on the live site.
+- `scripts/check-live-site-visits.mjs` fails a committed script that opens the live site without one of these protections.
+
 ## Coordinator operating protocol
 
 - When a request has independent workstreams or benefits from specialization, start workers immediately. Keep small, tightly coupled work in the coordinator when delegation would add overhead.
@@ -21,6 +31,16 @@
 - Post a compact worker ledger in the coordinator chat whenever a worker starts, completes, fails, or needs input. Use one line per worker with: `Worker | Task | Status | Result or next action`.
 - Actively follow worker progress. Handle routine questions, retries, and integration yourself; involve the user only for a material product choice, external permission, destructive action, or a review required by the policy below.
 - Integrate compatible worker results, run final verification on the combined change, and report the shipped result and evidence in the coordinator chat.
+
+### Checks that outlive a tool connection
+
+- Start long verification jobs in a detached process session. Do not depend on a tool session handle to keep a required check alive.
+- Save the source commit, process ID, stage, exit status, logs, and each completed browser-test outcome to disk.
+- Write live records outside active Vite/Tailwind source trees. Copy them into repository evidence after the development server stops.
+- After an interruption, inspect those records and the live process before restarting. Reuse completed checks when their inputs have not changed.
+- Inspect the current commit and the recorded operational output paths after an environment transition. Use a unique output directory for each new attempt; never overwrite a completed run's artifacts.
+- Remove an orphan preview server only after checking its process command and working directory. Keep the user's other servers running.
+- Continue monitoring through the authorized merge and deployment. A phone or tool reconnect is not a reason to end the task.
 - Never claim a worker is running, finished, verified, or merged unless you have checked its actual state.
 
 ## Reuse existing UI exactly
@@ -49,7 +69,8 @@
 
 ## 1. Verify before you show
 
-- Run `/verify-my151` on the change. If that command is unavailable, read `.claude/skills/verify-my151/SKILL.md` and follow it.
+- Run canonical affected CI on the final merge candidate, or use the recorded proportional-verification exception in `CLAUDE.md`. CI-only work can finish with runner proofs and fast checks. Reserve full regression for actual broad release risk.
+- For visual/platform changes, read `.claude/skills/verify-my151/SKILL.md` and capture the relevant screens and actual affected engines. Reserve its exhaustive matrix for full/release QA.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.
 - For a bugfix, prove the fix with a proof test that fails on the old behavior and passes on the fix. Report both results, then delete the test. See section 4, "Testing".
@@ -102,4 +123,4 @@ Maintain the suite this way:
 - A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
 - Tag a Playwright test or describe `@viewport` when its result depends on the viewport or device. Untagged tests run only in the `desktop` project. `scripts/check-viewport-tags.mjs` enforces the tag on tests that skip `desktop`.
 - `scripts/check-test-rules.mjs` fails on a committed proof test, and on a new unit test outside `api/`, `scripts/`, or saved-data code unless its first 5 lines hold `// keeps: <bug E2E misses>`.
-- Run tests by the two-tier rule in `CLAUDE.md`, "Build Verification".
+- Run tests by the fast/affected/full policy in `CLAUDE.md`, "Build Verification". Keep all cheap API and migration gates in every code mode.

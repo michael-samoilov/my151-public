@@ -1,23 +1,13 @@
 import { useSyncExternalStore } from 'react';
 import { getUnzoomedViewportWidth } from './viewport';
 
-/** Native sprite resolution (px). Pair sprites snap to 1× or 2× of this. */
 export const SPRITE_NATIVE = 96;
 
-/**
- * CSS px that paints `scale` copies of the native sprite on this device.
- *
- * `image-rendering: pixelated` stays crisp when the CSS size is `n * 96 / dpr`
- * (integer device pixels). A pane fraction such as `min(42cqw, 32cqh)` is not
- * an integer scale and is the source of pair-sprite pixelation.
- * `scale` is an integer ≥ 1 (1×, 2×, 3×…). Values below 1 snap up to 1.
- */
 export function pixelPerfectCssPx(scale: number, dpr: number): number {
   const n = Math.max(1, Math.round(scale));
   return Math.round((n * SPRITE_NATIVE) / Math.max(dpr, 1));
 }
 
-/** True when device pixels are an integer multiple of the native sprite, ≥ 1×. */
 export function isIntegerSpriteScale(devicePx: number, nativePx = SPRITE_NATIVE): boolean {
   if (!Number.isFinite(devicePx) || devicePx + 0.5 < nativePx) return false;
   const multiple = devicePx / nativePx;
@@ -63,14 +53,11 @@ let vpVersion = 0;
 if (typeof window !== 'undefined') {
   const notify = () => { vpVersion++; vpListeners.forEach((fn) => fn()); };
   window.addEventListener('resize', notify);
-  // Track DPR changes (e.g. dragging window between monitors, zoom bucket snaps)
   const watchDpr = () => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mq.addEventListener('change', () => { notify(); watchDpr(); }, { once: true });
   };
   watchDpr();
-  // Catch-all: ResizeObserver fires on any layout-affecting change to the
-  // document root, including zoom transitions that miss resize events.
   if (typeof ResizeObserver !== 'undefined') {
     const ro = new ResizeObserver(notify);
     ro.observe(document.documentElement);
@@ -82,35 +69,6 @@ function subscribeFn(cb: () => void) {
   return () => { vpListeners.delete(cb); };
 }
 
-/**
- * Returns a fluid sprite size (CSS px) for a container whose size follows
- * CSS clamp(desktopMin, desktopVw * vw, desktopMax) on desktop and
- * mobileVw * vw on mobile. The value interpolates continuously with the
- * viewport width — resizing grows/shrinks the sprite smoothly rather than
- * jumping between discrete sizes.
- *
- * (Earlier this snapped to integer multiples of 96 / devicePixelRatio for
- * pixel-perfect rendering. That's pointless once sprites render at a
- * non-integer scale like 1.95×, and it produced visible size "steps" while
- * resizing — every tile jumped at once because the chrome is sized off this
- * value. Continuous interpolation trades a touch of pixel-art crispness for
- * smooth scaling; `image-rendering: pixelated` keeps edges hard.)
- *
- * Being independent of devicePixelRatio also means a given CSS viewport
- * width renders at the same size on every device — a desktop window shrunk
- * below the md: breakpoint matches what a phone shows at that width.
- *
- * Both browser zoom (desktop Ctrl+=) and iOS pinch-zoom are compensated
- * for via `getUnzoomedViewportWidth` — see src/lib/viewport.ts for the
- * full rationale. In short: the CSS-px sprite size stays constant across
- * zoom levels, so the browser's zoom transform magnifies the sprite in
- * lockstep with the rest of the UI.
- *
- * `divisor` (default 1) shrinks the effective viewport — pass 2 when the
- * tile lives inside a half-pane (desktop side-panel layout) so the
- * formula sizes for the pane width rather than the full window.
- */
-/** CSS px for the fluid 1× sprite base at a known layout width. */
 export function fluidSpriteCssPx(
   viewportCssPx: number,
   mobileVw: number,
@@ -154,12 +112,6 @@ export function useFluidSpritePx(
   );
 }
 
-/**
- * Returns true when the (unzoomed) viewport width is at least `minPx`.
- * Shares the same viewport-change subscription as useFluidSpritePx.
- * Used to gate larger (2×) sprite rendering on viewports wide enough to
- * absorb the extra sprite width without heavy inter-tile overlap.
- */
 export function useViewportAtLeast(minPx: number): boolean {
   return useSyncExternalStore(
     subscribeFn,
@@ -171,7 +123,6 @@ export function useViewportAtLeast(minPx: number): boolean {
   );
 }
 
-/** Layout viewport width in CSS px, on the same subscription as the sprite hooks. */
 export function useLayoutViewportCssPx(): number {
   return useSyncExternalStore(
     subscribeFn,
@@ -183,7 +134,6 @@ export function useLayoutViewportCssPx(): number {
   );
 }
 
-/** Device pixel ratio, on the same viewport subscription as the sprite hooks. */
 export function useDevicePixelRatio(): number {
   return useSyncExternalStore(
     subscribeFn,
@@ -195,19 +145,10 @@ export function useDevicePixelRatio(): number {
   );
 }
 
-/**
- * CSS px for an integer sprite scale on this device. Default 1× (almost always
- * what a single portrait sprite wants). Never fractional, never below native.
- */
 export function usePixelPerfectSprite(scale = 1): number {
   return pixelPerfectCssPx(scale, useDevicePixelRatio());
 }
 
-/**
- * Integer survey-sprite scale (1× / 2× / 3× only).
- * Device pixels stay ≥ native and an integer multiple. Desktop uses 2×
- * when 1× CSS would be a sub-native stub (dpr > 1).
- */
 export function exportSurveySpriteScale(opts: {
   viewportWidth: number;
   dpr: number;
@@ -224,7 +165,6 @@ export function exportSurveySpriteScale(opts: {
   return 1;
 }
 
-/** Integer scale for the export-survey highlight sprite. */
 export function useExportSurveySpriteScale(): number {
   return useSyncExternalStore(
     subscribeFn,

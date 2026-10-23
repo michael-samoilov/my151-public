@@ -1,0 +1,79 @@
+{
+ "source": "my151's own wording for app forms that no game, guide or Bulbapedia names in a locale. Each name joins the species' official name with an official word, in the order the language puts an adjective. Michael decided this for Purple Kecleon on 2026-10-20: \"could we just include 'purple' in that language as that adjective would typically modify a word in that language\". npm run i18n:names gives these names `idiomatic` provenance and fails when an official name already exists.",
+ "read": "2026-10-20",
+ "forms": {
+  "11105": {
+   "basis": "Overdrive in Chinese. No official Chinese name exists: Pokémon Masters EX Traditional Chinese text (poke-corpus d74a89ba) has no 超頻驅動, and Black and White had no Chinese release (checked 2026-10-20). Chinese fan references write the state 超频驱动模式: 52poke, and Baidu Baike's 捷克罗姆 entry (https://baike.baidu.com/item/%E6%8D%B7%E5%85%8B%E7%BD%97%E5%A7%86/5074392). The descriptor drops 模式, the same short form as the other locales. Coordinator decision, 2026-10-20.",
+   "names": {
+    "zh-Hans": "超频驱动",
+    "zh-Hant": "超頻驅動"
+   }
+  },
+  "11106": {
+   "basis": "Overdrive in Chinese: as 11105.",
+   "names": {
+    "zh-Hans": "超频驱动",
+    "zh-Hant": "超頻驅動"
+   }
+  },
+  "11107": {
+   "basis": "Overdrive in Chinese: as 11105. The fusion’s official name comes first.",
+   "names": {
+    "zh-Hans": "超频驱动",
+    "zh-Hant": "超頻驅動"
+   }
+  },
+  "11108": {
+   "basis": "Overdrive in Chinese: as 11107.",
+   "names": {
+    "zh-Hans": "超频驱动",
+    "zh-Hant": "超頻驅動"
+   }
+  },
+  "11122": {
+   "basis": "Species name from game text (pokemon_species_names), and the word for purple from the Pokédex colour names the games use (PokéAPI pokemon_color_names, colour 7): むらさきいろ, 보라, 紫色, Violet, Violett, Morado, Viola, Purple. No game or Bulbapedia page names the purple Kecleon: Kecleon Shop rev 4649465 calls it the younger, purple Kecleon. German uses violett, not lila, because game text does: in Sword/Shield, Scarlet/Violet and Legends: Z-A (poke-corpus commit 57e50780), 9 of the 11 English names that start with Purple use violett (Purple Petal is Violettes Blatt, a neuter noun like das Kecleon), one uses lila (Purple Stripes is Lila gestreift, Z-A), and Purple Nectar is Purpurner Nektar. Michael asked for this check on 2026-10-20.",
+   "names": {
+    "en": "Purple Kecleon",
+    "ja": "むらさきのカクレオン",
+    "ko": "보라색 켈리몬",
+    "zh-Hans": "紫色变隐龙",
+    "zh-Hant": "紫色變隱龍",
+    "fr": "Kecleon violet",
+    "de": "Violettes Kecleon",
+    "es": "Kecleon morado",
+    "it": "Kecleon viola"
+   }
+  },
+  "11123": {
+   "basis": "Pokémon XD had no Korean or Chinese release, so no game names Shadow Lugia there. The word is Pokémon GO's official term for Shadow Pokémon (Bulbapedia, Shadow Pokémon (GO) rev 4640838: 그림자 포켓몬, 暗影寶可夢), before the species' official name.",
+   "names": {
+    "ko": "그림자 루기아",
+    "zh-Hans": "暗影洛奇亚",
+    "zh-Hant": "暗影洛奇亞"
+   }
+  },
+  "11124": {
+   "basis": "The Explorers games had no Chinese release, so no game names Primal Dialga there. The word is the official Chinese 原始 of Primal Reversion (原始回归, 原始回歸 in game text), before the species' official name, as Korean 원시 디아루가 does.",
+   "names": {
+    "zh-Hans": "原始帝牙卢卡",
+    "zh-Hant": "原始帝牙盧卡"
+   }
+  },
+  "11129": {
+   "basis": "Pokémon Ranger: Guardian Signs had no Korean or Chinese release, so no game names Ukulele Pichu there. Korean: the Korean Pokémon wiki's page title 우쿨렐레 피츄 (pokemon.fandom.com/ko). Chinese: 52poke's Guardian Signs page (乌克丽丽皮丘). Read through a search index on 2026-10-20.",
+   "names": {
+    "ko": "우쿨렐레 피츄",
+    "zh-Hans": "乌克丽丽皮丘",
+    "zh-Hant": "烏克麗麗皮丘"
+   }
+  },
+  "11130": {
+   "basis": "Pokkén Tournament had no Korean release and no Chinese text, so no game names Shadow Mewtwo there. The word is Pokémon GO's official term for Shadow Pokémon (Bulbapedia, Shadow Pokémon (GO) rev 4640838: 그림자 포켓몬, 暗影寶可夢), before the species' official name, as for Shadow Lugia.",
+   "names": {
+    "ko": "그림자 뮤츠",
+    "zh-Hans": "暗影超梦",
+    "zh-Hant": "暗影超夢"
+   }
+  }
+ }
+}

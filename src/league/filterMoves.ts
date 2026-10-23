@@ -3,7 +3,7 @@ import type { TypeName } from '@/types/pokemon';
 import { moveName } from './moveNames';
 import { MOVES, type ContestType, type Move } from './moves';
 
-export type MoveChips = {
+type MoveChips = {
   types: TypeName[] | null;
   categories: ReadonlyArray<Move['category']>;
   contests: ReadonlyArray<ContestType>;
@@ -15,8 +15,6 @@ type MoveListQuery =
 
 function filterMoves(query: MoveListQuery): Move[] {
   if (query.kind === 'search') {
-    // The name the picker shows, folded the way the Pokémon search folds it:
-    // accents, full-width Latin and hiragana typed for katakana all match.
     const q = normalizeSearch(query.q.trim());
     return MOVES.filter((m) => normalizeSearch(moveName(m)).includes(q));
   }

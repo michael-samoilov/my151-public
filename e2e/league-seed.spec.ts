@@ -1,15 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
-/**
- * The Kanto league a preview build seeds on a first visit.
- *
- * The seed exists for feature work, so what it must guarantee is that there
- * is something to work against: twelve full teams, one of every card feature
- * that is hard to reach by hand, and two rows left blank so the empty state
- * is on screen beside the filled one.
- */
-
 test.describe('seeded league', () => {
   test.beforeEach(async ({ page }) => {
     await seededLeague(page);
@@ -29,12 +20,8 @@ test.describe('seeded league', () => {
           ).length,
       ),
     );
-    // What a filled summary shows is the row's own team size: two at gym 1,
-    // rising to six for the champion and the boss. Gym 7 and Elite Four 2 are
-    // the two blanks, and a blank row paints no sprite at all.
     expect(filled).toEqual([2, 3, 3, 3, 4, 4, 0, 5, 5, 0, 5, 5, 6, 6]);
 
-    // A blank row offers to start the card; a filled one offers to open it.
     const actions = await page.evaluate(() =>
       [...document.querySelectorAll('[data-testid^="league-action-"]')].map(
         (el) => el.getAttribute('data-action'),
@@ -70,9 +57,6 @@ test.describe('seeded league', () => {
   });
 
   test('a leader who fields a mid-line stage gets there by a drag', async ({ page }) => {
-    // Brock's team is Onix, and the line a picker hands over is Onix into
-    // Steelix. The seed reaches his state the way a person would — one
-    // boundary push — so the line reads as edited, reset button and all.
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(400);
@@ -101,7 +85,6 @@ test.describe('seeded league', () => {
             ?.getAttribute('alt') ?? null,
         [row, seat],
       );
-    // Seat 6 holds Lapras; Mewtwo covers it on the endgame boss row.
     expect(await alt(10, 6)).toBe('lapras');
     expect(await alt(11, 6)).toBe('mewtwo');
   });

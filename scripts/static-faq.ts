@@ -1,16 +1,5 @@
-/**
- * Writes each tool page's "About this tool" FAQ into its served HTML.
- *
- * The app renders the FAQ with React under the page footer, so a crawler that
- * does not run JavaScript never saw it: most AI crawlers, and Bing in part.
- * This plugin replaces a `<!-- p151-faq:<page> -->` marker in the page's HTML
- * with the same English copy from the catalog, so the two can never drift.
- *
- * The marker sits inside the page's boot copy (`.p151-copy`, `.lg-copy` or
- * `.fv-copy`). That block stays at opacity 0 for the first second and React
- * replaces it on mount, so a normal load never paints the served FAQ. A load
- * slower than a second shows it as one collapsed "About this tool" line.
- */
+
+
 import type { Plugin } from 'vite';
 import { en } from '../src/i18n/catalogs/en';
 import { FAQ_KEYS, type FaqPage } from '../src/components/shared/faqKeys';

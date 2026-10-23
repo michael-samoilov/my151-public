@@ -1,84 +1,110 @@
-/**
- * The sprites my151 chose one by one, for the sprite lists in the footer's
- * Acknowledgements panel.
- *
- * Most sprites come in bulk: PokéAPI's front sprites, drawn by Game Freak,
- * the Smogon Sprite Project, KingOfThe-X-Roads and Kyle Dove. Their entries
- * say so in one line and list nothing (Michael, 2026-10-12). A sprite is
- * listed only when it ties to an artist: a gap filled from another source,
- * a targeted replacement, or an artist's own credit request.
- *
- * Each such sprite is a row in `spriteSources.json`, keyed by the file name
- * it is served under. `source` is the entry that credits it; `by` names the
- * spriter, `with` names someone the source asks to credit beside it, and
- * `base` names the artist of the base sprite an animation is drawn on. A row
- * with `cleanup` records a sprite my151 only repaired, saying what changed; the
- * panel does not list it, because nobody chose it.
- * `scripts/check-sprite-revisions.mjs` fails when a sprite is added or
- * replaced without a row, or when a row names a missing file.
- */
-import rows from './spriteSources.json';
-import altFormSpecies from '@/i18n/alt-form-species.json';
-import { allPickerMons, comparePickerOrder, pickerNameId, type PickerMon } from '@/favorites/model/catalog';
-import { SPRITE_CREDIT_IDS } from './acknowledgements';
+import attribution from './spriteAttribution.json';
+import bundleCredits from './bundleCredits.json';
+import { allPickerMons, comparePickerOrder, type PickerMon } from '@/favorites/model/catalog';
+import { artistLinks } from './creditTerms';
 
-/**
- * Every source a row can name. Game Freak's own sprites and my151's own
- * drawings (the sprite lab's) have no entry in the panel; every other
- * source does.
- */
-export const SPRITE_SOURCES = ['game-freak', 'my151', ...SPRITE_CREDIT_IDS] as const;
-export type SpriteSourceId = (typeof SPRITE_SOURCES)[number];
+const OWN_UPLOAD = 'own upload';
 
-interface SpriteRow {
-  source: SpriteSourceId;
-  by?: string;
-  with?: string;
-  base?: string;
-  cleanup?: string;
+interface AttributionFile {
+  sprites: Record<string, { via: string; artists?: string[] }>;
 }
 
-const isSource = (id: unknown): id is SpriteSourceId => (SPRITE_SOURCES as readonly unknown[]).includes(id);
+const DATA = attribution as unknown as AttributionFile;
 
-const ROWS = new Map(Object.entries(rows as Record<string, Partial<SpriteRow>>).map(([file, row]) => {
-  if (!isSource(row.source)) throw new Error(`spriteSources.json: ${file} names an unknown source, "${row.source}".`);
-  return [file, row as SpriteRow] as const;
-}));
-
-/** A listed sprite, with the people its row credits. */
-export interface ChosenSprite {
+export interface CreditedSprite {
   mon: PickerMon;
-  by?: string;
-  with?: string;
-  base?: string;
 }
 
-/** The file name a sprite is served under, without `.png` and the `?v=` revision. */
+export interface ArtistCredit {
+  name: string;
+  links: readonly string[];
+  sprites: readonly CreditedSprite[];
+}
+
 const spriteFile = (sprite: string) => sprite.replace(/^.*\/|\.png(\?.*)?$/g, '');
 
-const ALT_FORM_SPECIES = altFormSpecies as Record<string, number>;
-const speciesOf = (id: number): number => (id <= 1025 ? id : ALT_FORM_SPECIES[id] ?? 0);
+const dexOrder = (a: CreditedSprite, b: CreditedSprite) => a.mon.ownerId - b.mon.ownerId || comparePickerOrder(a.mon, b.mon);
 
-let bySource: Map<SpriteSourceId, ChosenSprite[]> | undefined;
-
-function groupRows(): Map<SpriteSourceId, ChosenSprite[]> {
-  const listed = allPickerMons()
-    .flatMap((mon) => {
-      const row = ROWS.get(spriteFile(mon.sprite));
-      return row && !row.cleanup ? [{ mon, row, species: speciesOf(pickerNameId(mon)) || speciesOf(mon.ownerId) }] : [];
-    })
-    .sort((a, b) => a.species - b.species || comparePickerOrder(a.mon, b.mon));
-  const groups = new Map<SpriteSourceId, ChosenSprite[]>();
-  for (const { mon, row } of listed) {
-    const list = groups.get(row.source) ?? [];
-    groups.set(row.source, list);
-    list.push({ mon, by: row.by, with: row.with, base: row.base });
-  }
-  return groups;
+interface Parsed {
+  artists: Map<string, ArtistCredit>;
+  sources: Set<string>;
 }
 
-/** The sprites one source's rows credit, in national dex order. */
-export function chosenSprites(source: SpriteSourceId): readonly ChosenSprite[] {
-  bySource ??= groupRows();
-  return bySource.get(source) ?? [];
+function parse(): Parsed {
+  const monByFile = new Map(allPickerMons().map((mon) => [spriteFile(mon.sprite), mon] as const));
+  const sources = new Set<string>();
+  const direct = new Map<string, CreditedSprite[]>();
+  for (const [file, mon] of monByFile) {
+    const row = DATA.sprites[file];
+    if (!row) continue;
+    sources.add(row.via);
+    if (row.via !== OWN_UPLOAD) continue;
+    for (const artist of row.artists ?? []) {
+      const list = direct.get(artist) ?? [];
+      direct.set(artist, list);
+      list.push({ mon });
+    }
+  }
+  const artists = new Map<string, ArtistCredit>();
+  for (const name of [...direct.keys()].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))) {
+    artists.set(name, { name, links: artistLinks(name), sprites: direct.get(name)!.sort(dexOrder) });
+  }
+  return { artists, sources };
+}
+
+let parsed: Parsed | undefined;
+const data = () => (parsed ??= parse());
+
+export function spriteArtists(): readonly ArtistCredit[] {
+  return [...data().artists.values()];
+}
+
+export function artistCredit(name: string): ArtistCredit | undefined {
+  return data().artists.get(name);
+}
+
+export function hasSpriteRows(source: string): boolean {
+  return data().sources.has(source);
+}
+
+/**
+ * A bundle's share of the app's fan-made sprite files, from
+ * scripts/credits/bundle-credits.ts: each file counts under one entry, and an
+ * artist counts a file only when the ledger confirms it.
+ */
+export interface BundleCredit {
+  sprites: number;
+  unconfirmed: number;
+  /** [artist, files], most files first, ties by name. */
+  artists: [string, number][];
+}
+
+/** The shown files that PokéAPI delivers: Game Freak's, the Smogon Sprite Project's, and its own. */
+export interface PokeApiDelivery {
+  official: number;
+  smogon: number;
+  own: number;
+}
+
+const BUNDLES = bundleCredits as unknown as {
+  entries: Record<string, BundleCredit>;
+  pokeapi: PokeApiDelivery;
+  links: Record<string, string>;
+};
+
+export const bundleCredit = (id: string): BundleCredit | undefined => BUNDLES.entries[id];
+
+export const pokeapiDelivery = (): PokeApiDelivery => BUNDLES.pokeapi;
+
+/** An artist's profile, only where it is proven to be theirs. */
+export const artistProfile = (name: string): string | undefined => BUNDLES.links[name];
+
+/** The bundles that credit an artist, most files first. */
+export function bundlesCrediting(name: string, ids: readonly string[]): [string, number][] {
+  return ids
+    .flatMap((id): [string, number][] => {
+      const files = BUNDLES.entries[id]?.artists.find(([artist]) => artist === name)?.[1];
+      return files ? [[id, files]] : [];
+    })
+    .sort((a, b) => b[1] - a[1]);
 }

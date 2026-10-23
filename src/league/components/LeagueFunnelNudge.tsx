@@ -3,21 +3,11 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { isRosterNudge, leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
 import { pickVisibleAnchor, revealToolbarButton } from '../model/nudgeAnchor';
 import { useLeagueUi } from '../store/useLeagueUi';
 import type { Fit } from '../useFitScale';
-
-/**
- * League export nudges. Same popup as the dex builder's MilestoneCelebration,
- * pointed at the toolbar Export button instead of a nav tab. Beacons go
- * through sendEventBeacon (/api/event), including the shown/cta/dismiss
- * trio intro and league-promo already use.
- *
- * Two placements. The trainer card's popup floats under the card's Export
- * button (`LeagueFunnelNudge`). The two roster popups belong to the league
- * summary and never cover its rows (`LeagueRosterNudge`).
- */
 
 interface NudgeCopy {
   titleKey: NoArgKey;
@@ -41,20 +31,28 @@ const COPY: Record<LeagueNudgeId, NudgeCopy> = {
     bodyKey: 'nudge.complete.body',
     ctaKey: 'nudge.gyms.cta',
   },
+  full: {
+    titleKey: 'nudge.full.title',
+    bodyKey: 'nudge.complete.body',
+    ctaKey: 'nudge.gyms.cta',
+  },
 };
 
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 264;
-/** The wait before a popup shows, so the mobile pane pan (280ms) has ended. */
 export const REVEAL_DELAY_MS = 360;
 
-const isCardNudge = (id: LeagueNudgeId) => id === 'card';
-
 /**
- * One placement's popup lifecycle: the reveal delay, the `shown` beacon, the
- * 10-second close, and the CTA and dismiss actions. Each placement handles
- * only its own nudges, so each beacon and timer runs once.
+ * Whether a nudge floats under an Export button rather than sitting under the
+ * league summary. The summary beside an open card on desktop is too narrow
+ * for the full-league nudge, so it points at the league's Export button.
  */
+function useFloats() {
+  const openCard = useLeagueUi((s) => s.openCard);
+  const isDesktop = useIsDesktop();
+  return (id: LeagueNudgeId) => id === 'card' || (id === 'full' && isDesktop && openCard !== null);
+}
+
 function useNudge(owns: (id: LeagueNudgeId) => boolean) {
   const active = useLeagueUi((s) => s.activeNudge);
   const id = active !== null && owns(active) ? active : null;
@@ -101,7 +99,6 @@ function useNudge(owns: (id: LeagueNudgeId) => boolean) {
   return { id, armed, ready, finish };
 }
 
-/** The pointer on a popup's edge, toward the Export button. */
 function NudgeArrow({ left, below }: { left: number; below: boolean }) {
   return (
     <div
@@ -116,11 +113,6 @@ function NudgeArrow({ left, below }: { left: number; below: boolean }) {
   );
 }
 
-/**
- * The popup's words and its two buttons. `inline` sets the button beside the
- * words instead of under them: under the summary every px of the popup's
- * height comes off the summary, and this layout is about 40px shorter.
- */
 function NudgeContent({ id, finish, inline = false }: {
   id: LeagueNudgeId;
   finish: (action: 'cta' | 'dismiss') => void;
@@ -143,8 +135,6 @@ function NudgeContent({ id, finish, inline = false }: {
       </button>
       {title}
       {inline ? (
-        // The button shares the body's line, under the title's, so it
-        // clears the dismiss button in the corner.
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">{body}</div>
           <button type="button" onClick={() => finish('cta')} className={`${cta} mt-1 shrink-0 whitespace-nowrap px-3`}>
@@ -165,9 +155,8 @@ function NudgeContent({ id, finish, inline = false }: {
 
 const POPUP_CLASS = 'relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in';
 
-/** The trainer card's popup, floating under the card's Export button. */
 export function LeagueFunnelNudge() {
-  const { id, armed, ready, finish } = useNudge(isCardNudge);
+  const { id, armed, ready, finish } = useNudge(useFloats());
   const [anchor, setAnchor] = useState<{ id: LeagueNudgeId; rect: DOMRect } | null>(null);
 
   useLayoutEffect(() => {
@@ -175,7 +164,7 @@ export function LeagueFunnelNudge() {
     let cancelled = false;
     let raf = 0;
     let frames = 0;
-    const selector = '[data-league-export="card"]';
+    const selector = id === 'card' ? '[data-league-export="card"]' : '[data-league-export="league"]';
     const capture = () => {
       if (cancelled) return;
       const nodes = [...document.querySelectorAll(selector)];
@@ -234,12 +223,9 @@ export function LeagueFunnelNudge() {
   );
 }
 
-/** The gap between the summary and a popup beside it, and from the pane edge. */
 const BESIDE_GAP = 12;
 const EDGE = 8;
-/** The narrowest popup that sits beside the summary. Narrower, it goes below. */
 const BESIDE_MIN_W = 220;
-/** How far in from a popup's corner its arrow may sit. */
 const ARROW_INSET = 14;
 
 type Placement =
@@ -252,29 +238,9 @@ function samePlacement(a: Placement | null, b: Placement): boolean {
   return a.left === b.left && a.top === b.top && a.width === b.width && a.arrowLeft === b.arrowLeft;
 }
 
-/**
- * The roster popups, "Gym leaders complete" and "League ready", in the
- * league summary's own column. `LeagueHome` renders this right after its
- * fitted block, and it never covers a summary row:
- *
- * - `beside`: where the pane leaves room right of the summary (a desktop),
- *   the popup sits there, level with the summary's top, under the Export
- *   button. The summary keeps its size, so a Retina screen keeps its 1x
- *   sprites and nothing jumps when the popup opens or closes.
- * - `below`: everywhere else (a phone, a tablet), it joins the page flow
- *   under the summary. It keeps its own size rather than taking the
- *   summary's zoom, which goes down to 0.55, and `data-fit-reserve` has the
- *   fit take its height off the summary's budget, so the rows shrink to
- *   make room for it.
- *
- * The choice reads the column's width, not the summary's: the summary
- * narrows while the popup is below it, and a choice that read the summary
- * would flip back and forth at the boundary.
- *
- * While either shows, the league Export button pulses (`HeaderActions`).
- */
 export function LeagueRosterNudge({ fit }: { fit: Fit }) {
-  const { id, ready, finish } = useNudge(isRosterNudge);
+  const floats = useFloats();
+  const { id, ready, finish } = useNudge((nudge) => isRosterNudge(nudge) && !floats(nudge));
   const slotRef = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<Placement | null>(null);
 
@@ -286,7 +252,6 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
       const pane = slot.closest('[data-lg-viewport]');
       const summary = slot.previousElementSibling?.querySelector('[data-lg-league-root]');
       if (!column || !pane || !summary) return;
-      // The pane's client box, which leaves out a classic scrollbar.
       const paneRight = pane.getBoundingClientRect().left + pane.clientLeft + pane.clientWidth - EDGE;
       const columnRight =
         column.getBoundingClientRect().right - (parseFloat(getComputedStyle(column).paddingRight) || 0);

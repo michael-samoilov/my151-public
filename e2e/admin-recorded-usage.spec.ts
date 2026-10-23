@@ -1,7 +1,7 @@
+import { openAdmin } from './admin-ready';
 import {expect, test} from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
-// @viewport: both charts, the long-tail distribution, and metric controls must fit every admin layout.
 test('recorded usage switches metrics and preserves separate tool samples @viewport', async ({page}, testInfo) => {
   const now = Date.UTC(2026,9,10,0);
   const record = {cid:'recorded-e2e',firstTs:now-3_600_000,firstAt:new Date(now-3_600_000).toISOString(),lastTs:now,
@@ -18,7 +18,7 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
     localStorage.setItem('p151-admin-token','e2e');
     localStorage.setItem('p151-admin-range','all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const panel = page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
   await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByText('22.83 recorded hours',{exact:true})).toBeVisible();
@@ -28,7 +28,6 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   await panel.getByText('Details',{exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 4 browsers, 2 at zero, maximum 1,368 minutes\./,exact:true})).toBeVisible();
   const curve=panel.getByRole('img',{name:/Recorded minutes retention/});
-  // Keep the pointer target below the desktop's sticky date-and-tab bar.
   await curve.evaluate(el => el.scrollIntoView({block:'center'}));
   const curveBox=await curve.boundingBox();
   await page.mouse.move(curveBox!.x+41,curveBox!.y+90);

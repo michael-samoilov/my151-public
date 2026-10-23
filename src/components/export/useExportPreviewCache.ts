@@ -1,29 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-export type ExportPreviewJob = {
+type ExportPreviewJob = {
   key: string;
   render: () => Promise<Blob>;
 };
 
-/**
- * Paint the active export first. Later setting switches render that key on
- * demand and reuse a cached blob URL. Do not encode every permutation up
- * front: that work froze pointer-tilt.
- */
 export function useExportPreviewCache(opts: {
   enabled: boolean;
   activeKey: string;
   jobs: readonly ExportPreviewJob[];
 }): { urls: Record<string, string>; busy: boolean } {
   const [urls, setUrls] = useState<Record<string, string>>({});
-  // Keys whose render threw. They stop the wait, so Save is not stuck on "Preparing…".
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
   const urlsRef = useRef(urls);
   const jobsRef = useRef(opts.jobs);
   const objectUrlsRef = useRef(new Set<string>());
-  // The key whose picture is on screen. A setting switch can drop it from the
-  // job list; its picture stays until the next one is ready, so the preview
-  // never flickers to a placeholder between two finished pictures.
   const shownKeyRef = useRef<string | null>(null);
   const activeReady = Boolean(urls[opts.activeKey]);
   useLayoutEffect(() => {
@@ -69,9 +60,6 @@ export function useExportPreviewCache(opts: {
       const jobs = jobsRef.current;
       const active = jobs.find((job) => job.key === opts.activeKey);
       if (active) await runJob(active);
-      // Skip the rest of the permutation list. Encoding every export on the
-      // main thread stole frames from pointer-tilt. First paint stays the
-      // active job; a later setting switch renders that key on demand.
     };
 
     void pump();

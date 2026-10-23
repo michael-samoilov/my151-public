@@ -1,4 +1,3 @@
-/** A shared identifier rail keeps all count and index axes aligned at the same chart width. */
 export function butterflyColumns(width: number, scale = 1, hideDeviation = false, signedCount = false) {
   const identifierWidth = Math.min(96 * scale, width * .3);
   const countStart = identifierWidth + 6;

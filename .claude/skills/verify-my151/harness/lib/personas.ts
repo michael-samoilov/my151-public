@@ -1,8 +1,5 @@
-// Browser-tab identities for the Blink lane. A persona is Blink under the hood,
-// so it proves the app's platform-sniff CODE branches (UA/touch/feature reads),
-// never engine rendering. Real iOS rendering is the WebKit engine; real Firefox
-// rendering is the Gecko engine. Assert the persona at the top of every proof so
-// a run can never silently verify the wrong surface.
+
+
 export type PersonaName = 'ios-safari' | 'ios-chrome' | 'android-chrome';
 
 export interface Persona {
@@ -12,7 +9,6 @@ export interface Persona {
   hasTouch: boolean;
   deviceScaleFactor: number;
   initScript: string;
-  // What evalJson(readPersona) must report back for this persona to be genuine.
   expect: { platform: string; maxTouchPoints: 'gt0' | 'zero'; webSpeech: boolean };
 }
 
@@ -52,7 +48,6 @@ export const PERSONAS: Record<PersonaName, Persona> = {
   },
 };
 
-// Body for Session.evalJson: reads back the identity the app would sniff.
 export const READ_PERSONA = `
 return {
   platform: navigator.platform,
@@ -69,7 +64,6 @@ return {
 
 export interface PersonaReadback { platform: string; maxTouchPoints: number; hasWebSpeech: boolean; ua: string; isCriOS: boolean; engine: string; dpr: number; innerWidth: number; }
 
-// Throws when the live readback does not match the requested persona.
 export function assertPersona(name: PersonaName, got: PersonaReadback): void {
   const p = PERSONAS[name];
   const fails: string[] = [];

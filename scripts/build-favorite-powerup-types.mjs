@@ -1,4 +1,3 @@
-/** Refresh sourced battle-form types. This manual task is never part of a build. */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';

@@ -3,24 +3,16 @@ import { bursts, settledBursts, watchConfetti, type Burst } from './support/conf
 import { favoritesBoard, pickLastCell, seedFavorites } from './support/favoritesBoard';
 import { oneLineShortLeague } from './support/leagueSeed';
 
-/**
- * The completion confetti: one burst of type stickers per tool, the first
- * time the work is complete, and never again after a reload. Each test ends
- * with the burst it saw and the bursts after a reload.
- */
-
 async function stubApi(page: Page) {
   await page.route('**/api/**', (route) => route.fulfill({ json: { ok: true } }));
 }
 
-/** One burst, drawn sharp, with most of the 18 type colors on screen. */
 function expectStickerBurst(found: Burst[], dpr: number) {
   expect(found).toHaveLength(1);
   expect(found[0].scale, 'canvas pixels per CSS pixel').toBe(dpr);
   expect(found[0].types?.length ?? 0, `type colors drawn: ${found[0].types}`).toBeGreaterThanOrEqual(12);
 }
 
-/** Reloads, waits past every reveal delay and a whole burst, and attaches the evidence. */
 async function reloadAndAttach(page: Page, testInfo: TestInfo, seen: Burst[]) {
   await page.reload();
   await page.waitForTimeout(3000);
@@ -37,7 +29,6 @@ async function reloadAndAttach(page: Page, testInfo: TestInfo, seen: Burst[]) {
   expect(afterReload, 'bursts after a reload').toBe(0);
 }
 
-/** Opens a league card, puts Eevee on its sixth seat, and leaves the card open. */
 async function seatSixthLine(page: Page, slot: number) {
   await page.click(`[data-testid="league-slot-${slot}"]`);
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -55,7 +46,6 @@ async function seatSixthLine(page: Page, slot: number) {
   await page.click('[data-testid="verify-evo-card"]');
 }
 
-/** Opens the Pokédex Maker with 150 placed and every earlier milestone played. */
 async function openDexAt150(page: Page) {
   await page.addInitScript(() => localStorage.setItem('p151-league-promo-seen', '1'));
   await page.goto('/pokedex-builder?tune&lang=en');
@@ -64,7 +54,6 @@ async function openDexAt150(page: Page) {
   await expect(page.getByTestId('tool-title')).toContainText('150/151');
 }
 
-/** Places Pokémon 1 to `count` through the store, which the milestone tracker watches. */
 async function placeDex(page: Page, count: number, extra: Record<string, unknown> = {}) {
   await page.evaluate(({ count, extra }) => {
     const store = (window as unknown as { __pokedexStore: {
@@ -76,6 +65,7 @@ async function placeDex(page: Page, count: number, extra: Record<string, unknown
 }
 
 const dexPopup = (page: Page) => page.getByRole('status').filter({ hasText: 'Your 151 is complete!' });
+const leagueNudge = (page: Page) => page.getByRole('status').filter({ hasText: 'All 14 teams are full!' });
 
 test.describe('completion confetti', () => {
   test.use({ deviceScaleFactor: 2 });
@@ -107,15 +97,18 @@ test.describe('completion confetti', () => {
     await reloadAndAttach(page, testInfo, seen);
   });
 
-  test('the League Maker bursts on desktop as the last card gets its sixth line', async ({ page }, testInfo) => {
+  test('the League Maker bursts on desktop, with its export tooltip, once the picker closes', async ({ page }, testInfo) => {
     await stubApi(page);
     await watchConfetti(page);
     await oneLineShortLeague(page, 13);
     await page.goto('/custom-gym-leader?lang=en');
     await seatSixthLine(page, 13);
-    // The summary stays on screen beside the open card.
+    await page.waitForTimeout(1500);
+    expect(await bursts(page), 'no burst while the picker is open').toHaveLength(0);
+    await page.getByTestId('browser-close').click();
     const seen = await settledBursts(page);
     expectStickerBurst(seen, 2);
+    await expect(leagueNudge(page)).toBeVisible();
     await reloadAndAttach(page, testInfo, seen);
   });
 });
@@ -134,6 +127,7 @@ test.describe('completion confetti on a phone', () => {
     await page.getByRole('button', { name: /Back to the league/ }).click();
     const seen = await settledBursts(page);
     expectStickerBurst(seen, 3);
+    await expect(leagueNudge(page)).toBeVisible();
     await reloadAndAttach(page, testInfo, seen);
   });
 });

@@ -3,30 +3,12 @@ import { predictLevel } from '@/league/model/levelFit';
 import { PokemonNameText } from '@/components/shared/PokemonNameText';
 import { ROW_THRESHOLDS, levelModel, type LevelPoint } from './levelData';
 
-/**
- * The evolution-level model, drawn.
- *
- * The card decides which stage of a line a row shows by comparing the stage's
- * evolution level against that row's hidden threshold. Stone, trade and
- * friendship evolutions have no level, so they get one from a regression of
- * level on base stat total. This page is that regression: the cloud it was
- * fitted to, the line, and every level-less evolver sitting on the line where
- * the model put it.
- *
- * Preview-only. `main.tsx` refuses to mount it on the production deploy.
- */
-
-// Two series, one job: identity (measured against implied). Checked with the
-// palette validator — ΔE 32 under protanopia, 38 with normal vision, both
-// above 3:1 on the page surface.
 const REAL = '#2563eb';
 const IMPLIED = '#d97706';
 const INK = '#525252';
 const FAINT = '#e5e5e5';
 
 const VB = { w: 360, h: 212 };
-// The right margin is the row-threshold gutter: labels inside the plot land
-// on the fit line wherever the two cross.
 const PAD = { left: 30, right: 30, top: 8, bottom: 26 };
 const PLOT = { w: VB.w - PAD.left - PAD.right, h: VB.h - PAD.top - PAD.bottom };
 const X_MIN = 180;
@@ -96,7 +78,6 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = e.currentTarget;
     const rect = svg.getBoundingClientRect();
-    // Client pixels back into viewBox units.
     const vx = ((e.clientX - rect.left) / rect.width) * VB.w;
     const vy = ((e.clientY - rect.top) / rect.height) * VB.h;
     let best: { p: LevelPoint; implied: boolean } | null = null;
@@ -105,7 +86,6 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
       const dx = sx(entry.p.bst) - vx;
       const dy = sy(entry.p.level) - vy;
       const d = dx * dx + dy * dy;
-      // A tie goes to the implied point: it is what the page is about.
       if (d < bestD || (d === bestD && entry.implied)) {
         bestD = d;
         best = entry;
@@ -133,7 +113,6 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
         </label>
       </div>
 
-      {/* Capped: past this the SVG's own text outgrows the prose around it. */}
       <div className="relative max-w-[40rem] rounded-lg border bg-card p-1">
         <svg
           viewBox={`0 0 ${VB.w} ${VB.h}`}
@@ -145,9 +124,6 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
         >
           {showRows &&
             ROW_THRESHOLDS.map((level, i) => {
-              // Two rows four levels apart would stack their labels, so a
-              // label is dropped when the line above is too close. The line
-              // still draws; only the word goes.
               const prev = i > 0 ? ROW_THRESHOLDS[i - 1] : null;
               const room = prev === null || Math.abs(sy(level) - sy(prev)) > 6;
               return (
@@ -162,7 +138,6 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
               );
             })}
 
-          {/* Axes: recessive, and only where a value has to be read. */}
           <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={PAD.top + PLOT.h} stroke={FAINT} strokeWidth="0.8" />
           <line x1={PAD.left} y1={PAD.top + PLOT.h} x2={PAD.left + PLOT.w} y2={PAD.top + PLOT.h} stroke={FAINT} strokeWidth="0.8" />
           {[0, 10, 20, 30, 40, 50, 60, 70].map((v) => (

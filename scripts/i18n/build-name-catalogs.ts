@@ -1,13 +1,5 @@
-/**
- * Generates `src/i18n/names/<locale>.json` — species names, form descriptors
- * and search affixes for the nine shipped locales.
- *
- * Missing PokeAPI descriptors come from pinned game text. Combinations of
- * published strings, such as Alcremie's cream and sweet, retain composed
- * provenance. An absent official descriptor never becomes a translated slug.
- *
- * Run: npm run i18n:names
- */
+
+
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { GAME_TERMS_PATH, type GameTermsFixture } from './extract-game-terms';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
@@ -18,22 +10,60 @@ import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms
 
 const OUT_DIR = 'src/i18n/names';
 const PICKER_OUT_DIR = 'src/i18n/picker-names';
-/** Picker-only Mega variants: [variant, the plain Mega, the matching cosmetic form]. */
 const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /**
- * How a name was arrived at. `english-only` marks a descriptor that no game
- * publishes in any language: every locale carries the same English words.
- * `formProvenance` in src/i18n/names.ts exposes the value; no UI marker
- * renders it yet.
+ * How a name was arrived at. `official` comes from game text or PokéAPI.
+ * `official-bulbapedia` is an official name that no game-text corpus in the
+ * repository carries, copied from Bulbapedia (BULBAPEDIA_NAMES_PATH).
+ * `english-only` marks a descriptor with no official name in that language:
+ * the locale carries the English words. `formProvenance` in
+ * src/i18n/names.ts exposes the value; no UI marker renders it yet.
+ * `official-usage` is an official name from outside game text and
+ * Bulbapedia: The Pokémon Company's own websites, or a licensed product
+ * (OFFICIAL_USAGE_PATH).
+ * `idiomatic` is my151's own wording where no official name exists: the
+ * species' official name with an official word, as the language orders an
+ * adjective (MY151_NAMES_PATH).
  */
-export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'official-usage' | 'idiomatic' | 'english-only';
+
+const BULBAPEDIA_NAMES_PATH = 'docs/i18n/sources/bulbapedia-form-names.json';
+const OFFICIAL_USAGE_PATH = 'docs/i18n/sources/official-usage-form-names.json';
+const MY151_NAMES_PATH = 'docs/i18n/sources/my151-form-names.json';
+
+interface BulbapediaSection {
+  page: string;
+  revid?: number;
+  section: string;
+  read?: string;
+  via?: 'search index';
+  names: Partial<Record<string, string>>;
+}
+
+interface BulbapediaNames {
+  read: string;
+  /**
+   * `names` is the name Bulbapedia gives the form, or for a Pokopia character
+   * the character's name. `form`, when present, is the form name from the
+   * species page: it becomes the descriptor, and `names` stays a search alias.
+   */
+  forms: Record<string, BulbapediaSection & { form?: BulbapediaSection }>;
+}
+
+interface OfficialUsageNames {
+  forms: Record<string, { basis: string; sources: { url: string; quote: string }[]; names: Partial<Record<string, string>> }>;
+}
+
+interface My151Names {
+  forms: Record<string, { basis: string; names: Partial<Record<string, string>> }>;
+}
 
 /**
- * Battle appearances with no official name in any language, by app id. Each
- * locale gets the English descriptor, never an invented translation. A fusion
- * leads with its official name, so the two Kyurem Overdrives stay distinct.
+ * English descriptors for app forms that no game-text row names. Each locale
+ * shows its official name from BULBAPEDIA_NAMES_PATH when it has one, and the
+ * English words otherwise.
  */
 const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
   11105: { descriptor: 'Overdrive' },
@@ -43,8 +73,29 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11109: { descriptor: 'Radiant Sun Phase' },
   11110: { descriptor: 'Full Moon Phase' },
   11111: { descriptor: 'Zenith' },
-  11112: { descriptor: 'DJ' },
 };
+
+/**
+ * Stereo Rotom's compact code. The other Rotom forms show Latin codes in every
+ * locale (H, W, FR, F, M). English keeps DJ (Michael, 2026-10-20: "for the
+ * rotom short form i meant <DJ>"), and so does each locale whose character name
+ * has DJ in it: DJ 로토무, DJ Motisma, DJ Rotom. The others take the initial of
+ * their own name in Latin, like the other codes: ステレオロトム and 立体音响洛托姆
+ * (stereo) give S, Discorotom gives D.
+ */
+const STEREO_ROTOM_CODES: Readonly<Partial<Record<string, string>>> = { ja: 'S', 'zh-Hans': 'S', 'zh-Hant': 'S', it: 'D' };
+
+/**
+ * The six Cosplay Pikachu. PokéAPI gives all six one German descriptor,
+ * "Cosplayform", which names none of them. Omega Ruby and Alpha Sapphire game
+ * text names each costume (Rocker-Pikachu, Damen-Pikachu, ...), so game text
+ * wins for these forms in every locale that has it (Michael, 2026-10-20: "let's
+ * fix the german cosplay pikachu names in the app", then "add both leftovers").
+ * It also corrects English "Pikachu, Ph.D." and Japanese "マスク・ド・ピカチュウ".
+ */
+const COSTUMES: ReadonlySet<string> = new Set([
+  'pikachu-rock-star', 'pikachu-belle', 'pikachu-pop-star', 'pikachu-phd', 'pikachu-libre', 'pikachu-cosplay',
+]);
 
 /**
  * Terastallized Ogerpon, by app id, with the mask each one wears. No game
@@ -55,7 +106,6 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
 const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
 const TERASTAL_FORM = 10276;
 
-/** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
 
 /**
@@ -76,11 +126,8 @@ const SWEET_ITEMS: Record<string, string> = {
 
 interface NameCatalog {
   locale: string;
-  /** Dense, indexed by speciesId - 1. */
   species: string[];
-  /** Form descriptor per app id, only for entries that have one. */
   forms: Record<string, string>;
-  /** Provenance for each form descriptor, same keys as `forms`. */
   formSource: Record<string, NameProvenance>;
   /**
    * A one-grapheme marker distinguishing an alt form from its species, for the
@@ -140,8 +187,7 @@ async function main(): Promise<void> {
   for (const form of ALTERNATE_PICKER_FORMS) {
     if (originalIds.has(form.id)) continue;
     const speciesId = entries.find((entry) => entry.appId === form.ownerId)?.speciesId ?? form.ownerId;
-    // A Terastal Ogerpon's identity names its whole mask, as the masks' own
-    // identities do, so its compact code is the mask's code plus T.
+
     addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball'
       : form.name.replace(/^(ogerpon-[a-z]+)-tera$/, '$1-mask-tera'), speciesId);
   }
@@ -164,6 +210,11 @@ async function main(): Promise<void> {
       }
     }
   }
+  // Mega Meowstic has one design for both genders: PokéAPI's female Mega is a
+  // pixel copy of the male one. Its name still comes from PokéAPI's
+  // meowstic-male-mega row, but its identity names no gender, so its code is
+  // M rather than M ♂.
+  entries.find((entry) => entry.appId === 10314)!.formIdentifier = 'meowstic-mega';
   const xerneas = entries.find((entry) => entry.appId === 716)!;
   xerneas.formId = Number(formsBySlug.get('xerneas-active')!.id);
   xerneas.formIdentifier = 'xerneas-active';
@@ -205,6 +256,13 @@ async function main(): Promise<void> {
       .filter((term) => term.key.startsWith('form.'))
       .map((term) => [Number(term.key.slice('form.'.length)), term.from[0].text]),
   );
+
+  const bulbapedia = (JSON.parse(readFileSync(BULBAPEDIA_NAMES_PATH, 'utf8')) as BulbapediaNames).forms;
+  const officialUsage = (JSON.parse(readFileSync(OFFICIAL_USAGE_PATH, 'utf8')) as OfficialUsageNames).forms;
+  const my151 = (JSON.parse(readFileSync(MY151_NAMES_PATH, 'utf8')) as My151Names).forms;
+  for (const id of [...Object.keys(bulbapedia), ...Object.keys(officialUsage), ...Object.keys(my151)]) {
+    if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Sourced name ${id} is not a picker form`);
+  }
 
   const itemIdBySlug = new Map<string, number>();
   for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
@@ -265,8 +323,6 @@ async function main(): Promise<void> {
       formMark: {},
     };
 
-    // First grapheme, not first code unit: Korean syllables and any character
-    // outside the BMP would be cut in half by `[0]`.
     const firstGrapheme = (text: string): string => {
       const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
       return [...seg.segment(text.normalize('NFC'))][0]?.segment ?? '';
@@ -298,6 +354,9 @@ async function main(): Promise<void> {
 
     let official = 0;
     let composed = 0;
+    let sourced = 0;
+    let usage = 0;
+    let idiomatic = 0;
     let marked = 0;
     for (const entry of entries) {
       const markRegion = originalIds.has(entry.appId) ? regionOf(entry.appName) : null;
@@ -313,8 +372,15 @@ async function main(): Promise<void> {
         marked += 1;
       }
 
+      const pokeapi = formNames.get(`${entry.formId}:${langId}`);
+      const game = gameDescriptor(entry, locale);
+      // Japanese base forms such as Kyogre's are named "カイオーガのすがた",
+      // "Kyogre's form": no form name, so the descriptor is the species name
+      // and the label is the species alone, as English "Kyogre" is.
+      const speciesName = speciesNames.get(`${entry.speciesId}:${langId}`);
+      const bare = locale === 'ja' && speciesName && pokeapi === `${speciesName}のすがた` ? speciesName : undefined;
       const descriptor = sourcedForms.get(entry.appId)?.[locale as keyof typeof LANGUAGE_IDS]
-        ?? formNames.get(`${entry.formId}:${langId}`) ?? gameDescriptor(entry, locale);
+        ?? (COSTUMES.has(entry.formIdentifier) && game ? game : bare ?? pokeapi ?? game);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';
@@ -390,6 +456,55 @@ async function main(): Promise<void> {
       catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
       catalog.formSource[id] = 'english-only';
     }
+    // A sourced descriptor for an English-only form keeps its official prefix:
+    // ブラックキュレム — オーバードライブ.
+    const prefixed = (id: string, name: string): string => {
+      const prefix = ENGLISH_ONLY_FORMS[Number(id)]?.officialPrefix;
+      return prefix === undefined ? name : `${catalog.forms[prefix]} — ${name}`;
+    };
+    const formAlias: Record<string, string> = {};
+    for (const [id, { names, form }] of Object.entries(bulbapedia)) {
+      const name = form?.names[locale] ?? names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the Bulbapedia name`);
+      }
+      catalog.forms[id] = name;
+      catalog.formSource[id] = 'official-bulbapedia';
+      sourced += 1;
+    }
+    for (const [id, { names }] of Object.entries(officialUsage)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && !['english-only', 'official-bulbapedia'].includes(catalog.formSource[id])) {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the official-usage name`);
+      }
+      catalog.forms[id] = prefixed(id, name);
+      catalog.formSource[id] = 'official-usage';
+      usage += 1;
+    }
+    for (const [id, { names }] of Object.entries(my151)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the my151 name`);
+      }
+      catalog.forms[id] = prefixed(id, name);
+      catalog.formSource[id] = 'idiomatic';
+      idiomatic += 1;
+    }
+    // A Pokopia character's name stays searchable after its form name replaces it.
+    for (const [id, { names, form }] of Object.entries(bulbapedia)) {
+      const character = names[locale];
+      if (form && character && character !== catalog.forms[id]) formAlias[id] = character;
+    }
+    // A form these files name in English, with no English-only fallback, needs
+    // a name in every locale.
+    const covered = [...Object.entries(bulbapedia), ...Object.entries(my151)]
+      .filter(([id, row]) => row.names.en && !(Number(id) in ENGLISH_ONLY_FORMS)).map(([id]) => id);
+    for (const id of covered) {
+      if (!catalog.forms[id]) throw new Error(`${locale} ${id}: no name; add one to ${BULBAPEDIA_NAMES_PATH} or ${MY151_NAMES_PATH}`);
+    }
     const femaleDescriptor = catalog.forms[10025];
     if (femaleDescriptor) {
       for (const entry of entries.filter(entry => entry.formIdentifier.endsWith('-female') && !catalog.forms[entry.appId])) {
@@ -402,8 +517,7 @@ async function main(): Promise<void> {
     const affix = catalog.species.map((name, i) =>
       name ? searchAffix(locale, name, romaji.get(i + 1)) : '',
     );
-    // Omitted rather than shipped empty: for the five Latin locales every entry
-    // would be '', which is 1,025 commas of nothing in the payload.
+
     if (affix.some(Boolean)) catalog.affix = affix;
 
     if (locale === 'en') englishDescriptors = { ...catalog.forms };
@@ -414,7 +528,9 @@ async function main(): Promise<void> {
       composed += 1;
     }
     catalog.formCompact = compactFormLabels(entries, catalog.forms, catalog.formMark);
-    const overlay = { formCompact: {} as Record<string, string>, species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
+    const stereoRotom = STEREO_ROTOM_CODES[locale];
+    if (stereoRotom) catalog.formCompact[11112] = stereoRotom;
+    const overlay = { formCompact: {} as Record<string, string>, formAlias, species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
     for (const key of Object.keys(catalog.forms)) {
       if (originalIds.has(Number(key))) continue;
       overlay.forms[key] = catalog.forms[key];
@@ -431,16 +547,10 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(usage).padStart(2)} official usage   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
     );
   }
 
-  /**
-   * appId -> speciesId, but only where they differ. For all 1,025 base species
-   * they are equal, so shipping the full map would put ~1,000 redundant pairs
-   * (and every entry's slug, form id and note) into the main bundle — it added
-   * ~95 kB before this was split out. Only alt forms need stating.
-   */
   const altForms = Object.fromEntries(
     entries.filter((e) => originalIds.has(e.appId) && e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
   );

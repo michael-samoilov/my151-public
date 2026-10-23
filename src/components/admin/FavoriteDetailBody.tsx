@@ -18,13 +18,9 @@ import type {FeedbackItem} from './feedbackList';
 import {distinctCalendarDays} from './charts/sessionTimelineMath';
 import {SessionsChip,TimeChip} from './SessionRailChips';
 
-/** Snapshot preview is read-only. A swapped cell counts as one addition and one removal.
- *  A point sits at its visit's last report, as Dex and League sittings do. */
 export function FavoriteDetailBody({user,reports=[]}:{user:FavoriteUser;reports?:FeedbackItem[]}) {
   const sessions = useMemo(()=>[...user.sessionLog].sort((a,b)=>a.endTs-b.endTs),[user.sessionLog]);
   const [index,setIndex] = useState(Math.max(0,sessions.length-1));
-  // SessionTimeline holds its snapshot until release. Like the Dex and League
-  // boards, follow the slider's input events so the grid tracks the drag.
   useLayoutEffect(()=>{
     const fromSlider=()=>{
       const el=document.querySelector('input[aria-label="Scrub sessions"]');
@@ -56,7 +52,6 @@ export function FavoriteDetailBody({user,reports=[]}:{user:FavoriteUser;reports?
     rightChip={<TimeChip ms={totalMs} full={single}/>}>{board}</SessionTimeline>;
 }
 
-/** All tracks share one size, fitted to the measured remaining space. */
 function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
   const frame=useRef<HTMLDivElement>(null);
   const [size,setSize]=useState({width:0,height:0});

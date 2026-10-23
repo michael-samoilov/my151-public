@@ -18,7 +18,6 @@ const dex = {
   everIds: [1], latestIds: [1], completed: false, exported: false,
 };
 
-/** Answers an HMGET of `clients` from `stored`, field by field. */
 function clients(stored: Record<string, unknown>) {
   return (cmd: string[]) =>
     cmd[0] === 'hmget' && cmd[1] === 'clients' ? cmd.slice(2).map((f) => (f in stored ? JSON.stringify(stored[f]) : null)) : null;

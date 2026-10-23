@@ -1,11 +1,4 @@
-/**
- * Build script to fetch Pokemon data from PokeAPI CSV files and compile into pokemon.json.
- *
- * Run with: npx tsx scripts/build-pokemon-data.ts
- *
- * This fetches CSV data from the PokeAPI GitHub repo and compiles it into
- * a single optimized JSON file for the app to use.
- */
+
 
 const BASE_URL = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv';
 
@@ -37,7 +30,6 @@ async function main() {
     fetchCSV('pokemon_evolution.csv'),
   ]);
 
-  // Parse species (skip header)
   const speciesMap = new Map<number, Record<string, string>>();
   const speciesHeader = speciesRows[0];
   for (let i = 1; i < speciesRows.length; i++) {
@@ -47,7 +39,6 @@ async function main() {
     speciesMap.set(parseInt(row[0]), entry);
   }
 
-  // Parse pokemon (only default forms)
   const pokemonMap = new Map<number, Record<string, string>>();
   const pokemonHeader = pokemonRows[0];
   for (let i = 1; i < pokemonRows.length; i++) {
@@ -59,7 +50,6 @@ async function main() {
     }
   }
 
-  // Parse types
   const typesMap = new Map<number, string[]>();
   for (let i = 1; i < typeRows.length; i++) {
     const [pokemonId, typeId, slot] = typeRows[i];
@@ -72,7 +62,6 @@ async function main() {
     }
   }
 
-  // Parse stats
   const statsMap = new Map<number, number[]>();
   for (let i = 1; i < statRows.length; i++) {
     const [pokemonId, statId, baseStat] = statRows[i];
@@ -82,7 +71,6 @@ async function main() {
     stats[parseInt(statId) - 1] = parseInt(baseStat);
   }
 
-  // Parse evolution info
   const evoLevelMap = new Map<number, number>();
   const evoHeader = evoRows[0];
   for (let i = 1; i < evoRows.length; i++) {
@@ -94,7 +82,6 @@ async function main() {
     }
   }
 
-  // Build output
   const result = [];
   for (const [id, species] of speciesMap) {
     const pokemon = pokemonMap.get(id);
@@ -107,7 +94,6 @@ async function main() {
       spa: rawStats[3], spd: rawStats[4], spe: rawStats[5],
     };
 
-    // Determine evolution stage
     let stage: 1 | 2 | 3 = 1;
     if (species.evolves_from_species_id) {
       const parentSpecies = speciesMap.get(parseInt(species.evolves_from_species_id));

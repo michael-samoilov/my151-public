@@ -1,0 +1,1278 @@
+{
+ "note": "One record per credited source and per artist that attribution.json names. 'terms' holds only text copied from a page loaded on the date given. A Smogon spriter with no page of their own here carries the project's terms, marked by termsSource. One quote per record since 2026-10-13: the source's own main terms page, else its most durable official statement; each quote was re-loaded on 2026-10-13 ('verified').",
+ "sources": {
+  "smogon-sprite-project": {
+   "name": "Smogon Sprite Project (X/Y, Sun/Moon, Gen 8 and later threads)",
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/",
+    "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/",
+    "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "These sprites are also free for use as long as the spriter or the project itself is credited.",
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
+     "where": "opening post by G.E.Z.; the X/Y and Sun/Moon opening posts carry the same sentence",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "smogon-credit-sheets": {
+   "name": "Smogon Sprite Project credit sheets (Gen 6, 7, 8, 9)",
+   "urls": [
+    "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
+    "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
+    "https://docs.google.com/spreadsheets/d/1MCjDktTOOFjLKM5C-RW6SfBQGkjlxDSCZAZDma_ItuA"
+   ],
+   "status": "read through the Google Drive connector (Gen 6 and Gen 9 on 2026-10-13; Gen 7 and Gen 8 exported on 2026-10-12, unchanged since 2026-04-20 and 2026-07-03); docs.google.com itself is blocked here",
+   "terms": [
+    {
+     "text": "Here is a spreadsheet of the finished Gen 9 sprites.",
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
+     "where": "opening post links the Gen 8 and Gen 9 sheets; the X/Y and Sun/Moon opening posts link the Gen 6 and Gen 7 sheets",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "kingofthe-x-roads": {
+   "name": "KingOfThe-X-Roads",
+   "urls": [
+    "https://www.deviantart.com/kingofthe-x-roads/about",
+    "https://x.com/kingofthexroad5"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Any official Pokémon sprites are free for use in non-profit projects. **EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF**\nAll I ask is that you provide proper credit, maybe even drop some links around!",
+     "url": "https://www.deviantart.com/kingofthe-x-roads/about",
+     "where": "About page; two consecutive lines",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "kiriaura": {
+   "name": "kiriaura",
+   "urls": [
+    "https://www.deviantart.com/kiriaura/about"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "hi, if you enjoy my sprites and you'd like to use them for your projects, feel free to do so! c:",
+     "url": "https://www.deviantart.com/kiriaura/about",
+     "where": "About page, My Bio",
+     "read": "2026-10-19",
+     "verified": true
+    }
+   ]
+  },
+  "joetestrikesback": {
+   "name": "JoeTEStrikesBack",
+   "urls": [
+    "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Feel free to use these for whatever you'd like, just make sure to mention that I made them.",
+     "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "where": "Deviation description, \"B/W Shadow Lugia + Primal Dialga Sprites (Updated)\"",
+     "read": "2026-10-20",
+     "verified": true
+    }
+   ]
+  },
+  "kyle-dove": {
+   "name": "Kyle Dove",
+   "urls": [
+    "https://x.com/DoveKyle"
+   ],
+   "status": "read (X posts); github.com/kyledovey not readable here (403)",
+   "terms": [
+    {
+     "text": "Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands\n\nI do not follow size nor color limits, feel free to resize/edit as needed!",
+     "url": "https://x.com/DoveKyle/status/2043659798055354390",
+     "where": "X post of 2026-04-13",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "gen9-resource-pack": {
+   "name": "Generation 9 Resource Pack [v21.1]",
+   "urls": [
+    "https://eeveeexpo.com/resources/1101/",
+    "https://eeveeexpo.com/threads/5817/"
+   ],
+   "status": "read (Eevee Expo release page); the PokéCommunity copy (https://www.pokecommunity.com/threads/generation-9-resource-pack-v21-1.527398/) answers 403 from the site",
+   "terms": [
+    {
+     "text": "This is an open collaboration project for Essentials v21.1. So, everyone can contribute to this pack, and please give the properly credit.",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page overview, by Caruban",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "gen9-pack-sprites-list": {
+   "name": "Generation 9 Pack 'Sprites list' sheet",
+   "urls": [
+    "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY"
+   ],
+   "status": "read through the Google Drive connector on 2026-10-13 (all 232 rows of Pokemon Sprites)",
+   "terms": [
+    {
+     "text": "Full Sprites Credit List:\nSee Full Sprites Credit List",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page Credits section links this sheet",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokeapi-sprites": {
+   "name": "PokéAPI sprites",
+   "urls": [
+    "https://github.com/PokeAPI/sprites"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "All image contents within are Copyright The Pokémon Company.\n\nThis repository is distributed under CC0 1.0 Universal",
+     "url": "https://github.com/PokeAPI/sprites/blob/HEAD/LICENCE.txt",
+     "where": "first lines of LICENCE.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokemon-showdown": {
+   "name": "Pokémon Showdown",
+   "urls": [
+    "https://pokemonshowdown.com",
+    "https://github.com/smogon/pokemon-showdown-client"
+   ],
+   "status": "read (GitHub); blocked: pokemonshowdown.com",
+   "terms": [
+    {
+     "text": "The sprites themselves are property of Nintendo / Game Freak / The Pokémon Company, though Black & White sprites for Pokémon from later generations were created by artists in the community. The license for these community-created sprites is still being determined and may change in the future, but in the meantime please talk to use first before using them.",
+     "url": "https://github.com/smogon/sprites/blob/HEAD/README.md",
+     "where": "README of Smogon's sprite repository, section License; Showdown's Gen 5 sprites come from it",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "partywhale-type-icons": {
+   "name": "Pokémon type icons by Partywhale (James Watkins)",
+   "urls": [
+    "https://github.com/partywhale/pokemon-type-icons"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2022 James Watkins",
+     "url": "https://github.com/partywhale/pokemon-type-icons/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "elginive-type-icons": {
+   "name": "Generation 9 type icons by Elginive",
+   "urls": [
+    "https://github.com/Elginive/pokemon-type-icons"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Free to use. Credit is always appreciated, but not necessary.",
+     "url": "https://github.com/Elginive/pokemon-type-icons/blob/HEAD/README.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "lucide": {
+   "name": "Lucide",
+   "urls": [
+    "https://github.com/lucide-icons/lucide"
+   ],
+   "status": "read (GitHub); blocked: lucide.dev",
+   "terms": [
+    {
+     "text": "ISC License\n\nCopyright (c) 2026 Lucide Icons and Contributors",
+     "url": "https://github.com/lucide-icons/lucide/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "tabler-icons": {
+   "name": "Tabler Icons",
+   "urls": [
+    "https://github.com/tabler/tabler-icons"
+   ],
+   "status": "read (GitHub); blocked: tabler.io",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2020-2026 Paweł Kuna",
+     "url": "https://github.com/tabler/tabler-icons/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "simple-icons": {
+   "name": "Simple Icons and react-icons",
+   "urls": [
+    "https://github.com/simple-icons/simple-icons",
+    "https://github.com/react-icons/react-icons"
+   ],
+   "status": "read (GitHub); blocked: simpleicons.org",
+   "terms": [
+    {
+     "text": "# CC0 1.0 Universal",
+     "url": "https://github.com/simple-icons/simple-icons/blob/HEAD/LICENSE.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "bulbagarden-archives": {
+   "name": "Bulbagarden Archives",
+   "urls": [
+    "https://archives.bulbagarden.net"
+   ],
+   "status": "blocked: archives.bulbagarden.net (the site answers 403)",
+   "terms": []
+  },
+  "inter": {
+   "name": "Inter",
+   "urls": [
+    "https://github.com/rsms/inter"
+   ],
+   "status": "read (GitHub); blocked: rsms.me",
+   "terms": [
+    {
+     "text": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/rsms/inter/blob/HEAD/LICENSE.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "noto-sans": {
+   "name": "Noto Sans",
+   "urls": [
+    "https://github.com/notofonts/latin-greek-cyrillic"
+   ],
+   "status": "read (GitHub); blocked: fonts.google.com",
+   "terms": [
+    {
+     "text": "Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/notofonts/latin-greek-cyrillic/blob/HEAD/OFL.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "press-start-2p": {
+   "name": "Press Start 2P",
+   "urls": [
+    "https://github.com/google/fonts/tree/main/ofl/pressstart2p"
+   ],
+   "status": "read (GitHub); blocked: fonts.google.com",
+   "terms": [
+    {
+     "text": "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/google/fonts/blob/HEAD/ofl/pressstart2p/OFL.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokeapi": {
+   "name": "PokéAPI (data)",
+   "urls": [
+    "https://github.com/PokeAPI/pokeapi"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Copyright (c) © 2013–2023 Paul Hallett and PokéAPI contributors (https://github.com/PokeAPI/pokeapi#contributing). Pokémon and Pokémon character names are trademarks of Nintendo.",
+     "url": "https://github.com/PokeAPI/pokeapi/blob/HEAD/LICENSE.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "poke-corpus": {
+   "name": "poke-corpus",
+   "urls": [
+    "https://github.com/abcboy101/poke-corpus"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "GNU GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007",
+     "url": "https://github.com/abcboy101/poke-corpus/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "bulbapedia": {
+   "name": "Bulbapedia",
+   "urls": [
+    "https://bulbapedia.bulbagarden.net"
+   ],
+   "status": "blocked: bulbapedia.bulbagarden.net (the site answers 403)",
+   "terms": []
+  },
+  "npm-packages": {
+   "name": "Open-source packages",
+   "urls": [
+    "/licenses/npm-packages.txt",
+    "/licenses/npm-packages-extra.txt"
+   ],
+   "status": "not re-read in this pass: the build writes each package's own license text",
+   "terms": []
+  },
+  "hover-tilt": {
+   "name": "hover-tilt",
+   "urls": [
+    "https://github.com/simeydotme/hover-tilt"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2026 Simeydotme",
+     "url": "https://github.com/simeydotme/hover-tilt/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "darkwarepx": {
+   "name": "DarkwarePX",
+   "urls": [
+    "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "free for public use, no need to credit me but don't say you made it",
+     "url": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "where": "Deviation description, \"Shadow Mewtwo\"; the shiny's page gives the same sentence",
+     "read": "2026-10-20",
+     "verified": true
+    }
+   ]
+  }
+ },
+ "artists": {
+  "Arkeis": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-35#post-4913946"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-35#post-4913946",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names aromatisse, slurpuff (app 683.png, 685.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-35#post-4913946",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Banana Toast": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Basic Vanillite": {
+   "urls": [],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Blaquaza": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "branflakes": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4792146"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "Branflakes325",
+    "Branflake325"
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4792146",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names pangoro (app 675.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4792146",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Brylark": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-116#post-5801053"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-116#post-5801053",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names glalie (app 10074.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-116#post-5801053",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Buna": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Bynine": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4806173"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4806173",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names malamar (app 687.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4806173",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Caruban": {
+   "urls": [
+    "https://eeveeexpo.com/resources/1101/"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "This is an open collaboration project for Essentials v21.1. So, everyone can contribute to this pack, and please give the properly credit.",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page overview",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "proof": "c-own-page",
+     "detail": "Caruban publishes the Generation 9 Resource Pack page (earlier research, credits-research/gen9-pack.md); this is the pack credit, not a sprite credit.",
+     "source": "https://eeveeexpo.com/resources/1101/",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "Corson": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-14#post-4868741"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-14#post-4868741",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names goomy (app 704.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-14#post-4868741",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Cynda": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-2#post-8226857"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-2#post-8226857",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names cramorant (app 10182.png, 10183.png, 845.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-2#post-8226857",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Dleep": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-12#post-4864229"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-12#post-4864229",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names blaziken (app 10050.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-12#post-4864229",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Espeon Scientist": {
+   "urls": [],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Falgaia": {
+   "urls": [
+    "https://www.deviantart.com/falgaia"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "aXl"
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/falgaia",
+     "proof": "b-smogon-link",
+     "detail": "Falgaia's own thread posts link falgaia.deviantart.com 14 times (e.g. post 6952524, Avalugg) and 33 DeviantArt-hosted files named \"by_falgaia\"; the DeviantArt About page's website field is www.smogon.com/forums/members/axl.30808/, the account credited here.",
+     "source": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-3#post-6952524",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "Farriella": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-107#post-5691852"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-107#post-5691852",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names kyogre (app 10077.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-107#post-5691852",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "fishbowlsoul90": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "G.E.Z.": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-5#post-9195974"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-5#post-9195974",
+     "proof": "fallback-own-post",
+     "detail": "Their own post carries attachment 420752, which the sheet row for 899.png (wyrdeer) uses and which has the app file's opaque pixels.",
+     "source": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/page-5#post-9195974",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Galifia": {
+   "urls": [
+    "https://www.deviantart.com/galifiastudios"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/galifiastudios",
+     "proof": "b-smogon-link",
+     "detail": "Galifia's own thread post 4930775 links galifiastudios.deviantart.com.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-38#post-4930775",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "GeoisEvil": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "HeaLnDeaL": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-6#post-6994646"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "HealnDeal"
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-6#post-6994646",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names mudsdale (app 750.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-6#post-6994646",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Hematite": {
+   "urls": [],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Involuntary Twitch": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "JoeTEStrikesBack": {
+   "urls": [
+    "https://www.deviantart.com/joetestrikesback"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Feel free to use these for whatever you'd like, just make sure to mention that I made them.",
+     "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/joetestrikesback",
+     "proof": "a-pixel-match",
+     "detail": "11123.png (Shadow Lugia) and 11124.png (Primal Dialga) are the front cells of this deviation's sheet, posted by the profile on 2012-11-16, with only my151's recorded pixel changes: 229 and 8 pixels.",
+     "source": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms first read on 2026-10-19 and read again on 2026-10-20 with the same text. my151 changed both sprites; the change is recorded in the evidence ledger, and the panel does not mention it (Michael, 2026-10-20)."
+  },
+  "Katten": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "KattenK": {
+   "urls": [
+    "https://www.deviantart.com/kattenk"
+   ],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/kattenk",
+     "proof": "a-pixel-match",
+     "detail": "10244.png (Hisuian Decidueye) is in his uploads \"Legends Arceus Final Evolution Starters By Katten\" and \"All Hisuian Pokemon Front Sprites\", 0 of 1935 pixels differ.",
+     "source": "https://www.deviantart.com/kattenk/art/Legends-Arceus-Final-Evolution-Starters-By-Katten-911373327",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "KingOfThe-X-Roads": {
+   "urls": [
+    "https://www.deviantart.com/kingofthe-x-roads",
+    "https://x.com/kingofthexroad5"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Any official Pokémon sprites are free for use in non-profit projects. **EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF**\nAll I ask is that you provide proper credit, maybe even drop some links around!",
+     "url": "https://www.deviantart.com/kingofthe-x-roads/about",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/kingofthe-x-roads",
+     "proof": "a-pixel-match",
+     "detail": "47 of his 106 app sprites appear in 9 of his own uploads, e.g. 933.png in \"Gen 9 Sprites - Pokemon Scarlet and Violet\" (0 of 1048 pixels differ) and 870.png in \"Pokemon Sword and Shield Sprites (WIP)\" (0 of 2285).",
+     "source": "https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834",
+     "read": "2026-10-13"
+    },
+    {
+     "url": "https://x.com/kingofthexroad5",
+     "proof": "c-cross-link",
+     "detail": "His DeviantArt About page lists twitter.com/kingofthexroad5; the X page title is \"KingOfThe-X-Roads (@kingofthexroad5)\".",
+     "source": "https://www.deviantart.com/kingofthe-x-roads/about",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "kiriaura": {
+   "urls": [
+    "https://www.deviantart.com/kiriaura"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "hi, if you enjoy my sprites and you'd like to use them for your projects, feel free to do so! c:",
+     "url": "https://www.deviantart.com/kiriaura/about",
+     "read": "2026-10-19"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/kiriaura",
+     "proof": "a-pixel-match",
+     "detail": "11120.png (Mosslax) and 11121.png (Peakychu) hold kiriaura's uploads \"Mosslax Sprite\" and \"Peakychu sprite\" pixel for pixel: 0 of 8,075 and 0 of 2,162 original pixels differ; the app files only add transparent margin.",
+     "source": "https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280",
+     "read": "2026-10-19"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms first read on 2026-10-13 with the same text. kiriaura's About page lists no other profile."
+  },
+  "Kyle Dove": {
+   "urls": [
+    "https://x.com/DoveKyle"
+   ],
+   "status": "read (X posts); github.com/kyledovey not readable here (403)",
+   "terms": [
+    {
+     "text": "Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands\n\nI do not follow size nor color limits, feel free to resize/edit as needed!",
+     "url": "https://x.com/DoveKyle/status/2043659798055354390",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://x.com/DoveKyle",
+     "proof": "a-pixel-match",
+     "detail": "Images in his own X posts contain his app sprites at 2x with 0 differing pixels: 950.png (post 1794443316722823292, 7636 px) and 10282, 10285, 10297, 10306, 10308 (post 2078773333294776813).",
+     "source": "https://x.com/DoveKyle/status/2078773333294776813",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "Larryturbo": {
+   "urls": [],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Layell": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4783589"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4783589",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names sylveon (app 700.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4783589",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Legitimate Username": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4813837"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4813837",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names mawile (app 10052.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-2#post-4813837",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "leParagon": {
+   "urls": [
+    "https://www.deviantart.com/leparagon",
+    "https://x.com/leParagonArts"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/leparagon",
+     "proof": "a-pixel-match",
+     "detail": "206 of his 225 app sprites appear in 16 of his own DeviantArt uploads (202 with 0 differing pixels), e.g. 890.png is in \"Eternatus sprites\" at offset (6,15), 0 of 3279 opaque pixels differ. Also: that upload says \"for backsprites and shinies, check out the Gen 8 Smogon Sprite Project\" and links the Gen 8 sheet.",
+     "source": "https://www.deviantart.com/leparagon/art/Eternatus-sprites-822188522",
+     "read": "2026-10-13"
+    },
+    {
+     "url": "https://x.com/leParagonArts",
+     "proof": "c-cross-link",
+     "detail": "His DeviantArt About page lists twitter.com/leParagonArts as his social link; the X page title is \"leParagon (requests and commissions closed) (@leParagonArts)\".",
+     "source": "https://www.deviantart.com/leparagon/about",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven",
+   "terms": [
+    {
+     "text": "sorry just saw this now, havent been active for a while. go ahead! as long as it's a non-profit game it's fine",
+     "url": "https://www.deviantart.com/leparagon/about",
+     "where": "his own comment (2023-10-26) on his deviation \"Gen 8 Pokemon sprites\" (https://www.deviantart.com/leparagon/art/Gen-8-Pokemon-sprites-800622106), shown on his About page; on \"Gen 7 Pokemon sprites\" he wrote \"go ahead, have fun w the sprites if u still need them as long as it's non-profit\"",
+     "read": "2026-10-13"
+    }
+   ]
+  },
+  "Mintly": {
+   "urls": [],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "mjco": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "MrDollSteak": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "MyMarshlands": {
+   "urls": [
+    "https://x.com/DoveKyle/status/2043659798055354390"
+   ],
+   "status": "read (DeviantArt profile and X profile; neither states terms); blocked: public.api.bsky.app (Bluesky posts)",
+   "terms": [],
+   "note": "Kyle Dove's post asks to credit MyMarshlands for Victreebel: https://x.com/DoveKyle/status/2043659798055354390",
+   "linkEvidence": [
+    {
+     "url": "https://x.com/DoveKyle/status/2043659798055354390",
+     "proof": "named-in-post",
+     "detail": "Kyle Dove's post names MyMarshlands, as plain text with no link or tag, for Victreebel. No profile of MyMarshlands is proven to have drawn an app sprite: deviantart.com/mymarshlands, its tumblr and X have no Victreebel and no matching image; Bluesky could not be read.",
+     "source": "https://x.com/DoveKyle/status/2043659798055354390",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "none-found (named in Kyle Dove's post)"
+  },
+  "N-Kin": {
+   "urls": [
+    "https://www.deviantart.com/n-kin"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/n-kin",
+     "proof": "b-smogon-link",
+     "detail": "N-Kin's own thread posts show images hosted by the DeviantArt account n-kin (file names \"..._by_n_kin-...\", e.g. greninjabacksprite_by_n_kin in post 5074083, 4 posts).",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-67#post-5074083",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "Noscium": {
+   "urls": [
+    "https://www.deviantart.com/noscium"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/noscium",
+     "proof": "b-smogon-link",
+     "detail": "Noscium's own thread post 4875735 shows an image hosted by this account (mega_gengar_sprite_by_noscium-d6ph3r6.png, 2 posts).",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-19#post-4875735",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "paintseagull": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-7#post-4856592"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-7#post-4856592",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names skiddo (app 672.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-7#post-4856592",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "princessofmusic": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6935935"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6935935",
+     "proof": "fallback-own-post",
+     "detail": "Their own post carries attachment 75943, which the sheet row for 731.png (pikipek) uses and which has the app file's opaque pixels.",
+     "source": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6935935",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "PumpkinPastel": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Quanyails": {
+   "urls": [
+    "https://www.deviantart.com/quanyails",
+    "https://x.com/quanyails"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/quanyails",
+     "proof": "b-smogon-link",
+     "detail": "Quanyails's own thread posts show images hosted by this DeviantArt account (e.g. post 4783489, \"..._by_quanyails-d68o25z.png\", 6 posts); the upload \"Smogon April Fools' Day Sprites and Miscellaneous\" says \"More Smogon-related stuff\".",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4783489",
+     "read": "2026-10-13"
+    },
+    {
+     "url": "https://x.com/quanyails",
+     "proof": "c-cross-link",
+     "detail": "The DeviantArt About page lists twitter.com/quanyails; the X page title is \"Quanyails (@Quanyails)\".",
+     "source": "https://www.deviantart.com/quanyails/about",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "RadicalCharizard": {
+   "urls": [
+    "https://www.deviantart.com/radicalcharizard"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/radicalcharizard",
+     "proof": "b-smogon-link",
+     "detail": "His upload \"Unused Smogon Alcremie Sprite (Test)\" says: \"This was submitted as a Smogon Gen 8 Sprite Project Alcremie redesign. Though it was not accepted, a few part were edited and used for the actual redesign.\"",
+     "source": "https://www.deviantart.com/radicalcharizard/art/Unused-Smogon-Alcremie-Sprite-%28Test%29-812823069",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "RedRooster": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-13#post-4867422"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-13#post-4867422",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names gourgeist (app 711.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-13#post-4867422",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Siiilver": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-56#post-5015843"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-56#post-5015843",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names gogoat (app 673.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-56#post-5015843",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Sleet": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-6#post-4850281"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-6#post-4850281",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names spritzee (app 682.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-6#post-4850281",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "SpheX": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Spook": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "TeraVolt": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-53#post-4988101"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-53#post-4988101",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names houndoom (app 10048.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-53#post-4988101",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "The Cynical Poet": {
+   "urls": [
+    "https://www.deviantart.com/thecynicalpoet"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "creditedAs": [
+    "TheCynicalPoet"
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/thecynicalpoet",
+     "proof": "b-smogon-link",
+     "detail": "His own thread post 5222877 links thecynicalpoet.deviantart.com/art/Mega-Kangaskhan-Sprites-419630783; his About page says he contributed to \"Smogon's Gen VI & VII Project\".",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-83#post-5222877",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven",
+   "terms": [
+    {
+     "text": "My work is free to use, but I do ask that you give credit if my work is used or edited.  However, I do ask that you absolutely refrain from using or feeding any of my work into AI.",
+     "url": "https://www.deviantart.com/thecynicalpoet/about",
+     "read": "2026-10-13"
+    }
+   ]
+  },
+  "Tooni": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "Toonie"
+   ],
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "TrainerSplash": {
+   "urls": [
+    "https://www.deviantart.com/trainersplash"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/trainersplash",
+     "proof": "b-smogon-link",
+     "detail": "TrainerSplash's own thread post 5788006 links trainersplash.deviantart.com.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-114#post-5788006",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "proven"
+  },
+  "Travis": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Wobblebuns": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6933505"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6933505",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names lurantis (app 754.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/page-1#post-6933505",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "WPS": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-108#post-5727681"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-108#post-5727681",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names camerupt (app 10087.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-108#post-5727681",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Wyverii": {
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4786693"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [
+    {
+     "url": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4786693",
+     "proof": "fallback-own-post",
+     "detail": "Their own post names fletchling, spritzee (app 661.png, 682.png) and shows an image; the image host is gone, so the pixels were not compared.",
+     "source": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/page-1#post-4786693",
+     "read": "2026-10-13"
+    }
+   ],
+   "linkStatus": "fallback-thread-post"
+  },
+  "Z-nogyroP": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Zermonious": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "Zerudez": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
+  "DarkwarePX": {
+   "urls": [
+    "https://www.deviantart.com/darkwarepx"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "free for public use, no need to credit me but don't say you made it",
+     "url": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/darkwarepx",
+     "proof": "a-pixel-match",
+     "detail": "11130.png (Shadow Mewtwo) is frame 0 of this deviation's 96x96 GIF, posted by the profile on 2023-01-06, every pixel unchanged.",
+     "source": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms ask for no credit; my151 credits DarkwarePX as it credits every direct-upload artist, which also makes clear my151 did not make the sprite."
+  }
+ }
+}

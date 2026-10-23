@@ -27,9 +27,7 @@ interface SuperimposedHistogramProps {
   yTicks: number[];
   onBarClick?: (binCenter: number) => void;
   activeBin?: number | null;
-  /** Multiplier on the plot height (default 1) to tune vertical space vs. peers. */
   heightScale?: number;
-  /** Overrides the font-size class on the axis tick labels (default text-xs). */
   textClass?: string;
   meanRail?: { yours: number; options: number; labels: { yours: string; options: string; exact: string } };
 }
@@ -55,18 +53,12 @@ function SuperimposedHistogramImpl({
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
-      // Ignore sub-0.5px jitter so observer echoes don't re-render the
-      // whole chart during an interaction (same guard as MilestoneBar).
       if (w > 0) setWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
 
-  // Chart geometry scales with container width so histograms grow on
-  // desktop dashboards instead of staying pinned at the mobile ~200px
-  // height. chartScale matches the formula in ButterflyChart — 1 at
-  // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const baseHeight = 200 * chartScale * heightScale;
   const margin = {
@@ -95,10 +87,8 @@ function SuperimposedHistogramImpl({
       {width > 0 && (
         <svg width={width} height={height}>
           <g transform={`translate(${margin.left},${margin.top})`}>
-            {/* Baseline (x-axis) */}
             <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke="var(--color-muted-foreground)" strokeWidth={1} />
 
-            {/* National bars (full width, behind) */}
             {visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2);
               const barH = plotH - yScale(d.nationalPct);
@@ -117,7 +107,6 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {/* Yours bars (narrower, in front) */}
             {visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2) + (barFullWidth - barNarrowWidth) / 2;
               const barH = plotH - yScale(d.yoursPct);
@@ -136,7 +125,6 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {/* Clickable hit targets per bin (full height, full bin width) */}
             {onBarClick && visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2);
               const isActive = activeBin === d.x;
@@ -156,7 +144,6 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {/* X axis tick marks + labels */}
             {xTicks.map((t) => (
               <g key={`xtick-${t}`}>
                 <line
@@ -187,7 +174,6 @@ function SuperimposedHistogramImpl({
                 </text>
               </g>
             </g>)}
-            {/* Y axis tick marks + labels */}
             {visibleYTicks.map((t) => (
               <g key={`ytick-${t}`}>
                 <line
@@ -216,5 +202,4 @@ function SuperimposedHistogramImpl({
   );
 }
 
-/** Memoized for the same reason as ButterflyChart — see that file. */
 export const SuperimposedHistogram = memo(SuperimposedHistogramImpl);

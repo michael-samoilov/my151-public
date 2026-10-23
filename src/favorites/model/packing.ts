@@ -24,7 +24,7 @@ function otherTypes(mon: PickerMon, fromType: TypeName): TypeName[] {
   return mon.types.filter((t) => t !== fromType && (TYPES18 as readonly string[]).includes(t));
 }
 
-export function occupantType(map: TypeFills, id: number): TypeName | null {
+function occupantType(map: TypeFills, id: number): TypeName | null {
   for (const t of TYPES18) {
     if (map[t]?.id === id) return t;
   }
@@ -50,7 +50,7 @@ export function typeMapFromFills(
   return map;
 }
 
-export function placeIncoming(
+function placeIncoming(
   map: TypeFills,
   dest: TypeName,
   incoming: PickerMon,
@@ -79,12 +79,6 @@ function hasLeave(path: PackMove[]): boolean {
   return path.some((step) => step.kind === 'leave' || step.to == null);
 }
 
-/**
- * Keep-everyone chains, shortest first, plus the direct trash swap.
- * A later Pokémon is listed only when the previous seat is theirs, so
- * someone who can move but does not have to make space stays off the list.
- * Every length stays. Nothing is dropped for being long.
- */
 export function enumeratePaths(
   map: TypeFills,
   dest: TypeName,
@@ -150,8 +144,6 @@ export function packingNeeded(map: TypeFills, dest: TypeName, incoming: PickerMo
 export function applyPathToTypeMap(map: TypeFills, path: PackMove[]): TypeFills {
   const next = cloneMap(map);
   for (const step of path) {
-    // `from` is the cell this Pokémon left. Skip the delete when an earlier
-    // step already put someone else there, or the kick erases the arrival.
     if (step.from && next[step.from]?.id === step.mon.id) delete next[step.from];
     if (step.to) next[step.to] = step.mon;
   }
@@ -184,7 +176,6 @@ export function packListMode(chains: { slots: ChainSlot[] }[]): 'full' | 'steppe
   return chains.some((chain) => chain.slots.length > PACK_FULL_MAX) ? 'stepped' : 'full';
 }
 
-/** The next two links of each branch under `prefix`. `path` is set when the branch ends there. */
 export function packStepOptions(
   chains: { path: PackMove[]; slots: ChainSlot[] }[],
   prefix: string,

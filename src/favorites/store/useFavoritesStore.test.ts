@@ -28,6 +28,13 @@ describe('favorite picker saved-form migration', () => {
     });
   });
 
+  it('moves retyped Terastal Ogerpon to its mask form when that fits, and clears what no longer fits', () => {
+    expect(migrateFavoriteFills({
+      'grass|9': 11116, 'grass|favorite': 11116, 'grass|gimmick': 11115, 'ghost|9': 11112, 'ghost|favorite': 11112,
+      'rock|9': 11116, 'normal|9': 11112,
+    })).toEqual({ 'grass|9': 10275, 'grass|favorite': 10275, 'rock|9': 11116, 'normal|9': 11112 });
+  });
+
   it('keeps previously filled type, category, and favorite cells during a version migration', () => {
     const saved = {
       'fire|1': 6,

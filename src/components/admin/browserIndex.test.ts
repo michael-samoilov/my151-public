@@ -3,15 +3,6 @@ import { buildDashboard, type DashboardSource } from '../../../api/_dashboard';
 import { mergeFavoriteRecord, parseFavoriteSnapshot, type FavoriteRecord } from '../../../api/_favoriteRecord';
 import type { DashboardRange } from '../../../api/_range';
 
-// How the Newest browsers index can go wrong, and the test that catches each:
-// 1. A browser falls out of the index: a page size, a cap, or the date range
-//    trims a list, so the admin can neither scroll to it nor filter for it.
-// 2. A country-split Dex record (`<cid>::<country>`) loses its own row, or its
-//    row loses the League and Picker of the browser it belongs to.
-// 3. The Dex chip counts evolution lines instead of Pokémon.
-// 4. The index carries whole records, so the response grows back toward the
-//    megabytes the full records cost.
-
 const NOW = Date.UTC(2026, 9, 9, 12);
 const MIN = 60_000;
 const DAY = 86_400_000;
@@ -34,7 +25,6 @@ function league(cid: string, end: number, extra: Record<string, unknown> = {}) {
   };
 }
 
-/** A Picker record from a beacon at the start and the end of each daily session. */
 function picker(cid: string, end: number, sessions = 1) {
   const snapshot = parseFavoriteSnapshot({ v: 1, fills: { 'fire|1': 6 } })!;
   let rec: FavoriteRecord | null = null;
@@ -65,7 +55,6 @@ const dash = (src: DashboardSource, range: DashboardRange) => buildDashboard(src
 describe('Newest browsers index', () => {
   it('lists every record of every tool, whatever the range, archived ones flagged (1)', () => {
     const clients: Record<string, unknown> = {};
-    // Every browser older than 24 hours but one, and more than the old 500-row cap.
     for (let i = 0; i < 650; i++) clients[`d-${i}`] = dex(`d-${i}`, NOW - (i === 0 ? MIN : 2 * DAY + i * MIN));
     const src = source({
       clients,
@@ -84,7 +73,6 @@ describe('Newest browsers index', () => {
 
   it('keeps each country-split Dex record on its own row with its browser’s other tools (2, 3)', () => {
     const src = source({
-      // Bulbasaur, Ivysaur, Venusaur: one evolution line, three Pokémon.
       clients: { abc: dex('abc', NOW - 2 * DAY, { country: 'US', latestIds: [1, 2, 3] }), 'abc::DE': dex('abc::DE', NOW - DAY, { country: 'DE', latestIds: [25] }) },
       league: { abc: league('abc', NOW - 3 * DAY) },
       picker: { abc: picker('abc', NOW - 4 * DAY) },
@@ -118,5 +106,38 @@ describe('Newest browsers index', () => {
       expect(JSON.stringify(row).length, list).toBeLessThan(600);
     }
     expect(JSON.stringify(heavyDex).length).toBeGreaterThan(20_000);
+  });
+});
+
+describe('Page loads and suspected automation', () => {
+  function pageLoad(cid: string, now: number) {
+    const snapshot = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+    return mergeFavoriteRecord(null, { cid, id: `${cid}-0`, now, kind: 'progress', snapshot, events: ['favorites-open'], country: 'US' });
+  }
+
+  it('keeps a browser that never placed or touched anything out of the users, and in the funnel opens', () => {
+    const d = dash(source({ picker: { 'p-load': pageLoad('p-load', NOW - MIN), 'p-user': picker('p-user', NOW - MIN) } }), '7d');
+    expect(d.byTool.favorites.users).toBe(1);
+    expect(d.pageLoads).toEqual({ dex: 0, league: 0, favorites: 1 });
+    expect(d.favoriteFunnel.opened).toBe(2);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-load')?.pageLoadOnly).toBe(true);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.pageLoadOnly).toBeUndefined();
+  });
+
+  it('flags three fresh look-alike browsers within ten minutes, and a browser with no language', () => {
+    const bot = (cid: string, at: number) =>
+      dex(cid, at, { firstTs: at, sessionMs: [0], region: 'OH', device: 'Desktop', os: 'Linux', browser: 'Chrome' });
+    const clients = {
+      'b-0': bot('b-0', NOW - 60 * MIN),
+      'b-4': bot('b-4', NOW - 56 * MIN),
+      'b-9': bot('b-9', NOW - 51 * MIN),
+      'b-late': bot('b-late', NOW - 30 * MIN),
+      'person': dex('person', NOW - 58 * MIN, { region: 'OH', device: 'Desktop', os: 'Linux', browser: 'Chrome' }),
+      'no-lang': dex('no-lang', NOW - MIN, { lang: undefined }),
+    };
+    const reasons = Object.fromEntries(dash(source({ clients }), 'all').browsers.dex.map((r) => [r.cid, r.suspect]));
+    expect(reasons).toEqual({
+      'b-0': ['burst'], 'b-4': ['burst'], 'b-9': ['burst'], 'b-late': undefined, person: undefined, 'no-lang': ['no-language'],
+    });
   });
 });

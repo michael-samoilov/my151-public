@@ -13,9 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Koraidon Limited Build | Gen 9 Koraidon family | No distinct matching sprite verified. |
-| Miraidon Low-Power Mode | Gen 9 Miraidon family | No distinct matching sprite verified. |
-| Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
 | Pecharunt Shell | Gen 9 Pecharunt family | No distinct matching sprite verified. |
@@ -25,9 +22,65 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Forms batch 3, 2026-10-20 (review candidate)
+
+Pokopia forms are named by species and form, with the character name as a search alias: “Snorlax (Mossy)”, “Pikachu (Pale)”, “Smeargle (Decorator)”, “Stereo Rotom”, “Greedent (Cook)”, “Tinkaton (Supervisor)”, “Tangrowth (Professor)”. Compact codes: M, PE, D, DJ, C, S, P. Sources: [the name sources](i18n/sources/README.md#character-names-and-costume-names).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Cherrim (Sunshine Form) | 11128 | Cherrim's battle form, Grass × IV, debut Diamond and Pearl, compact S. Game Freak's Black and White sprite, byte-identical to PokéAPI's `421-sunshine.png` from the Black and White import. No credit. Kept out of the League builder as a battle form. |
+
+## Added on 2026-10-20 (review candidate)
+
+Michael approved each sprite in the sprite lab. The app files are byte copies of the lab selections. [Provenance](favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Shadow Lugia | 11123 | Lugia appearance, Psychic and Flying × III (Pokémon XD is a Generation III game), debut XD, compact S. JoeTEStrikesBack's sprite; my151 changed 229 pixels. |
+| Primal Dialga | 11124 | Dialga appearance, Steel and Dragon × IV, debut Explorers of Time and Darkness, compact P. JoeTEStrikesBack's sprite; my151 made 8 background pixels transparent. |
+| Tinkmaster | 11125 | Tinkaton appearance, Fairy and Steel × IX, debut Pokopia, compact T (S since forms batch 3). Travis's #959 with tools my151 added. |
+| Professor Tangrowth | 11126 | Tangrowth appearance, Grass × IX, debut Pokopia, compact P. The sprite lab's own drawing from Game Freak's #465. No credit. |
+| Chef Dente | 11127 | Greedent appearance, Normal × IX, debut Pokopia, compact CD (C since forms batch 3). G.E.Z.'s #820 with kitchen items my151 added. |
+
+None has a shiny. Types are the species' own, as for the other picker-only forms; the generation is the source game's, as for the Pokopia forms. Each shows its official name, or its character name for the Pokopia forms, in every locale where one exists. The full label was the character's name alone (“Mosslax”, “DJ Rotom”) until forms batch 3. None is in the League builder (Michael, 2026-10-20: “for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder”).
+
+## Imported on 2026-10-19 (review candidate)
+
+Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, peakychu. Having no shiny is fine." Each original is smaller than 96×96. Its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror, centered on the base sprite's ink and on that sprite's bottom edge. [Originals and provenance](favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json) record the source pages, hashes, offsets, and the terms.
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Mosslax | 11120 | Snorlax appearance in Normal × IX, debut Pokopia, with compact M and full label “Mosslax” (“Snorlax (Mosslax)” until 2026-10-20). Offset (1, 7) on the 96×96 canvas. https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 |
+| Peakychu | 11121 | Pikachu appearance in Electric × IX, debut Pokopia, with compact PE and full label “Pikachu (Peakychu)”. PE keeps Pikachu Ph.D.'s P. Offset (28, 26). https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 |
+
+Neither has a shiny. kiriaura gets a credit entry of their own with both sprites. Michael chose official localized names for every added form on 2026-10-19. All four Pokopia forms take their official name in each locale from Bulbapedia, with `official-bulbapedia` provenance: for example, German “Relaxo (Mooslaxo)” and “Pikachu (Schlappchu)”, and Japanese “こけカビゴン” and “ピカチュウ（うすチュウ）”. English is unchanged. See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia). sprite-lab's Pokopia report notes that kiriaura's Peakychu matches camioftargon's earlier Peakychu in outline and body colour; the direction is not proven.
+
+## Purple Kecleon, added on 2026-10-19 (review candidate)
+
+Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. [Provenance](favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Purple Kecleon | 11122 | Kecleon appearance in Normal × III, debut Pokémon Mystery Dungeon: Red Rescue Team and Blue Rescue Team, with compact P and full label “Purple Kecleon”. The tooltip names Mystery Dungeon. |
+
+No shiny. No credit, because the art is Game Freak's. No game gives the purple Kecleon a name. Michael decided on 2026-10-20 that each locale shows the species name with its word for purple, in the place an adjective takes: French “Kecleon violet”, Japanese “むらさきのカクレオン”. The names have `idiomatic` provenance ([sources](i18n/sources/README.md#names-that-no-official-source-gives)).
+
+## Imported on 2026-10-17, released on 2026-10-18
+
+The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. [Originals and provenance](favorite-picker-work/sprites/2026-10-17-king-originals/originals.json) record the source pages, hashes, dimensions, transparency, and ink bounds.
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)” (D and “Smeargle (Decorator)” since forms batch 3). https://sta.sh/0qi9vfww1kg |
+| Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
+| Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
+| Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
+
+King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
+
 ## Added on 2026-10-12
 
-Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. The forms are on the preview branch `claude/new-forms` until Michael ships them.
+Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. These forms are included in production baseline `6405eb76`.
 
 | Form | Picker id | Placement and note |
 | --- | --- | --- |
@@ -39,7 +92,7 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 | Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
 | Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
-Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any language. Every locale shows the same English descriptor, with `english-only` provenance in the name catalogs.
+Overdrive, the two phases, Zenith, and DJ Rotom have no localized name from a game-text source in the repository. Since 2026-10-19, the phases and DJ Rotom take their official name in each locale from Bulbapedia, and Zenith takes its Japanese name ぜんりょくのマーシャドー, with `official-bulbapedia` provenance. Bulbapedia gives no localized name for Overdrive, or for Zenith outside Japanese, so those keep the English descriptor with `english-only` provenance. Since forms batch 3, Overdrive is オーバードライブ and 오버드라이브 (`official-usage`) and 超频驱动 and 超頻驅動 (`idiomatic`). See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia).
 
 No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, with `official-composed` provenance. The tooltip reads "Ogerpon (Wellspring Mask, Terastal Form)" and the compact code is WM T: the mask's code, then Terapagos's T. Black and White Kyurem Overdrive read B O and W O by the same rule.
 
@@ -58,10 +111,7 @@ Requested by Michael on 2026-10-06. Sprite sources and picker placement have not
 | Wanted character | Status / note |
 | --- | --- |
 | Professor Tangrowth | Sprite search pending. |
-| Mosslax | Sprite search pending. |
 | Tinkmaster Tinkaton | Sprite search pending. |
-| Peakychu | Sprite search pending. |
-| Smearguru | Sprite search pending. |
 | Chef Dente Greedent | Sprite search pending. |
 
 ## Sprites to replace
@@ -78,6 +128,6 @@ The sprite file is `public/sprites/pokemon/<id>.png`. Mega and Gigantamax sprite
 
 When adding one: verify the source and visual style, save the sprite under `public/sprites/pokemon/`, register a unique picker-only form in `src/favorites/model/alternateForms.ts`, add eligibility/order tests, and remove or update its row here. Keep new forms out of the main dex-browser evolution counts.
 
-## Research and phone checklist
+## Research
 
-Open `/favorite-pokemon-by-type?spritecheck=1` on a work-branch preview. Search terms, candidate comparisons, and source provenance are recorded in [sprite review research](favorite-picker-work/sprites/README.md). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.
+Search terms, candidate comparisons, and source provenance are recorded in [sprite review research](favorite-picker-work/sprites/README.md). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.

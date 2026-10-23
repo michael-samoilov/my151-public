@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { KEEP_MS, LIVE, planKept } from './keep-previous-assets';
 
-/**
- * The rule that decides which earlier files a deploy carries. E2E cannot run
- * it across days of deploys. Each case names the failure it catches:
- * - drops a file too soon: a tab opened before a deploy crashes or reloads;
- * - keeps a file forever, or renews its time: every deploy grows without end;
- * - fills the size cap with the oldest files: the newest tabs lose theirs.
- */
 const start = new Date('2026-10-01T12:00:00Z');
 const at = (ms: number) => new Date(start.getTime() + ms);
 const HOUR = 3_600_000;
@@ -20,7 +13,6 @@ describe('planKept', () => {
   });
 
   it('counts the days from the deploy that dropped a file, not the one that built it', () => {
-    // a.js was live for 3 days, then dropped; it must still be there 6 days later.
     const dropped = planKept({ 'assets/a.js': LIVE }, ['assets/b.js'], at(72 * HOUR)).next;
     expect(planKept(dropped, ['assets/c.js'], at(72 * HOUR + KEEP_MS - HOUR)).keep).toContain('assets/a.js');
   });

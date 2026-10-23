@@ -25,7 +25,6 @@ const PAGE_LABELS: Record<string, string> = {
   '/favorite-pokemon-picker': 'Favorite Pokémon Picker',
 };
 
-/** Old paths that `vercel.json` redirects, so their rows count toward the page they now open. */
 const PAGE_REDIRECTS: Record<string, string> = {
   '/favorite-pokemon-by-type': '/favorite-pokemon-picker',
   '/favorite-pokemon-by-type.html': '/favorite-pokemon-picker',
@@ -76,11 +75,8 @@ export interface SearchProviderRangeView {
   status: SearchProviderStatus;
   fetchedAt?: string;
   dataThrough?: string;
-  /** Null when the provider reported nothing for this range. */
   current: SearchWindowMetric | null;
-  /** Null when the range does not compare, or the data does not reach back over the previous window. */
   comparison: SearchRangeComparison | null;
-  /** Every bucket of the current window; a bucket the provider skipped reads as zero. */
   series: SearchSeriesPoint[];
   topQueries: SearchDimensionRow[];
 }
@@ -149,7 +145,6 @@ function engineView(
   return { current: current ?? null, previous: previous ?? null, direction };
 }
 
-/** A query that reached a page under an old path and its new one counts once. */
 function pageQueries(provider: SearchProviderKey, rows: SearchPageQueryRow[], path: string): SearchPageQueryView[] {
   const byQuery = new Map<string, SearchMetric[]>();
   for (const row of rows) {
@@ -237,7 +232,6 @@ function rangeView(snapshot: SearchPerformanceSnapshot, range: SearchRangeKey): 
   const { granularity } = SEARCH_RANGE_SPECS[range];
   const part: Partial<Record<SearchProviderKey, SearchProviderSnapshot>> =
     granularity === 'hour' ? snapshot.hourly.providers : snapshot.daily.providers;
-  // A provider without this granularity (Bing has no hours) shows its daily status and no data.
   const google = part.google ?? snapshot.daily.providers.google;
   const bing = part.bing ?? snapshot.daily.providers.bing;
   const details = { google: part.google?.ranges[range], bing: part.bing?.ranges[range] };
@@ -245,7 +239,6 @@ function rangeView(snapshot: SearchPerformanceSnapshot, range: SearchRangeKey): 
     google: providerRangeView(google, details.google, granularity),
     bing: providerRangeView(bing, details.bing, granularity),
   };
-  // Page deltas follow the overview: no comparison, no previous page rows.
   const compared = (key: SearchProviderKey) => {
     const detail = details[key];
     return detail && !providers[key].comparison ? { ...detail, previous: undefined } : detail;

@@ -2,19 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 import { blankLeague, seededLeague, sevenGymsLeague } from './support/leagueSeed';
 
-/**
- * Where a drag puts things, on four surfaces.
- *
- * One rule decides it: nothing the drop is about sits below the thumb, because
- * a finger hides whatever is under it. The dex pages answer that by lifting
- * the copy and the hit test above the thumb; the league surfaces answer it by
- * putting the copy ON the target and opening the slot underneath. These are
- * the measurements that keep both honest, taken mid-drag.
- */
-
 const DRAG_SOURCE_OPACITY = 0.25;
 
-/** What the page shows mid-drag: the held copy, and whatever receded. */
 async function holdState(page: Page) {
   return page.evaluate(() => {
     const receded = [...document.querySelectorAll<HTMLElement>('*')].filter((el) => {
@@ -29,11 +18,8 @@ async function holdState(page: Page) {
   });
 }
 
-/** Grab something, move, and read the page without letting go. */
 async function midDrag(page: Page, selector: string, dx: number, dy: number) {
   const target = page.locator(selector).first();
-  // A seeded dex is taller than the window, and a grab at coordinates the
-  // pointer cannot reach starts no drag at all.
   await target.scrollIntoViewIfNeeded();
   await page.waitForTimeout(150);
   const box = (await target.boundingBox())!;
@@ -41,8 +27,6 @@ async function midDrag(page: Page, selector: string, dx: number, dy: number) {
   const y = box.y + box.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  // The touch projects arm their sensor on a 250ms hold, so the grab has to
-  // last before it travels.
   await page.waitForTimeout(350);
   await page.mouse.move(x + dx, y + dy, { steps: 8 });
   await page.waitForTimeout(250);
@@ -77,8 +61,6 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
-    // A row with a trainer on it. An empty row is not a drag source since
-    // 3c6e321d; it only opens on tap, so a blank league has nothing to carry.
     await sevenGymsLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -95,8 +77,6 @@ test.describe('drag hold', () => {
     const state = await page.evaluate(() => {
       const copy = document.querySelector('[data-drag-held]');
       if (!copy) return { copies: 0 };
-      // The carried row is drawn inside the slot it would land in, so the
-      // slot is its own ancestor rather than something it floats over.
       const slot = copy.closest('[data-testid^="league-slot-"]')!;
       const c = copy.getBoundingClientRect();
       const s = slot.getBoundingClientRect();
@@ -110,13 +90,10 @@ test.describe('drag hold', () => {
     await page.waitForTimeout(200);
 
     expect(state.copies, 'exactly one row in hand').toBe(1);
-    // Centred on the row it would be placed in, not floating above it.
     expect(state.offCentre!, 'the copy is centred in its slot').toBeLessThan(1.5);
-    // Smaller than the slot, so it reads as picked up rather than dropped.
     expect(state.heightRatio!, 'and smaller than the slot').toBeLessThan(0.95);
     expect(state.heightRatio!, 'but still a row').toBeGreaterThan(0.6);
   });
-
 
   test('a gym column is carried in place, with no stack under the thumb', async ({ page }) => {
     await blankLeague(page);
@@ -163,8 +140,6 @@ test.describe('drag hold', () => {
     await page.mouse.up();
     await page.waitForTimeout(200);
 
-    // The column IS the preview: it lifts off the card over an open seat.
-    // A truncated stack under the thumb showed neither the shape nor the seat.
     expect(state.copies, 'a column carries no overlay').toBe(0);
     expect(state.openSeats, 'the seat under the column opens').toBeGreaterThan(0);
     expect(state.lifted, 'every cell of the column lifts').toBe(state.openSeats);
@@ -185,8 +160,6 @@ test.describe('drag hold', () => {
             bad.push(`${el.getAttribute('data-testid') ?? el.tagName.toLowerCase()}: user-select is not none`);
             continue;
           }
-          // And prove it, rather than trusting the declaration: a subtree the
-          // engine will not select returns nothing to a selection of it.
           const selection = window.getSelection();
           if (!selection) continue;
           selection.removeAllRanges();
@@ -215,7 +188,6 @@ test.describe('drag hold', () => {
     expect(card.count, 'the card has draggable cells').toBeGreaterThan(0);
     expect(card.bad, 'gym card').toEqual([]);
 
-    // The dex builder shares the rule, and is where the app first needed it.
     await page.goto(TUNE_URL);
     await seedDex(page);
     await page.waitForSelector('[data-tile-id]');
@@ -224,9 +196,6 @@ test.describe('drag hold', () => {
   });
 
   test('the legendary is carried on a cell face', { tag: '@viewport' }, async ({ page }) => {
-    // The copy in hand wears what a cell wears, so a drag reads the same
-    // whether it carries a column or the boss's legendary. A bare sprite on
-    // the dark band read as a cutout beside the lifted cells.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -309,7 +278,6 @@ test.describe('drag hold', () => {
       (window as unknown as { __obs: MutationObserver }).__obs = observer;
     });
 
-    // Seat 6 reaches only the last two rows; seat 1 reaches all eleven.
     const from = (await page.locator('[data-testid="card-cell-10-6"]').boundingBox())!;
     const to = (await page.locator('[data-testid="card-cell-10-1"]').boundingBox())!;
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -347,8 +315,6 @@ test.describe('drag hold', () => {
     await page.click('[data-testid="verify-evo-card"]');
     await page.waitForTimeout(400);
 
-    // A vertical drag paints a shelf in place. Nothing leaves the card, so
-    // nothing should appear in hand.
     const state = await midDrag(page, '[data-testid="card-cell-3-1"]', 0, 120);
     expect(state.held, 'a boundary paint holds nothing').toBe(0);
   });

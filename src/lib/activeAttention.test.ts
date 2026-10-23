@@ -1,4 +1,3 @@
-// keeps: API ingestion, replay limits, retained windows, and Suite union math cannot be reached through E2E API stubs.
 import {describe,it,expect} from 'vitest';
 import {parseAttentionPayload,mergeAttention,parseAttentionRecording,attentionSessionCount} from '../../api/_attention';
 import {buildDashboard} from '../../api/_dashboard';

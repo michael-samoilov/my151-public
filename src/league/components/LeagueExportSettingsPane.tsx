@@ -41,7 +41,6 @@ export function LeagueExportSettingsPane({
   onCardTeamOrder: (next: CardTeamOrder) => void;
   busy: boolean;
   onExport: () => void;
-  /** The last save failed. */
   failed?: boolean;
   onClose: () => void;
   mobileSheet?: boolean;
@@ -164,7 +163,6 @@ function LayoutToggle({
   compact = false,
 }: {
   on: boolean;
-  /** Language-neutral name for tests and the verify harness. */
   id: string;
   title: string;
   onClick: () => void;
@@ -250,15 +248,12 @@ function TeamModeOption({
   );
 }
 
-/** Four line identities, with the same rounded diagonal joins as Dex outlines. */
 function CardOrderGlyph({ order }: { order: CardTeamOrder }) {
   const clipId = useId();
-  // Three equal-height rows of capacities 2, 3, 4. Each array follows one line identity.
   const columns = order === 'fixed'
     ? [[null,null,0], [null,1,1], [2,2,2], [3,3,3]]
     : [[null,null,2], [null,2,1], [2,1,0], [3,3,3]];
   const shapes = columns.map(orderLineContour);
-  // Double the 1.2px stroke at 28px (109 / 28), then clip inward to keep gaps clear.
   return (
     <svg viewBox="0 0 109 109" className="h-7 w-7" fill="none" strokeWidth={327 / 35} aria-hidden data-card-order-glyph={order}>
       <defs>
@@ -281,7 +276,6 @@ function CardOrderGlyph({ order }: { order: CardTeamOrder }) {
   );
 }
 
-/** Enclose each line's row spans, retaining diagonal joins before rounding. */
 function orderLineContour(columns: (number | null)[]): number[][] {
   const spans: { left: number; right: number; top: number; bottom: number }[] = [];
   columns.forEach((column, row) => {
@@ -303,7 +297,6 @@ function orderLineContour(columns: (number | null)[]): number[][] {
   return points;
 }
 
-/** Local form of sectionOutlines' convex/concave rule; no Dex dependencies. */
 function roundedOrderPath(points: number[][]): string {
   const parts: string[] = [];
   for (let i = 0; i < points.length; i++) {
@@ -315,8 +308,6 @@ function roundedOrderPath(points: number[][]): string {
     const before = Math.hypot(...incoming);
     const after = Math.hypot(...outgoing);
     const concave = incoming[0] * outgoing[1] - incoming[1] * outgoing[0] < 0;
-    // Three px between outlines. A concave corner shares the centre of the
-    // neighbouring convex corner by growing its radius by the same gap.
     const radius = Math.min(8 + (concave ? 3 : 0), before / 2, after / 2);
     const start = current.map((value, axis) => value - incoming[axis] * radius / before);
     const end = current.map((value, axis) => value + outgoing[axis] * radius / after);

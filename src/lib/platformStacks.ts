@@ -9,9 +9,9 @@ export interface PlatformClamp {
   value: string;
 }
 
-export const DEVICE_ORDER = ['Desktop', 'Mobile', 'Tablet'] as const;
-export const OS_ORDER = ['Windows', 'iOS', 'Android', 'macOS', 'Linux', 'ChromeOS'] as const;
-export const BROWSER_ORDER = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera', 'Samsung Internet'] as const;
+const DEVICE_ORDER = ['Desktop', 'Mobile', 'Tablet'] as const;
+const OS_ORDER = ['Windows', 'iOS', 'Android', 'macOS', 'Linux', 'ChromeOS'] as const;
+const BROWSER_ORDER = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera', 'Samsung Internet'] as const;
 
 const ORDER: Record<PlatformDim, readonly string[]> = {
   device: DEVICE_ORDER,
@@ -41,15 +41,15 @@ const TRACK = '#f5f5f5';
 const FALLBACK_FILL = '#737373';
 
 export const ICON_PX = 15;
-export const LABEL_GAP_PX = 4;
-export const LABEL_MIN_GAP_PX = 6;
-export const BAR_GAP_PX = 2;
-export const MUTE_MIX = 0.1;
+const LABEL_GAP_PX = 4;
+const LABEL_MIN_GAP_PX = 6;
+const BAR_GAP_PX = 2;
+const MUTE_MIX = 0.1;
 
 const PCT_MIN_PX = 36;
 const INT_MIN_PX = 16;
 
-export function dimOfJoint(j: PlatformJoint, dim: PlatformDim): string {
+function dimOfJoint(j: PlatformJoint, dim: PlatformDim): string {
   if (dim === 'device') return j.device;
   if (dim === 'os') return j.os;
   return j.browser;
@@ -74,7 +74,7 @@ export function clampedN(joints: PlatformJoint[], clamp: PlatformClamp | null): 
   return joints.reduce((s, j) => s + (dimOfJoint(j, clamp.dim) === clamp.value ? j.n : 0), 0);
 }
 
-export function brandFill(value: string): string {
+function brandFill(value: string): string {
   return BRAND[value] ?? FALLBACK_FILL;
 }
 
@@ -82,7 +82,7 @@ export function muteColor(color: string): string {
   return mixHex(color, TRACK, MUTE_MIX);
 }
 
-export function muteFill(value: string): string {
+function muteFill(value: string): string {
   return muteColor(brandFill(value));
 }
 
@@ -93,12 +93,12 @@ export function sliceFill(key: string, dim: PlatformDim, clamp: PlatformClamp | 
 
 const SPELL_ALWAYS = new Set(['ios', 'macos']);
 
-export function keepWord(value: string): boolean {
+function keepWord(value: string): boolean {
   const v = value.toLowerCase();
   return v.includes('ipad') || SPELL_ALWAYS.has(v);
 }
 
-export function orderedKeys(counts: Record<string, number>, dim: PlatformDim): string[] {
+function orderedKeys(counts: Record<string, number>, dim: PlatformDim): string[] {
   const rank = new Map(ORDER[dim].map((k, i) => [k, i]));
   return Object.keys(counts)
     .filter((k) => (counts[k] ?? 0) > 0)
@@ -110,7 +110,7 @@ export function orderedKeys(counts: Record<string, number>, dim: PlatformDim): s
     });
 }
 
-export interface SliceGeom {
+interface SliceGeom {
   key: string;
   n: number;
   pct: number;
@@ -150,7 +150,7 @@ export function sliceGeometry(
   return out;
 }
 
-export type InBarKind = 'pct' | 'int' | 'none';
+type InBarKind = 'pct' | 'int' | 'none';
 
 export function inBarKind(slices: SliceGeom[]): InBarKind[] {
   let usedPct = false;
@@ -345,7 +345,6 @@ function colorKey(color: string): string {
   return rgb ? rgb.join(',') : color.trim().toLowerCase();
 }
 
-/** Lightest lightness of this hue that still reads on white. */
 function lightCap(h: number, s: number, baseL: number): number {
   let lo = baseL;
   let hi = 0.9;
@@ -370,10 +369,6 @@ function lighterShade(color: string, t: number): string {
   return `#${next.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/**
- * Repeated colors become a same-hue ramp. The left copy stays darkest.
- * A color that appears once is unchanged.
- */
 export function shadeRamp(colors: readonly string[]): string[] {
   const groups = new Map<string, number[]>();
   colors.forEach((color, i) => {

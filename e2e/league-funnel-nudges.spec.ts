@@ -35,7 +35,6 @@ async function seatSixthLine(page: Page) {
   await page.waitForTimeout(400);
 }
 
-/** Open a league slot, seat one line on its first cell, and return home. */
 async function seatLine(page: Page, slot: number, query: string) {
   await page.click(`[data-testid="league-slot-${slot}"]`);
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -60,7 +59,6 @@ function nudgeEvents(events: EventBody[]) {
   return events.filter((e) => typeof e.event === 'string' && e.event.startsWith('league-nudge-'));
 }
 
-/** Wait out the reveal delay, then prove no popup took the dismissed one's place. */
 async function expectNoFollowUpNudge(page: Page) {
   await page.waitForTimeout(1500);
   await expect(page.getByTestId('league-nudge')).toHaveCount(0);
@@ -115,8 +113,6 @@ test.describe('league funnel export nudges', () => {
     const nudge = page.getByTestId('league-nudge');
     await expect(nudge).toBeVisible({ timeout: 5000 });
     await expect(nudge).toHaveAttribute('data-league-nudge', 'league');
-    // A phone has no room beside the summary, so the popup joins the page
-    // under it, clear of every row, and the league Export button pulses.
     const exportButton = page.locator('[data-league-export="league"]');
     await expect(nudge).toHaveAttribute('data-nudge-placement', 'below');
     await expect(exportButton).toHaveAttribute('data-nudge-pulse', 'true');
@@ -173,8 +169,6 @@ test.describe('league funnel export nudges', () => {
     await expect(full.getByRole('button', { name: 'Export league' })).toBeVisible();
     await full.getByRole('button', { name: 'Dismiss' }).click();
     await expectNoFollowUpNudge(page);
-    // /api/event accepts no name of its own for this popup, and `shown`
-    // posts once per browser, so the second popup adds only its dismiss.
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',
       'league-nudge-league-dismiss',
@@ -213,7 +207,6 @@ test.describe('league funnel export nudges', () => {
   });
 });
 
-/** Eight gym leaders filled in a save that has not seen their popup yet. */
 async function unseenEightGymsLeague(page: Page) {
   await page.addInitScript(() => {
     const empty = () => ({ type: null, theme: '', lines: [] as unknown[], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null });

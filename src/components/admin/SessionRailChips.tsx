@@ -1,9 +1,5 @@
 import type { ReactNode } from 'react';
 
-/** Two compact, fixed-width stat chips that flank the scrubber rail (or, for a
- *  single-session browser, split the width where the scrubber would be). Both
- *  share one two-row layout with fixed row heights, so the top values and the
- *  bottom captions line up across the pair. */
 function RailStat({ top, bottom, width, full }: { top: ReactNode; bottom: ReactNode; width: string; full?: boolean }) {
   return (
     <div

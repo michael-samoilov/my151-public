@@ -1,40 +1,3 @@
-/**
- * Ranking for the admin "What people pick" page.
- *
- * Index definition
- * ----------------
- * An evo line is the linear path `getEvolutionLine(id)`: root to one leaf.
- * Pikachu + Raichu without Pichu is still the Pichu–Pikachu–Raichu line.
- * Branched families split by leaf: Eevee→Vaporeon is not Eevee→Jolteon.
- * A lone Eevee joins whichever branch `getEvolutionLine(133)` walks first.
- *
- * Each species keeps its own pick count. The over/under-index is that count
- * against the uniform rate among default species in the section:
- *
- *     expected = T / N
- *     index = picks / expected
- *
- * `N` is the number of default species in the section. `T` is the sum of
- * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
- * Most picked lists every default species in that section, ordered by its
- * own ×, high to low. A lower-× stage does not ride with a higher-× evo-line
- * mate. There is no Most/Least split and no 1.10× / 0.90× cutoff. Other
- * Areas is not a default-member dump: it lists only species with at least
- * 1 pick, ordered by ×, and sits last on the page.
- * In-section Starters still show one first-stage face per chain, indexed
- * from that chain's max picks against the line-level uniform rate (`S / L`).
- *
- * In-section Starters list every first-stage Pokémon across the full row,
- * split grass / fire / water, with no most/least split. The starter grid
- * uses one full-width row per type with column count = starter generation
- * count from the Starter category (today nine). Other in-section sections
- * use one 9-column grid. Sprite packing wraps mid-line to fill the row.
- * Off-section has no least column, shows raw dex counts, never uses the
- * starter type split or first-stage-only faces, lays the sprite grid 9
- * columns wide, and does not cap rows. Off-section placements never appear
- * in Most picked. One-off off-section placements stay visible unless
- * Exclude one-offs is on.
- */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -49,27 +12,19 @@ import type { LeaguePickRows, LeaguePicks } from '../../../api/_leaguePicks';
 import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 
 export const PICKS_COLS = 6;
-/** Desktop most|least row: six for most, three for least. */
-export const PICKS_MOST_COLS = PICKS_COLS;
-export const PICKS_LEAST_DESKTOP_COLS = 3;
-/** Least column width in the combined most|least row (all viewports). */
-export const PICKS_LEAST_COLS = PICKS_LEAST_DESKTOP_COLS;
+const PICKS_MOST_COLS = PICKS_COLS;
+const PICKS_LEAST_DESKTOP_COLS = 3;
 export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
-/** Legacy 12-col track count; off-section and the suite strip use 9. */
 export const PICKS_PAIR_COLS = 12;
-/** Off-section grid: 9 columns on phone and desktop, matching Most picked. */
-export const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
-export const PICKS_OFF_DESKTOP_COLS = PICKS_OFF_COLS;
+const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
-/** Full-width grids (Most picked and off-section) are 9 columns. */
-export function picksGridCols(wide: boolean, _desktop: boolean): number {
+export function picksGridCols(wide: boolean): number {
   return wide ? PICKS_OFF_COLS : PICKS_COLS;
 }
 
-/** In-section starter row width: one column per main-series generation in the Starter category. */
-export function starterGenerationCount(): number {
+function starterGenerationCount(): number {
   const cat = getCategoryById('starter');
   const groups = cat?.subgroups ?? [];
   let n = 0;
@@ -79,20 +34,18 @@ export function starterGenerationCount(): number {
   return n > 0 ? n : 1;
 }
 
-/** In-section starters use one row across the section at generation count. */
 export function picksStarterCols(): number {
   return starterGenerationCount();
 }
 
-export type PicksSplitCap =
+type PicksSplitCap =
   | { kind: 'single'; cap: GridCap }
   | { kind: 'dual'; most: GridCap; least: GridCap };
 
-/** Row cap: one 9-column grid, no Most/Least split, no row cap. */
-export function picksSplitCap(_offSection: boolean, desktop: boolean): PicksSplitCap {
+export function picksSplitCap(): PicksSplitCap {
   return {
     kind: 'single',
-    cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
+    cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true) },
   };
 }
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
@@ -168,7 +121,6 @@ const POOL_BY_SECTION = (() => {
   return out;
 })();
 
-/** True when this species is not a default option for the section it landed in. */
 export function isOffSection(id: number, sectionId: string): boolean {
   if (sectionId === 'other') return false;
   return !(DEFAULT_SECTIONS_OF.get(id)?.has(sectionId) ?? false);
@@ -178,7 +130,6 @@ export function poolIdsForSection(sectionId: string): readonly number[] {
   return POOL_BY_SECTION.get(sectionId) ?? [];
 }
 
-/** Linear evo-line key: root-to-leaf ids joined. Same key ⇒ same line. */
 export function lineKey(id: number): string {
   const line = getEvolutionLine(id);
   if (line.length === 0) return String(id);
@@ -195,7 +146,7 @@ export function starterTypeOf(id: number): StarterType {
   return 'other';
 }
 
-export function roundedIndex(index: number): number {
+function roundedIndex(index: number): number {
   if (!Number.isFinite(index) || index <= 0) return 0;
   if (index >= 10) return Math.round(index);
   return Math.round(index * 10) / 10;
@@ -208,7 +159,6 @@ export function formatIndex(index: number): string {
   return `${r.toFixed(1)}×`;
 }
 
-/** Fill percent for an index bar scaled to `max` in the same most/least pair. */
 export function indexBarPct(index: number, max: number): number {
   if (!(max > 0) || !(index > 0)) return 0;
   return Math.min(100, (index / max) * 100);
@@ -249,14 +199,6 @@ function sortMembers(ids: number[]): Pokemon[] {
   const mons = ids.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p);
   mons.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
   return mons;
-}
-
-/** How many rows `lines` occupy when members wrap mid-line. */
-export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
-  let n = 0;
-  for (const line of lines) n += line.members.length;
-  if (n === 0) return 0;
-  return Math.ceil(n / cols);
 }
 
 function countsFrom(rows: [string, number][]): Map<number, number> {
@@ -307,13 +249,7 @@ function speciesExpected(universe: Map<string, number[]>, counts: Map<number, nu
   return N > 0 && T > 0 ? T / N : null;
 }
 
-/**
- * Index `groups` against the section universe.
- * Species (default) use `T / N` and rank as one entry each.
- * First-stage starter faces use `S / L`.
- * Off-section species use the section's default universe as the 1× baseline.
- */
-export function indexGroups(
+function indexGroups(
   groups: Map<string, number[]>,
   counts: Map<number, number>,
   universe: Map<string, number[]>,
@@ -452,13 +388,11 @@ export function isStarterTypeName(t: string): t is TypeName {
   return t === 'grass' || t === 'fire' || t === 'water';
 }
 
-/** Rows of faces each league picks section shows, at `PICKS_OFF_COLS` a row. */
-export const LEAGUE_PICKS_MAX_ROWS = 4;
+const LEAGUE_PICKS_MAX_ROWS = 4;
 
-/** The aces, or the cards of one chosen type. `none` is the "no type" choice. */
 export type LeaguePicksSectionId = 'ace' | TypeName | 'none';
 
-export interface LeaguePicksSection {
+interface LeaguePicksSection {
   id: LeaguePicksSectionId;
   lines: RankedLine[];
 }
@@ -473,7 +407,6 @@ function countLines(rows: LeaguePickRows): RankedLine[] {
   return out;
 }
 
-/** Aces first, then each type in the app's type order, then "no type". */
 export function leaguePicksSections(picks: LeaguePicks): LeaguePicksSection[] {
   const order: [LeaguePicksSectionId, LeaguePickRows | undefined][] = [
     ['ace', picks.ace],

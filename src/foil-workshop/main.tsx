@@ -3,22 +3,16 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
+import { installTranslationGuard } from '../lib/translationGuard'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { PRODUCTION_DEPLOY } from '../lib/demoMode'
 import { FoilWorkshopPage } from './FoilWorkshopPage'
 
-/**
- * The foil workshop's entry.
- *
- * A page for choosing export lighting rather than for using the live app,
- * so the production deploy never mounts it. Preview deployments and local
- * builds get the page.
- */
-
 const rootEl = document.getElementById('root')!;
 
 installLayoutFontSize();
+installTranslationGuard();
 
 void initLocale({
   search: window.location.search,

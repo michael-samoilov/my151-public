@@ -1,21 +1,5 @@
-/**
- * Generates `src/i18n/catalogs/en.data.ts` from the four data modules that
- * carry user-facing English: build sections, categories, archetypes and
- * regional dexes. Around 240 strings — a third of the whole corpus.
- *
- * Those modules keep their `name` / `description` / `label` fields as the
- * English source of record, because that is where they are naturally authored
- * and reviewed. This script lifts them into catalog keys so the other eight
- * locales have something to translate, and `dataLabels.ts` reads them back
- * through `t()`.
- *
- * The pairing is enforced rather than trusted: `en.data.test.ts` asserts every
- * id has a key and every value still equals the data field, so editing a name
- * without regenerating fails the build instead of silently shipping stale
- * copy in eight languages.
- *
- * Run: npm run i18n:data
- */
+
+
 import { writeFileSync } from 'node:fs';
 import { ARCHETYPES } from '../../src/data/archetypes';
 import { CATEGORIES } from '../../src/data/categories';

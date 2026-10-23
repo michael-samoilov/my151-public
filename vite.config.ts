@@ -2,11 +2,12 @@ import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } fro
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import fs from 'node:fs'
 import { prerenderHub } from './scripts/prerender-hub'
 import { staticFaq } from './scripts/static-faq'
 import { pickerSpritePacks } from './scripts/picker-sprite-packs'
+import { npmPackageIndex, stripCreditNotes } from './scripts/acknowledgements-build'
 
-/** Keep saved preview links on the canonical picker route in dev and preview. */
 function pickerRouteRedirect(): Plugin {
   const install = (server: ViteDevServer | PreviewServer) => {
     server.middlewares.use((request, response, next) => {
@@ -25,15 +26,8 @@ function pickerRouteRedirect(): Plugin {
   return { name: 'picker-route-redirect', configureServer: install, configurePreviewServer: install };
 }
 
-// SOURCE_DATE_EPOCH (seconds) pins the stamp, so two builds of different
-// trees show the same build time. The verify-my151 visual diff sets it.
 const BUILD_TIMESTAMP = (process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date()).toISOString()
 
-/**
- * Puts the build time in every page's HTML for src/lib/buildVersion.ts. In the
- * JavaScript it changed most chunk names on every deploy, and each renamed
- * chunk is one an open tab can no longer load (scripts/keep-previous-assets.ts).
- */
 function buildTimestampMeta(): Plugin {
   return {
     name: 'build-timestamp-meta',
@@ -41,21 +35,6 @@ function buildTimestampMeta(): Plugin {
   }
 }
 
-/**
- * On the picker and Pokédex pages, starts the app code and its downloads one
- * frame after the first paint, so on a slow phone the HTML and stylesheet have
- * the connection to themselves. Measured on a throttled phone (October 9):
- * the picker's header shows at 0.5 s, not 1.5 s, and the Pokédex's loading
- * screen at 1.0 s, not 1.5 s, while each tool appears at the same time as
- * before. Google's phone score for the picker went from 84 to 99.
- *
- * A visitor with saved work on the page starts the code at once, as before:
- * with a full Pokédex, starting later made the builder appear about 0.2 s
- * later. Not on the league page: its code is the largest, and starting it
- * later made the builder appear about 0.3 s later. Not on the hub, which is
- * prerendered and gained nothing. A hidden tab, which draws no frames, starts
- * at once.
- */
 const START_AFTER_FIRST_PAINT: Record<string, string> = {
   '/favorite-pokemon-picker.html': 'favorite-picker',
   '/pokedex-builder.html': 'personal-151-pokedex-v3',
@@ -78,8 +57,7 @@ function startAppAfterFirstPaint(): Plugin {
         const saved = `var saved=null;try{saved=localStorage.getItem(${JSON.stringify(savedKey)})}catch(e){}`
         const preloadAll = `${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})`
         const run = `var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)`
-        // Before the stylesheet, so a visitor with saved work fetches the code
-        // as early as the HTML's own links did.
+
         const early = `(function(){${saved}if(saved)${preloadAll}})()`
         const late = `(function(){${saved}if(saved){${run};return}var go=function(){${preloadAll};${run}};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
         return html
@@ -92,30 +70,32 @@ function startAppAfterFirstPaint(): Plugin {
   }
 }
 
+const artworkFile = path.resolve(__dirname, 'src/assets/home/mobile/manifest.json');
+const artwork = fs.existsSync(artworkFile) ? JSON.parse(fs.readFileSync(artworkFile, 'utf8')) : { poses: [] };
+const artworkPoses = artwork.poses.map((pose: { viewportWidth: number; cards: Record<string, unknown>[] }) => ({
+  viewportWidth: pose.viewportWidth,
+  cards: pose.cards.map(({ key, panel, placement, avif, webp }) => ({ key, panel: { width: (panel as { width: number }).width }, placement,
+    avif: { file: (avif as { file: string }).file }, webp: { file: (webp as { file: string }).file } })),
+}));
+
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), prerenderHub(), pickerSpritePacks()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), prerenderHub(), pickerSpritePacks(), npmPackageIndex(), stripCreditNotes()],
   define: {
-    // Only the hub prerender's server build keeps this constant; the browser
-    // reads the meta tag above.
+    __HOME_ARTWORK_CAPTURE__: process.env.MY151_HOME_ARTWORK_CAPTURE === '1',
+    __HOME_MOBILE_ARTWORK__: JSON.stringify(artworkPoses),
+
     __BUILD_TIMESTAMP__: JSON.stringify(BUILD_TIMESTAMP),
-    // Vercel deployment environment ('production' | 'preview' | ''), used to
-    // gate the demo-seed mode to preview builds only. See src/lib/demoMode.ts.
+
     __DEPLOY_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
   },
   build: {
     chunkSizeWarningLimit: 1000,
-    // The license notices of every npm package in the bundle, as the
-    // Acknowledgements panel's "Open-source packages" entry links them.
-    // Plain text, so a browser shows it rather than downloads it.
-    // public/licenses/npm-packages-extra.txt adds the three this misses.
+
     license: { fileName: 'licenses/npm-packages.txt' },
     rollupOptions: {
       output: {
         codeSplitting: {
-          // These shared startup modules keep their common dependencies in one
-          // chunk when a new lazy export entry changes automatic partitioning.
-          // React DOM always loads with React. Keeping them together avoids
-          // separate Brotli dictionaries and preserves first-load headroom.
+
           groups: [{
             name: 'shared-chrome',
             test: /(?:\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts|hooks\/useJsErrorCounter\.ts)$|\/node_modules\/react-dom\/)/,
@@ -123,20 +103,14 @@ export default defineConfig({
         },
       },
       input: {
-        // One served HTML file per page, each with its own head and crawlable
-        // copy — see docs/seo/PAGE-SEO-CONTRACT.md. `cleanUrls` in vercel.json
-        // serves `<name>.html` at `/<name>`; index.html is the hub at `/`.
+
         main: path.resolve(__dirname, 'index.html'),
         pokedex: path.resolve(__dirname, 'pokedex-builder.html'),
         league: path.resolve(__dirname, 'custom-gym-leader.html'),
-        // A preview-only diagnostic for the league builder's level model.
-        // The entry refuses to mount on the production deploy, and the page
-        // is noindex wherever it is reachable.
+
         levels: path.resolve(__dirname, 'evolution-levels.html'),
-        // The ace/partner slot, with its two halves loose so their placement
-        // can be settled by hand. Same production gate as `levels`.
+
         slotlab: path.resolve(__dirname, 'slot-lab.html'),
-        // Preview-only lighting studio for the league export card.
         foilworkshop: path.resolve(__dirname, 'foil-workshop.html'),
         favorites: path.resolve(__dirname, 'favorite-pokemon-picker.html'),
       },

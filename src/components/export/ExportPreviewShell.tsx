@@ -100,10 +100,6 @@ function useExportChrome(isDesktop: boolean) {
   return chrome;
 }
 
-/**
- * Shared export chrome for Dex, league, and gym-leader card.
- * Each tool supplies the settings node, survey nodes, and preview frames.
- */
 export function ExportPreviewShell({
   phase,
   onClose,
@@ -133,10 +129,6 @@ export function ExportPreviewShell({
   maskContext?: HoverTiltMaskContext;
   recipe?: FoilRecipe;
   tilt?: HoverTiltRecipe;
-  /**
-   * The export has no settings: its pane holds only `ExportNoSettings` and the
-   * actions, so the phone sheet sizes to them and the preview gets the rest.
-   */
   bare?: boolean;
   settingsTitle?: string;
   closeLabel?: string;

@@ -9,10 +9,9 @@ import { typeIconPath } from '@/data/type-ids';
 import { COLOR_BADGE_FILLS, type EvolutionRole } from '@/lib/attributeBadgeStyle';
 import { evolutionDotsSvg } from '@/components/shared/attributeBadgeSvg';
 import type { ColorName, Pokemon, ShapeName, TypeName } from '@/types/pokemon';
-import altFormSpecies from '@/i18n/alt-form-species.json';
 import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot';
 import { GEN_AXIS, isGenNumber, ROMAN } from '../model/cells';
-import { comparePickerOrder, getPickerMon, pickerNameId, type PickerMon } from '../model/catalog';
+import { comparePickerOrder, nationalDexNumber } from '../model/catalog';
 import { pickerPokemonMetadata } from '../model/metadata';
 import { pointerCoordinates, type SourceCoordinate } from '../model/pointers';
 import { labelOf, pickerLabelOf } from './spriteLabel';
@@ -20,21 +19,10 @@ import { coordinateLabel } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { pickerConditionalContributors } from '../stats/pickerConditionalStats';
 
-/** The species a pick belongs to: Alolan Raichu and Mega Raichu X are both Raichu. */
-function speciesOf(mon: PickerMon): number {
-  const owner = pickerNameId(getPickerMon(mon.ownerId) ?? mon);
-  return (altFormSpecies as Record<string, number>)[owner] ?? owner;
-}
-
-/**
- * A row keeps its cells' order, except that one species' picks sit together
- * where its first pick sits, in the picker's form order. Another Pokémon
- * never splits Ogerpon's masks and Terastal forms.
- */
 function speciesTogether(cells: FavoritesExportCell[]): FavoritesExportCell[] {
   const first = new Map<number, number>();
   const placed = cells.map((cell, index) => {
-    const species = cell.mon ? speciesOf(cell.mon) : -1 - index;
+    const species = cell.mon ? nationalDexNumber(cell.mon) : -1 - index;
     if (!first.has(species)) first.set(species, index);
     return { cell, index, species };
   });
@@ -49,7 +37,6 @@ export interface FavoritesDrillDownSelection {
   label: string;
 }
 
-/** Picker contributes cells and origins; Dex owns all sheet and tile presentation. */
 export function FavoritesDrillDown({ snapshot, contributors, selection, siblings, topGap, onNavigate, onClose }: {
   snapshot: FavoritesSnapshot;
   contributors: FavoritesExportCell[];

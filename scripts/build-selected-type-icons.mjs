@@ -44,15 +44,13 @@ try {
         calibratedInk.x + calibratedInk.width > frame.width || calibratedInk.y + calibratedInk.height > frame.height) {
       throw new Error(`Calibrated ${name} artwork extends outside the shared glyph frame`);
     }
-    // Every glyph shares the same game frame. Its transparent padding carries
-    // relative size and optical placement into badges, masks, and exports.
+
     const content = `<g transform="translate(${tx} ${ty}) scale(${scale})">${body}</g>`;
     const viewBox = `0 0 ${frame.width} ${frame.height}`;
     const notice = source === 'partywhale'
       ? `<!-- Source: partywhale/pokemon-type-icons; selected and modified by my151.\n${readFileSync('scripts/type-icons/sources/partywhale/LICENSE', 'utf8')}-->`
       : '<!-- Source: Elginive/pokemon-type-icons. README grants free use; credit appreciated. -->';
     const glyph = `<svg xmlns="http://www.w3.org/2000/svg" width="${frame.width * 4}" height="${frame.height * 4}" viewBox="${viewBox}" overflow="hidden">${notice}${content}</svg>`;
-    // Use identical calibrated content inside the native 60-unit game frame.
     const icon = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60" overflow="hidden">${notice}<rect width="60" height="60" rx="8" fill="${colors[name]}"/><g transform="translate(${frame.x} ${frame.y})">${content}</g></svg>`;
     const save = (kind, svg) => {
       const hash = createHash('sha256').update(svg).digest('hex').slice(0, 12);

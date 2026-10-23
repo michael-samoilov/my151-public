@@ -51,7 +51,7 @@ async function confirmExport(page: Page) {
 test.describe('league export success beacons', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('league home share posts league-export-league after download', async ({ page }) => {
+  test('league home share posts league-export-league after download', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     const events = await collectEvents(page);
     const leaguePosts = await collectLeague(page);
     await seededLeague(page);
@@ -73,6 +73,7 @@ test.describe('league export success beacons', () => {
     await expect.poll(() => leaguePosts.filter((p) => p.kind === 'export')).toEqual([
       expect.objectContaining({ kind: 'export', exportKind: 'league' }),
     ]);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('gym card share posts league-export-card after download', async ({ page }) => {

@@ -7,10 +7,7 @@ export interface AlternatePickerForm {
   name: string;
   types: TypeName[];
   generation?: GenNumber;
-  /** Source filename in Pokémon Showdown's Gen 5-style sprite directory. */
-  spriteSlug?: string;
-  /** A battle form, such as a cosmetic variant of a Mega that the League
-   *  builder collapses into one Mega. It belongs in the gimmick cells. */
+  spritePath?: string;
   source?: 'powerup';
 }
 
@@ -19,7 +16,7 @@ const unownLetters: AlternatePickerForm[] = Array.from('BCDEFGHIJKLMNOPQRSTUVWXY
   ownerId: 201,
   name: `unown-${letter.toLowerCase()}`,
   types: ['psychic'],
-  spriteSlug: `unown-${letter.toLowerCase()}`,
+  spritePath: `201-${letter.toLowerCase()}`,
 }));
 
 const flowerColors: AlternatePickerForm[] = [
@@ -32,16 +29,13 @@ const flowerColors: AlternatePickerForm[] = [
     ownerId: Number(ownerId),
     name: `${species}-${color}`,
     types: ['fairy'],
-    spriteSlug: `${species}-${color}`,
+    spritePath: `${ownerId}-${color}`,
   })));
 
-// The nine trims in game order (PokéAPI forms 10115–10123). Natural Form is
-// the base Furfrou (676).
 const furfrouTrims: AlternatePickerForm[] = [
   'heart', 'star', 'diamond', 'debutante', 'matron', 'dandy', 'la-reine', 'kabuki', 'pharaoh',
 ].map((trim, index) => ({ id: 11096 + index, ownerId: 676, name: `furfrou-${trim}`, types: ['normal'] }));
 
-/** Picker-only forms keep dex evolution lines unchanged. IDs above 11000 identify locally sourced sprite variants. */
 export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 10001, ownerId: 386, name: 'deoxys-attack', types: ['psychic'] },
   { id: 10002, ownerId: 386, name: 'deoxys-defense', types: ['psychic'] },
@@ -150,7 +144,6 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11011, ownerId: 586, name: 'sawsbuck-summer', types: ['normal', 'grass'] },
   { id: 11012, ownerId: 586, name: 'sawsbuck-autumn', types: ['normal', 'grass'] },
   { id: 11013, ownerId: 586, name: 'sawsbuck-winter', types: ['normal', 'grass'] },
-  // Meadow is the base Vivillon (666); these are its other 19 official patterns.
   { id: 11018, ownerId: 666, name: 'vivillon-archipelago', types: ['bug', 'flying'] },
   { id: 11019, ownerId: 666, name: 'vivillon-continental', types: ['bug', 'flying'] },
   { id: 11020, ownerId: 666, name: 'vivillon-elegant', types: ['bug', 'flying'] },
@@ -171,43 +164,45 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11035, ownerId: 666, name: 'vivillon-sun', types: ['bug', 'flying'] },
   { id: 11036, ownerId: 666, name: 'vivillon-tundra', types: ['bug', 'flying'] },
   ...unownLetters,
-  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spriteSlug: 'unown-em' },
-  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spriteSlug: 'unown-qm' },
-  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spriteSlug: 'pichu-spikyeared' },
-  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spriteSlug: 'shellos-east' },
-  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spriteSlug: 'gastrodon-east' },
-  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spriteSlug: 'hippopotas-f' },
-  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spriteSlug: 'hippowdon-f' },
-  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
-  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
-  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
-  // Sprites from PokeAPI's Black/White female folder: Showdown is unreachable
-  // from the build machines, and that folder matches Showdown's Gen 5 art
-  // pixel for pixel (checked on hippopotas-f).
-  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spriteSlug: 'combee-f' },
-  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
-  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
+  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spritePath: '201-exclamation' },
+  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spritePath: '201-question' },
+  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spritePath: '172-spiky-eared' },
+  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spritePath: '422-east' },
+  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spritePath: '423-east' },
+  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spritePath: 'female/449' },
+  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spritePath: 'female/450' },
+  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spritePath: 'female/592' },
+  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spritePath: 'female/593' },
+  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spritePath: 'female/668' },
+  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spritePath: 'female/415' },
+  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spritePath: 'female/521' },
+  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spritePath: '10178' },
   ...flowerColors,
   ...furfrouTrims,
-  // In-battle appearances with no record of their own. They keep the owner's
-  // types and generation, so each sits beside its species.
   { id: 11105, ownerId: 643, name: 'reshiram-overdrive', types: ['dragon', 'fire'] },
   { id: 11106, ownerId: 644, name: 'zekrom-overdrive', types: ['dragon', 'electric'] },
-  // The species owns both fusion Overdrives: a form owner would cost them
-  // their legendary status and their analytics species.
   { id: 11107, ownerId: 646, name: 'kyurem-black-overdrive', types: ['dragon', 'ice'] },
   { id: 11108, ownerId: 646, name: 'kyurem-white-overdrive', types: ['dragon', 'ice'] },
   { id: 11109, ownerId: 791, name: 'solgaleo-radiant-sun', types: ['psychic', 'steel'] },
   { id: 11110, ownerId: 792, name: 'lunala-full-moon', types: ['psychic', 'ghost'] },
   { id: 11111, ownerId: 802, name: 'marshadow-zenith', types: ['fighting', 'ghost'] },
-  // A form takes the generation of the game it debuted in. DJ Rotom debuted
-  // in Pokémon Pokopia, released in 2026 during Generation IX.
-  { id: 11112, ownerId: 479, name: 'rotom-dj', types: ['electric', 'ghost'], generation: 9 },
-  // Terastallized Ogerpon in each mask: battle-only forms 4 to 7 of Scarlet
-  // and Violet's personal table, which match each mask's types and stats.
-  // PokéAPI has no record of them; the slugs follow Pokémon Showdown.
+  { id: 11112, ownerId: 479, name: 'rotom-dj', types: ['electric', 'normal'], generation: 9 },
   { id: 11113, ownerId: 1017, name: 'ogerpon-teal-tera', types: ['grass'] },
-  { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
-  { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },
-  { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['grass', 'rock'] },
+  { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['water'] },
+  { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['fire'] },
+  { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['rock'] },
+  { id: 11117, ownerId: 235, name: 'smeargle-smearguru', types: ['normal'], generation: 9 },
+  { id: 11118, ownerId: 1007, name: 'koraidon-limited-build', types: ['fighting', 'dragon'] },
+  { id: 11119, ownerId: 1008, name: 'miraidon-low-power-mode', types: ['electric', 'dragon'] },
+  { id: 11120, ownerId: 143, name: 'snorlax-mosslax', types: ['normal'], generation: 9 },
+  { id: 11121, ownerId: 25, name: 'pikachu-peakychu', types: ['electric'], generation: 9 },
+  { id: 11122, ownerId: 352, name: 'kecleon-purple', types: ['normal'] },
+  { id: 11123, ownerId: 249, name: 'lugia-shadow', types: ['psychic', 'flying'], generation: 3 },
+  { id: 11124, ownerId: 483, name: 'dialga-primal', types: ['steel', 'dragon'] },
+  { id: 11125, ownerId: 959, name: 'tinkaton-tinkmaster', types: ['fairy', 'steel'], generation: 9 },
+  { id: 11126, ownerId: 465, name: 'tangrowth-professor', types: ['grass'], generation: 9 },
+  { id: 11127, ownerId: 820, name: 'greedent-chef-dente', types: ['normal'], generation: 9 },
+  { id: 11128, ownerId: 421, name: 'cherrim-sunshine', types: ['grass'], spritePath: '421-sunshine' },
+  { id: 11129, ownerId: 172, name: 'pichu-ukulele', types: ['electric'], generation: 4 },
+  { id: 11130, ownerId: 150, name: 'mewtwo-shadow', types: ['psychic'], generation: 6 },
 ];

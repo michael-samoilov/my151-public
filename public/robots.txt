@@ -22,6 +22,11 @@ Disallow: /evolution-levels
 Disallow: /slot-lab
 Disallow: /foil-workshop
 Allow: /
+# Search may use these pages; AI training may not. Content Signals is a
+# declaration that crawlers honor voluntarily, so the training crawlers below
+# are also blocked outright. The site sends "tdm-reservation: 1" (vercel.json)
+# to reserve text and data mining in the same way.
+Content-Signal: search=yes, ai-train=no
 
 User-agent: GPTBot
 Disallow: /
@@ -39,9 +44,6 @@ User-agent: anthropic-ai
 Disallow: /
 
 User-agent: Google-Extended
-Disallow: /
-
-User-agent: PerplexityBot
 Disallow: /
 
 User-agent: Amazonbot

@@ -1,0 +1,1 @@
+../vendor/open-pstack/upstream/plugins/pstack/agents/thermo-nuclear-review-subagent.md

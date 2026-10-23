@@ -1,175 +1,153 @@
-/**
- * The people and projects the footer's Acknowledgements panel credits.
- *
- * Entry content stays in English in every locale: the names are proper nouns,
- * and the credit lines and license texts are the sources' own words. Only the
- * panel's chrome goes through the i18n catalogs.
- *
- * License texts live in `public/licenses/` and load when an entry opens, so
- * none of them reach a page's first download.
- */
+import typeIconSelections from '../../scripts/type-icons/selections.json';
+import { hasSpriteRows, spriteArtists } from './spriteCredits';
 
-/** A license or terms file under `public/licenses/`. */
 export interface LicenseFile {
-  /** Heading above the text when an entry ships more than one file. */
   name: string;
-  /** File name under `public/licenses/`. */
   file: string;
 }
 
 export interface Acknowledgement {
-  /** Stable id: the React key and the test hook. */
   id: string;
   name: string;
-  /** The author, when the credit names one. Shown as "by …". */
   by?: string;
-  /** What my151 uses it for. */
-  usedFor: string;
-  /** Short license or terms label for the row's second line. Absent when the source states none. */
+  compiledBy?: string;
+  usedFor?: string;
   license?: string;
-  /** The source's own terms or credit statement, in full. */
-  terms?: string;
-  artists?: readonly string[];
+  note?: string;
   links: readonly string[];
-  /** A link's button text, for an entry whose links share one site. Otherwise the button names the site. */
   linkLabels?: Readonly<Record<string, string>>;
-  /**
-   * The source's sprites reach the app only as rows in `spriteSources.json`,
-   * so the entry shows only while one of them does.
-   */
-  rowsOnly?: true;
   texts?: readonly LicenseFile[];
+  kind?: 'project' | 'artist' | 'packages';
+  rowsOnly?: true;
 }
 
-export type AcknowledgementGroupId = 'sprites' | 'icons' | 'fonts' | 'data' | 'code';
-
-/** The sprite sources whose detail lists the sprites my151 chose from them, from `spriteCredits.ts`. */
-export const SPRITE_CREDIT_IDS = [
-  'smogon-sprite-project',
-  'kingofthe-x-roads',
-  'kyle-dove',
-  'gen9-resource-pack',
-  'ghasty001',
-] as const;
-export type SpriteCreditId = (typeof SPRITE_CREDIT_IDS)[number];
+export type AcknowledgementGroupId =
+  | 'sprite-projects'
+  | 'sprite-artists'
+  | 'pokemon-art'
+  | 'interface-icons'
+  | 'fonts'
+  | 'data'
+  | 'code';
 
 export interface AcknowledgementGroup {
   id: AcknowledgementGroupId;
   entries: readonly Acknowledgement[];
 }
 
-const SMOGON_SPRITERS = [
-  'leParagon', 'Blaquaza', 'TheAetherPlayer', 'G.E.Z.', 'KingOfThe-X-Roads', 'Spook', 'Cynda',
-  'Involuntary Twitch', 'mjco', 'Z-nogyroP', 'PumpkinPastel', 'RadicalCharizard', 'HM100', 'N-Kin',
-  'Zerudez', 'MyMarshlands', 'Wobblebuns', 'princessofmusic', 'aXl', 'fishbowlsoul90', 'HealnDeal',
-  'Espeon Scientist', 'AMVictory', 'Mega-Pokebattlerz', 'Layell', 'GeoisEvil', 'Quanyails', 'RedRooster',
-  'Wyverii', 'Basic Vanillite', 'Larryturbo', 'TheCynicalPoet', 'Arkeis', 'paintseagull', 'Branflakes325',
-  'Siiilver', 'Noscium', 'Sleet', 'Zermonious', 'Bynine', 'Corson', 'Legitimate Username', 'TrainerSplash',
-  'Farriella', 'MrDollSteak', 'TeraVolt', 'Dleep', 'WPS', 'Brylark', 'KattenK', 'Travis', 'SpheX',
-  'SelenaArmorclaw', 'Hematite',
-] as const;
+export const artistEntryId = (name: string) => `artist:${name}`;
+
+const typeIconsFrom = (source: string) => {
+  const names = Object.entries(typeIconSelections as Record<string, { source: string }>)
+    .filter(([, selection]) => selection.source === source)
+    .map(([type]) => type[0].toUpperCase() + type.slice(1));
+  return `The ${new Intl.ListFormat('en', { type: 'conjunction' }).format(names)} type icons.`;
+};
+
+const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (a: T, b: T) =>
+  count(b) - count(a) || name(a).localeCompare(name(b), 'en', { sensitivity: 'base' });
+
+const SPRITE_SOURCES: readonly Acknowledgement[] = [
+  {
+    id: 'pokeapi-sprites',
+    name: 'PokéAPI sprites',
+    kind: 'project',
+    links: ['https://github.com/PokeAPI/sprites', 'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks'],
+    linkLabels: {
+      'https://github.com/PokeAPI/sprites': 'the PokéAPI sprites repository',
+      'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks': "PokéAPI's credits",
+    },
+  },
+  {
+    id: 'gen9-resource-pack',
+    name: 'Generation 9 Resource Pack',
+    compiledBy: 'Caruban',
+    rowsOnly: true,
+    license: 'Open collaboration, with credit',
+    kind: 'project',
+    links: ['https://eeveeexpo.com/resources/1101/'],
+  },
+  {
+    // Its terms ask to credit the spriter or the project; this credits the
+    // project.
+    id: 'smogon-sprite-project',
+    name: 'Smogon Sprite Project',
+    license: 'Non-profit use, with credit',
+    kind: 'project',
+    links: [
+      'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/',
+      'https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/',
+      'https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/',
+    ],
+    linkLabels: {
+      'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/': 'Generation 6 thread',
+      'https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/': 'Generation 7 thread',
+      'https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/': 'Generation 8 and later thread',
+    },
+  },
+];
 
 export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
   {
-    id: 'sprites',
-    entries: [
-      {
-        id: 'smogon-sprite-project',
-        name: 'Smogon Sprite Project',
-        usedFor:
-          'Black and White-style sprites for every Pokémon in Generations 6 to 8, Chespin (#650) to Enamorus (#905), and for many forms, such as Megas, regional forms and Gigantamax forms. The app takes them from PokéAPI and Pokémon Showdown.',
-        license: 'Non-profit use, with credit',
-        terms:
-          'Read on the project threads on 2026-10-12: “These sprites are also free for use as long as the spriter or the project itself is credited.” and “For the sake of transparency, these sprites are free for non-profit use.”',
-        artists: SMOGON_SPRITERS,
-        // The X and Y thread asks for a credit page that links back to it.
-        links: [
-          'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/',
-          'https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/',
-          'https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/',
-        ],
-        linkLabels: {
-          'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/': 'Generation 6 thread',
-          'https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/': 'Generation 7 thread',
-          'https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/': 'Generation 8 and later thread',
-        },
-      },
-      {
-        id: 'kingofthe-x-roads',
-        name: 'KingOfThe-X-Roads',
-        usedFor: 'Generation 9 sprites.',
-        license: 'Non-profit use, with credit',
-        terms:
-          "From the artist's About page: “Any official Pokémon sprites are free for use in non-profit projects. EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF. All I ask is that you provide proper credit, maybe even drop some links around!”",
-        links: ['https://www.deviantart.com/kingofthe-x-roads/gallery'],
-      },
-      {
-        id: 'kyle-dove',
-        name: 'Kyle Dove',
-        usedFor: 'Legends: Z-A Mega sprites.',
-        license: 'Free to use, with credit',
-        terms:
-          "PokéAPI's README thanks “x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9”. His terms, quoted from one of his X posts, not read at the source: “Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands - I do not follow size nor color limits, feel free to resize/edit as needed!”",
-        links: ['https://x.com/DoveKyle', 'https://github.com/kyledovey'],
-      },
-      {
-        id: 'gen9-resource-pack',
-        name: 'Generation 9 Resource Pack',
-        rowsOnly: true,
-        by: 'Caruban and contributors',
-        usedFor: 'Sprites that replace single PokéAPI sprites or fill its gaps, listed below.',
-        license: 'Free to use, with credit',
-        terms: 'Reported, not read at the source: free to use with credit to the creator.',
-        // Every artist the pack's Credits.txt names (read 2026-10-11). Its per-sprite sheet covers
-        // only Generation 9 species, so it names no artist for the sprites my151 takes from it.
-        artists: ['KingOfThe-X-Roads', 'Mak', 'Caruban', 'jinxed', 'leParagon', 'Sopita_Yorita', 'Azria', 'Mashirosakura', 'JordanosArt', 'Abnayami', 'OldSoulja', 'Katten', 'Divaruta 666', 'Clara', 'Skyflyer', 'AshnixsLaw', 'ace_stryfe', 'camiloveso'],
-        links: ['https://github.com/Teffa14/AutoPTU/tree/main/Generation%209%20Pack%20v3.3.4'],
-      },
-      {
-        id: 'ghasty001',
-        name: 'Ghasty001',
-        rowsOnly: true,
-        usedFor: 'Animated sprites, of which the app shows the first frame. They are listed below, with the artist of each base sprite.',
-        license: 'Free to use, with credit',
-        terms:
-          "From the repository's README: “All these sprites are free to use, for other projects to use *with credit*. The credits also apply to all the artists who made the base sprite I used for the animation (also shared with free to use consent), and all of them will be listed below.”",
-        links: ['https://github.com/Ghasty001/Animated_sprites_by_Ghasty001'],
-      },
-      {
-        id: 'pokeapi-sprites',
-        name: 'PokéAPI sprites',
-        usedFor: "The source of the app's Pokémon sprite files. my151 hosts its own copies.",
-        links: ['https://github.com/PokeAPI/sprites'],
-      },
-      {
-        id: 'pokemon-showdown',
-        name: 'Pokémon Showdown',
-        usedFor: "The source of some form sprite files, such as Vivillon's patterns. my151 hosts its own copies.",
-        links: ['https://pokemonshowdown.com'],
-      },
-    ],
+    id: 'sprite-projects',
+    entries: SPRITE_SOURCES.filter((project) => !project.rowsOnly || hasSpriteRows(project.id)),
   },
   {
-    id: 'icons',
+    id: 'sprite-artists',
+    entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
+      id: artistEntryId(artist.name),
+      name: artist.name,
+      usedFor: artist.name === 'KingOfThe-X-Roads'
+        ? `In addition to their sprites in the projects above, we use these ${artist.sprites.length} additional sprites from their own uploads.`
+        : undefined,
+      links: artist.links,
+      kind: 'artist',
+    })),
+  },
+  {
+    id: 'pokemon-art',
     entries: [
       {
         id: 'partywhale-type-icons',
-        name: 'Pokémon type icons',
+        name: 'Gen 9 Type Icons',
         by: 'Partywhale (James Watkins)',
-        usedFor: 'The Fighting, Rock, Bug, Water and Psychic type icons.',
+        usedFor: typeIconsFrom('partywhale'),
         license: 'MIT',
         texts: [{ name: 'MIT', file: 'partywhale-pokemon-type-icons-MIT.txt' }],
+        note: 'The type symbols the icons draw are artwork © Nintendo / Game Freak / TPC.',
         links: ['https://github.com/partywhale/pokemon-type-icons'],
       },
       {
         id: 'elginive-type-icons',
-        name: 'Generation 9 type icons',
+        name: 'Gen 9 Type Icons',
         by: 'Elginive',
-        usedFor: 'The other 13 type icons.',
+        usedFor: typeIconsFrom('elginive'),
         license: 'Free to use',
-        terms: "From the repository's README: “Free to use. Credit is always appreciated, but not necessary.”",
+        note: 'The type symbols the icons draw are artwork © Nintendo / Game Freak / TPC.',
         links: ['https://github.com/Elginive/pokemon-type-icons'],
       },
+      {
+        id: 'pokemon-home-shapes',
+        name: 'Pokémon HOME body-shape icons',
+        usedFor: "The body-shape icons the app shows for a Pokémon's shape, from Pokémon HOME.",
+        license: 'Artwork © Nintendo / Game Freak / TPC',
+        note: 'The artwork belongs to Nintendo, Game Freak and The Pokémon Company.',
+        links: [],
+      },
+      {
+        id: 'bulbagarden-archives',
+        name: 'Pokémon symbols and item icons',
+        usedFor:
+          'Move category icons, the Mega Evolution and Dynamax symbols, the Blue and Red Orbs, the Leaf Crown and the Shiny Leaf.',
+        license: 'Artwork © Nintendo / Game Freak / TPC',
+        note: 'The artwork belongs to Nintendo, Game Freak and The Pokémon Company; Bulbagarden hosts it.',
+        links: ['https://archives.bulbagarden.net'],
+      },
+    ],
+  },
+  {
+    id: 'interface-icons',
+    entries: [
       {
         id: 'lucide',
         name: 'Lucide',
@@ -197,15 +175,6 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
           { name: 'react-icons: MIT', file: 'react-icons-MIT.txt' },
         ],
         links: ['https://simpleicons.org', 'https://github.com/react-icons/react-icons'],
-      },
-      {
-        id: 'bulbagarden-archives',
-        name: 'Bulbagarden Archives',
-        usedFor:
-          'Move category icons, the Mega Evolution and Dynamax symbols, the Blue and Red Orbs, the Leaf Crown and the Shiny Leaf.',
-        license: 'Artwork © Nintendo / Game Freak / TPC',
-        terms: 'The artwork belongs to Nintendo, Game Freak and The Pokémon Company; Bulbagarden hosts it.',
-        links: ['https://archives.bulbagarden.net'],
       },
     ],
   },
@@ -260,7 +229,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         usedFor:
           "Game text in nine languages, such as type, move and form names, read from the project's text dumps of the games. my151 uses none of its code.",
         license: 'Game text © Nintendo / Game Freak / TPC',
-        terms: "The game text belongs to Nintendo, Game Freak and The Pokémon Company. poke-corpus's own code is under GPL 3.0; my151 does not use it.",
+        note: "The game text belongs to Nintendo, Game Freak and The Pokémon Company. poke-corpus's own code is under GPL 3.0; my151 does not use it.",
         links: ['https://github.com/abcboy101/poke-corpus'],
       },
       {
@@ -276,17 +245,10 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
     entries: [
       {
         id: 'npm-packages',
-        name: 'Open-source packages',
-        usedFor:
-          "The npm packages the site is built with, such as React, Radix UI, d3 and ECharts. Each package's license notice is in the files below.",
-        license: 'MIT, ISC, Apache-2.0 and others',
-        // The build writes npm-packages.txt (vite.config.ts, build.license);
-        // npm-packages-extra.txt holds the notices it misses.
-        links: ['/licenses/npm-packages.txt', '/licenses/npm-packages-extra.txt'],
-        linkLabels: {
-          '/licenses/npm-packages.txt': 'package licenses',
-          '/licenses/npm-packages-extra.txt': 'more package licenses',
-        },
+        name: 'npm packages',
+        usedFor: "The open-source libraries in the site's code. Each one is listed below with its version, by license.",
+        kind: 'packages',
+        links: [],
       },
       {
         id: 'hover-tilt',
@@ -295,7 +257,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         usedFor: 'The tilt, springs, drop shadow, and glare of the export card.',
         license: 'MIT (repository) · MPL-2.0 (package)',
         // MPL-2.0 section 3.2(a): say where the source of the changed files is.
-        terms: "my151's changed hover-tilt files are available as source at the links above.",
+        note: "my151's changed hover-tilt files are available as source at the links above.",
         texts: [
           { name: 'MIT (repository)', file: 'hover-tilt-MIT.txt' },
           { name: 'MPL-2.0 (package)', file: 'hover-tilt-MPL-2.0.txt' },

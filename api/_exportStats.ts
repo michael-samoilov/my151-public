@@ -1,33 +1,18 @@
-/**
- * Global export uniqueness: per-tool ordinals, the set of Pokémon that have
- * already appeared in an export, and Pokedex Builder placement frequency.
- *
- * Redis keys:
- *   export:counts          hash  tool -> ordinal
- *   export:seen-pokemon    set   pokemon ids that have been exported
- *   dex:ever-freq          hash  pokemon id -> client count (ever placed)
- */
 import { redis } from './_shared.js';
 
-export type ExportTool = 'pokedex' | 'league' | 'card';
+type ExportTool = 'pokedex' | 'league' | 'card';
 
-export interface ExportHighlight {
+interface ExportHighlight {
   ordinal: number;
   tool: ExportTool;
   firstPokemonId: number | null;
 }
 
-export const EXPORT_COUNTS_KEY = 'export:counts';
-export const EXPORT_SEEN_KEY = 'export:seen-pokemon';
-export const DEX_EVER_FREQ_KEY = 'dex:ever-freq';
+const EXPORT_COUNTS_KEY = 'export:counts';
+const EXPORT_SEEN_KEY = 'export:seen-pokemon';
+const DEX_EVER_FREQ_KEY = 'dex:ever-freq';
 
-const TOOLS: ExportTool[] = ['pokedex', 'league', 'card'];
-
-export function isExportTool(s: unknown): s is ExportTool {
-  return typeof s === 'string' && (TOOLS as string[]).includes(s);
-}
-
-export function pickFirstExportPokemon(
+function pickFirstExportPokemon(
   exportIds: number[],
   alreadySeen: Iterable<number>,
   dexFreq: Record<number, number>,
@@ -39,8 +24,6 @@ export function pickFirstExportPokemon(
   return unseen[0];
 }
 
-// One script call for the whole batch: a pipeline of HINCRBY is still billed
-// one command per Pokémon, and a first full build places 151 at once.
 const BUMP_FREQ_LUA = `
 for _, id in ipairs(ARGV) do
   redis.call('HINCRBY', KEYS[1], id, 1)
@@ -65,9 +48,6 @@ export function isPreviewDeploy(env: string | undefined = process.env.VERCEL_ENV
   return env === 'preview';
 }
 
-/** Writes uniqueness only on the live site. A Vercel preview, local, any other
- *  `VERCEL_ENV`, and an owner `notme` request must not increment
- *  `export:counts` or add to `export:seen-pokemon`. */
 export function canRecordToolExport(
   env: string | undefined = process.env.VERCEL_ENV,
   notme = false,
@@ -76,7 +56,6 @@ export function canRecordToolExport(
   return env === 'production';
 }
 
-/** Same shape the live recorder returns, without touching Redis. */
 export function previewExportHighlight(tool: ExportTool, pokemonIds: number[]): ExportHighlight {
   const firstPokemonId = pokemonIds.find((id) => Number.isInteger(id) && id > 0 && id < 100_000) ?? null;
   return { ordinal: 151, tool, firstPokemonId };

@@ -2,8 +2,6 @@ import { createContext, useContext } from 'react';
 
 export const PreviewChipZoom = createContext(1);
 
-/** Each locked row reports the zoom that fits it, or null when it leaves.
- *  The list zooms every locked row to the smallest report. */
 export const PreviewChipZoomReport = createContext<((id: string, fit: number | null) => void) | null>(null);
 
 export function usePreviewChipZoom(): number {

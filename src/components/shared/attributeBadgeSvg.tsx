@@ -23,15 +23,14 @@ function attributeBadgeSvg(kind: 'color' | 'shape' | 'evolution', value: ColorNa
 
 export function evolutionDotsSvg(role: EvolutionRole): ReactNode {
   const filled = role === 'basic' ? 1 : role === 'intermediate' ? 2 : 3;
-  // All roles reserve the same three-dot slot; standalone paints its center only.
   return <g data-evolution-dots={role}>{[0, 1, 2].filter(index => role !== 'standalone' || index === 1).map(index =>
     <circle key={index} cx={18 + index * 14} cy={TYPE_BADGE_H / 2} r={4.5}
       fill={role === 'standalone' || index < filled ? '#dc2626' : 'none'} stroke="#dc2626" strokeWidth={1.5} />)}</g>;
 }
 
-export const evolutionBadgeSvg = (role: EvolutionRole) => attributeBadgeSvg('evolution', role);
-export const colorBadgeSvg = (color: ColorName) => attributeBadgeSvg('color', color);
-export const shapeBadgeSvg = (shape: ShapeName) => attributeBadgeSvg('shape', shape);
+const evolutionBadgeSvg = (role: EvolutionRole) => attributeBadgeSvg('evolution', role);
+const colorBadgeSvg = (color: ColorName) => attributeBadgeSvg('color', color);
+const shapeBadgeSvg = (shape: ShapeName) => attributeBadgeSvg('shape', shape);
 
 function badgeChartIcon(render: () => ReactNode) {
   return (x: number, y: number, size: number, colWidth = size): ReactNode => {
@@ -43,13 +42,10 @@ function badgeChartIcon(render: () => ReactNode) {
 export const colorChartIcon = (color: ColorName) => badgeChartIcon(() => colorBadgeSvg(color));
 export const shapeBadgeChartIcon = (shape: ShapeName) => badgeChartIcon(() => shapeBadgeSvg(shape));
 
-/** Reuse the existing generation pill, including its hard gradient and outlined word. */
 export function generationChartIcon(gen: GenNumber) {
   return (x: number, y: number, size: number, colWidth = size): ReactNode => {
     const height = Math.min(size, colWidth * TYPE_BADGE_H / TYPE_BADGE_W);
     const width = height * TYPE_BADGE_W / TYPE_BADGE_H;
-    // A nested SVG needs an explicit coordinate viewport; CSS sizing alone
-    // leaves its hit box relative to the complete chart instead of its row.
     return <svg x={x + (colWidth - width) / 2} y={y + (size - height) / 2}
       width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <GenerationBadge gen={gen} maxUnits={TYPE_BADGE_W} height={height} />

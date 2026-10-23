@@ -36,49 +36,22 @@ import {
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 
-/**
- * Re-measure droppable rects on every frame. See ViewPage.tsx for the
- * full rationale — in short, iOS Safari collapses its URL bar on the
- * first touch after a page load, shifting layout; dnd-kit's default
- * WhileDragging strategy caches rects at drag-start, so the snap
- * indicator ends up stuck on pre-shift tile positions while the faint
- * viewport-fixed cursor tracks the real finger. Always-measuring
- * keeps both in sync.
- */
 const DND_MEASURING = {
   droppable: { strategy: MeasuringStrategy.Always },
 } as const;
 
-// Page-specific drag geometry. The build page uses ~60-80px tiles on
-// mobile, so the held overlay lifts 90px above the pointer and the
-// hit-test target lifts 180px — enough clearance for the sprite and
-// the target tile above it. See src/lib/dragCollision.ts for the
-// visual stack explanation.
 const OVERLAY_LIFT_PX = 63;
 const TOUCH_HIT_LIFT_PX = 180;
 const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
 const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);
 
-// ---------- helpers ----------
-
-/**
- * Members of `pokemonId`'s full evolution chain (all branches — Wurmple →
- * Silcoon, Cascoon, Beautifly, Dustox) that are currently placed in this
- * section, in section order. Used to treat branched chains as atomic
- * bundles for drag-to-rearrange.
- */
 function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
   const chainSet = new Set(getEvolutionChainIds(pokemonId));
   return sectionIds.filter((id) => chainSet.has(id));
 }
 
-/**
- * Returns the set of IDs that would be removed if the user clicked the
- * delete button on `pokemonId`. Delegates to the shared cascade helper so
- * the hover preview matches `removeBranch` exactly (including the
- * cross-gen individual-removal carve-out).
- */
 function computeRemoveSet(pokemonId: number, sectionIds: number[]): Set<number> {
   return computeRemovalCascade(pokemonId, sectionIds);
 }
@@ -92,18 +65,11 @@ function parseTileId(id: string): { sectionId: string; pokemonId: number } {
   return { sectionId, pokemonId: Number(pidStr) };
 }
 
-// ---------- gen badge ----------
-
 import { GenBadge } from '@/components/shared/GenBadge';
 import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 
-// ---------- static pokemon tile (for overlay) ----------
-
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
-  // Sprite sizing + internal ratios come from the shared tile primitives
-  // so the build page, selection pane, and drag overlay all render the
-  // same Pokemon at the same size at a given viewport width.
   const spritePx = useTileSpritePx();
   if (!pokemon) return null;
   return (
@@ -120,11 +86,6 @@ function PokemonTileStatic({ id }: { id: number }) {
   );
 }
 
-// ---------- draggable + droppable tile ----------
-
-// Memoized so a render of the page around it (the header, a tab's pre-mount,
-// the toolbar slot arriving) does not re-render all 151 tiles. Its props are
-// primitives, and it subscribes to the names and locale it reads itself.
 const DraggableTile = memo(function DraggableTile({
   id,
   pokemonId,
@@ -145,8 +106,6 @@ const DraggableTile = memo(function DraggableTile({
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
   const spritePx = useTileSpritePx();
-  // The X's accessible name carries the Pokémon's name, which lands with the
-  // name catalog after first paint.
   useNamesVersion();
 
   const {
@@ -154,7 +113,7 @@ const DraggableTile = memo(function DraggableTile({
     listeners,
     setNodeRef: setDragRef,
     isDragging,
-  } = useDraggable({ id });
+  } = useDraggable({ id, attributes: { roleDescription: t('dnd.roleDescription') } });
 
   const { setNodeRef: setDropRef } = useDroppable({ id });
 
@@ -199,7 +158,6 @@ const DraggableTile = memo(function DraggableTile({
           aria-label={t('builder.remove', { name: pokemonLabel(pokemon.id, pokemon.name).full })}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            // For a finger, the target is wider than the glyph; see index.css.
             'tile-remove-target cursor-pointer md:opacity-0 md:focus-visible:opacity-100 transition-opacity',
             showX && 'md:!opacity-100',
           )}
@@ -212,8 +170,6 @@ const DraggableTile = memo(function DraggableTile({
     </div>
   );
 });
-
-// ---------- end-of-section drop zone ----------
 
 const END_SENTINEL = 'end::';
 function endSentinelId(sectionId: string) { return `${END_SENTINEL}${sectionId}`; }
@@ -236,26 +192,13 @@ function EndDropZone({ sectionId, showIndicator, aspect }: { sectionId: string; 
   );
 }
 
-// ---------- add-tile sizing ----------
-
-// The grid is six columns wide, always. A dashed cell (a "+", a starter type
-// placeholder, the end-of-section drop zone) that shares its row with a
-// Pokémon tile stretches to that row's height, as tall as the tile, on every
-// width. A row that holds no tile has no height to stretch to, so its dashed
-// cells stay square instead of collapsing to a short strip: a trailing "+"
-// that starts a fresh row on a section of exactly n*6 Pokémon, a block of type
-// placeholders under a full row, or an empty section's lone "+".
 const PLUS_COLS = 6;
-/** The aspect class for a dashed cell, given whether a tile shares its row. */
 function dashedCellAspect(rowHasTile: boolean): string {
   return rowHasTile ? '' : 'aspect-square';
 }
-/** The aspect class for a trailing dashed cell, given the count of tiles before it. */
 function trailingPlusAspect(precedingCount: number): string {
   return dashedCellAspect(precedingCount % PLUS_COLS !== 0);
 }
-
-// ---------- starter type buttons ----------
 
 const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
 
@@ -263,10 +206,7 @@ type StarterSlot =
   | { kind: 'tile'; pid: number }
   | { kind: 'ph'; type: (typeof STARTER_TYPES)[number][0]; color: string; i: number };
 
-/** The starter box's grass, fire, and water groups as one flat list of slots in
- *  grid order, or null when it shows a plain list with a trailing "+". */
 function starterTypeSlots(pokemonIds: number[], dragging: boolean): StarterSlot[] | null {
-  // Check if every pokemon matches a starter type (grass/fire/water)
   const allMatchStarterType = pokemonIds.length === 0 || pokemonIds.every(pid => {
     const p = getPokemonById(pid);
     return p && STARTER_TYPES.some(([t]) => p.types.includes(t as never));
@@ -277,7 +217,6 @@ function starterTypeSlots(pokemonIds: number[], dragging: boolean): StarterSlot[
     return line?.[0] ?? id;
   }));
 
-  // Use colored placeholders only when < 3 chains AND all pokemon fit grass/fire/water
   if (dragging || chains.size >= 3 || !allMatchStarterType) return null;
 
   const pidsByType = new Map<string, number[]>();
@@ -291,9 +230,6 @@ function starterTypeSlots(pokemonIds: number[], dragging: boolean): StarterSlot[
     }
   }
 
-  // One flat list of slots in grid order, so a placeholder can tell whether a
-  // Pokémon tile shares its six-column row: if so it stretches to that tile's
-  // height, otherwise it stays a square rather than a short strip.
   const slots: StarterSlot[] = [];
   for (const [type, color] of STARTER_TYPES) {
     const typePids = pidsByType.get(type);
@@ -367,7 +303,6 @@ function StarterContent({
     );
   }
 
-  // Standard rendering: show tiles + trailing "+"
   return (
     <>
       {pokemonIds.map((pid) => {
@@ -405,8 +340,6 @@ function StarterContent({
   );
 }
 
-// ---------- group box ----------
-
 function GroupBox({
   group,
   pokemonIds,
@@ -424,7 +357,6 @@ function GroupBox({
 }) {
   const isEmpty = pokemonIds.length === 0;
   const isStarter = group.id === 'starter';
-  // Starters always use the expanded grid path (for green/red/blue placeholders)
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
   const dragging = dragLineIds !== null;
@@ -432,19 +364,10 @@ function GroupBox({
     () => (isStarter ? starterTypeSlots(pokemonIds, dragging) : null),
     [isStarter, pokemonIds, dragging],
   );
-  // Cells in the grid: tiles plus the trailing "+" (or the drop zone during a
-  // drag). The glyph needs the last row's two right-hand cells free.
   const cellCount = starterSlots?.length ?? pokemonIds.length + 1;
   const showGlyph = (cellCount - 1) % PLUS_COLS < PLUS_COLS - 2;
-  // Accessible fill/stroke pair (see src/lib/sectionColors.ts): the light FILL
-  // tints the section background, the dark STROKE draws the border, label, and
-  // empty-state "+", so text/outline stay legible on the fill for every section.
   const { fill: sectionFill, stroke: sectionStroke } = sectionColor(group.id);
 
-  // Hover state for evo-line X highlight.
-  // Uses onMouseOver on the grid container (bubbles from any descendant) to detect
-  // the current tile via closest('[data-tile-id]'), so X buttons disappear as soon
-  // as the pointer enters a gap/padding area — no debounce needed.
   const [hoveredPokemonId, setHoveredPokemonId] = useState<number | null>(null);
   const showXIds = useMemo(
     () => hoveredPokemonId !== null ? computeRemoveSet(hoveredPokemonId, pokemonIds) : new Set<number>(),
@@ -460,7 +383,6 @@ function GroupBox({
     }
   }, []);
 
-  // Animate height changes (e.g. when removing a pokemon causes a row to collapse)
   const boxRef = useRef<HTMLDivElement>(null);
   const prevHeightRef = useRef<number | null>(null);
 
@@ -491,38 +413,18 @@ function GroupBox({
         });
       });
     } else if (el.style.height) {
-      // No animation needed, but stale inline styles are present from an
-      // earlier animation that was interrupted (e.g. by the tab being hidden
-      // before transitionend fired). Clear them so natural layout resumes.
       el.style.height = '';
       el.style.overflow = '';
       el.style.transition = '';
     }
 
     prevHeightRef.current = newHeight;
-    // Scoped to the only React-driven cause of a height change. Without a
-    // dependency list this ran after every commit, so each of the ~29 group
-    // boxes did a scrollHeight read (and sometimes a style write) on every
-    // builder interaction — forced-reflow thrash inside the layout phase.
-    // The ResizeObserver below keeps prevHeightRef honest for layout shifts
-    // that React does not drive.
   }, [pokemonIds]);
 
-  // Keep prevHeightRef current with the element's actual rendered height,
-  // independent of React re-renders. Without this, the useLayoutEffect above
-  // only updates the ref on re-render — so any layout shift that happens
-  // while PokedexGrid is quiet (sprite/font loads, viewport resize) goes
-  // unnoticed, and the next drag-start re-render misreads the accumulated
-  // delta as a fresh change and triggers a 150ms height collapse animation.
-  // ResizeObserver fires on every real layout change, keeping the baseline
-  // in sync. scrollHeight (not offsetHeight) so mid-animation fires don't
-  // capture the transitioning intermediate value.
   useEffect(() => {
     const el = boxRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      // Ignore hidden-state measurements (scrollHeight = 0) so the baseline
-      // stays at the last real height across tab switches.
       const h = el.scrollHeight;
       if (h > 0) prevHeightRef.current = h;
     });
@@ -535,7 +437,6 @@ function GroupBox({
       boxRef.current.style.height = '';
       boxRef.current.style.overflow = '';
       boxRef.current.style.transition = '';
-      // Update stored height to current auto height
       prevHeightRef.current = boxRef.current.scrollHeight;
     }
   }, []);
@@ -551,7 +452,6 @@ function GroupBox({
         border: `1px solid ${sectionStroke}30`,
       }}
     >
-      {/* Label */}
       <div
         className="text-xs font-semibold uppercase tracking-wide px-1.5"
         style={{
@@ -560,14 +460,13 @@ function GroupBox({
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
       >
-        {sectionName(group.id)}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
+        {/* The count is an element, not a bare text node: a browser's page
+            translation replaces text nodes, and React then crashes removing
+            one when the section empties (20 October). */}
+        {sectionName(group.id)}{pokemonIds.length > 0 && <span>{` (${pokemonIds.length})`}</span>}
       </div>
 
       {showEmptyState ? (
-        /* Empty: single "+" at tile size. During drag swap to an
-           EndDropZone so the section itself is a drop target — without
-           it, there's no droppable here at all and the cursor can't
-           snap to an empty section (not even to the left of the "+"). */
         <div className="grid grid-cols-6 gap-1 p-1 pt-0">
           {dragLineIds ? (
             <EndDropZone
@@ -579,8 +478,6 @@ function GroupBox({
             <button type="button"
               onClick={() => onAddClick(group.id)}
               aria-label={t('builder.addToSection', { section: sectionName(group.id) })}
-              // Stable handle for e2e: the accessible name is translated, and
-              // the pseudo-locales rewrite it beyond matching.
               data-add-slot
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
               style={{
@@ -593,7 +490,6 @@ function GroupBox({
           )}
         </div>
       ) : (
-        /* Filled: grid of tiles */
         <div
           className="grid grid-cols-6 gap-1 p-1 pt-0"
           onMouseOver={handleGridMouseOver}
@@ -655,14 +551,10 @@ function GroupBox({
           )}
         </div>
       )}
-      {/* Last, so it leaves the label's and grid's selector paths as they were;
-          its negative z-index puts it behind them. */}
       {showGlyph && <SectionBoxGlyph sectionId={group.id} color={sectionStroke} />}
     </div>
   );
 }
-
-// ---------- settings menu ----------
 
 function SettingsMenu({ onClear }: { onClear: () => void }) {
   const [open, setOpen] = useState(false);
@@ -670,7 +562,6 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -683,7 +574,6 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  // Reset confirm state after timeout
   useEffect(() => {
     if (confirming) {
       timeoutRef.current = setTimeout(() => setConfirming(false), 3000);
@@ -710,9 +600,6 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
       >
         <Settings className="w-4 h-4" />
       </HeaderActionButton>
-      {/* The menu is sized to its label, not to the gear button it hangs
-          from: an absolute box shrinks to its containing block, which is the
-          32px button, so a label past the 160px minimum used to wrap. */}
       {open && (
         <div className="absolute right-0 top-full mt-1 w-max bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
           <button type="button"
@@ -732,9 +619,8 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
   );
 }
 
-// ---------- main grid ----------
-
 export function PokedexGrid() {
+  const dndAccessibility = useDndAccessibility();
   const sections = usePokedexStore((s) => s.sections);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
@@ -748,7 +634,6 @@ export function PokedexGrid() {
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
   const containerMaxW = useTileGridMaxWidth(6, 4, 32);
 
-  // Scroll container ref — used for auto-scroll when desktop browser adds pokemon
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -756,15 +641,12 @@ export function PokedexGrid() {
       const sectionId = (e as CustomEvent<string>).detail;
       const container = scrollContainerRef.current;
       if (!container || !sectionId) return;
-      // Wait a frame for the DOM to update with the newly added pokemon
       requestAnimationFrame(() => {
         const el = container.querySelector(`[data-section-id="${sectionId}"]`);
         if (!el) return;
-        // Check if the element is already visible in the scroll container
         const containerRect = container.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         if (elRect.top >= containerRect.top && elRect.bottom <= containerRect.bottom) return;
-        // Scroll smoothly to the section
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     };
@@ -772,12 +654,7 @@ export function PokedexGrid() {
     return () => window.removeEventListener('scroll-to-section', handler);
   }, []);
 
-  // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
-  // The grabbed tile's own width, in client pixels. The held copy used to
-  // size itself with a percentage of the grid's column maths, which resolves
-  // against the drag overlay's box instead — every held tile came out half
-  // width and the line overlapped itself.
   const [dragTileWidth, setDragTileWidth] = useState<number | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
@@ -812,9 +689,6 @@ export function PokedexGrid() {
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    // Update the faint effective-cursor marker. The hit-test point on
-    // touch is lifted above the thumb by TOUCH_HIT_LIFT_PX; on desktop
-    // it's the raw mouse.
     const rawPtr = dragPointerRef.current;
     if (rawPtr) {
       setCursorPos({
@@ -823,10 +697,6 @@ export function PokedexGrid() {
       });
     }
 
-    // Update overTileId atomically with dropSide. Splitting across
-    // onDragOver (setOverTileId) and onDragMove (setDropSide) renders once
-    // with the NEW overTileId but STALE dropSide — causing the indicator
-    // to flash at the wrong edge of the new bundle before correcting.
     setOverTileId(event.over ? (event.over.id as string) : null);
 
     if (!event.over) return;
@@ -836,15 +706,8 @@ export function PokedexGrid() {
 
     const target = parseTileId(overId);
 
-    // Skip if hovering over the dragged evo line itself
     if (dragLineIds && dragLineIds.includes(target.pokemonId)) return;
 
-    // dropSide is recomputed every move from the authoritative pointer X
-    // (stashed by the collision detector) vs the bundle's horizontal
-    // extent. Bundle extent comes from the actual DOM rects of every
-    // bundle member tile — so a 3-, 4-, or N-chain splits cleanly at its
-    // real visual midpoint regardless of tile width, gaps, or chain
-    // length.
     const ptr = dragPointerRef.current;
     if (!ptr) return;
     const px = ptr.x;
@@ -852,9 +715,6 @@ export function PokedexGrid() {
     const sectionIds = sections[target.sectionId] ?? [];
     const bundle = findEvoLineGroup(target.pokemonId, sectionIds);
 
-    // Look up each bundle member's live DOM rect. Filter to members on
-    // the target's visual row — a chain that wraps to a second row uses
-    // only the row segment the pointer is currently interacting with.
     const targetEl = document.querySelector<HTMLElement>(
       `[data-tile-id="${tileId(target.sectionId, target.pokemonId)}"]`,
     );
@@ -911,7 +771,6 @@ export function PokedexGrid() {
             const withoutDragged = targetSectionIds.filter((id) => !dragSetLocal.has(id));
             const targetFirstIdx = withoutDragged.indexOf(targetLineIds[0]);
             if (dropSide === 'right') {
-              // Insert after the target evo line
               const lastInLine = targetLineIds[targetLineIds.length - 1];
               const lastIdx = withoutDragged.indexOf(lastInLine);
               insertIdx = lastIdx >= 0 ? lastIdx + 1 : withoutDragged.length;
@@ -956,7 +815,6 @@ export function PokedexGrid() {
     if (targetLineIds.length === 0) return { tileId: null, endSection: null, side: 'left' };
 
     if (dropSide === 'right') {
-      // Show indicator on right edge of last tile in the target evo line
       const lastId = targetLineIds[targetLineIds.length - 1];
       return { tileId: tileId(target.sectionId, lastId), endSection: null, side: 'right' };
     }
@@ -979,17 +837,11 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* This page's controls live in the shared tool bar, not a row of its
-          own — the count and nav are the header's job now. */}
       {toolbarSlot && createPortal(<SettingsMenu onClear={clearAll} />, toolbarSlot)}
 
       <div
         ref={scrollContainerRef}
         data-build-scroll
-        // The scroll container itself is capped and centred, not the content
-        // inside it, so its scrollbar rides the content's right edge instead of
-        // sitting far out in the empty margin. `scrollbar-gutter: stable` keeps
-        // the rail's width reserved so it does not flicker as content grows.
         className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain md:overscroll-auto"
         style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined, scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
@@ -999,6 +851,7 @@ export function PokedexGrid() {
               onChooseStarters={() => handleAddClick('starter')}
             />
             <DndContext
+              accessibility={dndAccessibility}
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
               modifiers={[snapCenterToPointer]}

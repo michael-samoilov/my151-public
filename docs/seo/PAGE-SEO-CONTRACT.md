@@ -1,5 +1,7 @@
 # Page SEO contract
 
+Historical captures and commands are in this folder's Git history.
+
 Every page that should rank meets this contract. It is short because the
 site is small. Copy comes from the slug-plan artifact and `SEO-PLAN.md` P16;
 this document covers how the HTML is built and served, which is what decides

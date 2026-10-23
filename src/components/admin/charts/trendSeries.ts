@@ -34,7 +34,6 @@ export function splitProvisional(
   };
 }
 
-/** Calendar DAU; last point uses `label24h` when the API set it (rolling 24h at now). */
 export function chartDailyValues(series: DailyPoint[]): number[] {
   if (series.length === 0) return [];
   const last = series.length - 1;
@@ -44,9 +43,8 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
   });
 }
 
-export const INCOMPLETE_WEEKLY_DAYS = 6;
+const INCOMPLETE_WEEKLY_DAYS = 6;
 
-/** Days that overlap the window opening at `start`; every day for `null`. */
 export function sliceActivityRange(series: DailyPoint[], start: number | null): DailyPoint[] {
   if (start == null || series.length === 0) return series;
   const sliced = series.filter((p) => p.day + DAY_MS > start);
@@ -70,7 +68,7 @@ export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: numb
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-export interface WeekdayTick {
+interface WeekdayTick {
   idx: number;
   weekday: (typeof WEEKDAYS)[number];
 }
@@ -109,7 +107,6 @@ export function chartMonthlyValues(series: DailyPoint[]): (number | null)[] {
   });
 }
 
-/** Merge server rolling labels onto today's activity row (from `byTool.*.activity`). */
 export function applyActivityLabels(
   series: DailyPoint[],
   nowMs: number,
@@ -130,7 +127,6 @@ export function applyActivityLabels(
   return out;
 }
 
-/** Gutter counts: rolling at `now` when computed, else same as production (DAU / calendar week). */
 export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
   if (series.length === 0) return { hours24: 0, days7: null };
   const last = series[series.length - 1];
@@ -140,10 +136,6 @@ export function windowCounts(series: DailyPoint[]): { hours24: number; days7: nu
   };
 }
 
-/**
- * Fractional category indices for week separators, stepping back 7d from now.
- * The rightmost line is exactly one week before `nowMs`.
- */
 export function weekLineIndices(days: number[], nowMs: number): number[] {
   if (days.length < 2) return [];
   const origin = days[0];
@@ -157,13 +149,12 @@ export function weekLineIndices(days: number[], nowMs: number): number[] {
   return out;
 }
 
-export interface MonthLabelTick {
+interface MonthLabelTick {
   idx: number;
   abbr: string;
   year: number | null;
 }
 
-/** First visible month, and every January, carry a year under the abbreviation. */
 export function monthLabelTicks(days: number[]): MonthLabelTick[] {
   if (days.length === 0) return [];
   const groups: { start: number; month: number; year: number }[] = [];
@@ -185,8 +176,6 @@ export function monthLabelTicks(days: number[]): MonthLabelTick[] {
   });
 }
 
-/** Category indices halfway between the last day of a month and the first of the next.
- *  Drawn only in the x-axis label ribbon, not through the plot. */
 export function monthDividerIndices(days: number[]): number[] {
   if (days.length < 2) return [];
   const out: number[] = [];
@@ -200,9 +189,9 @@ export function monthDividerIndices(days: number[]): number[] {
   return out;
 }
 
-export type CountLabelSide = 'above' | 'below';
+type CountLabelSide = 'above' | 'below';
 
-export interface CountLabelLayout {
+interface CountLabelLayout {
   x: number;
   side: CountLabelSide;
   dailyY: number;
@@ -210,7 +199,6 @@ export interface CountLabelLayout {
   yMax: number;
 }
 
-/** Place 24h/7d labels at the last point's y, stacked if the daily/weekly gap is tight. */
 export function countLabelLayout(
   daily: number[],
   weekly: (number | null)[],

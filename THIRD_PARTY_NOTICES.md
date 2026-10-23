@@ -4,13 +4,15 @@ These notices apply to the identified third-party assets. They do not change the
 
 ## Pokémon type icons by Partywhale
 
+<!-- type-icons:partywhale -->
 Fighting, Rock, Bug, Water, and Psychic use SVG artwork from [Partywhale's Pokémon type icons](https://github.com/partywhale/pokemon-type-icons), commit `fcbe6978c61c359680bc07636c3f9bdc0f346b43`. Bug, Water, and Psychic are modified to mirror the original right half.
 
 These assets use the MIT license. The original copyright notice and full license text are preserved in [the source license](scripts/type-icons/sources/partywhale/LICENSE) and [the distributed license](public/licenses/partywhale-pokemon-type-icons-MIT.txt).
 
 ## Generation 9 Pokémon type icons by Elginive
 
-The other 13 type SVGs use artwork from [Elginive's Pokémon type icons](https://github.com/Elginive/pokemon-type-icons), commit `b8562e080dd0b48742a9ba0c9b0bc7f1acdc5d88`.
+<!-- type-icons:elginive -->
+Normal, Flying, Poison, Ground, Ghost, Steel, Fire, Grass, Electric, Ice, Dragon, Dark, and Fairy use artwork from [Elginive's Pokémon type icons](https://github.com/Elginive/pokemon-type-icons), commit `b8562e080dd0b48742a9ba0c9b0bc7f1acdc5d88`.
 
 The source README says “Free to use. Credit is always appreciated, but not necessary.” Its original text is preserved in [the source README](scripts/type-icons/sources/elginive/README.md).
 
@@ -32,4 +34,4 @@ hover-tilt states two licenses. The repository's `LICENSE` file is MIT. The pack
 
 ## npm packages
 
-`build.license` in `vite.config.ts` makes each production build write the name, version, license, and license text of every npm package in the browser bundle to `dist/licenses/npm-packages.txt`, served at <https://my151.app/licenses/npm-packages.txt>. Vite's list misses three notices, which [npm-packages-extra.txt](public/licenses/npm-packages-extra.txt) holds: Tailwind CSS with modern-normalize, country-flag-icons, and the Apache ECharts NOTICE. Its versions are written by hand, so update it after you upgrade one of those packages. The Acknowledgements panel links both files.
+`build.license` in `vite.config.ts` makes each production build write the name, version, license, and license text of every npm package in the browser bundle to `dist/licenses/npm-packages.txt`, served at <https://my151.app/licenses/npm-packages.txt>. Vite's list misses three notices, which [npm-packages-extra.txt](public/licenses/npm-packages-extra.txt) holds: Tailwind CSS with modern-normalize, country-flag-icons, and the Apache ECharts NOTICE. Its versions are written by hand, and the build fails when one differs from the installed package. The build also writes `dist/licenses/npm-packages.json`, the name, version, and license of every package in both files (`scripts/acknowledgements-build.ts`). The Acknowledgements panel lists the packages from it and links both files.

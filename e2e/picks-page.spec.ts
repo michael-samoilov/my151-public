@@ -1,23 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { TYPE_NAMES } from '../src/types/pokemon';
 
-/**
- * The admin "What people pick" page. Demo fixture, no token.
- *
- * Layout: builder chrome with the section name at the top-left; one 9-column
- * sprite grid per section with an index bar under each sprite. Most picked
- * lists every default species in that section, ordered by ×, with no
- * Most/Least split. Other Areas lists only species with at least 1 pick
- * and sits last. In-section Starters list every first-stage face across
- * the full row, split by grass / fire / water. Nine faces fit one row.
- * Off-section Starters do not. Off-section sprite grids are 9 columns.
- */
-
 async function openPicks(page: Page) {
   await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
   await page.goto('/?admin&demo');
   await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
-  // "What people pick" lives on the Dex tab; Suite holds cross-tool cards only.
   await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
   await page.getByRole('button', { name: /Most picked/ }).click();
   await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();

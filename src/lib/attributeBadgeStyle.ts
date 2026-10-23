@@ -4,7 +4,6 @@ import { TYPE_BADGE, TYPE_BADGE_W } from './typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from './typeBadgeFit';
 import { TYPE_COLORS } from '@/data/type-colors';
 
-/** Color badges and chart bars share the official type-badge palette. */
 export const COLOR_BADGE_FILLS: Record<ColorName, string> = {
   black: TYPE_COLORS.dark, blue: TYPE_COLORS.water, brown: TYPE_COLORS.ground,
   gray: TYPE_COLORS.normal, green: TYPE_COLORS.grass, pink: TYPE_COLORS.fairy,
@@ -14,15 +13,12 @@ export const COLOR_BADGE_FILLS: Record<ColorName, string> = {
 
 export const colorBadgeTextFill = (color: ColorName): string => color === 'white' ? '#171717' : '#ffffff';
 
-// The existing shape artwork is not perfectly centered within every source PNG.
-// Its largest measured left-plus-right painted extent is 62.34 badge units.
-// Reserve 64 before text, so the glyph-to-word gap clears the left inset too.
 const SHAPE_TEXT_LEFT = 64;
 const SHAPE_TEXT_RIGHT = TYPE_BADGE_W - (TYPE_BADGE.glyphCenterX - TYPE_BADGE.glyph / 2);
 
 export type EvolutionRole = 'basic' | 'intermediate' | 'final' | 'standalone';
-export const EVOLUTION_ROLES: EvolutionRole[] = ['basic', 'intermediate', 'final', 'standalone'];
-export function evolutionLabel(role: EvolutionRole): string {
+const EVOLUTION_ROLES: EvolutionRole[] = ['basic', 'intermediate', 'final', 'standalone'];
+function evolutionLabel(role: EvolutionRole): string {
   return t(({ basic: 'favorites.stats.basic', intermediate: 'favorites.stats.middle', final: 'favorites.stats.final', standalone: 'favorites.stats.noEvo' } as const)[role]);
 }
 
@@ -43,8 +39,6 @@ export function attributeBadgeLayout(kind: 'color' | 'shape' | 'evolution', valu
       const ink = shapeMeasureContext.measureText(label);
       const inkWidth = ink.actualBoundingBoxLeft + ink.actualBoundingBoxRight;
       if (inkWidth > 0) {
-        // Fit painted glyphs, not advance widths, which include unequal side bearings.
-        // Short labels retain their natural width; long labels share the same bounds.
         fit.scaleX = Math.min(TYPE_BADGE.textScaleX, textWidth / inkWidth);
         centerX += (ink.actualBoundingBoxLeft - ink.actualBoundingBoxRight) * fit.scaleX / 2;
       }

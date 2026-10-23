@@ -1,5 +1,8 @@
 # Backlog
 
+Documentation review, October 18, 2026. These are proposals and historical observations, not verified open defects or production status.
+Check the [surface handoffs](README.md#make-a-change) before starting an item.
+
 Things worth doing that are not being done yet, with enough of the reasoning
 that picking one up does not start from scratch.
 

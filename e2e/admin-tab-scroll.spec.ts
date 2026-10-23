@@ -1,9 +1,9 @@
+import { openAdmin } from './admin-ready';
 import {test,expect} from '@playwright/test';
 
-// Each dashboard tab keeps its own position; detail Back retains its existing behavior.
 test('admin tabs restore independent scroll positions @viewport',async({page},testInfo)=>{
   await page.addInitScript(()=>localStorage.setItem('p151-admin-tool','all'));
-  await page.goto('/?admin&demo');
+  await openAdmin(page, '/?admin&demo');
   const nav=page.getByRole('navigation',{name:'Admin section'});
   await expect(nav.getByRole('button',{name:'Suite',exact:true})).toHaveAttribute('aria-pressed','true');
   const saved={Suite:500,Dex:250,League:300,Picker:200};

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Gen 4 Pokemon data (387-493)"""
-# (id, name, t1, t2, hp, atk, def, spa, spd, spe, gen, chain, from, stage, lvl, leg, myth, cap, grow, baby)
 GEN4 = [
 (387,"turtwig","grass",None,55,68,64,45,55,31,4,203,None,1,None,0,0,45,"ms",0),
 (388,"grotle","grass",None,75,89,85,55,65,36,4,203,387,2,18,0,0,45,"ms",0),

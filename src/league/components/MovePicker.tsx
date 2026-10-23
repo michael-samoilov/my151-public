@@ -27,16 +27,6 @@ import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
-/**
- * The TM picker, on the selection pane's architecture: a BottomSheet on
- * mobile (the pane's own drag-to-dismiss), a centred dialog on desktop, and
- * the pane's filter idiom — entry chips that open an inline panel,
- * multi-select values as dismissible coloured chips, an or/and mode for
- * types. Fields run Type, Cat., Move, Att., Acc., PP; Move and the numeric
- * columns sort, and a move that always hits carries no accuracy and sorts
- * above 100%.
- */
-
 type SortKey = 'name' | 'pp' | 'power' | 'accuracy';
 type FilterSheet = 'type' | 'category' | 'contest' | null;
 
@@ -57,7 +47,6 @@ function SortCaret({ dir }: { dir: 'asc' | 'desc' | null }) {
   );
 }
 
-/** Entry-point chip — the pane's recipe: opens a filter panel. */
 function EntryChip({ label, onClick, active, testId }: {
   label: string;
   onClick: () => void;
@@ -82,7 +71,6 @@ function EntryChip({ label, onClick, active, testId }: {
   );
 }
 
-/** Active filter chip — the pane's recipe: shows the value with a dismiss. */
 function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
   label: string;
   onDismiss: () => void;
@@ -113,7 +101,6 @@ function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
   );
 }
 
-/** A coloured multi-select option chip inside the category/contest panels. */
 function OptionChip({ label, active, colour, onClick }: {
   label: string;
   active: boolean;
@@ -145,8 +132,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const cardType = useLeagueStore((s) => s.cards[cardIndex]?.type ?? null);
 
   const [search, setSearch] = useState('');
-  // The leader's own type arrives pre-selected, exactly as the selection
-  // pane pre-selects it for line picks.
   const [typeFilter, setTypeFilter] = useState<TypeName[] | null>(
     cardType && cardType !== 'none' ? [cardType] : null,
   );
@@ -182,8 +167,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       contests,
     });
     const dir = sortDir === 'asc' ? 1 : -1;
-    const num = (v: number | null) => (v === null ? 101 : v); // always-hits above 100%
-    // By the name on screen, in the language's own order.
+    const num = (v: number | null) => (v === null ? 101 : v);
     const collator = new Intl.Collator(locale);
     const label = (m: Move) => names?.[m.id] ?? m.name;
     const byName = (a: Move, b: Move) => collator.compare(label(a), label(b));
@@ -196,10 +180,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
     return filtered;
   }, [search, typeFilter, categories, contests, sortKey, sortDir, locale, names]);
 
-  // A name that does not fit its line wraps at its spaces onto a second one;
-  // one that fits keeps the row's single line exactly as before. A word wider
-  // than the column on its own (German Elektrifizierung, at 320 px) shrinks
-  // to fit, as the card's TM slot does, rather than being cut.
   const listRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -212,7 +192,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       for (const el of long) Object.assign(el.style, { whiteSpace: 'normal', lineHeight: '1.1' });
       const scale = new Map(long.map((el) => [el, Math.min(1, el.clientWidth / el.scrollWidth)]));
       for (const [el, s] of scale) if (s < 0.995) el.style.fontSize = `${base * s}px`;
-      // Two lines at most: Spanish Tormenta de Diamantes takes three at 320 px.
       const lines = (el: HTMLElement) => el.scrollHeight / (parseFloat(el.style.fontSize || `${base}`) * 1.1);
       for (let round = 0; round < 8; round++) {
         const tall = long.filter((el) => lines(el) > 2.2);
@@ -244,8 +223,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         }
       }}
       className={cn(
-        // One line: a CJK head such as 威力 would otherwise break between
-        // its two characters in the narrow numeric columns.
         'flex items-center whitespace-nowrap text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground',
         right && 'justify-end',
       )}
@@ -262,8 +239,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const grid = { gridTemplateColumns: '4.5rem 2.125rem 1fr 1.875rem 2.375rem 1.5rem', columnGap: '0.375rem' };
 
   return (
-    // h-full fills the sheet's definite-height scroll container on mobile;
-    // flex-1/min-h-0 size it inside the desktop dialog's flex column.
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2 p-3 pb-2">
         <div className="relative flex-1">
@@ -273,6 +248,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('league.tm.search')}
+            aria-label={t('league.tm.search')}
             className="pl-9"
           />
         </div>
@@ -287,9 +263,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         'flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar transition-opacity',
         isSearching && hasActiveFilters && 'opacity-40',
       )}>
-        {/* No match-mode control: a move has exactly one type, so "all of
-            these types" can only ever be empty. Several types selected always
-            means any of them. */}
         {typeFilter && typeFilter.length > 0 ? (
           <>
             {typeFilter.map((type) => (
@@ -359,8 +332,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         )}
       </div>
 
-      {/* Inline filter panel, the pane's desktop idiom on both breakpoints —
-          the picker already sits in a sheet on mobile. */}
       {openSheet && (
         <div className="border-b bg-muted/30 px-3 py-2">
           <div className="mb-2 flex items-center justify-between">
@@ -482,7 +453,6 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
   const close = () => setMovePickerOpen(false);
   const t = useT();
   const slot = slotLabel(cardIndex);
-  // One sentence with the slot in red, wherever the language puts it.
   const title = splitTemplate(raw('league.tm.title'));
 
   if (!isDesktop) {

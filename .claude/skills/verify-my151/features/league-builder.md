@@ -16,13 +16,17 @@ and a legendary on the boss row.
   it to replace that seat's line. A filled boss-row cell opens the legendary
   picker instead.
 - The boss row keeps its legendaries in `legends[]`, at most one per seat. A
-  legendary dropped on a seat that holds one swaps the two.
+  legendary dropped on a seat that holds one swaps the two. Dropped on a seat
+  without one, it moves there. A column with no line has nothing for it to
+  replace, so a drop there leaves it where it was.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
   When the card has room, a pick also seats the tapped Pokémon's whole line.
 - A cell dragged up or down moves an evolution boundary. A press and hold lifts
   the column to reorder it. The moving stage wears a wash of its primary type.
 - Mega and Gigantamax buttons on rows 9-11, the bottom three. A press sets its
-  row and every row below it that shows the same form on that seat. Kyogre's
+  row and every row below it that shows the same form on that seat. A boss-row
+  legendary has its own buttons, and a press on the line above skips it. Its
+  form moves with it. Kyogre's
   and Groudon's Mega button shows their orb (`/powerups/primal-kyogre.png`,
   `primal-groudon.png`) and is labelled "Primal Reversion". The Gigantamax
   button's `aria-label` is "Dynamax".
@@ -62,8 +66,11 @@ league suites, then `favorites`. The league suites:
   tab shows (see `league-export.md`).
 - `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
   `data-league-nudge` is `card` for a full trainer card, `league` for eight
-  gym leaders with a card still empty, and `complete` for every card filled.
-  The two roster popups never cover a summary row: `data-nudge-placement`
+  gym leaders with a card still empty, `complete` for every card filled, and
+  `full` for six lines on all 14 cards. `full` arrives with the confetti,
+  once the summary is on screen and the picker is shut. Beside an open card
+  on desktop it floats under the league Export button.
+  The roster popups never cover a summary row: `data-nudge-placement`
   is `beside` where the pane has room right of the summary (a desktop) and
   `below` elsewhere, where the popup joins the page flow and the fit shrinks
   the summary to make room. The league Export button carries

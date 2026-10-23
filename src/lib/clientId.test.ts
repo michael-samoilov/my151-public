@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { installOptOut, isOptedOut, resolveCidFrom } from './clientId';
 
-/** Minimal working storage stub. */
 function workingStore(seed?: Record<string, string>) {
   const data = new Map(Object.entries(seed ?? {}));
   return {
@@ -10,7 +9,6 @@ function workingStore(seed?: Record<string, string>) {
   };
 }
 
-/** Storage that throws on every access — locked-down private modes. */
 const throwingStore = {
   getItem: () => {
     throw new Error('storage disabled');
@@ -20,7 +18,6 @@ const throwingStore = {
   },
 };
 
-/** Storage that accepts writes and silently drops them — the treacherous case. */
 const droppingStore = {
   getItem: () => null,
   setItem: () => {},
@@ -52,16 +49,7 @@ describe('resolveCidFrom', () => {
   });
 });
 
-/**
- * The owner opt-out.
- *
- * Worth pinning because the failure is invisible: a broken opt-out looks
- * exactly like a working one until the owner's own sessions show up in the
- * dashboard weeks later.
- */
 describe('opt-out', () => {
-  // A locked-down browser must not take the whole page down with it. There is
-  // no page to report the failure to, so both sides just stay quiet.
   it('survives a storage that throws', () => {
     vi.stubGlobal('localStorage', {
       getItem: () => {

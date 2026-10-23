@@ -5,18 +5,13 @@ import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 import { reloadIfStale } from '@/lib/staleDeploy';
 
-// Lazy, with its data: a page's first download carries only the link.
 const AcknowledgementsPanel = lazy(() => reloadIfStale(import('./AcknowledgementsPanel'))
   .then((module) => ({ default: module.AcknowledgementsPanel })));
 const BUILD_VERSION = BUILD_TIMESTAMP.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
-/** `faq` names the page whose "About this tool" block sits under the footer. */
 export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: boolean } = {}) {
   const t = useT();
-  // The link that opened the panel, so closing it returns focus there. Each
-  // footer owns its panel: the panel portals itself to the body, so a footer
-  // in a hidden page cannot hold it, and only a visible footer can be clicked.
   const [ackFrom, setAckFrom] = useState<HTMLElement | null>(null);
   const ackLink = (className: string) => (
     <button
@@ -34,13 +29,13 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
     </Suspense>
   );
   if (compact) {
-    // A slim, pinned footer for the desktop league builder: one centred line
-    // and its two links, so the panes above it keep the vertical room the
-    // full footer used to reserve. The FAQ stays for SEO, collapsed and tight.
     return (
       <div className="flex flex-col items-center">
-        <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground">
-          <span>v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC</span>
+        <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[length:max(11px,0.5625rem)] text-muted-foreground">
+          <span>
+            v{BUILD_VERSION} · Pokémon © 1995–{YEAR}{' '}
+            <span className="whitespace-nowrap">Nintendo / Game Freak / Creatures / TPC</span>
+          </span>
           <span aria-hidden className="text-muted-foreground/40">·</span>
           <button
             type="button"
@@ -71,15 +66,14 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
         <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       </svg>
-      <span className="text-[0.5625rem] text-muted-foreground text-center">
-        v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC
+      <span className="text-[length:max(11px,0.5625rem)] text-muted-foreground text-center">
+        v{BUILD_VERSION} · Pokémon © 1995–{YEAR}{' '}
+        <span className="whitespace-nowrap">Nintendo / Game Freak / Creatures / TPC</span>
       </span>
-      <span className="text-[0.5rem] text-muted-foreground">
+      <span className="text-[length:max(11px,0.5rem)] text-muted-foreground">
         {t('footer.disclaimer')}
       </span>
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[0.5625rem] text-muted-foreground">
-        {/* The secondary path to the report form. The floating button is the one
-            people find by accident; this is the one they go looking for. */}
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[length:max(11px,0.5625rem)] text-muted-foreground">
         <button
           type="button"
           onClick={(e) => openFeedback('bug', e.currentTarget)}

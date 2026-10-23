@@ -11,9 +11,6 @@ import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { Pokemon } from '@/types/pokemon';
 
-// The admin snapshot packs 15 per row, not the View page's 10, so a full 151
-// dex reads in ~11 rows and fits under the scrubber without a scroll. This is
-// local to the admin view — the shared COLS the real builder uses is unchanged.
 const GRID_COLS = 15;
 
 const DexTile = memo(function DexTile({
@@ -30,13 +27,6 @@ const DexTile = memo(function DexTile({
   );
 });
 
-/**
- * The dex at one moment, drawn with the real View-page section outlines. The
- * layout comes from the user's full section assignment (so tiles never move as
- * you scrub); tiles present in the scrubbed session show their sprite, absent
- * ones fade. The whole grid scales to the container width, so it never exceeds
- * the viewport — no horizontal scroll, no canvas-style drag.
- */
 export const OutlinedDex = memo(function OutlinedDex({
   sections,
   presentIds,
@@ -55,8 +45,6 @@ export const OutlinedDex = memo(function OutlinedDex({
     return () => ro.disconnect();
   }, []);
 
-  // Ordered list of every sectioned pokemon (build-group order), and the layout
-  // it produces. Memoized on the section structure, not the scrubbed session.
   const { sorted, layout, allStartRows } = useMemo(() => {
     const orderedIds: number[] = [];
     const seen = new Set<number>();
@@ -70,9 +58,6 @@ export const OutlinedDex = memo(function OutlinedDex({
       }
     }
     const sortedP = orderedIds.map((id) => getPokemonById(id)).filter((p): p is NonNullable<typeof p> => !!p);
-    // Use the real tile count, not a full-row multiple. Padding up to a multiple
-    // makes the layout treat a hanging final row as a full left-aligned row, so
-    // its section outline is drawn from the left while the tiles render centered.
     const totalSlots = Math.max(1, sortedP.length);
     const nextLayout = computeOutlineLayout(sortedP, sections, totalSlots, GRID_COLS);
     return {
@@ -94,19 +79,12 @@ export const OutlinedDex = memo(function OutlinedDex({
   const gridWidth = GRID_COLS * tileSize + (GRID_COLS - 1) * gap;
   const gridPokemon = sorted.slice(0, gridSlots);
   const lastRowPokemon = sorted.slice(gridSlots);
-  // A build under one row (gridSlots === 0) has no grid rows: the whole build is
-  // the centered last row. Never floor this at 1 — a phantom empty grid row
-  // pushes the tiles down a row while the outline stays at the top, so the
-  // sprites render outside their own outline. buildOutlines puts the last row at
-  // blockTop[0] === 0 in that case, so the flex above it takes no leading gap.
   const totalGridRows = Math.ceil(gridSlots / GRID_COLS);
   const gridRowTemplate = Array.from({ length: totalGridRows }, (_, r) =>
     gridStartRows.has(r) ? `${headroom + tileSize}px` : `${tileSize}px`,
   ).join(' ');
   const gridBlockHeight =
     totalGridRows * tileSize + gridStartRows.size * headroom + Math.max(totalGridRows - 1, 0) * gap;
-  // The row gap sits between the grid and the centered last row. With no grid, it
-  // must be 0 so the last row aligns with the outline's top edge.
   const lastRowGap = totalGridRows > 0 ? gap : 0;
   const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
 

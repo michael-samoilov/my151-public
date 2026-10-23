@@ -26,8 +26,8 @@ describe('fmtRange', () => {
 
 describe('midnightBoundaries', () => {
   it('marks every UTC midnight, not only Sunday', () => {
-    const t0 = Date.parse('2026-09-09T12:00:00Z'); // Wednesday
-    const t1 = Date.parse('2026-09-13T12:00:00Z'); // Sunday
+    const t0 = Date.parse('2026-09-09T12:00:00Z');
+    const t1 = Date.parse('2026-09-13T12:00:00Z');
     const days = midnightBoundaries(t0, t1);
     const weeks = weekBoundaries(t0, t1);
     expect(days.length).toBeGreaterThan(weeks.length);
@@ -38,7 +38,6 @@ describe('midnightBoundaries', () => {
     const t0 = Date.parse('2026-09-10T02:00:00Z');
     const t1 = Date.parse('2026-09-11T10:00:00Z');
     const ny = midnightBoundaries(t0, t1, 'America/New_York');
-    // 2026-09-10 00:00 in America/New_York is 04:00 UTC (EDT, UTC−4).
     expect(ny).toContain(Date.parse('2026-09-10T04:00:00Z'));
     expect(ny).not.toContain(Date.parse('2026-09-10T00:00:00Z'));
   });

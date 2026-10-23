@@ -52,7 +52,6 @@ test('Stats switches in both layouts retain plain bytes and download the selecte
   expect(detailed.width).toBeGreaterThan(plain.width);
   expect(detailed.height).toBe(plain.height);
   expect(detailed.sha256).not.toBe(plain.sha256);
-  // The summary keeps the stats switch and draws the same panel beside it.
   await page.locator('[data-favorites-export-mode="simplified"]').click();
   await expect(stats(page)).toBeChecked();
   const simplifiedDetailed = await imageEvidence(page);

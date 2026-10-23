@@ -23,11 +23,6 @@ function FourChanMark({ className }: { className?: string }) {
   );
 }
 
-/**
- * `label` is the English the report sends, so the answers read the same in
- * every language. `key` is the shown label; a brand name has none and shows
- * as is.
- */
 const HEARD: {
   id: string;
   label: string;
@@ -189,7 +184,7 @@ export function LeagueExportSurvey({
             placeholder={t('exportSurvey.heard.where')}
             aria-label={t('exportSurvey.heard.whereLabel')}
             data-export-other-input
-            className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-base outline-none md:text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
         <div className="grid grid-cols-2 gap-1">

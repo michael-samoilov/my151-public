@@ -16,9 +16,8 @@
 
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
 import { getPokemonById } from '@/league/data/catalog';
-import { drawTypeBadge } from '@/lib/drawTypeBadge';
+import { drawTypeBadge, drawTypeIcon } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
@@ -67,11 +66,8 @@ import {
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
-export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
-
 const FG = '#0a0a0a';
 const RED = '#DC2626';
-/** The league summary's frame: the Dex export's red. */
 const HOME_FRAME = RED;
 const GREY = '#a3a3a3';
 const NO_TYPE = '#9CA3AF';
@@ -87,22 +83,18 @@ const HOME_LINE = '#f0f0f1';
  */
 const MAX_CANVAS_AREA = 16_000_000;
 
-// ---------- reading a card ----------
-
-/** The ace and the partner: the two Pokémon the showcase draws. */
 export function showcasePair(card: GymCard): { ace: number | null; partner: number | null } {
   const seat = card.signatureSeat;
   const ace = seat === null ? null : signatureMember(card.lines[seat - 1], card.signatureId ?? null);
   return { ace, partner: card.partnerId ?? null };
 }
 
-export interface ExportCell {
+interface ExportCell {
   seat: number;
   pokemonId: number | null;
   form: PowerupForm | null;
 }
 
-/** One row of the card, with each seat's powerup form already resolved. */
 export function exportRow(card: GymCard, row: number): ExportCell[] {
   const cells = deriveRow(card.lines, row, row === L.BOSS_ROW ? legendsOf(card) : []);
   const powerups = powerupsAt(card, row);
@@ -113,22 +105,18 @@ export function exportRow(card: GymCard, row: number): ExportCell[] {
   }));
 }
 
-/** A seat's sprite, or null when the seat is empty or the id is unknown. */
 function spriteUrl(pokemonId: number | null, form: PowerupForm | null): string | null {
   if (form) return pokemonSpriteUrl(form.id);
   if (pokemonId === null) return null;
   return getPokemonById(pokemonId)?.sprite ?? pokemonSpriteUrl(pokemonId);
 }
 
-/** The two colours a Pokémon's pokeball is painted in. */
 function ballColours(pokemonId: number): [string, string] {
   const types = getPokemonById(pokemonId)?.types ?? [];
   const primary = TYPE_COLORS[types[0] as TypeName] ?? NO_TYPE;
   const secondary = TYPE_COLORS[(types[1] ?? types[0]) as TypeName] ?? primary;
   return [primary, secondary];
 }
-
-// ---------- images ----------
 
 type Images = Map<string, HTMLImageElement>;
 
@@ -137,8 +125,6 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    // A missing sprite degrades to an empty cell rather than failing the
-    // export: one 404 should not cost the user their picture.
     img.onerror = () => resolve(null);
     img.src = src;
   });
@@ -155,11 +141,8 @@ async function loadAll(urls: Iterable<string>): Promise<Images> {
   return out;
 }
 
-/** Every image one gym card needs. */
 function cardImageUrls(card: GymCard): string[] {
   const urls: string[] = [];
-  // The title row's badge wants the type's white glyph, not its icon.
-  if (card.type && card.type !== 'none') urls.push(typeGlyphPath(card.type));
   const { ace, partner } = showcasePair(card);
   for (const id of [ace, partner]) {
     const url = spriteUrl(id, null);
@@ -172,14 +155,10 @@ function cardImageUrls(card: GymCard): string[] {
     }
   }
   const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-  if (move) {
-    urls.push(typeGlyphPath(move.type as TypeName));
-    urls.push(`/sprites/moves/${move.category}.png`);
-  }
+  if (move) urls.push(`/sprites/moves/${move.category}.png`);
   return urls;
 }
 
-/** Story and rematch rows a slot paints. Rematch is always the endgame row. */
 export function homeRowsForCard(
   index: number,
   view: LeagueView,
@@ -193,17 +172,12 @@ export function homeRowsForCard(
   return [effectiveView === 'rematch' ? rematch : challenge];
 }
 
-/** Every image the league home needs. */
 function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExportLayout): string[] {
   const urls: string[] = [];
   cards.forEach((card, index) => {
-    if (card.type && card.type !== 'none') urls.push(typeIconPath(card.type));
     if (layout.showTmReward) {
       const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-      if (move) {
-        urls.push(typeIconPath(move.type as TypeName));
-        urls.push(`/sprites/moves/${move.category}.png`);
-      }
+      if (move) urls.push(`/sprites/moves/${move.category}.png`);
     }
     if (card.lines.length === 0) return;
     for (const row of homeRowsForCard(index, view, layout)) {
@@ -216,33 +190,19 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
   return urls;
 }
 
-// ---------- shared chrome ----------
-
-/**
- * The type square on a league row: the chosen type's icon, or the no-type
- * grey and its star.
- *
- * A trainer with a team and no type exports as "no type" rather than as the
- * app's dashed square. The dashed square is an add affordance — it asks the
- * card's owner to do something — and a picture they hand to someone else has
- * nothing to press. An open seat is the exception: see `vacantRow`.
- */
 function drawTypeMark(
   ctx: CanvasRenderingContext2D,
   type: GymCard['type'],
-  images: Images,
   x: number,
   y: number,
   size: number,
   radius: number,
 ): void {
-  const icon = type && type !== 'none' ? images.get(typeIconPath(type)) : undefined;
-  if (icon) {
+  if (type && type !== 'none') {
     ctx.save();
     roundRect(ctx, x, y, size, size, radius);
     ctx.clip();
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(icon, x, y, size, size);
+    drawTypeIcon(ctx, type, x, y, size);
     ctx.restore();
     return;
   }
@@ -255,27 +215,16 @@ function drawTypeMark(
   ctx.restore();
 }
 
-/** Cap height at the current font — what a reader lines two runs up by. */
 function capHeight(ctx: CanvasRenderingContext2D): number {
   const m = ctx.measureText('H');
   return m.actualBoundingBoxAscent || parseFloat(ctx.font) * 0.72;
 }
 
-// ---------- the gym card ----------
-
-/** The headings' size and tracking, in export px. */
 interface HeadFace {
   px: number;
   track: number;
 }
 
-/**
- * The face every heading line fits its room at, as the live pane fits it
- * (`fitHeadings`): the card's size and tracking where there is room, the
- * tracking taken in where a line runs close, and a smaller size where a
- * line is too wide even untracked. Japanese, Korean and Chinese stay
- * untracked, as the app sets them.
- */
 function headFace(ctx: CanvasRenderingContext2D, lines: { text: string; room: number }[]): HeadFace {
   ctx.font = font(L.HEAD_PX, 800);
   const fit = fitHeadings(
@@ -286,7 +235,6 @@ function headFace(ctx: CanvasRenderingContext2D, lines: { text: string; room: nu
   return { px, track: headingTracks() && px === L.HEAD_PX ? fit.track : 0 };
 }
 
-/** A heading's lines, centred on `cx`, the first line's top at `top`. */
 function drawHeading(
   ctx: CanvasRenderingContext2D,
   lines: string[],
@@ -306,12 +254,6 @@ function drawHeading(
   ctx.restore();
 }
 
-/**
- * A chosen Pokémon on its two-tone ball, in one layer or in both.
- *
- * The showcase draws the pair in two passes, so it needs the ball and the
- * sprite separately; everywhere else takes both at once.
- */
 function drawShowcaseArt(
   ctx: CanvasRenderingContext2D,
   pokemonId: number,
@@ -339,7 +281,6 @@ function speciesCaption(pokemonId: number): { text: string; mark?: string } {
     mark: label.mark ?? undefined };
 }
 
-/** One run of a signature caption: its text and its face. */
 interface CaptionRun {
   text: string;
   mark?: string;
@@ -348,13 +289,9 @@ interface CaptionRun {
   colour: string;
 }
 
-/** A caption run laid out on its line. */
 interface CaptionLine extends CaptionRun {
-  /** Where the run starts. */
   x: number;
-  /** The line box's vertical centre. */
   cy: number;
-  /** The line box, as wide as the ink plus `CAPTION_HALO` each side. The seam fades inside it. */
   halo: L.Box;
 }
 
@@ -372,10 +309,6 @@ function captionMarkWidth(ctx: CanvasRenderingContext2D, mark: string | undefine
   return width + px * 0.15;
 }
 
-/**
- * A species name in black at the name size. A name wider than `room` shrinks
- * to `CAPTION_NAME_MIN_PX`, and past that it takes an ellipsis.
- */
 function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: number): CaptionRun {
   const { text, mark } = pokemonId === null ? { text: '' } : speciesCaption(pokemonId);
   const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
@@ -389,11 +322,6 @@ function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: 
     px, track: trackAt(px), colour: FG };
 }
 
-/**
- * Caption runs one heading line apart from `top`, each centred on `anchor`
- * or ending at it. A shrunk name keeps the full line height, so the lines
- * around it stay where they are.
- */
 function layoutCaption(
   ctx: CanvasRenderingContext2D,
   runs: CaptionRun[],
@@ -417,7 +345,6 @@ function layoutCaption(
   });
 }
 
-/** Each run's capitals centred on its line box. The cap height is the same on every engine. */
 function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void {
   ctx.save();
   ctx.textAlign = 'left';
@@ -448,12 +375,6 @@ function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void 
   ctx.restore();
 }
 
-/**
- * The seam, at full strength outside the caption halos and at `SEAM_FADE`
- * inside them. Each part is stroked once, so the line's antialiased edges
- * are no heavier than a single stroke's. The halos are line boxes, which
- * never overlap, so the even-odd clip holds every point outside them.
- */
 function strokeSeam(
   ctx: CanvasRenderingContext2D,
   seam: { x1: number; y1: number; x2: number; y2: number },
@@ -498,8 +419,6 @@ function drawShowcase(
   const y = oy + box.top;
   const { ace, partner } = showcasePair(card);
   const filled = ace !== null || partner !== null;
-  // One Pokémon to show is a single showcase: a lone ace, a lone partner, or
-  // the same Pokémon in both slots, which is headed as the signature Pokémon.
   const solo = (ace === null) !== (partner === null) || (ace !== null && ace === partner);
 
   ctx.save();
@@ -552,9 +471,6 @@ function drawShowcase(
     return;
   }
 
-  // The ace at 2× over the partner at 1×, each captioned, and the 30° seam
-  // between the two sides. The captions are laid out first, because the
-  // seam runs between them.
   const panel = { x, y, w: box.width, h: box.height };
   const squares = L.showcaseSquares(ox, oy);
   const headColour = (id: number | null) => (id !== null ? shades.band : shades.hint);
@@ -562,8 +478,6 @@ function drawShowcase(
   const partnerSq = squares.partner;
   const partnerRight = partnerSq.x - L.CAPTION_GAP_X;
   const partnerRoom = partnerRight - x - L.CAPTION_GAP_X;
-  // Each heading has the room its name has: the ace's square under it, and
-  // the pane beside the partner.
   const aceHead = headingInline('ace');
   const partnerHead = headingLines('partner');
   const face = headFace(ctx, [
@@ -619,7 +533,6 @@ function drawShowcase(
   ctx.restore();
 }
 
-/** The mark column both the TM and the badge slot open with. */
 function drawMarkColumn(
   ctx: CanvasRenderingContext2D,
   word: string,
@@ -638,8 +551,6 @@ function drawMarkColumn(
     drawGlyph(mark.glyph, cx - mark.glyph / 2, mark.top);
     ctx.fillStyle = colour;
     ctx.textBaseline = 'middle';
-    // A word wider than the column and its two pads, as MEDAGLIA or わざマシン
-    // are, takes a smaller face rather than reach the slot's edge.
     const track = L.labelTrack(L.MARK_TRACK);
     const room = L.MARK_COL + 2 * L.MARK_PAD;
     const wide = trackedWidth(ctx, word, track);
@@ -705,15 +616,10 @@ function drawTmSlot(
 
   const badgeH = L.tmBadgeH();
   const name = L.moveExportName(moveName(move));
-  // Untracked in Japanese, Korean and Chinese, as the live card sets it.
   const nameTrack = L.labelTrack(L.NAME_TRACK);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
-  // As few lines as fit the body: one line whenever the whole name fits,
-  // as the live card wraps it.
   const lines = wrapTracked(ctx, name, bodyW, nameTrack);
-  // A word wider than the body on its own (German ELEKTRIFIZIERUNG) shrinks
-  // to fit, as the live card shrinks it; the line box keeps its height.
   const widestAt = (scale: number) => {
     ctx.font = font(L.NAME_PX * scale, 800);
     return Math.max(...lines.map((line) => paintedWidth(ctx, line, nameTrack * scale)));
@@ -731,14 +637,7 @@ function drawTmSlot(
   ctx.rect(bodyX, y, bodyW, h);
   ctx.clip();
 
-  drawTypeBadge(
-    ctx,
-    move.type as TypeName,
-    images.get(typeGlyphPath(move.type as TypeName)) ?? null,
-    bodyX,
-    body.badgeY,
-    badgeH,
-  );
+  drawTypeBadge(ctx, move.type as TypeName, bodyX, body.badgeY, badgeH);
 
   const chipX = bodyX + L.TM_BADGE_W + L.TM_TYPE_GAP;
   ctx.fillStyle = CATEGORY_COLORS[move.category];
@@ -780,11 +679,6 @@ function drawTmSlot(
   ctx.restore();
 }
 
-/**
- * How far `fillTracked` paints a run. Each glyph sits after the measured run
- * before it, so a pair the font kerns tight (the TA of Italian
- * ELETTROIMPENNATA) ends wider than the kerned run `trackedWidth` measures.
- */
 function paintedWidth(ctx: CanvasRenderingContext2D, text: string, track: number): number {
   if (track === 0) return ctx.measureText(text).width;
   const chars = [...text];
@@ -838,10 +732,6 @@ function drawBadgeSlot(
   ctx.restore();
 }
 
-/**
- * Whether the wrapped phrase kept the whole badge word: the last line ends in
- * it where it follows the name, and no word was dropped where it leads.
- */
 function badgeLinesKeepSuffix(
   lines: string[],
   maxW: number,
@@ -865,9 +755,6 @@ function drawBand(
   ox: number,
   y: number,
 ): void {
-  // The band's corner curve ends on the rail and its label starts there, so
-  // the box overhangs the rail by its own radius — and the rail's mirror by
-  // the same, which keeps the overhang short and even.
   const x = ox + L.RAIL - L.BAND_R;
   const w = L.CARD_W - 2 * L.PADX - 2 * L.RAIL + 2 * L.BAND_R;
   ctx.save();
@@ -886,7 +773,6 @@ function drawBand(
     tx += trackedWidth(ctx, label, track) + 5 * L.K;
     const room = x + w - L.BAND_R - tx;
     ctx.font = font(size, 400);
-    // A longer rule takes a smaller face before it is cut short.
     const natural = ctx.measureText(note).width;
     if (natural > room) ctx.font = font(Math.max(size * 0.8, (size * room) / natural), 400);
     ctx.globalAlpha = 0.85;
@@ -913,8 +799,6 @@ function drawGlyphCell(
   const cy = y + L.INY + h / 2;
   const gap = 2 * L.K;
   if (row === 1) {
-    // Row 1 is the only row whose glyph says what it means: one open diamond
-    // with nothing before it reads as "one badge", not "no badges".
     const size = 9.5 * L.K;
     ctx.font = font(size, 600);
     ctx.fillStyle = '#ffffff';
@@ -944,9 +828,6 @@ function drawGymCard(
   const shades = cardShades(card.type);
   const type = card.type !== 'none' ? card.type : null;
 
-  // The frame and the bar are one colour: the whole picture first, then the
-  // card's own tint inside the frame and under the bar. No page and no card
-  // chrome beyond that, so nothing reads as a card floating on a blank ground.
   ctx.fillStyle = type ? shades.band : RED;
   ctx.fillRect(0, 0, L.CARD_IMG_W, L.CARD_IMG_H);
   ctx.fillStyle = shades.base;
@@ -964,11 +845,8 @@ function drawGymCard(
   const fx = L.FRAME;
   const ox = fx + L.PADX;
   const innerW = L.CARD_W - 2 * L.PADX;
-  // The theme field ends on the rail's mirror, where the team cells end, so
-  // the band below overhangs it by the same amount at each side.
   const right = ox + innerW - L.RAIL;
 
-  // --- the header bar: the title in white, from the grid's own left rail ---
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.TITLE_PX, 800);
@@ -990,7 +868,6 @@ function drawGymCard(
       x += trackedWidth(ctx, specialist.before, titleTrack) + L.TITLE_WORD_GAP;
     }
     const badgeTop = (L.BAR_H - L.TITLE_BADGE_H) / 2;
-    // The ring: two pixels of white outside the pill, following its radius.
     const r = TYPE_BADGE.radius * (L.TITLE_BADGE_H / TYPE_BADGE_H);
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = L.BAR_RING;
@@ -1003,14 +880,13 @@ function drawGymCard(
       r + L.BAR_RING / 2,
     );
     ctx.stroke();
-    drawTypeBadge(ctx, type, images.get(typeGlyphPath(type)) ?? null, x, badgeTop, L.TITLE_BADGE_H);
+    drawTypeBadge(ctx, type, x, badgeTop, L.TITLE_BADGE_H);
     x += L.TITLE_BADGE_W + L.TITLE_WORD_GAP;
     ctx.fillStyle = '#ffffff';
     if (specialist.after) fillTracked(ctx, specialist.after, x, titleBase, titleTrack);
   }
   ctx.restore();
 
-  // --- the theme row: THEME on the rail, then a white field to the right ---
   const fieldTop = L.BAR_H + L.THEME_GAP;
   ctx.save();
   ctx.textBaseline = 'alphabetic';
@@ -1036,12 +912,9 @@ function drawGymCard(
 
   const gridY = L.gridTop();
 
-  // --- the rows, drawn first so the slots sit over the top-left corner ---
   drawBand(ctx, shades, localeUppercase(t('league.band.team')), null, ox, gridY);
   for (let row = 1; row <= L.ROW_COUNT; row++) {
     const banner = L.BAND_BEFORE[row];
-    // `rowTop` counts the band plus the 2px above it, so the band's own top
-    // is one band-height back from the row, not one band and the gap.
     if (banner) drawBand(ctx, shades, localeUppercase(t(banner[0])), t(banner[1]), ox, gridY + L.rowTop(row) - L.BAND);
     const y = gridY + L.rowTop(row);
     if (row !== 1 && !banner) {
@@ -1052,8 +925,6 @@ function drawGymCard(
     }
     const resolved = exportRow(card, row);
     const occupied = resolved.filter((cell) => cell.pokemonId !== null);
-    // Keep the original rightmost seat last. The other active seats follow
-    // their introduction order. Resolve legendary and form identity first.
     const cells = teamOrder === 'first-last' && occupied.length > 0
       ? [...occupied.slice(0, -1).reverse(), ...occupied.slice(-1)]
       : resolved;
@@ -1085,7 +956,6 @@ function drawGymCard(
     });
   }
 
-  // --- the three slots over the grid's top-left corner ---
   drawShowcase(ctx, card, shades, images, ox, gridY);
   drawTmSlot(ctx, card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId), shades, images, ox, gridY);
   drawBadgeSlot(ctx, card.badgeName, shades, ox, gridY);
@@ -1093,16 +963,6 @@ function drawGymCard(
   drawCredit(ctx, fx + L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.cardCreditPrefix());
 }
 
-// ---------- the league home ----------
-
-/**
- * Whether a league row shows the dashed square where a type would go.
- *
- * A trainer with no Pokémon at all is an open seat, and the row says so the
- * way the app does: a dashed square, in the neutral shades. A trainer with a
- * team and no type has made a choice and shows the no-type square; a type
- * chosen for an empty seat is a choice too, and keeps its icon.
- */
 export function vacantRow(card: GymCard): boolean {
   return card.lines.length === 0 && (!card.type || card.type === 'none');
 }
@@ -1126,26 +986,14 @@ function drawHomeTeamSprites(
   });
 }
 
-/** Inset of the details lines from either side of their column. */
 const DETAIL_PAD = 2 * L.K2;
-/** Between THEME and the theme's own words. */
 const THEME_VALUE_GAP = 5 * L.K2;
 
-/** One line of a row's details column: theme, TM, or badge. */
 interface DetailLine {
-  /** The column width the line needs to draw uncut, padding included. */
   need: number;
-  /** Paint the line on `midY`, between the column's padded edges. */
   paint: (bodyX: number, right: number, midY: number) => void;
 }
 
-/**
- * A row's details lines, each with the width it takes at full size.
- *
- * The export sizes the details column from these widths before it draws, and
- * then paints the same lines in it, so the column and the text agree on
- * every engine.
- */
 function homeDetailLines(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
@@ -1170,8 +1018,6 @@ function homeDetailLines(
     ctx.restore();
     return w;
   };
-  // The words the app sets in the locale's face, a move's name among them,
-  // go untracked in CJK.
   const wordTrack = L.labelTrack(L.HOME_MARK_TRACK);
   const themeLabel = localeUppercase(t('league.export.theme'));
 
@@ -1229,7 +1075,6 @@ function homeDetailLines(
         drawTypeMark(
           ctx,
           move.type as TypeName,
-          images,
           typeX,
           midY - L.HOME_DETAIL_TYPE / 2,
           L.HOME_DETAIL_TYPE,
@@ -1289,7 +1134,6 @@ function homeDetailLines(
   return lines;
 }
 
-/** The widest details line in the league, which the details column fits. */
 function homeDetailsNeed(
   ctx: CanvasRenderingContext2D,
   cards: GymCard[],
@@ -1370,8 +1214,6 @@ function drawHomeRow(
   x: number,
   y: number,
 ): void {
-  // An unset type takes the neutral ramp, as `cardShades` gives it in the
-  // app, rather than a grey of its own.
   const shades = cardShades(card.type);
   const cell = shades.cell;
   const filled = card.lines.length > 0;
@@ -1391,7 +1233,6 @@ function drawHomeRow(
   ctx.fillRect(x, y, geom.homeInner, L.K2);
   ctx.restore();
 
-  // The glyph cell, on the rail.
   const glyphH = L.ROW2 - 10 * L.K2;
   ctx.save();
   ctx.fillStyle = cell;
@@ -1408,7 +1249,6 @@ function drawHomeRow(
   else if (kind === 'champion') drawCrown(ctx, 13 * L.K2, gcx, gcy);
   else drawBossBall(ctx, cell, 15 * L.K2, gcx, gcy);
 
-  // The type square, or the dashed square of an open seat.
   const sq = L.HOME_TYPE_MARK;
   const sqX = x + L.GLYPH_COL + (L.TYPE_COL - sq) / 2;
   const sqY = y + (L.ROW2 - sq) / 2;
@@ -1417,13 +1257,12 @@ function drawHomeRow(
     ctx.strokeStyle = shades.dash;
     ctx.lineWidth = 1.4 * L.K2;
     ctx.setLineDash([4 * L.K2, 4 * L.K2]);
-    // The stroke sits inside the square, as a CSS border does.
     const half = ctx.lineWidth / 2;
     roundRect(ctx, sqX + half, sqY + half, sq - 2 * half, sq - 2 * half, L.HOME_R - half);
     ctx.stroke();
     ctx.restore();
   } else {
-    drawTypeMark(ctx, card.type, images, sqX, sqY, sq, L.HOME_R);
+    drawTypeMark(ctx, card.type, sqX, sqY, sq, L.HOME_R);
   }
 
   const detailsX = x + L.GLYPH_COL + L.TYPE_COL;
@@ -1433,7 +1272,6 @@ function drawHomeRow(
 
   const teamBaseX = L.homeTeamOriginX(x, geom);
   if (!filled) {
-    // An empty row says which seat is open, in the league's own words.
     ctx.save();
     ctx.font = font(11 * L.K2, 500);
     ctx.fillStyle = GREY;
@@ -1466,20 +1304,12 @@ function drawLeagueHome(
   geom: L.HomeExportGeometry,
   images: Images,
 ): void {
-  // The picture is the league's content on white, edge to edge.
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name, geom.homeW));
 
   const ox = L.HPADX;
-  // An unnamed league opens on its first band, so the band takes the gutter
-  // above it as well as either side of it.
   let y = L.homeTopPad(!!name, geom.homeW);
 
-  // --- the identity line: the league's name, and nothing else ---
-  // The tool's own name stays off the picture, and so does the reading:
-  // someone handed it wants to know whose league it is, and the rows say
-  // themselves which teams they are. An unnamed league gets no line, so the
-  // picture starts at its first band and is that much shorter.
   if (name) {
     const big = 14 * L.K2;
     ctx.save();
@@ -1499,7 +1329,6 @@ function drawLeagueHome(
     const section = L.SECTION_BEFORE[index];
     if (section) {
       if (index !== 0) y += 2;
-      // Every band splits over the two team blocks; only the first names them.
       for (const pill of L.homeSectionPills(ox, geom, localeUppercase(t(section)), bothTeamColumns, index === 0)) {
         paintSectionPill(ctx, pill.x, y, pill.w, pill.label, pill.align);
       }
@@ -1511,8 +1340,6 @@ function drawLeagueHome(
 
   drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.homeCreditPrefix());
 }
-
-// ---------- assembling a PNG ----------
 
 /**
  * Wait for the export's face.
@@ -1526,7 +1353,7 @@ async function fontsReady(): Promise<void> {
   try {
     await document.fonts.ready;
   } catch {
-    /* fall back to metrics as they are */
+    return;
   }
 }
 
@@ -1536,8 +1363,6 @@ async function render(
   paint: (ctx: CanvasRenderingContext2D) => void,
 ): Promise<Blob> {
   await fontsReady();
-  // One PNG px per layout px, so the team sprites paint at their native 96px
-  // (1×). Only the iOS area cap could lower it.
   const scale = Math.min(1, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(w * scale);
@@ -1562,13 +1387,11 @@ async function render(
   });
 }
 
-/** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard, teamOrder: CardTeamOrder = 'fixed'): Promise<Blob> {
   const [images] = await Promise.all([loadAll(cardImageUrls(card)), activeMoveNames()]);
   return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images, teamOrder));
 }
 
-/** The league summary as a PNG, at the layout's team mode. `view` fills in for "both". */
 export async function exportLeagueHome(
   name: string,
   cards: GymCard[],
@@ -1576,8 +1399,6 @@ export async function exportLeagueHome(
   layout: LeagueHomeExportLayout = DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
 ): Promise<Blob> {
   const [images] = await Promise.all([loadAll(homeImageUrls(cards, view, layout)), activeMoveNames()]);
-  // The details column fits its widest line, so measure before the canvas
-  // takes its size.
   await fontsReady();
   const measure = document.createElement('canvas').getContext('2d');
   if (!measure) throw new Error('Canvas 2D context unavailable');

@@ -1,60 +1,34 @@
 import { HAS_DEX, HAS_LEAGUE, HAS_FAVORITES, type JournalEntry } from '../../api/_events';
 
-/**
- * The hub views, folded out of the raw funnel journal that `/api/journal`
- * returns.
- *
- * The hub is the one surface with no per-user record: someone who reads it and
- * leaves exists only as journal entries. Everything here therefore counts
- * distinct browsers (`cid`), never events — a browser that clicked the same
- * card twice is one person who clicked.
- *
- * Kept out of the component so the counting can be tested directly. It is the
- * kind of arithmetic that looks right and is off by a factor of the average
- * click count.
- */
-
-/** UTC day (`YYYY-MM-DD`) of a timestamp, matching the journal's own day keys. */
 function dayOf(ts: number): string {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
-/** Distinct browsers behind one set of events, and what became of them. */
-export interface HubCounts {
-  /** Browsers that saw the hub. The client de-dupes `hub-shown` once per
-   *  browser, so per day this is closer to "new browsers" than to "visits". */
+interface HubCounts {
   shown: number;
   dexClicks: number;
   leagueClicks: number;
   favoriteClicks: number;
-  /** The callout in the dex builder that points at the gym leader maker. */
   promoShown: number;
   promoCta: number;
   promoDismiss: number;
-  /** Of the browsers counted in `shown`: how many hold a record in each store,
-   *  ever — including after the day they saw the hub. */
   becameDex: number;
   becameLeague: number;
   becameBoth: number;
   becameFavorites: number;
-  /** Exclusive three-tool membership regions, keyed by sorted tool ids. */
   outcomes: Record<string, number>;
   becameNeither: number;
 }
 
-export interface HubDay extends HubCounts {
+interface HubDay extends HubCounts {
   day: string;
 }
 
-export interface HubViews {
+interface HubViews {
   days: HubDay[];
-  /** The same counts over the whole window, distinct across it — not the sum
-   *  of the days, which would count a returning browser once per day. */
   totals: HubCounts;
 }
 
-/** The events each counter draws on. One list, so a renamed event breaks in
- *  one place rather than silently zeroing a column. */
 const EVENT_OF = {
   shown: 'hub-shown',
   dexClicks: 'hub-cta-dex',
@@ -133,8 +107,6 @@ export function hubViews(
   };
 }
 
-/** Entries per day for the last `n` days of the window, newest last, and the
- *  most recent day the per-day cap discarded events. */
 export function journalHealth(
   days: { day: string; count: number; capped: boolean }[],
   n = 7,

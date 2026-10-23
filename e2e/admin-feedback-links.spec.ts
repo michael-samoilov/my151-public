@@ -1,21 +1,7 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { scrollToRow } from './admin-virtual-list';
-
-/**
- * Feedback reports link to the browser that sent them, and back.
- *
- * - e2e-fb-both: Dex and League. Two reports, one from the league card, one
- *   from the hub, both sent during its sessions.
- * - e2e-fb-dex: Dex only. One report from the Picker, so its link falls back
- *   to Dex.
- * - e2e-fb-old: Dex only, behind 48 newer fillers, so it is the 51st Dex
- *   browser, far down the list. Its page loads it by id, as every page does.
- * - e2e-fb-eg: a second person on a shared browser. api/submit.ts stored its
- *   only Dex record as `e2e-fb-eg::EG`, also far down the list. Its report
- *   carries the country EG.
- * - e2e-fb-gone: no tool record anywhere.
- */
 
 const MIN = 60_000;
 const PLATFORM = { country: 'GB', device: 'Mobile', os: 'iOS', browser: 'Safari', tz: 'Europe/London', lang: 'en-GB', locale: 'en' };
@@ -70,7 +56,6 @@ async function stub(page: Page) {
     report('r-gone', 'e2e-fb-gone', 'league', t0 + 50 * 60 * MIN),
     report('r-card', 'e2e-fb-both', 'league-card', t0 + (24 * 60 + 15) * MIN),
     report('r-dex', 'e2e-fb-dex', '/favorite-pokemon-picker', t0 + 20 * MIN),
-    // Between e2e-fb-old's two Dex sessions, over two hours from each: no session holds it.
     report('r-far', 'e2e-fb-old', 'builder', t0 - 450 * MIN),
     report('r-home', 'e2e-fb-both', 'home', t0 + 10 * MIN),
     report('r-old', 'e2e-fb-old', 'league', t0 - 285 * MIN),
@@ -81,7 +66,6 @@ async function stub(page: Page) {
     const qs = new URL(route.request().url()).searchParams;
     const cid = qs.get('cid');
     if (!cid) return route.fulfill({ json: buildDashboard(source, { range: 'all' }, now) });
-    // As api/submissions.ts reads it: the report country's record first.
     const country = qs.get('country');
     const dex = (country && source.clients?.[`${cid}::${country}`]) ?? source.clients?.[cid] ?? null;
     const league = source.leagueClients?.[cid] ?? null;
@@ -96,7 +80,7 @@ async function stub(page: Page) {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   return { calls: () => feedbackCalls };
 }
 
@@ -125,19 +109,16 @@ test.describe('admin feedback links', () => {
     const { calls } = await stub(page);
     await nav(page).getByRole('button', { name: 'Dex', exact: true }).click();
     await page.getByRole('link', { name: /Open user e2…both/ }).click();
-    // The hub report snaps to the first visit, the card report to the second.
     await expect(page.getByTestId('session-feedback-mark')).toHaveCount(2);
     await tools(page).getByRole('button', { name: 'League', exact: true }).click();
     await expect(page.getByTestId('session-feedback-mark')).toHaveCount(2);
     await page.getByRole('slider', { name: 'Scrub sessions' }).fill('1');
     await expect(page.getByTestId('session-playhead-milestone')).toHaveText('feedback');
-    // The user page and the Feedback tab share one fetch.
     await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
     await expect(report(page, 'r-card')).toBeVisible();
     expect(calls()).toBe(1);
   });
 
-  // The chip sits in the who row on desktop and ends the tool row on a phone.
   test('the who-row chip opens the Feedback tab on that browser', { tag: '@viewport' }, async ({ page }) => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Dex', exact: true }).click();
@@ -158,19 +139,16 @@ test.describe('admin feedback links', () => {
     await expect(report(page, 'r-gone')).toBeVisible();
   });
 
-  // On a phone the chip ends the card's chip row; on desktop it sits beside the archive button.
   test('a browser card in the list shows the chip and opens the Feedback tab on that browser', { tag: '@viewport' }, async ({ page }) => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Dex', exact: true }).click();
     const card = page.getByRole('link', { name: /Open user e2…both/ });
     const chip = card.getByTestId('admin-feedback-chip').locator('visible=true');
     await expect(chip).toHaveText('2');
-    // The list renders the rows near the viewport; these two are the 49th and 50th.
     const quiet = await scrollToRow(page, 'Open user e2…ll-0');
     await expect(quiet.getByTestId('admin-feedback-chip')).toHaveCount(0);
     const dexOnly = await scrollToRow(page, 'Open user e2…-dex');
     await expect(dexOnly.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
-    // The first card left the rendered rows on the way down.
     await page.evaluate(() => window.scrollTo(0, 0));
     await (await scrollToRow(page, 'Open user e2…both')).getByTestId('admin-feedback-chip').locator('visible=true').click();
 
@@ -184,14 +162,11 @@ test.describe('admin feedback links', () => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
 
-    // The browser index holds every browser, so the link knows it used only Dex.
     const old = report(page, 'r-old').getByTestId('feedback-open-browser');
     await expect(old).toHaveText('Open browser · Dex');
     await old.click();
-    // The report came from League, which this browser never used: Dex opens.
     await expect(tools(page).getByRole('button', { name: 'Dex', pressed: true })).toBeVisible();
     await expect(page.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('2');
-    // r-old falls inside the second session; r-far, between the two, belongs to neither.
     await expect(page.getByTestId('session-feedback-mark')).toHaveCount(1);
 
     await page.getByRole('button', { name: '‹ Back' }).click();

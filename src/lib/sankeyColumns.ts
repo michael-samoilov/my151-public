@@ -1,9 +1,5 @@
 import { nodeDepth, type FunnelLabelSide, type FunnelLink, type FunnelNode } from './usageFunnels';
 
-/** Where a node's name sits, the width echarts wraps it at, its gap from
- *  the bar, and the width of the count chip on its bar. `lead` is the width
- *  the label draws before the name: the count and a space when the count
- *  sits in the label. `lines` holds a name that breaks at a fixed word gap. */
 export interface LabelBox {
   side: FunnelLabelSide;
   wrap: number;
@@ -15,15 +11,10 @@ export interface LabelBox {
 
 export type MeasureText = (text: string) => number;
 
-/** Clear space kept between a label and the next thing it could touch. */
 const LABEL_MARGIN = 3;
-/** Clear space between two column headers, wide enough that "Pokémon" and
- *  "full" read as two headers, not one phrase. */
 const HEADER_MARGIN = 6;
 
-/** Width of the widest line once echarts' `overflow: 'break'` wraps the
- *  text at word gaps. A word wider than `wrap` keeps its own line. */
-export function wrappedWidth(text: string, wrap: number, measure: MeasureText): number {
+function wrappedWidth(text: string, wrap: number, measure: MeasureText): number {
   let widest = 0;
   let line = '';
   for (const word of text.split(' ')) {
@@ -38,9 +29,7 @@ export function wrappedWidth(text: string, wrap: number, measure: MeasureText): 
   return Math.max(widest, measure(line));
 }
 
-/** The two lines that break `text` at the word gap with the narrowest
- *  widest line. Null for a single word. */
-export function twoLines(text: string, measure: MeasureText): string[] | null {
+function twoLines(text: string, measure: MeasureText): string[] | null {
   const words = text.split(' ');
   let best: string[] | null = null;
   let bestWidth = Number.POSITIVE_INFINITY;
@@ -55,12 +44,6 @@ export function twoLines(text: string, measure: MeasureText): string[] | null {
   return best;
 }
 
-/**
- * How far a node's bar, count chip, and side or bottom label reach, in px
- * from its column's left edge. A right label's chip ends at the bar's right
- * edge, a left label's chip centers on that edge, and any other chip
- * centers on the bar. A top label sits above the plot, so it is not here.
- */
 function bodyReach(b: LabelBox, w: number, nodeWidth: number): { lo: number; hi: number } {
   const mid = nodeWidth / 2;
   const chipLo = b.side === 'right' ? nodeWidth - b.chip : b.side === 'left' ? nodeWidth - b.chip / 2 : mid - b.chip / 2;
@@ -76,22 +59,11 @@ function bodyReach(b: LabelBox, w: number, nodeWidth: number): { lo: number; hi:
   return { lo, hi };
 }
 
-export interface ColumnNeeds {
-  /** The gap each column needs before the next column's bars, in px. */
+interface ColumnNeeds {
   gaps: number[];
-  /** The room the last column's labels need right of its bars, in px. */
   right: number;
 }
 
-/**
- * The room each column's labels need, in px.
- *
- * Inside the plot, everything a column draws (bars, chips, side labels,
- * bottom labels) must end before the first thing the next column draws.
- * Above the plot, a top label starts at its bar's center and runs right
- * toward the next column's header. The last column's labels set the room
- * kept right of the plot.
- */
 export function columnNeeds(
   nodes: FunnelNode[],
   links: FunnelLink[],
@@ -124,14 +96,6 @@ export function columnNeeds(
   return { gaps, right };
 }
 
-/**
- * Left edge of each column's bars, in px from the plot's left edge.
- *
- * Columns sit evenly apart, as echarts places them, unless a gap is
- * narrower than its labels need. That gap then takes what it needs and the
- * other gaps share the rest evenly. Null when the plot cannot give every
- * gap what it needs.
- */
 export function columnLefts(needs: number[], plotWidth: number, nodeWidth: number): number[] | null {
   const free = plotWidth - (needs.length + 1) * nodeWidth;
   if (needs.reduce((s, n) => s + n, 0) > free) return null;
@@ -149,23 +113,13 @@ export function columnLefts(needs: number[], plotWidth: number, nodeWidth: numbe
   return lefts;
 }
 
-export interface ColumnFit {
+interface ColumnFit {
   fontSize: number;
-  /** Room right of the plot, in px. */
   right: number;
-  /** Each column's left edge, in px from the plot's left edge. */
   lefts: number[];
-  /** Headers that break onto two lines at a fixed word gap. */
   lines: Map<string, string[]>;
 }
 
-/**
- * Phone funnel layout: the largest type size in `fontSizes` at which every
- * column gets the gap its labels need inside `width`, with the last
- * column's labels right of the plot. At each size, headers break onto two
- * lines first, the one that frees the most room first, and only while that
- * frees room. Null when even the smallest size does not fit.
- */
 export function fitColumns(
   nodes: FunnelNode[],
   links: FunnelLink[],

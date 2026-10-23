@@ -8,7 +8,6 @@ describe('foil recipe', () => {
       extra: true,
       layers: {
         gleam: { on: false, amount: 4 },
-        // A layer that older saved recipes still carry.
         holographic: { on: true, amount: 0.7 },
         sparkle: { on: true, amount: 1 },
         rainbow: { on: true, amount: 1 },

@@ -24,7 +24,8 @@ import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { slotLabel } from '../slotLabel';
-import { localeUppercase, typeLabel, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { localeUppercase, spriteAlt, typeLabel, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
@@ -51,32 +52,16 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 import { LeagueRosterNudge } from './LeagueFunnelNudge';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
-/**
- * The league home: the card, zoomed out. One row per slot, led by the glyph
- * cell and the type chip, teams right-aligned; four red spacers; rows drag
- * to reorder and tap to open their card.
- *
- * Columns: glyph, type, six team seats, then the action column. The team
- * block is six wide because that is the largest team the template holds, so
- * the column the old right-aligned layout always left empty on the left now
- * sits on the right and carries the row's own affordance.
- */
-
-// Row, band, and sprite sizes live in `../homeLayout`, which spends a short
-// window's height on them.
 const GREY = '#a3a3a3';
 const BAND_RED = '#dc2626';
-/** The widest team any row holds — the team block's column count. */
 const TEAM_COLS = 6;
 
-/** Read stable drop wrappers, not the scaled face held inside a row. */
 function rowRects(): DOMRect[] {
   return Array.from({ length: SLOT_COUNT }, (_, i) =>
     document.querySelector(`[data-testid="league-slot-${i}"]`)?.parentElement?.getBoundingClientRect(),
   ).filter((r): r is DOMRect => r !== undefined);
 }
 
-/** The held copy sits on its target, so both inputs use the raw pointer. */
 function insertIndexFromPointer(): number | undefined {
   const y = dragPointerRef.current?.y;
   if (y === undefined) return undefined;
@@ -101,7 +86,6 @@ const rowCollision: CollisionDetection = (args) => {
   return index === undefined ? closestCenter(args) : [{ id: `slotdrop-${index}`, data: { value: 0 } }];
 };
 
-/** Keep edge scrolling only when the summary still has unreachable rows. */
 function canScrollRows(): boolean {
   const rects = rowRects();
   if (rects.length !== SLOT_COUNT) return true;
@@ -118,8 +102,6 @@ function canScrollRows(): boolean {
   }
   const allVisible = rects.every(r => r.top >= top && r.bottom <= bottom);
   const centers = rects.map(r => r.top + r.height / 2);
-  // Nearest-row targeting reaches an end row at the midpoint to its neighbour.
-  // There is no pointer-to-hit offset: the held copy is rendered on that row.
   const firstDropEnd = (centers[0] + centers[1]) / 2;
   const lastDropStart = (centers[SLOT_COUNT - 2] + centers[SLOT_COUNT - 1]) / 2;
   return !(allVisible && firstDropEnd > top && lastDropStart < bottom);
@@ -140,32 +122,17 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
   return <BossBall cell={cell} size={15} />;
 }
 
-/**
- * One league row.
- *
- * `position` is where the row sits on screen — it decides the glyph, the row
- * of the card that shows, and the drop target. `cardIndex` is whose card is
- * drawn there, which differs from `position` only while a drag previews a
- * reorder. Splitting the two is what lets a dragged row re-derive its team at
- * the size its would-be position allows.
- */
-/**
- * A row's face, with nothing interactive on it. The row itself renders one,
- * and so does the copy held under the pointer during a drag — one component
- * so the held copy cannot drift from the thing it is a copy of.
- */
 function SlotRowFace({ position, card, active }: { position: number; card: GymCard; active: boolean }) {
   const view = useLeagueStore((s) => s.view);
   useNamesVersion();
   const shades = card.type || active ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
-  // The gym challenge reads each trainer at the row you meet them; the
-  // rematch view reads every trainer at their last row instead.
   const row = view === 'rematch' ? BOSS_ROW : slotRow(position);
   const cells = deriveRow(card.lines, row, row === BOSS_ROW ? legendsOf(card) : []);
   const filled = card.lines.length > 0;
   const m = useContext(HomeMetricsContext);
   const t = useT();
+  useNamesVersion();
 
   return (
     <div
@@ -207,16 +174,12 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
                 <img
                   key={form ? pokemonSpriteUrl(form.id) : p.sprite}
                   src={form ? pokemonSpriteUrl(form.id) : p.sprite}
-                  alt={form ? powerupFormName(form) : p.name}
+                  alt={form ? powerupFormName(form) : spriteAlt(p.name, p.id)}
                   className="max-w-none"
                   style={{
                     width: `${HOME_SPRITE_REM}rem`,
                     height: `${HOME_SPRITE_REM}rem`,
                     imageRendering: SPRITE_RENDERING,
-                    // A trimmed row reserves less than the sprite, and the
-                    // image hangs over its edges. A grid item paints after
-                    // every row's background, so it lands above the rows and
-                    // bands beside it with no z-index.
                     ...(m.trimRem > 0 ? { margin: `-${m.trimRem}rem` } : null),
                   }}
                 />
@@ -243,20 +206,20 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
   );
 }
 
-/** The row as the league renders it: a drop target that drags and opens. */
 function SlotRow({ position, card, held, canDrag }: {
   position: number;
   card: GymCard;
-  /** This row is where the carried one would land, so it draws it in hand. */
   held: boolean;
   canDrag: boolean;
 }) {
+  const t = useT();
   const openCardPage = useLeagueUi((s) => s.openCardPage);
   const active = useLeagueUi((s) => s.openCard === position);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
     disabled: !canDrag,
+    attributes: { roleDescription: t('dnd.roleDescription') },
   });
   const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
   const dragProps = canDrag ? { ...listeners, ...attributes } : {};
@@ -268,7 +231,6 @@ function SlotRow({ position, card, held, canDrag }: {
         ref={setDragRef}
         {...dragProps}
         data-testid={`league-slot-${position}`}
-        // An empty row shows only its glyph, so it needs a name for screen readers.
         aria-label={card.lines.length > 0 ? undefined : slotLabel(position)}
         onClick={() => openCardPage(position)}
         className="block w-full cursor-pointer"
@@ -291,7 +253,6 @@ function SlotRow({ position, card, held, canDrag }: {
   );
 }
 
-/** How much smaller the copy in hand is than the row it came from. */
 const HELD_ROW_SCALE = 0.82;
 
 export function LeagueHome() {
@@ -320,6 +281,7 @@ export function LeagueHome() {
   const cards = useLeagueStore((s) => s.cards);
   const blank = cards.every((c) => leagueSlotIsEmpty(c));
   const t = useT();
+  const dndAccessibility = useDndAccessibility();
 
   const displayCards = useMemo(() => {
     if (!preview) return cards;
@@ -365,6 +327,7 @@ export function LeagueHome() {
 
   return (
     <DndContext
+      accessibility={dndAccessibility}
       sensors={sensors}
       collisionDetection={rowCollision}
       autoScroll={{ canScroll: canScrollRows }}
@@ -440,8 +403,6 @@ export function LeagueHome() {
           ) : null}
         </div>
       </div>
-      {/* After the fitted block, not in its tail: the popup keeps its own
-          size, and the fit reserves its height. */}
       <LeagueRosterNudge fit={fit} />
       </HomeMetricsContext.Provider>
     </DndContext>

@@ -22,7 +22,6 @@ export interface FavoritesCompletion {
   pointersTotal: number;
 }
 
-/** A validated input for export and completion UI. */
 export interface FavoritesSnapshot {
   cells: FavoritesExportCell[];
   summary: FavoritesExportCell[];
@@ -51,7 +50,6 @@ export function buildFavoritesSnapshot(fills: Readonly<Record<string, number>>):
     const id = fills[position.key];
     if (position.kind === 'pick' && candidates.get(position.key)?.has(id)) valid[position.key] = id;
   }
-  // Axis order places each pointer after all of its source cells.
   for (const position of positions) {
     const id = fills[position.key];
     if (position.kind === 'pointer' && getPickerMon(id)

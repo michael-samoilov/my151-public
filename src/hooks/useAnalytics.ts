@@ -64,9 +64,8 @@ const fullBaseline = computeBaseline(allNational);
 const filteredNational = withoutSpecials(allNational, STARTER_IDS);
 const filteredBaseline = computeBaseline(filteredNational);
 
-export { fullBaseline, filteredBaseline, computeBaseline };
+export { fullBaseline, filteredBaseline };
 
-/** Analytics for a Dex's sections. Pure, so a page without the store can call it. */
 export function computeAnalytics(sections: Record<string, number[]>, excludeSpecial = false) {
   const base = excludeSpecial ? filteredBaseline : fullBaseline;
 
@@ -104,7 +103,6 @@ export function computeAnalytics(sections: Record<string, number[]>, excludeSpec
     };
   }
 
-  // Type distribution
   const typeCounts: Record<string, number> = {};
   for (const t of TYPE_NAMES) typeCounts[t] = 0;
   for (const p of pokemon) {
@@ -131,7 +129,6 @@ export function computeAnalytics(sections: Record<string, number[]>, excludeSpec
     };
   }).sort((a, b) => b.deviation - a.deviation);
 
-  // Generation distribution
   const genCounts: Record<number, number> = {};
   for (let g = 1; g <= 9; g++) genCounts[g] = 0;
   for (const p of pokemon) {
@@ -157,7 +154,6 @@ export function computeAnalytics(sections: Record<string, number[]>, excludeSpec
     };
   });
 
-  // BST stats + histogram
   const bsts = pokemon.map((p) => p.bst).sort((a, b) => a - b);
   const bstStats = {
     min: bsts[0],
@@ -168,7 +164,6 @@ export function computeAnalytics(sections: Record<string, number[]>, excludeSpec
   };
   const yourBstHistogram = buildHistogram(bsts, 50);
 
-  // Evolution stats + histogram
   const evoLevels = pokemon
     .map((p) => p.evolutionLevel)
     .filter((l): l is number => l !== null);

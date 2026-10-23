@@ -1,11 +1,5 @@
-// The three real browser engines behind one Session interface.
-//   Blink  — agent-browser CLI by default, Playwright as the fallback (also
-//            carries the personas). See blinkDriverChoice below.
-//   WebKit — WebKitGTK MiniBrowser over raw W3C WebDriver (the real iOS engine).
-//   Gecko  — Mozilla-tarball Firefox over Marionette (no geckodriver; its only
-//            host is github, which this session gates).
-// Sessions run one-at-a-time per engine. Every method drives a trusted path;
-// no synthetic event doubling (handoff rule 7).
+
+
 import { spawn, type ChildProcess } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
@@ -17,8 +11,6 @@ import { PERSONAS, type PersonaName } from './personas.ts';
 import { startXvfb, startFfmpeg, stopFfmpeg, killProc } from './capture.ts';
 import { openAgentBrowser, resolveAgentBrowser } from './agentBrowser.ts';
 
-// Fixed Xvfb displays for the video lanes. WebKit and Gecko never run at the same
-// time (surfaces drive serially), so a fixed display each is safe.
 const WEBKIT_DISPLAY = 99;
 const GECKO_DISPLAY = 98;
 
@@ -96,8 +88,6 @@ export interface Session {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// ---------- Blink (Playwright) ----------
-
 class BlinkSession implements Session {
   readonly engine = 'blink' as const;
   constructor(
@@ -153,7 +143,7 @@ class BlinkSession implements Session {
   async errors() { return [...this.collected]; }
   async close() {
     const video = this.videoFile ? this.page.video() : null;
-    await this.ctx.close().catch(() => {}); // finalizes the recording
+    await this.ctx.close().catch(() => {});
     if (video && this.videoFile) await video.saveAs(this.videoFile).catch(() => {});
     await this.browser.close().catch(() => {});
   }
@@ -192,7 +182,7 @@ export function resolveChromium(): string | undefined {
         if (fs.existsSync(bin)) return bin;
       }
     }
-  } catch { /* fall through to Playwright default */ }
+  } catch {  }
   return undefined;
 }
 
@@ -215,8 +205,6 @@ export async function openBlinkPlaywright(persona: PersonaName | null, videoFile
   page.on('console', (m) => { if (m.type() === 'error' && m.text().includes('[P151] crash')) collected.push(`crash: ${m.text()}`); });
   return new BlinkSession(persona, browser, ctx, page, collected, videoFile);
 }
-
-// ---------- Blink driver choice ----------
 
 export type BlinkDriver = 'agent-browser' | 'playwright';
 
@@ -253,19 +241,13 @@ export async function openBlink(persona: PersonaName | null, videoFile?: string)
   try {
     return await openAgentBrowser(persona, resolveChromium(), videoFile);
   } catch (e) {
-    // A CLI that is installed but cannot start must not take the Blink floor
-    // down with it, so fall back and say so. An explicit VERIFY_BLINK_DRIVER
-    // never falls back: a forced driver that fails is a real failure.
+
     if (process.env.VERIFY_BLINK_DRIVER) throw e;
     console.warn(`blink: agent-browser failed (${(e as Error).message}); falling back to Playwright`);
     return openBlinkPlaywright(persona, videoFile);
   }
 }
 
-// ---------- WebKit (WebKitGTK, raw W3C WebDriver) ----------
-
-// Every request carries a hard socket timeout; a driver that accepts the socket
-// but stalls the response must reject, never hang (a bug that cost a probe run).
 function w3c(method: string, port: number, urlPath: string, body?: unknown): Promise<{ status: number; value: unknown }> {
   return new Promise((resolve, reject) => {
     const data = body === undefined ? null : JSON.stringify(body);
@@ -297,13 +279,10 @@ async function w3cOk(method: string, port: number, urlPath: string, body?: unkno
 }
 
 function killGroup(driver: ChildProcess) {
-  if (driver.pid) { try { process.kill(-driver.pid, 'SIGKILL'); return; } catch { /* fall back */ } }
+  if (driver.pid) { try { process.kill(-driver.pid, 'SIGKILL'); return; } catch {  } }
   driver.kill('SIGKILL');
 }
 
-// Startup recovery only: clear a stray driver or browser left by a crashed prior
-// run. WebKit is single-session, so a leaked process blocks the port. Normal
-// teardown kills the session's own process group by pid (killGroup), never by name.
 async function clearStrayWebKit() {
   await new Promise((r) => { spawn('pkill', ['-9', '-x', 'WebKitWebDriver']).on('exit', r); });
   await new Promise((r) => { spawn('pkill', ['-9', '-x', 'MiniBrowser']).on('exit', r); });
@@ -365,7 +344,7 @@ class WebKitSession implements Session {
   }
   async errors() { return this.evalJson<string[]>(`return window.__verifyErrors || [];`).catch(() => [] as string[]); }
   async close() {
-    await stopFfmpeg(this.ffmpeg); // finalize the clip before the display goes away
+    await stopFfmpeg(this.ffmpeg);
     await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}`).catch(() => {});
     killGroup(this.driver);
     killProc(this.xvfb);
@@ -390,8 +369,6 @@ const SAFARI_FEATURES = [
   'ImageCapture', 'MediaSessionCaptureToggleAPI', 'MediaStreamTrackProcessing',
 ];
 
-// Video mode runs the driver under a fixed Xvfb display so ffmpeg can grab it; the
-// default keeps the simpler xvfb-run path, which the proven suite relies on.
 export async function openWebKit(videoFile?: string): Promise<Session> {
   await clearStrayWebKit();
   let xvfb: ChildProcess | null = null;
@@ -405,7 +382,7 @@ export async function openWebKit(videoFile?: string): Promise<Session> {
   let ready = false;
   for (let i = 0; i < 40 && !ready; i++) {
     await sleep(250);
-    try { const s = await w3c('GET', ENGINE_PATHS.webkitPort, '/status'); if (s.status === 200) ready = true; } catch { /* not up yet */ }
+    try { const s = await w3c('GET', ENGINE_PATHS.webkitPort, '/status'); if (s.status === 200) ready = true; } catch {  }
   }
   if (!ready) { killGroup(driver); killProc(xvfb); throw new Error('WebKitWebDriver never became ready'); }
   const caps = { capabilities: { alwaysMatch: { browserName: 'MiniBrowser', 'webkitgtk:browserOptions': { binary: ENGINE_PATHS.webkitBrowser, args: ['--automation', `--features=${SAFARI_FEATURES.join(',')}`] } } } };
@@ -419,8 +396,6 @@ export async function openWebKit(videoFile?: string): Promise<Session> {
   }
   return new WebKitSession(driver, sid, xvfb, ffmpeg);
 }
-
-// ---------- Gecko (Firefox over Marionette) ----------
 
 // Marionette wire framing is "<byteLength>:<json>" over a localhost TCP socket.
 class MarionetteConn {
@@ -512,12 +487,10 @@ class GeckoSession implements Session {
       });
     }
     killProc(this.xvfb);
-    try { fs.rmSync(this.profile, { recursive: true, force: true }); } catch { /* best effort */ }
+    try { fs.rmSync(this.profile, { recursive: true, force: true }); } catch {  }
   }
 }
 
-// Video mode runs Firefox non-headless under a fixed Xvfb display so ffmpeg can
-// grab it; the default stays -headless, which the proven suite relies on.
 export async function openGecko(videoFile?: string): Promise<Session> {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-ff-'));
   let xvfb: ChildProcess | null = null;
@@ -539,14 +512,12 @@ export async function openGecko(videoFile?: string): Promise<Session> {
     attempt();
   });
   const conn = new MarionetteConn(sock);
-  // A connection that lands on a dying prior listener never sends the
-  // handshake, so the setup round-trips carry a deadline: fail the surface,
-  // never hang the run.
+
   let timer: NodeJS.Timeout | undefined;
   const deadline = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error('gecko: no Marionette handshake within 20s')), 20000);
   });
-  deadline.catch(() => {}); // the raced loser must not become an unhandled rejection
+  deadline.catch(() => {});
   try {
     await Promise.race([conn.next(), deadline]); // server handshake frame
     conn.send([0, 1, 'WebDriver:NewSession', { capabilities: {} }]);
@@ -568,8 +539,6 @@ export async function openGecko(videoFile?: string): Promise<Session> {
     clearTimeout(timer);
   }
 }
-
-// ---------- dispatch ----------
 
 export async function openSession(engine: EngineName, persona: PersonaName | null = null, videoFile?: string): Promise<Session> {
   if (engine === 'blink') return openBlink(persona, videoFile);

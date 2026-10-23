@@ -1,4 +1,3 @@
-// keeps: E2E stubs Redis, hiding optional-history failures and budget isolation.
 import {describe,it,expect} from 'vitest';
 import {appendMinuteActivity,readMinuteActivityBudget,loadMinuteActivityHistory,ACTIVITY_APPEND_SCRIPT} from '../../api/_activityHistoryStore';
 const now=Date.UTC(2026,9,11), raw={v:1,batches:[{id:'batch-0001',tab:'tab-00001',day:'2026-10-11',buckets:[{run:'run-00001',first:now,last:now}]}]};

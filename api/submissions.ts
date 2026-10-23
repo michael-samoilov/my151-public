@@ -7,9 +7,8 @@ import { ARCHIVED_KEY } from './_archive.js';
 import { buildBrowser, buildDashboard } from './_dashboard.js';
 import { funnelDayKeys, isDashboardRange } from './_range.js';
 import { readMinuteActivityBudget } from './_activityHistoryStore.js';
+import { FUNNEL_EXCLUDED_KEY } from './_funnelExclusions.js';
 
-// Sums every field across the window's day counters inside Redis, so the
-// window costs one billed command however many days it spans.
 const SUM_HASHES = `
 local sums = {}
 for _, key in ipairs(KEYS) do
@@ -26,7 +25,6 @@ end
 return out
 `;
 
-/** The script's flat [field, n, field, n, …] reply as a hash. */
 function pairsToHash(flat: unknown): Record<string, unknown> {
   const list = Array.isArray(flat) ? flat : [];
   const out: Record<string, unknown> = {};
@@ -36,7 +34,6 @@ function pairsToHash(flat: unknown): Record<string, unknown> {
 
 const SECRET_FIELD = /password|token|secret|email|endpoint/i;
 
-/** Drops any field whose name looks like a credential or address, at any depth. */
 function withoutSecrets(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(withoutSecrets);
   if (v && typeof v === 'object') {
@@ -76,7 +73,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (!(await requireAdmin(req, res))) return;
-    // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
     if (firstQueryValue(req.query.usage as string | string[] | undefined) === '1') {
@@ -89,14 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(await upstashUsage());
     }
 
-    // One browser's full records, for its detail page: one read per store
-    // plus its export-survey skips, 4 commands in all.
     const cid = firstQueryValue(req.query.cid as string | string[] | undefined);
     if (cid) {
       if (cid.length > 64) return res.status(400).json({ error: 'Invalid cid' });
-      // submit.ts keys a second person on the same browser, in another
-      // country, as `<cid>::<country>`, with the raw x-vercel-ip-country value.
-      // The report's country names that record; it wins when it exists.
       const country = firstQueryValue(req.query.country as string | string[] | undefined).trim();
       if (country && !/^[A-Za-z0-9]{1,4}$/.test(country)) return res.status(400).json({ error: 'Invalid country' });
       const dexFields = country ? [`${cid}::${country}`, cid] : [cid];
@@ -115,13 +106,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const now = Date.now();
     const dayKeys = funnelDayKeys(range, now);
-    const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients] = await Promise.all([
+    const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients, funnelExcluded] = await Promise.all([
       redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.smembers(ARCHIVED_KEY),
       redis.hgetall('funnel') as Promise<Record<string, unknown> | null>,
       dayKeys ? redis.eval(SUM_HASHES, dayKeys, []) : null,
       redis.hgetall(LEAGUE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.hgetall(FAVORITE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      redis.hgetall(FUNNEL_EXCLUDED_KEY) as Promise<Record<string, unknown> | null>,
     ]);
     const body = buildDashboard(
       {
@@ -131,6 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         funnelWindow: dayKeys ? pairsToHash(funnelDays) : null,
         leagueClients,
         favoriteClients,
+        funnelExcluded,
       },
       { range },
       now,

@@ -29,7 +29,6 @@ async function rowValues(page: Page, dimension: string, key: string) {
   return row.locator('td').allTextContents();
 }
 const number = (text: string) => Number(text.replace(/[^\d.-]/g, ''));
-// Analytics unlocks at 25 favorites and stays unlocked (useAnalyticsUnlock.ts).
 test.beforeEach(({ page }) => page.addInitScript(() => localStorage.setItem('personal-151-favorites-analytics-v1', '1')));
 
 test('short header retains full search title and keyboard tabs stay on the same URL', async ({ page, request }, testInfo) => {
@@ -199,8 +198,7 @@ test('complete saved chart reports every independent vote and honest per-chart c
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
   const means = await chart(page, 'bst').locator('[data-mean-marker] text').allTextContents();
-  // The options mean moves when a form joins an ordinary selector: 443.5 since the Terastal Ogerpon forms.
-  expect(means).toEqual(expect.arrayContaining(['Your Avg 430.5', '443.5 Options Avg']));
+  expect(means).toEqual(expect.arrayContaining(['Your Avg 430.5', '444.1 Options Avg']));
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });
 
@@ -220,7 +218,6 @@ test('Analytics retains the chosen chart sort and its scroll position across tab
   await artifact(page, testInfo, 'analytics-retained-sort-scroll', { offset, ordered });
 });
 
-
 test('chart identifiers stay distinct from counts and hidden chart data does not add blank page space @viewport', async ({ page }, testInfo) => {
   await seed(page, fullSeed);
   await page.goto('/favorite-pokemon-picker?notme&lang=en');
@@ -239,7 +236,6 @@ test('chart identifiers stay distinct from counts and hidden chart data does not
   expect(metrics.shapeGap).toBeGreaterThanOrEqual(3);
   await artifact(page, testInfo, 'chart-header-space', metrics);
 });
-
 
 test('five Analytics charts form one ordered column with the Dex desktop reading width @viewport', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'mobile') await page.setViewportSize({ width: 390, height: 844 });

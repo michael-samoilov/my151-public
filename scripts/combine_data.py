@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from pokemon_gen1 import GEN1
 
-# Import each gen separately - they may be in individual files or combined
 GEN2 = GEN3 = GEN4 = GEN5 = GEN6 = GEN7 = GEN8 = GEN9 = []
 
 try:
@@ -44,7 +43,6 @@ try:
 except ImportError:
     pass
 
-# Also try the combined files from agents
 try:
     from pokemon_gen2to5 import GEN2 as G2, GEN3 as G3, GEN4 as G4, GEN5 as G5
     if not GEN2: GEN2 = G2
@@ -109,7 +107,6 @@ for name, gen_data in gen_lists.items():
 
 all_data.sort(key=lambda x: x["id"])
 
-# Verify no duplicates
 ids = [p["id"] for p in all_data]
 if len(ids) != len(set(ids)):
     dupes = set(id_ for id_ in ids if ids.count(id_) > 1)

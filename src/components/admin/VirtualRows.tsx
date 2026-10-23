@@ -1,30 +1,17 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 
-/** Rows rendered past each edge of the viewport, so a fling never reaches a
- *  row before it renders. */
 const OVERSCAN_PX = 800;
-/** The list position is read in steps of this many pixels, so a scroll
- *  renders the list only when it has moved a step. */
 const STEP_PX = 64;
-/** A row's height before any row has been measured. */
 const FALLBACK_ROW_PX = 96;
 
-/**
- * Measured row heights by key. Kept for the page's life, so a list that
- * mounts again (Back from a detail page) places the rows above the reader at
- * their real heights and the reader lands on the same row. A new list width
- * clears them.
- */
 const heights = new Map<string, number>();
 let heightsWidth = 0;
 let lastGap = 8;
 
-/** One row, rendered again only when its item or its renderer changes. */
 const Row = memo(function Row<T>({ item, render }: { item: T; render: (item: T) => ReactNode }) {
   return render(item);
 }) as <T>(props: { item: T; render: (item: T) => ReactNode }) => ReactNode;
 
-/** The first index whose row ends after `y`. */
 function firstAfter(offsets: Float64Array, gap: number, y: number): number {
   let lo = 0;
   let hi = offsets.length - 1;
@@ -36,12 +23,6 @@ function firstAfter(offsets: Float64Array, gap: number, y: number): number {
   return lo;
 }
 
-/**
- * Renders the rows of `items` near the viewport and stands in for the others
- * with padding. The page's own scroll moves the list. Each row is a direct
- * child of the wrapper, so a wrapper that is a column subgrid keeps its rows
- * on the parent table's columns. `render` must return one element per item.
- */
 export function VirtualRows<T>({
   items,
   keyOf,
@@ -57,12 +38,9 @@ export function VirtualRows<T>({
   const [measured, setMeasured] = useState(0);
   const [gap, setGap] = useState(lastGap);
 
-  // How far the viewport top sits below the list top, in steps, and the
-  // viewport height. Above the list, the list renders its first rows.
   const subscribe = useCallback((notify: () => void) => {
     window.addEventListener('scroll', notify, { passive: true });
     window.addEventListener('resize', notify);
-    // Content above the list can grow or shrink without a scroll.
     const ro = new ResizeObserver(notify);
     ro.observe(document.body);
     return () => {
@@ -111,7 +89,6 @@ export function VirtualRows<T>({
   const padTop = end > start ? offsets[start] : total;
   const padBottom = end > start ? total - (offsets[end] - gap) : 0;
 
-  // Measures each rendered row, and the list width and gap, as they lay out.
   const rowsRO = useRef<ResizeObserver | null>(null);
   const keyOfEl = useRef(new WeakMap<Element, string>());
   const observed = useRef(new Set<Element>());

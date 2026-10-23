@@ -1,7 +1,8 @@
+import { openAdmin } from './admin-ready';
 import {expect,test} from '@playwright/test';
 test.describe('Picker admin @viewport',()=>{
   test('shows captured progress and exclusive export views, then scrubs a read-only session snapshot',async({page},testInfo)=>{
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
     await expect(page.getByRole('heading',{name:/^Picker activity/})).toBeVisible();
     const funnel=page.getByRole('img',{name:/Favorite Pokémon usage funnel/});
@@ -41,7 +42,7 @@ test.describe('Picker admin @viewport',()=>{
     await testInfo.attach('picker-admin-responsive-grid.png',{body:await page.screenshot(),contentType:'image/png'});
   });
   test('the full board refits when the available viewport height shrinks',async({page},testInfo)=>{
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     await expect(page.getByTestId('admin-favorite-snapshot').locator('[data-favorite-sprite]')).toHaveCount(257);
@@ -58,7 +59,7 @@ test.describe('Picker admin @viewport',()=>{
 
 test('resizing across the desktop breakpoint preserves every selected coordinate',async({page},testInfo)=>{
   await page.setViewportSize({width:1280,height:844});
-  await page.goto('/?admin&demo');
+  await openAdmin(page, '/?admin&demo');
   await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
   await page.locator('[data-favorite-user="demo-picker-6"]').click();
   const grid=page.getByTestId('admin-favorite-snapshot');
@@ -79,7 +80,7 @@ test('resizing across the desktop breakpoint preserves every selected coordinate
 });
 
 test('the milestone row tells the completion popup and an opened export dialog from an export',async({page},testInfo)=>{
-  await page.goto('/?admin&demo');
+  await openAdmin(page, '/?admin&demo');
   await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
   const labels:Record<string,string|null>={};
   for(const [cid,label,diamonds] of [['demo-picker-2','export opened',0],['demo-picker-5','full grid · detailed stats · export opened',1],['demo-picker-6','full grid · simplified · export nudge · export opened',1]] as const){
@@ -110,7 +111,7 @@ test('a three-tool overlap keeps all seven exclusive region counts visible',asyn
   const regions={dex:1,league:1,favorites:1,'dex+league':1,'dex+favorites':1,'favorites+league':1,'dex+favorites+league':1};
   const empty={survival:[],stats:{p50:0,p75:0,p90:0},n:0};
   await page.route('**/api/submissions?**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({totalUsers:0,funnel:{users:0,completed:0,exported:0},retention:{returning:0,newUsers:0},timeSurvival:[],timeStats:empty.stats,depthSurvival:[],depthStats:empty.stats,countries:{},devices:{},os:{},popularFinal:[],mostDropped:[],popularBySection:{},droppedBySection:{},picksBySectionAll:{},crossTool:{catalog,kpis:[],eras:[{key:'synthetic',label:'Demo overlap',shortLabel:'Demo overlap',since:1,until:null,browsers:7,regions}]}})}));
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const chart=page.locator('[data-testid="cross-tool-venns"] svg');
   await expect(chart.getByTestId('cross-tool-region-label')).toHaveCount(7);
   await expect(chart.locator('rect[data-region] title',{hasText:'Dex + Picker 1'})).toHaveCount(1);

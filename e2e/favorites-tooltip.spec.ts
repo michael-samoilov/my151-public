@@ -38,7 +38,6 @@ test.describe('favorite picker name tooltip', () => {
     expect(gridTip.luminance).toBeLessThan(0.3);
     expect(gridTip.inGridFrame).toBe(false);
 
-    // An empty cell has no name to show.
     await page.getByTestId('favorites-cell-normal-1').hover();
     await expect(tip).toHaveCount(0);
 
@@ -64,8 +63,6 @@ test.describe('favorite picker name tooltip', () => {
     await below.hover();
     const tip = page.getByTestId('favorites-name-tooltip');
     await expect(tip).toBeVisible();
-    // The tip opens above the hovered tile, over the tile in the row above.
-    // Move to a point the tip covers, the way a mouse would, and click there.
     const target = await center(tip);
     const aboveBox = (await above.boundingBox())!;
     expect(target.y).toBeGreaterThan(aboveBox.y);
@@ -89,7 +86,6 @@ test.describe('favorite picker name tooltip on touch', () => {
     await openSeeded(page);
     await page.getByTestId('favorites-cell-water-1').tap();
     await expect(page.getByTestId('favorites-picker')).toBeVisible();
-    // Wait past the 200 ms open delay.
     await page.waitForTimeout(500);
     await expect(page.getByTestId('favorites-name-tooltip')).toHaveCount(0);
 
@@ -102,10 +98,6 @@ test.describe('favorite picker name tooltip on touch', () => {
   });
 });
 
-/**
- * Real finger input through CDP. It runs in every project, so it covers the
- * phone sheet and the desktop pane on a touch screen.
- */
 test.describe('favorite picker name tooltip on a held finger', { tag: '@viewport' }, () => {
   test('a held finger names a sprite until it lifts, and that release never picks, opens, or clears', async ({ page }, testInfo) => {
     await openSeeded(page);
@@ -119,18 +111,15 @@ test.describe('favorite picker name tooltip on a held finger', { tag: '@viewport
       await touch('touchStart', [await center(page.getByTestId(testId))]);
       await lift();
     };
-    /** Holds a finger on the tile past the 450 ms hold, reads the tip, then lifts. */
     const hold = async (testId: string) => {
       await touch('touchStart', [await center(page.getByTestId(testId))]);
       await page.waitForTimeout(700);
       const [held = null] = await page.getByRole('tooltip').allTextContents();
       await lift();
       await expect(tip).toHaveCount(0);
-      // Wait past the click that can follow a hold.
       await page.waitForTimeout(300);
       return held;
     };
-    /** Slides a finger 30 px left from the tile, waits past the hold, and counts tips. */
     const slide = async (testId: string) => {
       const from = await center(page.getByTestId(testId));
       await touch('touchStart', [from]);
@@ -153,19 +142,14 @@ test.describe('favorite picker name tooltip on a held finger', { tag: '@viewport
     await page.keyboard.press('Escape');
     await expect(picker).toHaveCount(0);
 
-    // Squirtle now carries the clear x. A hold on it does not clear it.
     await tap('favorites-cell-water-1');
     await expect(picker).toBeVisible();
     await hold('favorites-pick-7');
     const afterClearHold = await savedFill(page, 'water|1');
-    // A finger that slides across the selector drops the hold, even where
-    // nothing scrolls.
     const tipAfterSlide = await slide('favorites-pick-7');
     await page.keyboard.press('Escape');
     await expect(picker).toHaveCount(0);
 
-    // A second finger, or a finger that scrolls the grid, drops the hold. The
-    // scroll comes last, because it moves the cells.
     const start = await center(page.getByTestId('favorites-cell-fire-1'));
     await touch('touchStart', [start]);
     await touch('touchStart', [start, { x: start.x, y: start.y + 60 }]);

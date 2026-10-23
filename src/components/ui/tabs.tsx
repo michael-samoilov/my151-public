@@ -2,10 +2,6 @@ import * as React from "react"
 import { Button, type ButtonProps } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-/**
- * Shared pill tab set from PR 79. One muted track, a raised card pill for
- * the selected tab.
- */
 function tabTriggerClass(selected: boolean) {
   return cn(
     "px-2 sm:px-3",

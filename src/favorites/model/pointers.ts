@@ -6,7 +6,6 @@ export type PointerMark =
   | { source: 'type'; value: TypeName }
   | { source: 'starter' | 'gimmick' | 'legendary' };
 
-/** The cells a favorite cell chooses from, as cell keys, in grid order. */
 export function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
   if (isDisabledFavoriteIntersection(type, gen)) return [];
   if (type === 'legendary' && gen === 'legendary') {
@@ -40,10 +39,6 @@ export function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
   return [];
 }
 
-/**
- * Favorite cells store a pointer to a form that already sits on that row or
- * column. They do not retarget. Drop the pointer when that form leaves.
- */
 export function pointerPool(
   type: TypeAxisId,
   gen: GenAxisId,
@@ -137,7 +132,6 @@ export function prunePointers(fills: Record<string, number>): Record<string, num
 
 export type SourceCoordinate = { type: TypeAxisId; gen: GenAxisId; mark: PointerMark };
 
-/** The pool's immediate source cells, without expanding summary pointers. */
 export function pointerCoordinates(type: TypeAxisId, gen: GenAxisId, fills: Record<string, number>, id: number): SourceCoordinate[] {
   return pointerSourceKeys(type, gen).flatMap((key) => {
     if (fills[key] !== id) return [];

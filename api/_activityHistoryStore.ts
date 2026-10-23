@@ -14,11 +14,6 @@ function settings(now:number,options:ActivityHistoryOptions) {
  const positive=(raw:string|undefined,fallback:number)=>raw&&/^\d+$/.test(raw)&&Number.isSafeInteger(Number(raw))&&Number(raw)>0?Number(raw):fallback;
  return {enabled:env.MINUTE_ACTIVITY_ENABLED!=='0',month,key:`${PREFIX}:budget:${month}`,limitUnits:Math.min(2_000_000,positive(env.MINUTE_ACTIVITY_MONTHLY_UNITS,2_000_000)),limitBytes:Math.min(16*1024*1024,positive(env.MINUTE_ACTIVITY_MONTHLY_BYTES,16*1024*1024)),retryAt:Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)};
 }
-/** Reserve ordinary progress/history work conservatively, including the outer EVAL and core ingestion margin.
- * Independent core work (large new-species imports, milestones, exports) is outside this feature estimate.
- * Retries consume units and byte allowance too.
- * A request refused at exhaustion still costs its EVAL/read; normal clients must honor retryAt.
- */
 export const ACTIVITY_APPEND_SCRIPT=`
 local used=tonumber(redis.call('HGET',KEYS[1],'units') or '0')
 local bytes=tonumber(redis.call('HGET',KEYS[1],'bytes') or '0')
@@ -46,6 +41,14 @@ for i=2,#KEYS do
  else result[1]='invalid' end
 end
 return result`;
+/** The ack stored batches get, without storing them. A browser whose beacons
+ *  are not saved clears its queue exactly as a counted visitor's does. */
+export function acknowledgeUnstored(raw:unknown,receivedAt:number):MinuteActivityAck|undefined {
+ if(raw===undefined)return undefined;
+ const payload=parseMinuteActivity(raw,receivedAt);
+ if(!payload)return {accepted:[],status:'invalid'};
+ return {accepted:payload.batches.map(batch=>batch.id),status:'recorded'};
+}
 export async function appendMinuteActivity(cid:string,tool:MinuteActivityTool,raw:unknown,receivedAt:number,options:ActivityHistoryOptions={}):Promise<MinuteActivityAck|undefined> {
  if(raw===undefined)return undefined;
  const config=settings(receivedAt,options);
@@ -56,7 +59,6 @@ export async function appendMinuteActivity(cid:string,tool:MinuteActivityTool,ra
  const keys=[config.key],args:(string|number)[]=[config.limitUnits,config.limitBytes,64+8*payload.batches.length,0,Math.floor((config.retryAt+32*DAY)/1000)];
  let bytes=0;
  for(const batch of payload.batches){
-  // receivedAt is omitted from immutable facts: delivery retries have different reception timestamps.
   const stored=JSON.stringify({...batch,cid,tool});
   bytes+=Buffer.byteLength(stored);
   keys.push(`${PREFIX}:day:${batch.day}`);

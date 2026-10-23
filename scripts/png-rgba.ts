@@ -1,7 +1,5 @@
 import { inflateSync } from 'node:zlib';
 
-/** Minimal PNG decoding shared by the type-icon scripts. */
-
 export interface Raster {
   width: number;
   height: number;
@@ -11,14 +9,14 @@ export interface Raster {
 
 function chunks(png: Buffer): Map<string, Buffer[]> {
   const out = new Map<string, Buffer[]>();
-  let pos = 8; // skip the signature
+  let pos = 8;
   while (pos < png.length) {
     const length = png.readUInt32BE(pos);
     const type = png.toString('ascii', pos + 4, pos + 8);
     const list = out.get(type) ?? [];
     list.push(png.subarray(pos + 8, pos + 8 + length));
     out.set(type, list);
-    pos += 12 + length; // length + type + data + crc
+    pos += 12 + length;
   }
   return out;
 }

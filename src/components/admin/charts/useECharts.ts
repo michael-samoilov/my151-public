@@ -12,9 +12,6 @@ import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
 import { categoryIndexAtX, categoryX, clampToRect, lineLeftInPlot, type PlotRect } from './scrubPlot';
 
-// Tree-shaken registration: only the chart types and components the admin
-// dashboard uses, so the admin bundle carries a fraction of full echarts. The
-// admin page is lazy-loaded (src/home/main.tsx), so this never reaches the hub.
 echarts.use([
   LineChart,
   SankeyChart,
@@ -31,9 +28,6 @@ echarts.use([
 export { echarts };
 export type EChartsOption = EChartsCoreOption;
 
-/** A light, confined tooltip shared by the admin charts. Surface background
- *  with a hairline border and soft shadow — never a large black box, and
- *  `confine` keeps it inside the chart so it can't cover the cards beneath. */
 export function tooltipStyle(el: HTMLElement | null) {
   return {
     confine: true,
@@ -46,44 +40,20 @@ export function tooltipStyle(el: HTMLElement | null) {
   };
 }
 
-/** Read a CSS custom property off an element, trimmed. Charts pull their colors
- *  from the app's design tokens so they track the theme instead of hardcoding
- *  hex values. Falls back to the given default when the property is unset. */
 export function cssVar(el: HTMLElement | null, name: string, fallback = ''): string {
   if (!el) return fallback;
   const v = getComputedStyle(el).getPropertyValue(name).trim();
   return v || fallback;
 }
 
-/**
- * The one scrub every admin line chart shares. Category positions are evenly
- * spaced; numeric charts can provide their actual axis coordinates.
- * Mouse hover and a press show the readout and vertical line. Both snap to the
- * nearest x position, so a drag steps from point to point and never sits
- * between two dates. Mouse leave or touch release hides them.
- */
-export interface ChartScrub {
+interface ChartScrub {
   count: number;
-  /** Sorted axis coordinates for unevenly spaced datapoints, such as logarithmic durations. */
   xValues?: number[];
-  /** HTML parts of the readout for one x position. The readout joins them
-   *  with " · " and wraps only between parts when the chart is too narrow. */
   label: (index: number) => string[];
 }
 
-/**
- * Mount an echarts instance on a div and keep its option in sync.
- *
- * Returns a ref to attach to the chart container. The container must have a
- * height (echarts measures its box), so callers set one. The option is rebuilt
- * by `build`, which receives the live container so it can read design tokens;
- * pass the values it depends on in `deps` so the chart redraws when they change.
- * A ResizeObserver keeps the chart sized to its container — the same
- * container-relative scaling the rest of the dashboard uses.
- */
 export function useECharts(
   build: (el: HTMLDivElement) => EChartsOption,
-  deps: unknown[],
   opts: {
     scrub?: ChartScrub;
   } = {},
@@ -93,7 +63,6 @@ export function useECharts(
   const roRef = useRef<ResizeObserver | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const scrubs = opts.scrub != null;
-  // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
   const scrubRef = useRef(opts.scrub);
   useEffect(() => {
@@ -101,10 +70,6 @@ export function useECharts(
     scrubRef.current = opts.scrub;
   });
 
-  // A callback ref, so the instance follows the DOM node. A conditional render
-  // (a "not enough data" fallback, or a hidden tab) detaches the node and then
-  // re-attaches a fresh one; init and dispose must track that, or the chart
-  // binds to a stale, detached node and paints nothing after the node returns.
   const setNode = useCallback((el: HTMLDivElement | null) => {
     if (el === elRef.current) return;
     if (chartRef.current) {
@@ -122,8 +87,6 @@ export function useECharts(
     chart.setOption(buildRef.current(el), true);
     const ro = new ResizeObserver(() => {
       chart.resize();
-      // Re-run the builder on resize so geometry that scales with width
-      // (label cadence, insets) recomputes, mirroring the mockup's chartScale.
       chart.setOption(buildRef.current(el), true);
     });
     ro.observe(el);
@@ -134,7 +97,6 @@ export function useECharts(
       let hovering = false;
 
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
-      // A drag scrubs the chart instead of scrolling the page.
       el.style.touchAction = 'none';
       const line = document.createElement('div');
       line.setAttribute('data-scrub-line', '1');
@@ -166,7 +128,6 @@ export function useECharts(
       ].join(';');
       el.appendChild(readout);
 
-      // The plot rect, so the line spans the series band only, not the gutters.
       const gridRect = (): PlotRect | null => {
         try {
           // getModel is internal, so reach it through an untyped view.
@@ -232,7 +193,7 @@ export function useECharts(
       const onDown = (e: PointerEvent) => {
         pressed = true;
         hovering = e.pointerType === 'mouse';
-        try { el.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+        try { el.setPointerCapture(e.pointerId); } catch { /* Pointer capture rejects inactive pointers. */ }
         showAt(e.clientX, e.clientY);
       };
       const onMove = (e: PointerEvent) => {
@@ -274,15 +235,12 @@ export function useECharts(
     }
   }, [scrubs]);
 
-  // Redraw when the caller's data changes. `deps` is the caller's own list, so
-  // it cannot be an array literal here — that's the design of the hook.
   useEffect(() => {
     const chart = chartRef.current;
     const el = elRef.current;
     if (!chart || !el) return;
-    chart.setOption(buildRef.current(el), true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+    chart.setOption(build(el), true);
+  }, [build]);
 
   return setNode;
 }

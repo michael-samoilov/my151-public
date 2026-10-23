@@ -1,5 +1,6 @@
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
+import GLYPH_PATHS from '@/data/typeGlyphPaths.json';
 import { typeLabel, typeLabels, localeUppercase } from '@/i18n';
 import {
   TYPE_BADGE,
@@ -9,23 +10,55 @@ import {
 } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 
+const GLYPHS: Record<TypeName, readonly string[]> = GLYPH_PATHS;
+
 /**
- * The canvas twin of `<TypeBadge>`.
+ * Fills a type's white glyph so that its shared 44-unit frame spans `frame`
+ * pixels around (cx, cy). The paths come from the glyph SVGs, so each type
+ * keeps its game size (see `scripts/type-icons/BUILD.md`).
  *
- * Both read their proportions from `typeBadgeGeometry.ts`, so the exported
- * poster and the screen cannot disagree about where the symbol sits or how big
- * the word is — the poster is a picture of the app, and a badge that is subtly
- * different in the PNG reads as a bug nobody can name.
- *
- * `glyph` is the shared transparent SVG symbol, already decoded by
- * the caller. Canvas never triggers image or font loading of its own, so this
- * draws whatever the caller has resolved; a missing glyph degrades to the
- * coloured pill with its word, which is still readable.
+ * A path rather than the SVG file: the browser rasterizes an SVG image drawn
+ * into a canvas, and exports from Samsung Internet and from Chrome on Windows
+ * showed that glyph faint, or between two thin lines. Each call builds new
+ * `Path2D` objects: Chrome drew a reused one with slightly different edges,
+ * so a second render of the same export did not match the first.
  */
+export function fillTypeGlyph(
+  ctx: CanvasRenderingContext2D,
+  type: TypeName,
+  cx: number,
+  cy: number,
+  frame: number,
+): void {
+  const unit = frame / 100;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(unit, unit);
+  ctx.fillStyle = '#ffffff';
+  for (const d of GLYPHS[type]) ctx.fill(new Path2D(d));
+  ctx.restore();
+}
+
+/** The colored type icon: the glyph's 44-unit frame centered on a 60-unit rounded square. */
+export function drawTypeIcon(
+  ctx: CanvasRenderingContext2D,
+  type: TypeName,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = TYPE_COLORS[type];
+  ctx.beginPath();
+  ctx.roundRect(x, y, size, size, (8 / 60) * size);
+  ctx.fill();
+  ctx.restore();
+  fillTypeGlyph(ctx, type, x + size / 2, y + size / 2, (44 / 60) * size);
+}
+
 export function drawTypeBadge(
   ctx: CanvasRenderingContext2D,
   type: TypeName,
-  glyphImage: HTMLImageElement | null,
   x: number,
   y: number,
   height: number,
@@ -39,38 +72,15 @@ export function drawTypeBadge(
   ctx.roundRect(x, y, w, height, TYPE_BADGE.radius * s);
   ctx.fill();
 
-  if (glyphImage) {
-    // Contain-fit into the symbol box, matching the SVG's
-    // preserveAspectRatio="xMidYMid meet" — the crops are not square.
-    const box = typeBadgeGlyphBox();
-    const side = box.size * s;
-    const iw = glyphImage.naturalWidth || 1;
-    const ih = glyphImage.naturalHeight || 1;
-    const fit = Math.min(side / iw, side / ih);
-    const dw = iw * fit;
-    const dh = ih * fit;
-    ctx.drawImage(
-      glyphImage,
-      x + box.x * s + (side - dw) / 2,
-      y + box.y * s + (side - dh) / 2,
-      dw,
-      dh,
-    );
-  }
+  const box = typeBadgeGlyphBox();
+  fillTypeGlyph(ctx, type, x + (box.x + box.size / 2) * s, y + (box.y + box.size / 2) * s, box.size * s);
 
   const label = localeUppercase(typeLabel(type));
-  // The same measured fit the SVG uses, from the same module — so a long
-  // Italian name is condensed identically in the poster and on screen.
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   ctx.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize * s}px ${typeBadgeFontStack()}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  // Alphabetic, then shifted — the same baseline placement the SVG does, and
-  // for the same reason: 'middle' is the em-box middle, which is right for CJK
-  // and visibly low for Latin. `fit.baseline` already carries the per-script
-  // correction, so this stays a plain alphabetic draw.
   ctx.textBaseline = 'alphabetic';
-  // Condensed about the text centre, the same way the SVG does it.
   const cx = x + TYPE_BADGE.textCenterX * s;
   ctx.translate(cx, 0);
   ctx.scale(fit.scaleX, 1);

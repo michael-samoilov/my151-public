@@ -1,4 +1,3 @@
-/** Versioned foreground interaction intervals; legacy session spans are never inferred here. */
 export interface AttentionSegment {id:string;start:number;end:number}
 export interface AttentionPayload {v:1;segments:AttentionSegment[]}
 export interface AttentionRecording extends AttentionPayload {coverageFrom:number;checkpointFrom:number;totalMs:number;asOf:number;retiredThrough?:number}
@@ -18,7 +17,6 @@ export function parseAttentionPayload(raw:unknown,receivedAt:number):AttentionPa
  }
  return {v:1,segments};
 }
-/** Optional analytics metadata must not reject valid legacy progress when a client clock is ahead. */
 export function parseAttentionForIngest(raw:unknown,receivedAt:number):AttentionPayload|null|undefined {
  if(raw===undefined)return undefined;
  const payload=parseAttentionPayload(raw,Infinity);
@@ -40,7 +38,6 @@ function unionMs(segments:readonly AttentionSegment[],from:number,until:number):
  }
  return total;
 }
-/** Merge before trimming. Stable IDs make retries and shorter late snapshots idempotent. */
 export function mergeAttention(previous:AttentionRecording|undefined,payload:AttentionPayload|undefined,receivedAt:number):AttentionRecording|undefined {
  if(!payload||!payload.segments.length)return previous;
  const old=previous?.segments??[],byId=new Map(old.map(s=>[s.id,{...s}]));

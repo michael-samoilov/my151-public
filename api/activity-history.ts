@@ -5,7 +5,6 @@ import {loadMinuteActivityHistory} from './_activityHistoryStore.js';
 import {reconstructMinuteActivity, type MinuteActivityTool} from './_minuteActivity.js';
 
 const DAY = 86_400_000;
-/** Bounded, explicit admin reads. Never part of an ordinary dashboard load. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') return res.status(405).json({error: 'Method not allowed'});
@@ -34,7 +33,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const excluded = new Set(archived.map(value => value.split('::')[0]));
     const batches = history.batches.filter(batch => !excluded.has(batch.cid));
     const totals = reconstructMinuteActivity(batches, gapMinutes * 60_000);
-    // Truncated pages must be combined before computing a whole-range total.
     return res.status(200).json({
       coverage: {...history.coverage, completeness: 'unknown', consistency: 'best-effort scan', bucketCount: batches.reduce((n, b) => n + b.buckets.length, 0),
         status: history.truncated || query('cursor') || totals.incomplete ? 'partial' : batches.length ? 'recorded' : 'missing'},

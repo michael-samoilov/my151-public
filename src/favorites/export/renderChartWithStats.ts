@@ -8,7 +8,6 @@ import type { FavoritesSnapshot } from './snapshot';
 import { drawExportButterfly, drawExportStatsTitle, type IconDrawer } from '@/lib/exportButterfly';
 import { drawExportHistogram } from '@/lib/exportStats';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { drawColorBadge, drawShapeBadge, drawEvolutionBadge, type EvolutionRole } from '@/lib/drawAttributeBadge';
 import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
@@ -23,7 +22,7 @@ function snapshotIncomplete(stats:PickerConditionalStats){return stats.incomplet
 function rowIcon(dimension:Dimension,key:string,images:Map<string,HTMLImageElement>):IconDrawer{
  return (ctx,x,y,w,h)=>{
   const height=Math.min(h,w/5),sx=x+(w-height*5)/2,sy=y+(h-height)/2;
-  if(dimension==='type') drawTypeBadge(ctx,key as TypeName,images.get(typeGlyphPath(key as TypeName))??null,sx,sy,height);
+  if(dimension==='type') drawTypeBadge(ctx,key as TypeName,sx,sy,height);
   else if(dimension==='shape') drawShapeBadge(ctx,key as ShapeName,images.get(`/shapes/${key}.png`)??null,sx,sy,height);
   else if(dimension==='color') drawColorBadge(ctx,key as ColorName,sx,sy,height);
   else drawEvolutionBadge(ctx,key as EvolutionRole,sx,sy,height);
@@ -35,12 +34,10 @@ function bstCardGeometry(ctx: CanvasRenderingContext2D, stats: PickerConditional
  const chartHeight = stats.dimensions.bst.coveredChoices ? drawExportHistogram(ctx, 0, 0, stats.bst, .87, false, meanLabels()) : 36;
  return { chartY, height: chartY + chartHeight + 12 };
 }
-/** Natural panel bounds come from the same histogram measurement used by its painter. */
-export function pickerStatsPanelSize(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
+function pickerStatsPanelSize(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
  return { w: PANEL_W, h: Math.max(864, 608 + bstCardGeometry(ctx, stats).height) };
 }
-/** Native panel, exported for the preview audit; the live export uses exactly this painter. */
-export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
+function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
  function card(d:Dimension,x:number,y:number,h:number){
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];
@@ -60,15 +57,9 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
 
  ctx.restore();
 }
-/**
- * Either export layout with the stats panel beside it. The stats always come
- * from the full grid's type and generation cells; pointer choices are omitted.
- * The summary shows other cells, so its panel title says where the stats come
- * from. Ordinary rendering remains byte-identical.
- */
 export async function renderChartWithStats(snapshot:FavoritesSnapshot,layout:'full'|'simplified'):Promise<Blob>{
  const stats=pickerConditionalStats(snapshot);
- const urls=[...stats.dimensions.type.rows.map(row=>typeGlyphPath(row.key as TypeName)),...stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`)];
+ const urls=stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`);
  const images=new Map(await Promise.all(urls.map(async url=>[url,await image(url)] as const)));
  const base=await(layout==='full'?renderFullChart(snapshot):renderSimplifiedChart(snapshot));
  const measure = document.createElement('canvas').getContext('2d')!;

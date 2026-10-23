@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * Fetches Pokemon data from PokeAPI's raw CSV files on GitHub
- * and generates src/data/pokemon.json
- *
- * Run: node scripts/generate-data.cjs
- */
 
 const https = require('https');
 const fs = require('fs');
@@ -67,13 +61,11 @@ async function main() {
   const stats = parseCSV(statsText);
   const evos = parseCSV(evoText);
 
-  // Build maps
   const speciesMap = new Map();
   for (const s of species) {
     speciesMap.set(parseInt(s.id), s);
   }
 
-  // Only default forms
   const pokemonMap = new Map();
   for (const p of pokemon) {
     if (p.is_default === '1') {
@@ -81,7 +73,6 @@ async function main() {
     }
   }
 
-  // Types by pokemon_id
   const typesMap = new Map();
   for (const t of types) {
     const pid = parseInt(t.pokemon_id);
@@ -92,7 +83,6 @@ async function main() {
     typesMap.get(pid)[slot - 1] = typeName;
   }
 
-  // Stats by pokemon_id
   const statsMap = new Map();
   for (const s of stats) {
     const pid = parseInt(s.pokemon_id);
@@ -103,7 +93,6 @@ async function main() {
     statsMap.get(pid)[statId - 1] = base;
   }
 
-  // Evolution levels
   const evoLevelMap = new Map();
   for (const e of evos) {
     if (e.minimum_level && e.minimum_level !== '') {
@@ -116,7 +105,7 @@ async function main() {
   const result = [];
 
   for (const [id, sp] of speciesMap) {
-    if (id > 1025) continue; // Only up to Gen 9
+    if (id > 1025) continue;
 
     const pk = pokemonMap.get(id);
     if (!pk) continue;

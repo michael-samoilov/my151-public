@@ -1,21 +1,9 @@
-/* my151's own holo pair for the export preview card: prism bands and a V
-   gleam. Both sit on the saturation mask (ExportPreview3D.css), so white
-   paper and black outlines keep their color, and both scale with
-   --foil-opacity, which grows with the tilt. Stops in percent scale with
-   the card, so a phone card shows the same pattern as a desktop card. */
-
 .export-foil-prism,
 .export-foil-gleam {
-  /* The pointer as -1 to 1 from the card center. */
   --holo-dx: var(--foil-dx);
   --holo-dy: var(--foil-dy);
 }
 
-/* Prism bands: a repeating pastel spectrum on a steep diagonal, about
-   2.5 repeats across a card's width, under a faint fixed grating of fine
-   lines. Every spectrum stop keeps each RGB channel above one half, so
-   soft-light only lifts the ink. The spectrum tile is twice the card, so
-   moving it with the pointer never shows an edge. */
 .export-foil-prism {
   --prism-angle: 110deg;
   --prism-band: 15.9%;
@@ -49,27 +37,6 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: two sets of stripes on one steep diagonal, screened together,
-   tinted by a slow pastel spectrum, and then passed through a soft knee
-   made of two flat grays: an overlay with a dark gray, then a color-burn
-   with a light gray. Light under the knee rises slowly from a low floor,
-   and light above it rises steeply. Each stripe is a narrow crest on a
-   wide, low skirt. A stripe alone shows its crest and a faint tail; as two
-   stripes approach, their skirts add up past the knee, so the lit part
-   swells into a wide knot that trails off slowly at its sides. Where the
-   two crests meet, every color channel clears the knee, so the middle of
-   the knot turns into a narrow, near-white line while its tails keep the
-   spectrum's tint. On one side of each crest the stripe has a little less
-   green, so that tail reads violet. The first set is strong and drifts
-   slowly with the pointer; the second is spaced wider and runs fast the
-   other way as the card tilts sideways. The spectrum runs up the card, so
-   it tints every stripe by its height on the card, and it scrolls up and
-   down as the card tips. A mostly gray grain tile on top uses color-burn,
-   so each grain pixel raises the cut a little: where the light is bright
-   it stays smooth, and where it is faint it breaks into sparse specks.
-   Black is no change under color-dodge, so only the stripes light the
-   ink. The stripe tiles are wider than tall, so the period follows the
-   card's width more than its height. */
 .export-foil-gleam {
   --gleam-period: 6.73%;
   --gleam-period-b: 8.95%;

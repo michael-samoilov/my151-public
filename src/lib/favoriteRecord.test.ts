@@ -1,4 +1,3 @@
-// keeps: API validation and out-of-order retry behavior cannot run through stubbed browser routes.
 import cellData from '../../api/_favoriteCells.json';
 import { describe, expect, it } from 'vitest';
 import { parseFavoriteSnapshot, mergeFavoriteRecord, parseFavoriteRecord } from '../../api/_favoriteRecord';

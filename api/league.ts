@@ -1,5 +1,5 @@
 import {parseAttentionForIngest} from './_attention.js';
-import {appendMinuteActivity} from './_activityHistoryStore.js';
+import {acknowledgeUnstored,appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -17,13 +17,7 @@ import {
   parseSummary,
 } from './_leagueRecord.js';
 import { parseNotmeFlag, parsePokemonIds, recordToolExport } from './_exportStats.js';
-
-/**
- * The gym leader maker's build beacon: one record per anonymous browser in
- * the `league:clients` hash, the way /api/submit keeps the dex builder's in
- * `clients`. Same cid, so the person who uses both tools is one field name
- * present in both hashes.
- */
+import { parseAutoFlag } from './_automation.js';
 
 const burstLimiter = new Ratelimit({
   redis,
@@ -31,8 +25,6 @@ const burstLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:burst',
 });
-// Same per-browser cap as the dex, under its own key (`league:<cid>`), so
-// the two tools' budgets are independent. See api/_limits.ts.
 const clientLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
@@ -40,10 +32,10 @@ const clientLimiter = new Ratelimit({
   prefix: 'rl:client',
 });
 
-// Same compare-and-set as submit.ts: write only if the version is unchanged.
 const CAS_LUA = `
 local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
 if cur == ARGV[2] then
+  if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 0 and redis.call('HLEN', KEYS[1]) >= tonumber(ARGV[4]) then return 2 end
   redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
   redis.call('HSET', KEYS[2], ARGV[1], tostring(tonumber(cur) + 1))
   return 1
@@ -71,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       activity?: unknown;
       ts?: unknown;
       notme?: unknown;
+      auto?: unknown;
       events?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
@@ -83,31 +76,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!isLeagueBeaconKind(body.kind)) return res.status(400).json({ error: 'invalid kind' });
     const summary = parseSummary(body.summary);
     if (!summary) return res.status(400).json({ error: 'invalid summary' });
-    // Bounded and field-by-field validated; a mangled card is dropped rather
-    // than failing a beacon whose counts are still good. Undefined when the
-    // client sent no structure, which leaves any stored structure alone.
     const cards = parseCards(body.cards);
     const exportKind = body.kind === 'export' ? (isLeagueExportKind(body.exportKind) ? body.exportKind : undefined) : undefined;
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
     const pokemonIds = body.kind === 'export' ? parsePokemonIds(body.pokemonIds) : [];
     const notme = parseNotmeFlag(body.notme);
-    if (notme || isReadOnlyDeployment(req)) {
+    if (notme || parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) {
+      const activityAck = acknowledgeUnstored(body.activity, receivedAt);
       if (exportKind) {
         const highlight = await recordToolExport(
           exportKind === 'card' ? 'card' : 'league',
           pokemonIds,
           { notme: true },
         );
-        return res.status(200).json({ ok: true, highlight });
+        return res.status(200).json({ ok: true, highlight, activityAck });
       }
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, activityAck });
     }
 
     const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention') => {
       try {
         await redis.hincrby('funnel', `league-drop:${reason}`, 1);
       } catch {
-        // the drop still happens; only its bookkeeping failed
+        return;
       }
     };
 
@@ -124,7 +115,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-
 
     const captured = parseCapturedAt(body.ts, receivedAt);
     const input = {
@@ -154,15 +144,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ]);
       const existing = parseLeagueRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
-      if (!existing) {
-        const count = await redis.hlen(LEAGUE_CLIENTS_KEY);
-        if (count >= MAX_CLIENTS) {
-          await countDrop('cap');
-          return res.status(200).json({ ok: true, capped: true });
-        }
-      }
       const rec = mergeLeagueRecord(existing, input);
-      const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec)]);
+      const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec), MAX_CLIENTS]);
+      if (ok === 2) {
+        await countDrop('cap');
+        return res.status(200).json({ ok: true, capped: true });
+      }
       if (ok === 1) {
         const activityAck = await appendMinuteActivity(cid, 'league', body.activity, receivedAt);
         if (exportKind) {

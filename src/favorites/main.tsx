@@ -4,6 +4,7 @@ import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-nor
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
+import { installTranslationGuard } from '../lib/translationGuard'
 import { installOptOut, isOptedOut } from '../lib/clientId'
 import { installStaleDeployReload } from '../lib/staleDeploy'
 import { installHideBrokenImages } from '../lib/hideBrokenImages'
@@ -12,8 +13,6 @@ import './pickerNames'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { FavoritesApp } from './FavoritesApp'
-import { SpriteChecklist } from './components/SpriteChecklist'
-import { SPRITE_CHECK_ENABLED } from './model/spriteChecklist'
 
 const preload = document.createElement('link');
 preload.rel = 'preload';
@@ -24,6 +23,7 @@ preload.href = interLatinUrl;
 document.head.prepend(preload);
 
 installLayoutFontSize();
+installTranslationGuard();
 installOptOut();
 installHideBrokenImages()
 installStaleDeployReload();
@@ -52,7 +52,7 @@ void initLocale({
 }).finally(() => {
   createRoot(rootEl).render(
     <StrictMode>
-      {SPRITE_CHECK_ENABLED ? <SpriteChecklist /> : <FavoritesApp />}
+      <FavoritesApp />
     </StrictMode>,
   )
 })

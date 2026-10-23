@@ -1,16 +1,4 @@
-// Biome assignment pipeline: for every evolution line in src/data/pokemon.json,
-// derive the best-fit build-page "place" section from real encounter data
-// (Gens I–VI from docs/biome-research/pokemon_encounters_gen1-8.csv; Gens
-// VII–VIII from the PokeAPI CSV dumps fetched by fetch-pokeapi.mjs), grade the
-// confidence of that assignment, tag no-data lines from official structural
-// metadata (legendary/starter/fossil/…), and fall back to a curated,
-// clearly-tagged knowledge file for SV/Kitakami-only wild lines.
-//
-// Output (report-only — this pipeline does NOT modify app data):
-//   docs/biome-research/output/biome-assignments.json
-//   docs/biome-research/output/biome-report.md
-//
-// Run:  node scripts/biome/fetch-pokeapi.mjs && node scripts/biome/build-assignments.mjs
+
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -22,9 +10,6 @@ const POKEAPI = join(RESEARCH, 'pokeapi');
 const OUT_DIR = join(RESEARCH, 'output');
 const SCRIPT_DIR = join(ROOT, 'scripts', 'biome');
 
-// ---------------------------------------------------------------- CSV parsing
-
-/** Quote-aware CSV line splitter (handles `"south, towards Jubilife City"`). */
 function splitCsvLine(line) {
   const out = [];
   let cur = '';
@@ -47,18 +32,13 @@ function readCsv(path) {
   return readFileSync(path, 'utf8').trim().split('\n').slice(1).map(splitCsvLine);
 }
 
-// ------------------------------------------------------------------ Constants
-
-/** Our 16 build-page place sections (biome tag → archetype id). */
 const SECTION_BY_TAG = {
   forest: 'forest', meadow: 'meadow', cave: 'cave-pokemon', mountain: 'mountain',
   swamp: 'swamp', lake: 'lake', dojo: 'dojo', haunted: 'haunted', ruins: 'ruins',
   beach: 'beach', fishing: 'fishing-pokemon', ocean: 'ocean', desert: 'desert',
   volcanic: 'volcanic', tundra: 'tundra', industrial: 'industrial',
 };
-// 'water' is an internal pseudo-tag for surf contexts whose location has no
-// explicit watery tag (city canals, route ponds, unlabelled sea) — it is
-// redistributed per line to ocean/lake after aggregation (see resolveWater).
+
 const VALID_TAGS = new Set([...Object.keys(SECTION_BY_TAG), 'urban', 'special', 'water']);
 const WATERY = new Set(['ocean', 'lake', 'beach', 'swamp']);
 
@@ -69,15 +49,9 @@ const WATERY = new Set(['ocean', 'lake', 'beach', 'swamp']);
 // Kanto is already richly covered by RBY/FRLG/HGSS.
 const GEN78_VIDS = new Set(['27', '28', '29', '30', '33', '34', '35', '36', '50', '51']);
 
-// Confidence thresholds (calibrated against the spot checks at the bottom).
 const HIGH = { share: 0.55, games: 3, margin: 1.5 };
 const MED = { share: 0.35, games: 2 };
 
-// RELATIVE rarity weighting: low rarity is NOT a counter-signal by itself —
-// pseudo-legendaries and mons like Dreepy are 1-5% EVERYWHERE, and those rare
-// slots ARE their canonical presence. A context is downweighted only when the
-// line has substantially HIGHER rates elsewhere (rare here + common there =
-// cameo). Weight is judged against the line's own best rarity.
 function relativeRarityWeight(rarity, lineMaxRarity) {
   const rel = rarity / Math.max(lineMaxRarity, 1);
   if (rel >= 0.34) return 1;
@@ -85,10 +59,6 @@ function relativeRarityWeight(rarity, lineMaxRarity) {
   return 0.2;
 }
 
-// Method-class weighting: gimmick mechanics are weaker evidence of habitat
-// than core wild spawns regardless of rate. SOS chaining (call-for-help
-// crossovers like Larvesta in Lush Jungle) and Island Scan (daily one-off
-// out-of-region spawns) don't establish "this is where the line lives".
 function methodClassWeight(method) {
   const m = method.toLowerCase();
   if (m === 'sos-encounter' || m === 'sos-from-bubbling-spot') return 0.3;
@@ -100,23 +70,12 @@ function methodClassWeight(method) {
   if (m === 'island-scan') return 0.2;
   return 1;
 }
-// Evidence-strength gate: if a line's TOTAL weighted evidence is below this,
-// the encounter data is too thin/rare to trust as a default placement — the
-// line reroutes to structural/knowledge, or lands in the needs-review bucket.
-// (Rare off-biome encounters are exactly the kind of thing that should be a
-// user's own off-section pick, not an app default.)
+
 const MIN_EVIDENCE_STRENGTH = 1.0;
 
-// ------------------------------------------------- Method → biome vote rules
-
-/**
- * Returns { tags: string[], acquisition?: 'gift'|'static' } for one encounter
- * row. `locTags` are the location's biome tags; `locName` aids the surf rule.
- */
 function votesFor(method, locTags, locName) {
   const m = method.toLowerCase();
-  // Terrain-descriptor methods carried by the gen1-6 CSV ("meadow|forest",
-  // "mountain", "cave|volcanic") — the method string IS the biome.
+
   if (m.split('|').every((t) => VALID_TAGS.has(t))) return { tags: m.split('|') };
   if (/^(yellow|purple|red)-flowers$/.test(m)) return { tags: ['meadow'] };
   if (m === 'rough-terrain') return { tags: ['mountain'] };
@@ -128,31 +87,18 @@ function votesFor(method, locTags, locName) {
     const water = locTags.filter((t) => WATERY.has(t));
     if (water.length) return { tags: water };
     if (/sea route|\bsea\b|\bbay\b|shoal|undella|ocean/i.test(locName)) return { tags: ['ocean'] };
-    // Surfing on a location with no watery tag = some body of water whose
-    // salt/freshwater nature we can't tell from the location alone (route
-    // ponds, city canals). Vote the 'water' pseudo-tag; it's redistributed to
-    // ocean/lake per line based on the line's explicit water evidence.
+
     return { tags: ['water'] };
   }
   if (/^(gift|gift-egg|npc-trade)$/.test(m)) return { tags: [], acquisition: 'gift' };
   if (m === 'only-one' || m === 'pokeflute' || m === 'squirt-bottle' || m === 'wailmer-pail' || m === 'devon-scope') {
     return { tags: locTags, acquisition: 'static' };
   }
-  // walk, dark-grass, grass-spots, sos-encounter, horde, headbutt*, berry-trees,
-  // honey-tree, hidden-grotto, overworld*, wanderer, roaming-grass, island-scan …
+
   return { tags: locTags };
 }
 
-// ------------------------------------------------------- Species stat holder
-
-// Each biome tag gets FULL credit for every distinct (game, location) context —
-// no fractional split across a location's multiple tags. Exclusivity (`share`)
-// is then tagContexts / totalContexts: "in X% of the line's distinct wild
-// appearances, the place is <tag>". (A fractional split was tried first and
-// systematically punished species whose core habitat carries several tags —
-// e.g. Mt. Silver is cave|mountain|tundra, which diluted Larvitar's mountain
-// signal below a four-game Unova meadow route.)
-const speciesStats = new Map(); // speciesId -> { tags: Map(tag -> {contexts:Set, games:Set, regions:Set, locs:Set}), contexts:Set, acquisitions:Set }
+const speciesStats = new Map();
 
 function statFor(id) {
   if (!speciesStats.has(id)) {
@@ -168,9 +114,7 @@ function addVotes(speciesId, game, region, locKey, tags, acquisition, rarity = 1
   if (!useful.length) return;
   const ctx = `${game}|${locKey}`;
   s.contexts.add(ctx);
-  // Track the BEST slot rarity and BEST method class seen per context —
-  // repeated slots for the same place/game keep their max, so weighting
-  // reflects the most accessible way to find the Pokémon there.
+
   if (!s.ctxRarity) s.ctxRarity = new Map();
   if (!s.ctxMethodW) s.ctxMethodW = new Map();
   s.ctxRarity.set(ctx, Math.max(s.ctxRarity.get(ctx) ?? 0, rarity));
@@ -190,16 +134,12 @@ function addVotes(speciesId, game, region, locKey, tags, acquisition, rarity = 1
   }
 }
 
-// -------------------------------------------------- 1. Local gen1–6 dataset
-
-// Also build (region|location-name) → tags so LGPE-Kanto can inherit the same
-// hand classification the Gen-I locations already received.
 const localNameTags = new Map();
 let localRows = 0;
 let localEmptyBiomeRows = 0;
 
 for (const r of readCsv(join(RESEARCH, 'pokemon_encounters_gen1-8.csv'))) {
-  if (r.length !== 14) continue; // header glitches; quote-aware parser leaves none in practice
+  if (r.length !== 14) continue;
   const [, idStr, , locName, , , region, biomes, method, game] = r;
   const id = Number(idStr);
   if (!Number.isInteger(id) || id <= 0) continue;
@@ -215,22 +155,20 @@ for (const r of readCsv(join(RESEARCH, 'pokemon_encounters_gen1-8.csv'))) {
   addVotes(id, game, region, `${region}|${locName}`, tags, acquisition, rarity, methodClassWeight(method));
 }
 
-// ------------------------------------------------ 2. PokeAPI gen7/8 dataset
-
 const paRows = (f) => readCsv(join(POKEAPI, f));
 const paAreas = new Map(paRows('location_areas.csv').map((r) => [r[0], r[1]]));
 const paLocs = new Map(paRows('locations.csv').map((r) => [r[0], { regionId: r[1], ident: r[2] }]));
 const paRegions = new Map(paRows('regions.csv').map((r) => [r[0], r[1]]));
 const paVersions = new Map(paRows('versions.csv').map((r) => [r[0], r[2]]));
 const paMethods = new Map(paRows('encounter_methods.csv').map((r) => [r[0], r[1].trim()]));
-const paSlots = new Map(paRows('encounter_slots.csv').map((r) => [r[0], { methodId: r[2], rarity: Number(r[4]) || 10 }])); // slot id -> method + slot rarity
-const paFormSpecies = new Map(paRows('pokemon.csv').map((r) => [r[0], Number(r[2])])); // pokemon id -> species id
-const paLocNames = new Map(); // location id -> english display name
+const paSlots = new Map(paRows('encounter_slots.csv').map((r) => [r[0], { methodId: r[2], rarity: Number(r[4]) || 10 }]));
+const paFormSpecies = new Map(paRows('pokemon.csv').map((r) => [r[0], Number(r[2])]));
+const paLocNames = new Map();
 for (const r of paRows('location_names.csv')) if (r[1] === '9') paLocNames.set(r[0], r[2]);
 
 const gen78LocTags = JSON.parse(readFileSync(join(SCRIPT_DIR, 'location-biomes.gen78.json'), 'utf8'));
 
-const unclassifiedLocs = new Map(); // locId -> {name, region, rows}
+const unclassifiedLocs = new Map();
 let gen78Rows = 0;
 
 for (const r of paRows('encounters.csv')) {
@@ -244,8 +182,6 @@ for (const r of paRows('encounters.csv')) {
   const dispName = paLocNames.get(locId) ?? loc.ident;
   const speciesId = paFormSpecies.get(pokeIdStr) ?? Number(pokeIdStr);
 
-  // Location tags: LGPE-Kanto inherits the local CSV's classification by
-  // display name; everything else uses the curated gen7/8 map.
   let locTags = null;
   if (region === 'kanto') {
     locTags = localNameTags.get(`Kanto|${dispName.toLowerCase()}`) ?? null;
@@ -265,8 +201,6 @@ for (const r of paRows('encounters.csv')) {
   addVotes(speciesId, game, region, `${region}|${dispName}`, tags, acquisition, slot?.rarity ?? 10, methodClassWeight(method));
 }
 
-// --------------------------------------------- 3. App data + structural sets
-
 const pokemon = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'pokemon.json'), 'utf8'));
 const byId = new Map(pokemon.map((p) => [p.id, p]));
 
@@ -282,10 +216,8 @@ const ULTRA_BEASTS = idSet('ULTRA_BEAST_IDS');
 const PARADOX = idSet('PARADOX_IDS');
 const CONVERGENT = idSet('CONVERGENT_IDS');
 
-// Archetype id lists (for currentlyCovered): pair every `id: '…'` with the
-// pokemonIds arrays that follow it (subgroup lists are subsets — union is safe).
 const archetypesSrc = readFileSync(join(ROOT, 'src', 'data', 'archetypes.ts'), 'utf8');
-const archetypeIds = new Map(); // archetype id -> Set<number>
+const archetypeIds = new Map();
 {
   const tokens = [...archetypesSrc.matchAll(/id:\s*'([\w-]+)'|pokemonIds:\s*\[([^\]]*)\]/g)];
   let current = null;
@@ -299,7 +231,6 @@ const archetypeIds = new Map(); // archetype id -> Set<number>
   }
 }
 
-// Build groups (which sections exist on the build page today).
 const slotSrc = readFileSync(join(ROOT, 'src', 'data', 'slot-template.ts'), 'utf8');
 const buildGroups = [...slotSrc.matchAll(/id:\s*'([\w-]+)'[^\n]*?filterType:\s*('archetype'|'category'|null)[^\n]*?filterId:\s*(?:'([\w-]+)'|null)/g)]
   .map((m) => ({ id: m[1], filterType: m[2]?.replaceAll("'", '') ?? null, filterId: m[3] ?? null }));
@@ -329,9 +260,7 @@ function coveredSectionsFor(ids) {
   return covered;
 }
 
-// ------------------------------------------------------ 4. Line aggregation
-
-const lines = new Map(); // evolutionChainId -> members[]
+const lines = new Map();
 for (const p of pokemon) {
   if (!lines.has(p.evolutionChainId)) lines.set(p.evolutionChainId, []);
   lines.get(p.evolutionChainId).push(p);
@@ -344,8 +273,7 @@ const overrideByName = new Map(overrides.map((e) => [e.species, e]));
 
 function structuralTagFor(members) {
   const ids = members.map((m) => m.id);
-  // Most-specific first: UBs and paradox mons carry isLegendary too, so the
-  // generic legendary check must come after them.
+
   if (ids.some((id) => ULTRA_BEASTS.has(id))) return 'ultra-beast';
   if (ids.some((id) => PARADOX.has(id))) return 'paradox';
   if (members.some((m) => m.isMythical)) return 'mythical';
@@ -357,18 +285,15 @@ function structuralTagFor(members) {
   return null;
 }
 
-// ---- Pass A: aggregate stats per line (no decisions yet — the specificity
-// weights below need the full distribution first).
 const prelims = [];
 for (const [chainId, members] of lines) {
   members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
   const base = members.find((m) => m.id < 10000) ?? members[0];
   const ids = members.map((m) => m.id);
 
-  // Union member stats.
-  const agg = new Map(); // tag -> {contexts:Set, games:Set, regions:Set, locs:Set, locGames:Map, ctxRarity:Map, locRarity:Map, ctxMethodW:Map}
-  const allCtxRarity = new Map(); // ctx -> best rarity across members/tags
-  const allCtxMethodW = new Map(); // ctx -> best method-class weight
+  const agg = new Map();
+  const allCtxRarity = new Map();
+  const allCtxMethodW = new Map();
   const acquisitions = new Set();
   const mergeTag = (a, t) => {
     for (const c of t.contexts) a.contexts.add(c);
@@ -396,10 +321,6 @@ for (const [chainId, members] of lines) {
     }
   }
 
-  // Redistribute the 'water' pseudo-tag: ambiguous surf contexts count toward
-  // whichever of ocean/lake the line has more EXPLICIT evidence for (sea-route
-  // and sea-location votes vs lake-tagged votes); no explicit evidence → lake
-  // (inland default). Set-merging dedupes contexts already counted explicitly.
   if (agg.has('water')) {
     const w = agg.get('water');
     agg.delete('water');
@@ -410,10 +331,6 @@ for (const [chainId, members] of lines) {
     mergeTag(agg.get(target), w);
   }
 
-  // Weighted exclusivity: each context contributes (relative-rarity weight ×
-  // method-class weight). Relative means judged against the LINE's own best
-  // rarity — a rare-everywhere line (Dreepy, pseudo-legendaries) keeps full
-  // weight on its rare slots; only "rare here, common elsewhere" is a cameo.
   const lineMaxRarity = Math.max(0, ...allCtxRarity.values());
   const ctxWeight = (ctx, ctxRarity, ctxMethodW) =>
     relativeRarityWeight(ctxRarity.get(ctx) ?? 10, lineMaxRarity) * (ctxMethodW.get(ctx) ?? 1);
@@ -439,11 +356,6 @@ for (const [chainId, members] of lines) {
   prelims.push({ chainId, members, base, ids, agg, scored, totalContexts, totalStrength, structural, knowledgeEntry, acquisitions });
 }
 
-// ---- Tag specificity (IDF): "meadow" is the background tag of nearly every
-// grass route, so raw share lets it absorb identity mons (Sandshrew, Grimer).
-// Weight each tag by how UNCOMMON meaningful presence of it is across all
-// lines — a desert vote says far more than a meadow vote. Clamped so ultra-
-// rare tags (dojo ≈ one location) can't hijack every line that passes by.
 const IDF_ALPHA = 1.5;
 const dfByTag = new Map();
 const dataLines = prelims.filter((p) => p.scored.length).length;
@@ -455,25 +367,10 @@ const idfOf = (tag) => {
   return Math.min(3, Math.max(1, Math.log2(1 + dataLines / df)));
 };
 
-// ---- Pass B: decide each line's recommendation.
 const records = [];
 for (const P of prelims) {
   const { chainId, members, base, ids, agg, scored, totalContexts, totalStrength, structural, knowledgeEntry, acquisitions } = P;
 
-  // Specificity-adjusted ranking (raw shares are kept for confidence gates
-  // and reporting — the IDF only decides WHICH tag wins), with three guards
-  // that keep the boost an arbiter of CONTESTED races, not a hijack vector:
-  //
-  // 1. DOMINANCE: a raw leader with share ≥ 0.5 and ≥ 1.8× the runner-up wins
-  //    outright — no boost may overturn it (Skarmory's 63% mountain must not
-  //    lose to a boosted 27% volcanic).
-  // 2. BREADTH: a tag needs ≥2 locations and ≥2 games to earn its boost (one
-  //    odd location must not hijack a broad line), AND its share must be
-  //    competitive (≥ leader/3) — a fringe tag can't boost past everyone.
-  // 3. INDEPENDENCE: no boost if the tag's contexts are ≈a subset (≥90%
-  //    overlap) of the raw leader's — co-tagged locations (Kanto Routes 12/16
-  //    are meadow|swamp) are the SAME evidence, not independent support for
-  //    the more specific tag.
   const rawLeaderScored = scored[0];
   const leaderCtx = rawLeaderScored ? agg.get(rawLeaderScored.tag)?.ctxRarity : null;
   const dominant = rawLeaderScored && scored[1]
@@ -493,11 +390,7 @@ for (const P of prelims) {
       }
       return { ...s, score: s.share * (boostEligible ? Math.pow(idfOf(s.tag), IDF_ALPHA) : 1) };
     })
-    // On an effective tie, prefer the more SPECIFIC tag — but only when the
-    // two tags rest on substantially different contexts (Stonjourner's Route
-    // 10 tundra vs Lake of Outrage mountain). If one side's contexts are just
-    // a subset of the other's (co-tagged meadow|swamp routes: Snorlax), the
-    // "specific" reading has no independent evidence — prefer the generic.
+
     .sort((a, b) => {
       if (Math.abs(a.score - b.score) >= 0.01) return b.score - a.score;
       const aCtx = agg.get(a.tag)?.ctxRarity;
@@ -509,18 +402,13 @@ for (const P of prelims) {
         for (const c of bCtx.keys()) if (aCtx.has(c)) bInA++;
         const aSubset = aInB / aCtx.size >= 0.9;
         const bSubset = bInA / bCtx.size >= 0.9;
-        if (aSubset && !bSubset) return 1; // a is derivative evidence — b first
+        if (aSubset && !bSubset) return 1;
         if (bSubset && !aSubset) return -1;
-        if (aSubset && bSubset) return idfOf(a.tag) - idfOf(b.tag); // same evidence → generic first
+        if (aSubset && bSubset) return idfOf(a.tag) - idfOf(b.tag);
       }
       return idfOf(b.tag) - idfOf(a.tag) || b.share - a.share || b.games - a.games;
     });
 
-  // Weak evidence = the line's TOTAL rarity-weighted presence is under the
-  // gate (Larvesta's whole record was two 1% Lush Jungle slots). The 1-2
-  // context test only reroutes lines that have a structural/curated identity
-  // to fall back on — 2 full-rate contexts (Burmy's honey trees) are enough
-  // to place when nothing contradicts them.
   const weakEvidence = scored.length > 0 && totalStrength < MIN_EVIDENCE_STRENGTH;
   const thinContexts = scored.length > 0 && totalContexts <= 2;
   let recommended = null;
@@ -529,23 +417,19 @@ for (const P of prelims) {
   let rationale = '';
 
   if ((weakEvidence || thinContexts) && structural) {
-    // A category mon (legendary/mythical/starter/…) with only a trace of
-    // encounter data (e.g. Magearna's single gift-city row): the structural
-    // identity is the better recommendation than one thin biome vote.
+
     recommended = structural;
     source = 'structural';
     confidence = 'high';
     rationale = `${structural} per official metadata; encounter evidence too weak to override (${totalContexts} context(s), strength ${totalStrength.toFixed(1)})`;
   } else if ((weakEvidence || thinContexts) && knowledgeEntry) {
-    // Curated knowledge beats a handful of rare slots (the marquee habitat is
-    // often a static encounter that wild-encounter tables never contained).
+
     recommended = knowledgeEntry.biome;
     source = 'knowledge';
     confidence = knowledgeEntry.confidence === 'medium' ? 'medium' : 'low';
     rationale = `encounter evidence too weak to trust (${totalContexts} context(s), strength ${totalStrength.toFixed(1)}); curated: ${knowledgeEntry.note}`;
   } else if (weakEvidence) {
-    // Real data exists but it's all rare/thin — flag for human review instead
-    // of confidently placing. The weak evidence stays attached for context.
+
     recommended = 'needs-review';
     source = 'encounters-weak';
     confidence = null;
@@ -588,10 +472,6 @@ for (const P of prelims) {
     }
   }
 
-  // Curated override — applied last and transparently (see overrides.json):
-  // for lines where the data is systematically misleading and no general rule
-  // fixes them without breaking others (e.g. Bagon's identity is Meteor
-  // Falls, a single location that breadth rules can't reward).
   const overrideEntry = members.map((m) => overrideByName.get(m.name)).find(Boolean);
   if (overrideEntry && overrideEntry.biome !== recommended) {
     rationale = `curated override: ${overrideEntry.reason} — pipeline would have said ${recommended ?? 'nothing'} (${rationale})`;
@@ -600,10 +480,6 @@ for (const P of prelims) {
     confidence = 'medium';
   }
 
-  // Substantiating in-game locations for the recommended tag: every distinct
-  // location that voted for it, with the games it appears in there. Sorted by
-  // game-breadth (the strongest evidence first); capped in the JSON to keep
-  // the file reviewable (Magikarp's fishing tag alone spans ~190 locations).
   const EVIDENCE_CAP = 40;
   const tagEvidence = (tag, share) => {
     const t = agg.get(tag);
@@ -618,12 +494,10 @@ for (const P of prelims) {
       .sort((a, b) => b.games.length - a.games.length || a.location.localeCompare(b.location));
     return { tag, share: share != null ? +share.toFixed(3) : undefined, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
   };
-  // Weak lines cite the evidence for their would-be top tag so reviewers can
-  // see exactly what was rejected (e.g. Larvesta's 1% Lush Jungle slots).
+
   const evidenceTag = source === 'encounters' || source === 'override' ? recommended : source === 'encounters-weak' ? ranked[0]?.tag : null;
   const evidence = evidenceTag ? tagEvidence(evidenceTag) : null;
-  // Top-two ranked biomes with their full location lists — the review surface
-  // for catching lines placed under their SECOND-likeliest biome.
+
   const topBiomes = ranked.slice(0, 2).map((s) => tagEvidence(s.tag, s.share)).filter(Boolean);
 
   records.push({
@@ -650,18 +524,14 @@ for (const P of prelims) {
 
 records.sort((a, b) => a.baseId - b.baseId);
 
-// -------------------------------------------------------------- 5. Outputs
-
 mkdirSync(OUT_DIR, { recursive: true });
 
-// Completeness check.
 const seenIds = new Set(records.flatMap((r) => r.members));
 const missing = [];
 for (let i = 1; i <= 1025; i++) if (!seenIds.has(i)) missing.push(i);
 
 const speciesWithData = [...speciesStats.entries()].filter(([id, s]) => id <= 1025 && s.tags.size).length;
 
-// Validation spot checks.
 const spot = (name) => {
   const r = records.find((x) => x.members.some((id) => byId.get(id)?.name === name));
   return r ? `${name}: → ${r.recommended} (${r.confidence ?? '-'}, ${r.source}) — ${r.rationale}` : `${name}: NOT FOUND`;
@@ -686,7 +556,6 @@ const summary = {
 
 writeFileSync(join(OUT_DIR, 'biome-assignments.json'), JSON.stringify({ summary, records }, null, 1));
 
-// ----- Markdown report -----
 const SECTION_ORDER = ['forest', 'meadow', 'cave', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const md = [];
 md.push('# Biome assignment report');
@@ -716,8 +585,7 @@ const fmtLine = (r) => {
   const cov = r.currentlyCovered.length ? r.currentlyCovered.join(', ') : '**UNCOVERED**';
   const top = r.scores[0];
   const metrics = r.source === 'encounters' && top ? `${Math.round(top.share * 100)}% · ${top.games}g · ${top.regions}r` : r.source;
-  // Substantiating locations: encounter-derived rows cite the top in-game
-  // locations (by game breadth); knowledge rows cite the curated note.
+
   let where = '—';
   if (r.evidence) {
     const SHOW = 5;
@@ -822,9 +690,6 @@ md.push('');
 
 writeFileSync(join(OUT_DIR, 'biome-report.md'), md.join('\n'));
 
-// ----- Evidence review document: top-two biomes with full location lists -----
-// Purpose: catch false positives where a line got placed under its SECOND-
-// likeliest biome (or where the runner-up is plainly its real home).
 const ev = [];
 ev.push('# Biome evidence review — top biome vs runner-up');
 ev.push('');
@@ -849,8 +714,7 @@ for (const tag of [...SECTION_ORDER, ...nonPlace.sort()]) {
     else ev.push('- _no second biome — single-biome evidence_');
   }
 }
-// Lines placed by knowledge/structural with ranked data but a non-section tag
-// (e.g. a legendary with real encounter rows) still deserve review visibility.
+
 const otherWithData = records.filter((r) => r.topBiomes.length && !SECTION_ORDER.includes(r.recommended) && !nonPlace.includes(r.recommended));
 if (otherWithData.length) {
   ev.push('');
@@ -865,7 +729,6 @@ if (otherWithData.length) {
 ev.push('');
 writeFileSync(join(OUT_DIR, 'biome-evidence.md'), ev.join('\n'));
 
-// Console summary.
 console.log('=== biome pipeline summary ===');
 console.log(JSON.stringify(summary, null, 2));
 console.log('\n=== spot checks ===');

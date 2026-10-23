@@ -4,19 +4,6 @@ import { buildDashboard, type DashboardSource } from '../../../api/_dashboard';
 import { mergeFavoriteRecord, parseFavoriteSnapshot } from '../../../api/_favoriteRecord';
 import type { DashboardRange } from '../../../api/_range';
 
-// How the Picker pick counts can go wrong, and the test that catches each:
-// 1. A chart counts a Pokémon it no longer holds: an earlier snapshot, not
-//    the latest one.
-// 2. A chart of a browser not active in the range counts.
-// 3. An archived browser's chart counts, or its Picker row loses the
-//    archived flag. The archived set holds bare browser ids.
-// 4. A Pokémon nobody picked in a cell takes room in the payload.
-// 5. Equal counts come out in an order that changes between calls.
-// 6. The overall top list counts a chart once per cell, so a Pokémon in
-//    three cells of one chart counts three times.
-// 7. The counts cost Redis commands: they must come from the records the
-//    handler already read.
-
 vi.hoisted(() => {
   process.env.UPSTASH_REDIS_REST_URL ||= 'https://example.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN ||= 'test-token';
@@ -35,16 +22,13 @@ function picker(cid: string, snapshots: { at: number; fills: Record<string, numb
 }
 
 const pickers = [
-  // Held Squirtle in water|1, then swapped it for Blastoise (1).
   picker('pick-a', [
     { at: NOW - 3 * DAY, fills: { 'water|1': 7 } },
     { at: NOW - DAY, fills: { 'fire|1': 6, 'water|1': 9, 'starter|1': 6, 'favorite|1': 6 } },
   ]),
   picker('pick-b', [{ at: NOW - 2 * DAY, fills: { 'fire|1': 6, 'water|1': 7 } }]),
   picker('pick-c', [{ at: NOW - 2 * DAY, fills: { 'fire|1': 4, 'water|1': 9 } }]),
-  // Active a month ago only (2).
   picker('pick-old', [{ at: NOW - 30 * DAY, fills: { 'fire|1': 146 } }]),
-  // Archived by its bare id (3).
   picker('pick-gone', [{ at: NOW - DAY, fills: { 'fire|1': 136 } }]),
 ];
 
@@ -87,7 +71,6 @@ describe('favoritePicks', () => {
   });
 
   it('ranks the overall top by charts, not by cells (6)', () => {
-    // Charizard fills three cells of pick-a and one of pick-b: two charts.
     expect(dash('7d').favoritePicks.top).toEqual([[6, 2], [9, 2], [4, 1], [7, 1]]);
   });
 });
@@ -124,6 +107,7 @@ describe('submissions Redis bill with the pick counts', () => {
       'hgetall clients',
       'hgetall favorites:clients',
       'hgetall funnel',
+      'hgetall funnel:excluded',
       'hgetall league:clients',
       'smembers clients:archived',
     ]);

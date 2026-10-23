@@ -3,16 +3,6 @@ import { defaultBoundaries, levelBoundaries, makePlacedLine } from '../model/eng
 import { BOSS_ROW, CHAMPION_ROW, SLOT_COUNT } from '../model/constants';
 import { emptyCard, legendAt, legendsOf, migrateLeagueState, powerupAt, useLeagueStore } from './useLeagueStore';
 
-/**
- * The signature mark's two halves.
- *
- * The mark names a seat, so a reorder or a removal has to keep it pointing at
- * the same line. It also names the Pokemon the user tapped, because the picker
- * shows one tile per Pokemon and a leader's ace is often not its line's leaf.
- * Deriving the shown member from the boss row alone answered a tap on Geodude
- * with Golem.
- */
-
 const GEODUDE = [74, 75, 76];
 const ONIX = [95, 208];
 const OMANYTE = [138, 139];
@@ -58,12 +48,6 @@ describe('the signature mark', () => {
   });
 });
 
-/**
- * A powerup names a seat, and a seat is a position rather than a line. A
- * column drag used to leave Mega Salamence behind on whatever line landed in
- * seat 3. It also names a row, and the two rows a card can use it on are the
- * same six Pokemon at different strengths.
- */
 describe('the powerup', () => {
   const CHAMPION = CHAMPION_ROW;
   const BOSS = BOSS_ROW;
@@ -88,13 +72,13 @@ describe('the powerup', () => {
           : c,
       ),
     });
-    useLeagueStore.getState().removeLineWith(0, 95); // seat 2
+    useLeagueStore.getState().removeLineWith(0, 95);
     expect(powerupAt(card(), CHAMPION)).toEqual({ seat: 2, kind: 'mega', index: 0 });
     expect(powerupAt(card(), BOSS)).toEqual({ seat: 2, kind: 'mega', index: 0 });
   });
 
   it('goes when its own line goes', () => {
-    useLeagueStore.getState().removeLineWith(0, 75); // seat 1, which holds it
+    useLeagueStore.getState().removeLineWith(0, 75);
     expect(powerupAt(card(), CHAMPION)).toBeNull();
     expect(powerupAt(card(), BOSS)).toBeNull();
   });
@@ -108,7 +92,6 @@ describe('the powerup', () => {
     useLeagueStore.setState({
       cards: [{ ...cardWith([CHARIZARD]), powerups: undefined, powerup: { seat: 1, kind: 'mega', index: 0 } }, emptyCard()],
     });
-    // One shared powerup meant both rows, so that is what both rows answer.
     expect(powerupAt(card(), CHAMPION)).toEqual({ seat: 1, kind: 'mega', index: 0 });
     expect(powerupAt(card(), BOSS)).toEqual({ seat: 1, kind: 'mega', index: 0 });
   });
@@ -134,8 +117,6 @@ describe('pressing a powerup', () => {
       seat: 1, kind: 'mega', index: 0,
     });
     expect(powerupAt(card(), CHAMPION_ROW, 2), 'and gains nothing').toBeNull();
-    // A second seat *adds*: a team may power up as many of its six as it
-    // likes, so pressing on seat 2 does not take seat 1's away.
     expect(powerupAt(card(), BOSS_ROW, 1), 'the boss row keeps seat 1').toEqual({
       seat: 1, kind: 'mega', index: 0,
     });
@@ -178,14 +159,6 @@ describe('evolution boundary intent', () => {
   });
 });
 
-/**
- * The v4 step. Before v4 the eight-gym popup said "League ready", the copy
- * the new all-cards popup uses. The ways it can fail a saved league:
- * 1. A full league that saw that popup is shown "League ready" again.
- * 2. A league with only its gyms filled loses the popup it has not yet seen.
- * 3. An older save skips the v3 boundary upgrade on its way to v4.
- * 4. The step drops or rewrites a card.
- */
 describe('the v4 roster popup migration', () => {
   const fullLeague = (line: () => object) =>
     Array.from({ length: SLOT_COUNT }, () => ({ ...emptyCard(), lines: [line()] }));
@@ -218,16 +191,6 @@ describe('the v4 roster popup migration', () => {
   });
 });
 
-/**
- * The completion confetti fires once, when all 14 cards first have a full
- * team. The ways the v7 step could go wrong:
- *
- * 1. A league that was full before the update replays a completion from the
- *    past.
- * 2. A league one line short loses the burst it has not had yet.
- * 3. A later step overwrites a v7 save's own answer with the derived one.
- * 4. The step drops or rewrites a card or the popups already seen.
- */
 describe('the v7 completion confetti migration', () => {
   const league = (short: boolean) =>
     Array.from({ length: SLOT_COUNT }, (_, i) =>
@@ -254,11 +217,6 @@ describe('the v7 completion confetti migration', () => {
   });
 });
 
-/**
- * Starting one card over. The dex builder's build page has the same control
- * for the whole dex; here the blast radius is one card, so the test that
- * matters most is what it does NOT touch.
- */
 describe('clearCard', () => {
   it('empties every field of its own card and no other', () => {
     useLeagueStore.setState({
@@ -287,14 +245,6 @@ describe('clearCard', () => {
   });
 });
 
-/**
- * Four rules the card used to enforce and no longer does.
- *
- * Each was a restriction the model imposed rather than the game: a gym can
- * field two Geodudes, an endgame team can be all legendaries, a champion can
- * Mega more than one Pokemon, and a legendary belongs to the column a person
- * put it on rather than to the position that column happened to be in.
- */
 describe('what a card may now hold', () => {
   const GEODUDE = 74;
   const card0 = () => useLeagueStore.getState().cards[0];
@@ -317,7 +267,7 @@ describe('what a card may now hold', () => {
     useLeagueStore.getState().placeBranch(0, [GEODUDE]);
     useLeagueStore.getState().setLegend(0, { pokemonId: 243, seat: 1 });
     useLeagueStore.getState().setLegend(0, { pokemonId: 244, seat: 2 });
-    useLeagueStore.getState().swapLegends(0, 1, 2);
+    useLeagueStore.getState().moveLegend(0, 1, 2);
     expect(legendAt(card0(), 1)?.pokemonId).toBe(244);
     expect(legendAt(card0(), 2)?.pokemonId).toBe(243);
     expect(legendsOf(card0()), 'neither vanished').toHaveLength(2);
@@ -327,7 +277,6 @@ describe('what a card may now hold', () => {
     useLeagueStore.getState().placeBranch(0, [GEODUDE]);
     useLeagueStore.getState().placeBranch(0, [131]);
     useLeagueStore.getState().placeBranch(0, [95]);
-    // On the column that is about to move.
     useLeagueStore.getState().setLegend(0, { pokemonId: 243, seat: 1 });
     useLeagueStore.getState().moveSeat(0, 1, 3);
     expect(legendAt(card0(), 3)?.pokemonId, 'it went with its column').toBe(243);

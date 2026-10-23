@@ -1,39 +1,22 @@
 import { create } from 'zustand';
 import type { LeagueNudgeId } from '../model/funnelNudges';
 
-/**
- * Transient league-page UI state. Never persisted: a reload lands on the
- * league home with everything closed, which is also the crawler's view.
- */
-
 export type BrowserPurpose = 'lines' | 'signature' | 'partner' | 'legend' | 'replace';
 
-export type LeagueExportPhase = 'settings' | 'surveyIntro' | 'survey';
+type LeagueExportPhase = 'settings' | 'surveyIntro' | 'survey';
 
 interface LeagueUiState {
-  /** null = league home; a number = that card is open full-screen. */
   openCard: number | null;
-  /** League or trainer-card export overlay. */
   exportOpen: boolean;
-  /** null = league summary; a number = that trainer's card. */
   exportCardIndex: number | null;
   exportPhase: LeagueExportPhase;
-  /**
-   * The card the pane last held. Mobile keeps both panes on one sliding
-   * track, so the card must stay drawn while it slides back out — closing
-   * pans away from what was there rather than from a blank.
-   */
   lastCard: number;
   browserOpen: boolean;
   browserPurpose: BrowserPurpose;
-  /** The seat the pick applies to: the boss seat a legendary overlays, or
-   *  the seat whose line is being replaced. */
   targetSeat: number;
-  /** The Pokémon that was pressed to start a replacement, for the heading. */
   replacingId: number | null;
   movePickerOpen: boolean;
   typePickerOpen: boolean;
-  /** Transient export-nudge id, never persisted. */
   activeNudge: LeagueNudgeId | null;
 
   openCardPage: (card: number) => void;

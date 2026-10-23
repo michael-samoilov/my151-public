@@ -1,11 +1,4 @@
-// Downloads the PokeAPI CSV dumps needed by the biome pipeline into
-// docs/biome-research/pokeapi/. The live PokeAPI (and Bulbapedia/Serebii) are
-// blocked by this environment's egress policy, but raw.githubusercontent.com is
-// reachable — and the repo's CSV dumps carry encounter data through Gen VIII
-// (SwSh + DLC), which is what build-assignments.mjs consumes.
-//
-// Skip-if-exists so the pipeline is rerunnable offline once the cache is
-// committed. Run with:  node scripts/biome/fetch-pokeapi.mjs [--force]
+
 
 import { mkdir, writeFile, access } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -36,13 +29,11 @@ await mkdir(OUT_DIR, { recursive: true });
 for (const file of FILES) {
   const dest = join(OUT_DIR, file);
   if (!force) {
-    try {
-      await access(dest);
+    const cached = await access(dest).then(() => {
       console.log(`skip   ${file} (cached)`);
-      continue;
-    } catch {
-      /* not cached — fetch below */
-    }
+      return true;
+    }).catch(() => false);
+    if (cached) continue;
   }
   const url = `${BASE}/${file}`;
   const res = await fetch(url);

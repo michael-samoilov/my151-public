@@ -4,20 +4,25 @@ const TEMPORARY_FORM_IDS = new Set([
   10013, 10014, 10015, 10017, 10018, 10026, 10117, 10120, 10127,
   10136, 10137, 10138, 10139, 10140, 10141, 10142, 10143, 10157,
   10182, 10183, 10185, 10187, 10190, 10276, 10277, 11004, 11072,
-  // Overdrive, the Radiant Sun and Full Moon phases, and Zenith Marshadow.
   11105, 11106, 11107, 11108, 11109, 11110, 11111,
-  // Terastallized Ogerpon in each mask.
   11113, 11114, 11115, 11116,
-  // DJ Rotom is not a battle form. It stays out because it comes from the
-  // spin-off Pokémon Pokopia, not from a main-series game.
-  11112,
+  11112, 11128,
 ]);
 const FUSION_FORM_IDS = new Set([10022, 10023, 10155, 10156, 10193, 10194]);
+/**
+ * Picker-only appearances from spin-off games, Pokopia, and battle or ride
+ * looks. Michael, 2026-10-20: "for now, we can keep off all of these
+ * spinoff-game etc. pokemon forms from the league builder."
+ */
+const PICKER_ONLY_FORM_IDS = new Set([
+  11117, 11118, 11119, 11120, 11121, 11122, 11123, 11124, 11125, 11126, 11127, 11129, 11130,
+]);
 
 export const isLeagueAlternateForm = (form: AlternatePickerForm): boolean =>
   form.source !== 'powerup' && form.id !== 10191
   && form.ownerId !== 201
-  && !TEMPORARY_FORM_IDS.has(form.id) && !FUSION_FORM_IDS.has(form.id);
+  && !TEMPORARY_FORM_IDS.has(form.id) && !FUSION_FORM_IDS.has(form.id)
+  && !PICKER_ONLY_FORM_IDS.has(form.id);
 
 export const STANDALONE_FORM_IDS = new Set([
   10080, 10081, 10082, 10083, 10084, 10085,

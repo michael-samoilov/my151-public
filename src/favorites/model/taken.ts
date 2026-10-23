@@ -1,31 +1,15 @@
-import {
-  GEN_AXIS,
-  TYPE_AXIS,
-  cellKey,
-  cellKind,
-  isGenNumber,
-  isTypeName,
-  parseCellKey,
-  type GenAxisId,
-  type TypeAxisId,
-} from './cells';
+import { GEN_AXIS, TYPE_AXIS, cellKey, cellKind, isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from './cells';
 import type { PointerMark, SourceCoordinate } from './pointers';
 
 type Coordinate = TypeAxisId | GenAxisId;
 type Cell = readonly [TypeAxisId, GenAxisId];
 
-/**
- * A row or a column of the grid. The legendary row and the legendary column
- * are one line, and so are the gimmick row and the gimmick column. Every cell
- * on a line has the `shared` coordinate.
- */
 type Line = { shared: Coordinate; cells: readonly Cell[] };
 
 function isLinked(id: Coordinate): id is 'legendary' | 'gimmick' {
   return id === 'legendary' || id === 'gimmick';
 }
 
-/** The source coordinate left after the selector supplies a shared pick line. */
 export function sharedPickOtherCoordinate(source: { type: TypeAxisId; gen: GenAxisId }, current: { type: TypeAxisId; gen: GenAxisId }): Coordinate | undefined {
   if (source.type === current.type) return source.gen;
   if (source.gen === current.gen) return source.type;
@@ -58,10 +42,6 @@ function axisMark(id: Coordinate): PointerMark | null {
 
 type Peer = { key: string; mark: PointerMark };
 
-/**
- * The pick cells that share a row or a column with a pick cell, each with the
- * mark for its other coordinate. A pointer cell has no peers.
- */
 function peersOf(type: TypeAxisId, gen: GenAxisId): Peer[] {
   if (cellKind(type, gen, false) !== 'pick') return [];
   const here = cellKey(type, gen);
@@ -82,7 +62,6 @@ function markKey(mark: PointerMark): string {
   return `${mark.source}:${'value' in mark ? mark.value : ''}`;
 }
 
-/** Each Pokémon a peer of this cell holds, with one mark per peer that holds it. */
 export function takenIn(
   fills: Record<string, number>,
   type: TypeAxisId,
@@ -99,21 +78,6 @@ export function takenIn(
   return taken;
 }
 
-/** Direct peer cells; unlike axis marks, distinct coordinate pairs stay distinct. */
-export function takenCoordinatesIn(fills: Record<string, number>, type: TypeAxisId, gen: GenAxisId) {
-  const result = new Map<number, SourceCoordinate[]>();
-  for (const { key, mark } of peersOf(type, gen)) {
-    const id = fills[key];
-    const cell = parseCellKey(key);
-    if (id == null || !cell) continue;
-    const origins = result.get(id) ?? [];
-    if (!origins.some((origin) => cellKey(origin.type, origin.gen) === key)) origins.push({ ...cell, mark });
-    result.set(id, origins);
-  }
-  return result;
-}
-
-/** Display-only origins from other pick cells; summary pointers add no new pick. */
 export function pickedCoordinatesElsewhere(fills: Record<string, number>, type: TypeAxisId, gen: GenAxisId) {
   const result = new Map<number, SourceCoordinate[]>();
   const here = cellKey(type, gen);

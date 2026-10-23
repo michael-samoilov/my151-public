@@ -1,13 +1,3 @@
-/**
- * Picker rows. At most 6 tiles.
- *
- * A plain list keeps full rows until the tail. Widths run from 6 down to 3.
- * A remainder of 1 or 2 folds into the previous row only. A width is rejected
- * when the short rows outnumber the full rows, or the short rows are not a
- * suffix. The chosen width is the one whose first short row starts latest.
- * A starter list does not split an evolution line, so nine starters are 6+3.
- */
-
 export const SELECTOR_MAX_COLS = 6;
 
 function clampCap(maxCols: number): number {
@@ -28,7 +18,6 @@ function rowsAtWidth(count: number, width: number): number[] {
   return [...Array(full - 1).fill(width), high, low];
 }
 
-/** Index of the first row shorter than `cap`. A full grid scores as its length. */
 function firstShortStart(rows: readonly number[], cap: number): number {
   const at = rows.findIndex((len) => len < cap);
   return at === -1 ? rows.length : at;
@@ -133,7 +122,6 @@ function packLines<T>(lines: readonly (readonly T[])[], cap: number, formKey?: (
   return rows;
 }
 
-/** Split `items` into rows. Pass `lineKey` so a starter line stays whole. */
 export function prettyRows<T>(
   items: readonly T[],
   maxCols = SELECTOR_MAX_COLS,

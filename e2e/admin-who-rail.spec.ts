@@ -1,8 +1,7 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 
-// One browser in each of these countries, so nearly every flag folds into the
-// Who card's Other rail. Laying out that many rows once froze the page.
 const COUNTRIES = (
   'AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG ' +
   'CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FR GA GB GD GE GH GM ' +
@@ -49,7 +48,7 @@ test.describe('admin Who Other rail', { tag: '@viewport' }, () => {
     });
     await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
     await page.addInitScript(() => localStorage.setItem('p151-admin-token', 'e2e'));
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const rail = page.locator('[data-who-other="flag"]');
     await expect(rail.locator('[data-who-rail-row]').nth(1)).toBeVisible();
     const layout = await rail.evaluate((el) => {

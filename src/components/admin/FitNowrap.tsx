@@ -12,11 +12,6 @@ export function PreviewChipZoomProvider({ zoom, children }: { zoom: number; chil
   return <PreviewChipZoom.Provider value={zoom}>{children}</PreviewChipZoom.Provider>;
 }
 
-/** Shrink a nowrap row until it fits the host. Zoom, not wrap.
- *  `contentsOnMd` lets children join a parent subgrid on desktop.
- *  `lockZoom` reports this row's fit and uses the list-wide preview chip zoom,
- *  the smallest fit of every locked row, so all of them keep one size.
- *  `innerClassName` replaces the row's flex layout, for a grid. */
 export function FitNowrap({
   children,
   className,

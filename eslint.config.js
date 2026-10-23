@@ -1,3 +1,4 @@
+import { builtinModules } from 'node:module'
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -5,8 +6,6 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-// Honour the `_name` convention for deliberately-unused bindings — the codebase
-// already uses it for destructured-but-ignored props (e.g. `minorXTicks: _minorXTicks`).
 const unusedVars = {
   '@typescript-eslint/no-unused-vars': ['error', {
     argsIgnorePattern: '^_',
@@ -19,8 +18,6 @@ const unusedVars = {
 export default defineConfig([
   globalIgnores(['dist', 'playwright-report', 'test-results']),
 
-  // Browser app code. The React rules only apply here — api/ and scripts/ have
-  // no components, and react-refresh would flag their non-component exports.
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [
@@ -36,11 +33,28 @@ export default defineConfig([
     rules: { ...unusedVars },
   },
 
-  // Node code: Vercel serverless routes, build/data scripts, e2e specs and the
-  // root config files. These use process/Buffer/__dirname, which the browser
-  // globals set does not declare. The browser globals are merged in as well
-  // because the Playwright-driving files pass callbacks to `page.evaluate()`,
-  // whose bodies are serialised and run in the page, not in Node.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.{test,spec}.{ts,tsx}', 'src/**/__fixtures__/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: builtinModules.map(name => ({ name, allowTypeImports: true })),
+        patterns: [
+          {
+            regex: '^(?:node:|@upstash(?:/|$)|@vercel/node(?:/|$))',
+            allowTypeImports: true,
+            message: 'Keep server runtime dependencies out of browser code.',
+          },
+          {
+            regex: '(?:^|/)api/(?:_shared|_feedbackStore|_exportStats|_activityHistoryStore|_searchPerformance|_dashboard|[^/_][^/]*)(?:\\.[cm]?[jt]s)?$',
+            allowTypeImports: true,
+            message: 'Use HTTP endpoints from browser code. Import only pure API helpers or erased types.',
+          },
+        ],
+      }],
+    },
+  },
+
   {
     files: [
       'api/**/*.ts',
@@ -56,7 +70,6 @@ export default defineConfig([
     rules: { ...unusedVars },
   },
 
-  // CommonJS scripts. `require()` is the correct call there, not a smell.
   {
     files: ['**/*.cjs'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },

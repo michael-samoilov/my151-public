@@ -1,29 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * Regression harness for lost analytics sessions.
- *
- * The progress beacon is debounced: it fires a few seconds after the last
- * edit. The way a phone session ends — swipe away, switch apps — lands inside
- * that window, and for months the pending beacon died with the page. A short
- * first visit lost every beacon: the person never existed in the dashboard.
- * ("My friend used the app and doesn't show up.")
- *
- * The fix delivers the pending beacon from visibilitychange→hidden and
- * pagehide, via fetch keepalive. These tests pin that behaviour.
- *
- * Method: virtual time is installed and never advanced, so the debounce timer
- * cannot fire on its own. Any beacon that arrives after backgrounding was sent
- * by the lifecycle flush — the thing under test — not by the timer racing the
- * assertion. The third test advances the clock instead, proving the ordinary
- * debounce path still delivers for users who simply linger.
- */
-
 const STORE_KEY = 'personal-151-pokedex-v3';
 const CID = 'e2e-beacon-cid-00000001';
 
-// One placed Pokemon, persisted the way the store persists it — the app mounts
-// with a non-empty build, so the beacon hook schedules a progress report.
 const SEEDED_STORE = JSON.stringify({ state: { sections: { starter: [1] } }, version: 10 });
 
 type Beacon = { kind?: string; cid?: string; ids?: number[] };
@@ -37,8 +16,6 @@ test.describe('beacon delivery', () => {
       posts.push(route.request().postDataJSON() as Beacon);
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
     });
-    // Funnel events are not under test; answer them so the preview server
-    // (which has no API) doesn't fill the console with 404s.
     await page.route('**/api/event', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
     );

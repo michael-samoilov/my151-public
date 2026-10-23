@@ -19,7 +19,6 @@ type Usage = ({ status: 'ready'; stats: Stats } | { status: 'not_configured' } |
 const fmt = new Intl.NumberFormat('en-US');
 const gb = (bytes = 0) => `${(bytes / 1e9).toFixed(2)} GB`;
 
-/** Bar plus number, scaled to the largest value in its list. */
 function Row({ label, value, max, text }: { label: string; value: number; max: number; text: string }) {
   return (
     <>
@@ -32,7 +31,6 @@ function Row({ label, value, max, text }: { label: string; value: number; max: n
   );
 }
 
-/** A list title. Both lists share one grid, so every bar track has one length. */
 function Title({ children }: { children: ReactNode }) {
   return <div className="col-span-3 mt-2 text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">{children}</div>;
 }
@@ -53,12 +51,6 @@ function ActivityStatus({budget}: {budget?: ActivityBudget}) {
   </div>;
 }
 
-/**
- * Upstash's own numbers for the database: this month, the last days, and
- * today's commands by type (each type's counter resets at 00:00 UTC, so its
- * newest point is today so far). Read once per page load through the admin
- * API; adds one Redis read for the optional minute-history allowance.
- */
 export function UsageCard({ token }: { token: string }) {
   const [usage, setUsage] = useState<Usage | null>(null);
   useEffect(() => {

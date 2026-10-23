@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Bring up what needs installing: WebKit (apt), Firefox (Mozilla tarball) and the
-# agent-browser CLI (npm), which is the default Blink driver. Blink still has
-# Playwright as its fallback, so a blocked agent-browser install is not fatal.
-# Idempotent: skips anything present.
-# On an egress block it prints the exact blocked host and keeps going, so the
-# harness degrades to whatever came up instead of failing the run.
-#
-# Nothing here names a version, an ABI, or a CPU. A container image is rebuilt on
-# somebody else's schedule, so every pinned string is a future false DOWN: the
-# distro moves webkit2gtk-4.1 to webkitgtk-6.0, an arm runner moves
-# x86_64-linux-gnu to aarch64-linux-gnu, and a stale third-party repo appears
-# where deadsnakes used to be. Discover each of those instead.
+
+
+
+
+
+
+
+
+
+
+
+
 set -uo pipefail
 
 FF_DIR="${VERIFY_ENGINE_DIR:-/opt/verify-my151}"
@@ -132,9 +132,9 @@ else
 fi
 
 echo "== agent-browser (default Blink driver; Playwright is the fallback) =="
-# Installed out-of-tree, beside Firefox, so the skill stays self-contained and
-# package.json never changes. The CLI drives Chrome only, so it replaces the
-# Blink lane and nothing else: WebKit and Gecko keep their own drivers above.
+
+
+
 AB_DIR="$FF_DIR/agent-browser"
 AB_BIN="$AB_DIR/node_modules/.bin/agent-browser"
 if [ -x "$AB_BIN" ]; then

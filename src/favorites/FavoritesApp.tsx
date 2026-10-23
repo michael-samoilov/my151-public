@@ -8,6 +8,7 @@ import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { whenIdle } from '@/lib/whenIdle';
 import { reloadIfStale } from '@/lib/staleDeploy';
@@ -39,7 +40,6 @@ const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/Fav
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
-/** The completion popup is on screen: the confetti lands with it, once, as the popup does. */
 function completionShown() {
   sendFavoriteNudgeShownBeacon();
   fireCompletionConfetti();
@@ -107,7 +107,6 @@ function FavoritesContent({ sel, setSel }: {
   useEffect(() => {
     if (completionNudge.armed) preloadCompletionConfetti();
   }, [completionNudge.armed]);
-  // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
 
@@ -120,14 +119,6 @@ function FavoritesContent({ sel, setSel }: {
     catch { /* Storage can be unavailable in private browsing. */ }
   }, [showIcons]);
 
-  // Picker sprites in the order a visitor needs them (model/spritePreload.ts).
-  // Nearly every visitor opens Normal / Gen I, the top-left cell, first, so
-  // its sprites go first everywhere. The phone layout then fetches the cells
-  // as they come into view. The desktop layout shows nearly every cell at
-  // once, so there "in view" would mean all 1,388 sprites; a cell that is
-  // hovered, pressed, or focused gets a head start of its own instead
-  // (FavoritesGrid). The switch is the layout, not the pointer: a touch
-  // screen at desktop width shows the whole grid too.
   useEffect(() => {
     let alive = true;
     let observer: IntersectionObserver | null = null;
@@ -148,7 +139,6 @@ function FavoritesContent({ sel, setSel }: {
     });
     return () => { alive = false; observer?.disconnect(); };
   }, []);
-  // Once a selector has opened, the visitor is picking: fetch the rest.
   useEffect(() => {
     if (sel) whenIdle(prefetchEverySprite);
   }, [sel]);
@@ -161,8 +151,6 @@ function FavoritesContent({ sel, setSel }: {
     setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
 
-  // Desktop shows the picker inside the grid, next to its cell. Mobile shows
-  // it as a bottom sheet.
   const picker = sel ? (
     <PickerSheet
       autoFocus={sel.keyboard}
@@ -185,8 +173,6 @@ function FavoritesContent({ sel, setSel }: {
       }}
       onClear={() => clear(sel.type, sel.gen)}
       onOpenCell={(type, gen, keyboard) => {
-        // The grid may be scrolled away from the cell. The scroller's padding
-        // keeps it clear of the sticky headers.
         document.querySelector(`[data-testid="favorites-cell-${type}-${gen}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         open(type, gen, keyboard);
       }}
@@ -196,10 +182,11 @@ function FavoritesContent({ sel, setSel }: {
   return (
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
+        <SkipLink />
         <GlobalHeader />
         {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
             loses its landmark role, so the panels are plain elements. */}
-        <main className="flex shrink-0 flex-col">
+        <main id={MAIN_ID} tabIndex={-1} className="flex shrink-0 flex-col focus:outline-none">
         <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
           currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
           onViewChange={(view) => {
@@ -209,10 +196,6 @@ function FavoritesContent({ sel, setSel }: {
             setCurrentView(view);
           }}
           onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills); }} />
-        {/* The grid frame fills the screen below both headers. The grid
-            scrolls inside it, and the footer stays below the fold. On
-            desktop the frame runs to the screen edge, as the grid did when
-            the page scrolled. */}
         <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
@@ -240,7 +223,6 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      {/* The Dex builder's 25 popup, under Analytics once the grid first holds 25. */}
       <AnalyticsNudge armed={analytics.armed} canShow={desktop || sel === null} desktop={desktop}
         onDismiss={analytics.dismiss}
         onOpen={() => {
@@ -249,8 +231,6 @@ function FavoritesContent({ sel, setSel }: {
           setCurrentView('analytics');
           analytics.dismiss();
         }} />
-      {/* The Dex builder's follow-up popup, pointing at Export once the grid is
-          first complete, with the completion confetti. */}
       <FollowUpHint
         armed={completionNudge.armed}
         dismiss={completionNudge.dismiss}

@@ -21,7 +21,7 @@ import { HoldOrMoveTouchSensor } from './gridTouchSensor';
  * under the fingers. A delayed `TouchSensor` cancels itself on that movement
  * and leaves the gesture to the browser.
  */
-export const DRAG_HOLD_MS = 250;
+const DRAG_HOLD_MS = 250;
 const TOUCH_SLOP_PX = 5;
 const MOUSE_DISTANCE_PX = 8;
 

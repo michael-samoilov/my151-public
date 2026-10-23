@@ -24,18 +24,15 @@ const MILESTONE_LINE = {
   card: 'exportSurvey.early.milestone.card',
 } as const satisfies Record<ExportTool, MessageKey>;
 
-/** Whole sentences per tool, with `{name}` where the Pokémon goes. */
 export const FIRST_POKEMON_LINE = {
   pokedex: 'exportSurvey.firstPokemon.pokedex',
   league: 'exportSurvey.firstPokemon.league',
   card: 'exportSurvey.firstPokemon.card',
 } as const satisfies Record<ExportTool, MessageKey>;
 
-/** First-N buckets for "you're among the first n users". */
 export const EARLY_EXPORT_BUCKETS = [10, 50, 100, 151, 251, 500, 1000] as const;
 
-/** Export ordinals that match national-dex generation totals. */
-export const GEN_EXPORT_MILESTONES: { n: number; gen: number }[] = [
+const GEN_EXPORT_MILESTONES: { n: number; gen: number }[] = [
   { n: 151, gen: 1 },
   { n: 251, gen: 2 },
   { n: 386, gen: 3 },
@@ -47,12 +44,6 @@ export const GEN_EXPORT_MILESTONES: { n: number; gen: number }[] = [
   { n: 1025, gen: 9 },
 ];
 
-/**
- * An ordinal in the active locale: 151st, 151., 151人目. The locale's ordinal
- * rule picks the pattern. Export milestones start at 151, where every
- * non-English locale's rule says `other`, so those catalogs carry only
- * `exportSurvey.ordinal_other`.
- */
 export function ordinalNumber(n: number): string {
   const rule = new Intl.PluralRules(getLocale(), { type: 'ordinal' }).select(n);
   const key = rule === 'one' || rule === 'two' || rule === 'few'
@@ -75,22 +66,11 @@ export function firstPokemonLine(pokemonName: string, tool: ExportTool): string 
   return t(FIRST_POKEMON_LINE[tool], { name: pokemonName });
 }
 
-/**
- * Preview and local testing still show the early-export copy, but they must
- * not consume production uniqueness. 151 is a generation milestone, so the
- * intro includes the "Lucky you!" line; the first seated id stands in for a
- * first-Pokémon highlight.
- */
 export function previewExportHighlight(tool: ExportTool, pokemonIds: number[]): ExportHighlight {
   const firstPokemonId = pokemonIds.find((id) => Number.isInteger(id) && id > 0) ?? null;
   return { ordinal: 151, tool, firstPokemonId };
 }
 
-/**
- * Demo / preview clients never POST an export beacon. They still need the
- * intro copy, so an export in demo mode uses `previewExportHighlight` instead
- * of the network. Progress beacons stay silent.
- */
 export function exportBeaconPlan(opts: {
   demo: boolean;
   optedOut: boolean;
@@ -99,23 +79,6 @@ export function exportBeaconPlan(opts: {
   if (opts.demo) return opts.kind === 'export' ? 'preview' : 'skip';
   if (opts.optedOut) return opts.kind === 'export' ? 'network' : 'skip';
   return 'network';
-}
-
-/**
- * Of Pokémon in this export that have never appeared in any export, pick the
- * one most often placed across Pokedex Builder entries. National-dex order
- * breaks ties.
- */
-export function pickFirstExportPokemon(
-  exportIds: number[],
-  alreadySeen: Iterable<number>,
-  dexFreq: Record<number, number>,
-): number | null {
-  const seen = new Set(alreadySeen);
-  const unseen = [...new Set(exportIds.filter((id) => id > 0 && !seen.has(id)))];
-  if (unseen.length === 0) return null;
-  unseen.sort((a, b) => (dexFreq[b] ?? 0) - (dexFreq[a] ?? 0) || a - b);
-  return unseen[0];
 }
 
 function allSeatedIds(cards: GymCard[]): number[] {
@@ -131,17 +94,11 @@ function allSeatedIds(cards: GymCard[]): number[] {
   return ids;
 }
 
-/** Distinct Pokémon ids that appear on these cards (export uniqueness). */
 export function exportPokemonIds(cards: GymCard[]): number[] {
   return [...new Set(allSeatedIds(cards).filter((id) => id > 0))];
 }
 
-/** Distinct Pokémon species seated anywhere in the league (lines, legends, picks). */
-export function countDistinctPokemonInLeague(cards: GymCard[]): number {
-  return new Set(allSeatedIds(cards)).size;
-}
-
-export function readLeagueExportCount(): number {
+function readLeagueExportCount(): number {
   try {
     const raw = localStorage.getItem(EXPORT_COUNT_KEY);
     const n = raw === null ? 0 : Number.parseInt(raw, 10);
@@ -151,7 +108,6 @@ export function readLeagueExportCount(): number {
   }
 }
 
-/** Returns the count after incrementing. */
 export function incrementLeagueExportCount(): number {
   const next = readLeagueExportCount() + 1;
   try {

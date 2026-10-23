@@ -7,7 +7,6 @@ import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 import { allPickerMons, getPickerMon } from './catalog';
 import { eligibleFor } from './eligibility';
 
-/** The file behind a sprite URL. A replaced sprite's URL carries a ?v= revision (src/lib/spriteUrl.ts); the file has none. */
 const spriteFile = (sprite: string) => `public${sprite.split('?')[0]}`;
 
 describe('alternate picker forms', () => {
@@ -68,7 +67,7 @@ describe('alternate picker forms', () => {
   it('offers twenty distinct Vivillon patterns in Gen 6 Bug without near-duplicate forms', () => {
     const vivillon = eligibleFor('bug', 6).filter((mon) => mon.ownerId === 666);
     expect(vivillon).toHaveLength(20);
-    expect(vivillon[0].id).toBe(666); // Meadow, the base form.
+    expect(vivillon[0].id).toBe(666);
     expect(vivillon.map((mon) => mon.id)).toEqual([666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]);
     expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(spriteFile(mon.sprite))).digest('hex'))).size).toBe(20);
     for (const id of [10027, 10030, 10118]) expect(getPickerMon(id)).toBeUndefined();
@@ -100,7 +99,6 @@ describe('alternate picker forms', () => {
       ['normal', 5, [521, 11095]],
       ['flying', 5, [521, 11095]],
       ['fairy', 6, [669, 11082, 11083, 11084, 11085, 670, 11086, 11087, 11088, 11089]],
-      // Natural Form, then the nine trims in game order.
       ['normal', 6, [676, 11096, 11097, 11098, 11099, 11100, 11101, 11102, 11103, 11104]],
     ] as const) {
       const list = ids(type, gen);
@@ -114,7 +112,7 @@ describe('alternate picker forms', () => {
     expect(ids('ice', 8)).toContain(11072);
     expect(ids('fire', 8)).toContain(11072);
     expect(ids('gimmick', 8)).toContain(11072);
-    expect(ids('psychic', 8)).toContain(10186); // Indeedee female already existed.
+    expect(ids('psychic', 8)).toContain(10186);
     expect(ids('dragon', 9)).toEqual(expect.arrayContaining([978, 11006, 11007]));
     for (let id = 11073; id <= 11081; id += 1) expect(getPickerMon(id)).toBeUndefined();
   });
@@ -149,20 +147,17 @@ describe('alternate picker forms', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     const cells = [
-      // Overdrive follows each owner; each Kyurem Overdrive follows its fusion.
       [[643, 11105], ['dragon', 5], ['fire', 5], ['legendary', 5], ['dragon', 'legendary'], ['fire', 'legendary']],
       [[644, 11106], ['dragon', 5], ['electric', 5], ['legendary', 5], ['electric', 'legendary']],
       [[646, 10022, 11107, 10023, 11108], ['dragon', 5], ['ice', 5], ['legendary', 5], ['ice', 'legendary']],
       [[791, 11109], ['psychic', 7], ['steel', 7], ['legendary', 7], ['steel', 'legendary']],
       [[792, 11110], ['psychic', 7], ['ghost', 7], ['legendary', 7], ['ghost', 'legendary']],
       [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
-      // Outside the Gimmick cells, each Terastal Ogerpon follows its mask,
-      // although battle forms otherwise sort last.
-      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['grass', 9], ['grass', 'legendary'], ['legendary', 9]],
+      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['legendary', 9]],
+      [[1017, 11113, 10273, 10274, 10275], ['grass', 9], ['grass', 'legendary']],
       [[10273, 11114], ['water', 9], ['water', 'legendary']],
       [[10274, 11115, 1020], ['fire', 9], ['fire', 'legendary']],
       [[10275, 11116, 1022], ['rock', 9], ['rock', 'legendary']],
-      // In the Gimmick cells they sort as battle forms, before Terapagos's.
       [[11113, 11114, 11115, 11116, 10276, 10277], ['gimmick', 9], ['legendary', 'gimmick']],
     ] as const;
     for (const [expected, ...positions] of cells) {
@@ -173,14 +168,14 @@ describe('alternate picker forms', () => {
         expect(list.slice(start, start + expected.length), `${type}|${gen}`).toEqual(expected);
       }
     }
-    // DJ Rotom debuted in Pokémon Pokopia, after every other Generation IX game.
-    for (const type of ['electric', 'ghost'] as const) expect(ids(type, 9).at(-1), type).toBe(11112);
+    expect(ids('electric', 9).at(-1)).toBe(11112);
+    expect(ids('normal', 9)).toContain(11112);
+    expect(ids('ghost', 9)).not.toContain(11112);
     expect(ids('electric', 4)).not.toContain(11112);
     expect(ids('legendary', 9)).not.toContain(11112);
     for (const [type, gen] of [['gimmick', 6], ['dragon', 'gimmick'], ['ground', 'gimmick'], ['legendary', 'gimmick']] as const) {
       expect(ids(type, gen), `${type}|${gen}`).toContain(10301);
     }
-    // Battle forms stay out of the ordinary type × generation cells.
     expect(ids('dragon', 6)).not.toContain(10301);
     expect(ids('legendary', 6)).not.toContain(10301);
   });

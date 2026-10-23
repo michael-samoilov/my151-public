@@ -1,22 +1,12 @@
-/**
- * Fetch and parse the PokeAPI CSV dumps that carry localized names.
- *
- * Cached under docs/i18n/pokeapi/ and deliberately NOT committed. Nothing in
- * `npm run build` or CI reads the CSVs — only these generators do, by hand —
- * and the files they produce are committed. So the pin against upstream drift
- * is the generated output itself: re-run a generator against a changed PokeAPI
- * and `src/i18n/names/` shows a diff. A checked-in copy of the raw dumps would
- * add ~21k lines and 730 kB to every review to buy offline regeneration, and
- * nothing else.
- */
+
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv';
-export const CACHE_DIR = 'docs/i18n/pokeapi';
+const CACHE_DIR = 'docs/i18n/pokeapi';
 
-/** The CSVs the name pipeline reads. */
-export const CSVS = [
+const CSVS = [
   'languages',
   'pokemon',
   'pokemon_species',
@@ -31,7 +21,7 @@ export const CSVS = [
   'item_names',
 ] as const;
 
-export type CsvName = (typeof CSVS)[number];
+type CsvName = (typeof CSVS)[number];
 
 /**
  * Populate the local cache, fetching anything missing.
@@ -57,7 +47,7 @@ export async function ensureCsvs(force = false): Promise<void> {
  * commas (a German growth-rate name is "langsam, dann sehr schnell"), so
  * splitting on commas would corrupt rows.
  */
-export function parseCsv(text: string): Record<string, string>[] {
+function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';
@@ -106,5 +96,4 @@ export const LANGUAGE_IDS = {
   it: 8,
 } as const;
 
-/** Romaji, used only to build the Japanese search index. */
 export const ROMAJI_LANGUAGE_ID = 2;

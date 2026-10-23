@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Custom Pokédex Maker, Gym Leader Maker &amp; Favorite Pokémon Picker</title>
     <meta name="description" content="Custom Pokédex maker with regional archetype templates. Gym leader &amp; trainer card maker with Elite Four &amp; Champion. Favorite Pokémon picker by type and generation." />
@@ -21,7 +25,7 @@
     <meta property="og:title" content="Custom Pokédex Maker, Gym Leader Maker &amp; Favorite Pokémon Picker" />
     <meta property="og:description" content="Custom Pokédex maker with regional archetype templates. Gym leader &amp; trainer card maker with Elite Four &amp; Champion. Favorite Pokémon picker by type and generation." />
     <meta property="og:url" content="https://my151.app/" />
-    <meta property="og:image" content="https://my151.app/og-hub.png?v=2" />
+    <meta property="og:image" content="https://my151.app/og-hub.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="my151 Free Pokémon Fan Tools: a favorite Pokémon chart, a custom regional Pokédex with detailed stats, and a Brock trainer card in front, fanned." />
@@ -29,7 +33,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Custom Pokédex Maker, Gym Leader Maker &amp; Favorite Pokémon Picker" />
     <meta name="twitter:description" content="Custom Pokédex maker with regional archetype templates. Gym leader &amp; trainer card maker with Elite Four &amp; Champion. Favorite Pokémon picker by type and generation." />
-    <meta name="twitter:image" content="https://my151.app/og-hub.png?v=2" />
+    <meta name="twitter:image" content="https://my151.app/og-hub.jpg" />
     <meta name="twitter:image:alt" content="my151 Free Pokémon Fan Tools: a favorite Pokémon chart, a custom regional Pokédex with detailed stats, and a Brock trainer card in front, fanned." />
 
     <script type="application/ld+json">
@@ -38,55 +42,58 @@
         "@type": "WebSite",
         "name": "my151",
         "url": "https://my151.app/",
-        "mainEntityOfPage": "https://my151.app/",
+        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://my151.app/", "url": "https://my151.app/",
+          "primaryImageOfPage": { "@type": "ImageObject", "url": "https://my151.app/search/hub.jpg", "width": 1932, "height": 1932 } },
         "image": { "@type": "ImageObject", "url": "https://my151.app/search/hub.jpg", "width": 1932, "height": 1932 },
         "description": "Custom Pokédex maker with regional archetype templates. Gym leader & trainer card maker with Elite Four & Champion. Favorite Pokémon picker by type and generation.",
         "inLanguage": "en"
       }
     </script>
+    <!-- Fetches a tool's HTML when a visitor is about to open it (hover or
+         press on desktop, links in view on phones). Prefetch runs no script,
+         so analytics only count a page someone actually opens. -->
+    <script type="speculationrules">
+      {"prefetch": [{"where": {"href_matches": ["/pokedex-builder", "/custom-gym-leader", "/favorite-pokemon-picker"]}, "eagerness": "moderate"}]}
+    </script>
 
     <style>
-      /* These must match the LIGHT palette in src/index.css, not a dark one. That
-       * file's `body` rule (background-color: var(--color-background) = #f7f7f8)
-       * lives in the built stylesheet, which is linked *after* this block and
-       * therefore wins — and because stylesheets are render-blocking, the values
-       * here only ever paint if that stylesheet fails to load. A dark background
-       * declared here is invisible in normal operation while making the boot
-       * screen look dark in any test that bypasses the stylesheet. The app has no
-       * dark mode: nothing applies the `.dark` class. */
+
+
+
+
+
+
+
+
       html, body { margin: 0; padding: 0; background: #f7f7f8; color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       #root { min-height: 100dvh; }
       .p151-boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; box-sizing: border-box; text-align: center; }
       .p151-boot svg { width: 64px; height: 64px; animation: p151-spin 1.1s linear infinite; }
-      /* Was #a3a3a3, which predated this block rendering on a light background and
-       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is the app's
-       * --color-muted-foreground: 4.76:1 on #f7f7f8, AA for 13px text. */
+
+
+
       .p151-boot span { font-size: 13px; color: #6e6e6e; letter-spacing: 0.02em; }
-      /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
-       * spinner and hint scale together at --breakpoint-md instead
-       * of staying pinned to phone sizing on a 1440px display. Plain px + one media
-       * query because this block renders before main.tsx installs the rem-based
-       * root font-size knob. */
+
+
+
+
+
       @media (min-width: 1024px) {
         .p151-boot { gap: 20px; }
         .p151-boot svg { width: 84px; height: 84px; }
         .p151-boot span { font-size: 14px; }
       }
       @keyframes p151-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .p151-boot svg { animation: none; }
+      }
     </style>
   </head>
   <body>
-    <!-- The spinner. The build writes the hub's own markup into #root (see
-         scripts/prerender-hub.ts), and the spinner shows only to visitors who
-         wait for the app: another language, `?admin`, `?demo`, or a returning
-         visitor while the favorites notice runs. A build
-         without the prerender, such as the dev server, shows it until React
-         renders. src/home/main.tsx removes it then. -->
-    <div class="p151-boot">
+    <div class="p151-boot" role="status" aria-live="polite" aria-atomic="true">
       <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" stroke-width="1.5"/>
         <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626"/>
-        <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" stroke-width="2"/>
         <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" stroke-width="2"/>
       </svg>
       <span>Loading…</span>

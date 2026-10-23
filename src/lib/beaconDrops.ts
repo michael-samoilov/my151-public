@@ -1,54 +1,23 @@
-/**
- * Server-side beacon drops: which ones are still meaningful, and what each one
- * does to the numbers on the admin dashboard.
- *
- * Kept out of the component so the filtering can be tested directly. The rule
- * it encodes is easy to lose in a refactor and expensive to lose in practice:
- * a retired counter must stop being shown, or the dashboard carries a standing
- * warning about a fixed problem that can never clear itself.
- */
-
-/**
- * The funnel-hash prefix each tool records its drops under: api/submit.ts
- * writes `submit-drop:*`, api/league.ts writes `league-drop:*`.
- *
- * Both tools drop beacons for the same four reasons, so a single combined
- * notice would say "4 dropped for cap" without saying which store lost them —
- * and the two stores fail for different reasons at different times.
- */
-export const DROP_PREFIXES = {
+const DROP_PREFIXES = {
   dex: 'submit-drop:',
   league: 'league-drop:',
 } as const;
 
-export type DropTool = keyof typeof DROP_PREFIXES;
+type DropTool = keyof typeof DROP_PREFIXES;
 
-/** Human label for each tool, for the notice. */
 export const DROP_TOOL_LABEL: Record<DropTool, string> = {
   dex: 'Dex builder',
   league: 'Gym leader maker',
 };
 
-export interface DropRow {
+interface DropRow {
   tool: DropTool;
   reason: string;
   count: number;
 }
 
-/**
- * Reasons retired by a later change. Their counters still hold real history in
- * Redis — nothing deletes them — but nothing increments them either.
- *
- * `rate-limit` predates the split into `rate-limit-ip` / `rate-limit-client`,
- * which exists because one combined bucket could not say which limiter fired.
- * Its 31 recorded drops are from before the cadence/cap fix and are frozen, so
- * showing them reads as an ongoing fault rather than as history.
- */
-export const LEGACY_DROP_REASONS = new Set(['rate-limit']);
+const LEGACY_DROP_REASONS = new Set(['rate-limit']);
 
-/** What a live drop reason means, and how it should change your reading of the
- *  numbers above it. The second half is the one that matters: a drop counter is
- *  only useful if you know which stat it makes untrustworthy. */
 export const DROP_REASON_INFO: Record<string, { title: string; what: string; reading: string }> = {
   'rate-limit-ip': {
     title: 'Per-network burst limit',
@@ -76,14 +45,6 @@ export const DROP_REASON_INFO: Record<string, { title: string; what: string; rea
   },
 };
 
-/**
- * Drop reasons worth showing, largest first: the funnel hash filtered to the
- * drop prefixes, with retired reasons and zero counts removed. Pass `tool` to
- * limit it to one store.
- *
- * Zeroes are dropped because a counter that has been created but never
- * incremented is not a fault, and an amber warning reading "0" is noise.
- */
 export function liveDropReasons(
   events: Record<string, number> | undefined,
   tool?: DropTool,

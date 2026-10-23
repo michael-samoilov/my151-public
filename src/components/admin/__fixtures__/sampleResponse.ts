@@ -5,19 +5,6 @@ import { bareCid } from '../../../../api/_archive';
 import { browserIndex } from '../../../../api/_dashboard';
 import type { BrowserRecords } from '../browserRecords';
 import favoriteCells from '../../../../api/_favoriteCells.json';
-// Demo fixture for the admin dashboard, reached at `/?admin&demo`.
-//
-// It renders the redesign without a live token, so a preview deploy shows the
-// whole page and the design can be reviewed on the real app instead of a
-// mockup. Every number is fabricated but self-consistent: the funnel stages
-// sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete
-// across 1–30 / 31–60 / 61–90 / 91–120 / 121–150; 65 = 17 exported + 48 kept
-// private; 23 incomplete builders also exported), the league funnel sums
-// (8 opened = 5 placed a Pokémon + 3 bounced; 5 = 1 card not finished + 4
-// with a full gym; 4 = 1 at 1–4 + 1 at 5–8 + 1 at 9–12 + 1 full league),
-// and each cohort's per-segment counts sum to its base. The cids are
-// obviously fake. This module is dynamically imported only when the `demo`
-// query flag is present, so it never ships in the real admin bundle.
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type {
@@ -32,20 +19,14 @@ import { lineKey, poolIdsForSection } from '../picksStats';
 import { leaguePicks } from '../../../../api/_leaguePicks';
 import { PREVIEW_FIT } from '../userPreview';
 const DAY = 86_400_000;
-// Anchor "now" to the data window's end so relative times read sensibly.
-const NOW = Date.UTC(2026, 8, 10, 18, 0, 0); // 2026-09-10
-const FIRST = Date.UTC(2026, 5, 12, 0, 0, 0); // 2026-06-12
+const NOW = Date.UTC(2026, 8, 10, 18, 0, 0);
+const FIRST = Date.UTC(2026, 5, 12, 0, 0, 0);
 const iso = (ts: number) => new Date(ts).toISOString();
 
-/** Build a survival curve from raw (t, survivors) points, with percentile
- *  stats derived so the existing readouts have something to show. `s` is stored
- *  as a surviving fraction (0–1), matching the real aggregation — consumers
- *  multiply by `n` to recover a count. */
 function curve(points: [number, number][], n: number): SurvivalCurve {
   const base = points[0]?.[1] || n || 1;
   const survival = points.map(([t, s]) => ({ t, s: s / base }));
   const at = (frac: number) => {
-    // First t whose survivor share drops to/below `frac` of the start.
     const start = points[0][1] || 1;
     for (const [t, s] of points) if (s / start <= frac) return t;
     return points[points.length - 1][0];
@@ -53,7 +34,6 @@ function curve(points: [number, number][], n: number): SurvivalCurve {
   return { survival, stats: { p50: at(0.5), p75: at(0.25), p90: at(0.1) }, n };
 }
 
-/** Turn a share vector (percent) over labels into a raw count map on a base. */
 function tally(labels: string[], pct: number[], base: number): Record<string, number> {
   const out: Record<string, number> = {};
   labels.forEach((l, i) => {
@@ -62,8 +42,6 @@ function tally(labels: string[], pct: number[], base: number): Record<string, nu
   return out;
 }
 
-// Daily active series: ~90 days that rise from the low 30s to the mid 50s, with
-// weekday texture, so the weekly rollup in the hero trend reads like the mockup.
 function activitySeries(): { day: number; dau: number; rolling7: number }[] {
   const today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
   const end = Math.max(NOW, today);
@@ -71,9 +49,9 @@ function activitySeries(): { day: number; dau: number; rolling7: number }[] {
   const raw: { day: number; dau: number }[] = [];
   for (let i = 0; i <= days; i += 1) {
     const day = FIRST + i * DAY;
-    const trend = 30 + (i / days) * 22; // 30 → 52 over the window
+    const trend = 30 + (i / days) * 22;
     const weekday = new Date(day).getUTCDay();
-    const dip = weekday === 0 || weekday === 6 ? -6 : 2; // weekend dip
+    const dip = weekday === 0 || weekday === 6 ? -6 : 2;
     const wobble = Math.round(6 * Math.sin(i / 2.3));
     raw.push({ day, dau: Math.max(8, Math.round(trend + dip + wobble)) });
   }
@@ -144,7 +122,6 @@ function mixFromJoints(joints: typeof DEX_JOINTS, key: 'device' | 'os' | 'browse
   return out;
 }
 
-// Per-cohort share vectors from the mockup's Who card.
 const COHORTS = {
   dex: { base: 388, dev: [63, 31, 6], geo: [44, 33, 15, 8], br: [52, 27, 9, 8, 4] },
   league: { base: 5, dev: [80, 20, 0], geo: [60, 20, 20, 0], br: [60, 20, 0, 20, 0] },
@@ -195,8 +172,6 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
   };
 }
 
-// Heatmaps: an evening-and-lunch pattern, heavier at weekends. Eastern Time
-// is the same week an hour later.
 const HOUR_SHAPE = Array.from({ length: 24 }, (_, h) => Math.exp(-((h - 20) ** 2) / 20) + 0.5 * Math.exp(-((h - 13) ** 2) / 8));
 const LOCAL_WEEK: number[][] = Array.from({ length: 7 }, (_, d) =>
   Array.from({ length: 24 }, (_, h) => Math.round(HOUR_SHAPE[h] * (d === 0 || d === 6 ? 13 : 10)) + ((d * 5 + h) % 3)),
@@ -213,11 +188,9 @@ const byTool: Record<ToolSlice, Aggregates> = {
   favorites:aggregateRecords([],Date.UTC(2026,9,4)),
 };
 
-// Fixed country distribution reused across cohorts (region rollup maps codes).
 const cohortCountries = (base: number): Record<string, number> =>
   tally(['US', 'GB', 'DE', 'IT', 'CA', 'FR', 'SE', 'JP', 'AU', 'Other'], [33, 11, 9, 7, 6, 6, 5, 4, 4, 15], base);
 
-// Dex cohorts: built (all), incomplete, completed. Completers skew desktop.
 const cohort = (base: number, dev: number[], br: number[]) => {
   const joints = scaleJoints(DEX_JOINTS, base);
   return {
@@ -235,7 +208,6 @@ const cohorts = {
   completed: cohort(65, [72, 23, 5], [55, 25, 8, 8, 4]),
 };
 
-// A handful of per-user records mirroring the mockup's "Newest browsers" list.
 type NewestSeed = {
   cid: string;
   c: string;
@@ -286,13 +258,9 @@ const NEWEST: NewestSeed[] = [
   { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'el-GR', locale: 'en', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
 ];
 
-// Bucket a run of ids into a few real build sections so the scrubber shows a
-// grouped "build at this moment", not a flat row.
 const SECTION_IDS = ['starter', 'early-bird', 'forest', 'cave-pokemon', 'ocean'];
 function sectionsOf(ids: number[]): Record<string, number[]> {
   const out: Record<string, number[]> = {};
-  // Assign a leading run into named sections; leave the trailing remainder
-  // unsectioned, so the detail page's "Other sections" box has content.
   const sectioned = Math.ceil(ids.length * 0.6);
   ids.slice(0, sectioned).forEach((id, i) => {
     const sid = SECTION_IDS[i % SECTION_IDS.length];
@@ -319,19 +287,14 @@ function record(s: NewestSeed): ClientRecord {
     sessionLog: sessionMs.map((_ms, i) => {
       const isLast = i === s.sess - 1;
       let count = Math.round((ids.length * (i + 1)) / s.sess);
-      // Deterministic wobble so session bars vary in height, like real runs.
       count += Math.round(Math.sin(i * 1.7) * ids.length * 0.05);
-      // One larger mid-run pruning so the timeline shows a clear loss (gray)
-      // bar, not only gains — up vs down is the diff chart's whole point.
       if (s.sess >= 5 && i === Math.floor(s.sess / 2)) count -= Math.round(ids.length * 0.25);
       count = Math.max(1, Math.min(ids.length, count));
-      if (isLast) count = ids.length; // land on the true final total
+      if (isLast) count = ids.length;
       let upto = ids.slice(0, count);
-      // One session both swaps members out and in, so the diff chart shows red
-      // deletions and green insertions in the same bar — not just a net change.
       if (s.sess >= 6 && i === Math.floor(s.sess / 2) + 1 && count > 40) {
-        const dropped = new Set(ids.slice(10, 22)); // remove a mid-run block
-        const swapIn = ids.slice(count, Math.min(ids.length, count + 12)); // add beyond the prefix
+        const dropped = new Set(ids.slice(10, 22));
+        const swapIn = ids.slice(count, Math.min(ids.length, count + 12));
         upto = [...upto.filter((id) => !dropped.has(id)), ...swapIn];
       }
       return {
@@ -375,8 +338,6 @@ const records = NEWEST.map(record);
   rec.exportSurveySkips = [{ t: rec.lastTs, tool: 'pokedex', reason: 'not_now' }];
 }
 
-// Build n trainer cards, each with six three-stage lines, so the admin board
-// exercises seat 6's two-slot cap and the no-type star.
 const CARD_TYPES = ['fire', 'water', 'grass', 'electric', 'psychic', 'rock', 'dragon', 'fairy', 'ghost', 'steel', 'ground', 'ice', 'bug', 'poison'];
 const SEATS_PER_CARD = 6;
 function mkCards(n: number): import('../AdminPage').LeagueCard[] {
@@ -389,8 +350,6 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
   return Array.from({ length: n }, (_, i) => {
     const l = Array.from({ length: 6 }, (_, si) => {
       const b = [next(), next(), next()];
-      // Seat 6 (leftmost) only has two template rows. A three-stage line that
-      // splits those rows shows two members, never three.
       return si === 5 ? { b, bd: [1, 10, 11] } : { b };
     });
     const card: import('../AdminPage').LeagueCard = {
@@ -407,7 +366,6 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
   });
 }
 
-// Five league browsers.
 function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAgo: number, hasDex: boolean): LeagueUser {
   const lastTs = NOW - hoursAgo * 3_600_000;
   const firstTs = lastTs - sess * DAY;
@@ -443,9 +401,6 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     exportedLeagueAt: cards >= 11 ? iso(lastTs) : undefined,
     sessionLog: Array.from({ length: sess }, (_, i) => {
       const c2 = Math.max(1, Math.round((cards * (i + 1)) / sess));
-      // Older beacons carried only summary counts, no card structure. Model that
-      // for the earliest sessions, so the diff chart's structure-less fallback
-      // is exercised (bars from the seat-count delta, a consistent size line).
       const hasStructure = i >= Math.floor(sess / 2);
       return {
         ts: firstTs + i * DAY,
@@ -474,9 +429,6 @@ const leagueUsers: LeagueUser[] = [
   leagueUser('9d19…10', 'FR', 1, 1, 50, false),
 ];
 
-// Delayed keepalive with no member ids, between two agreeing full sittings —
-// the live 13→1→14 shape. Display tidy must drop it so the scrubber has 3
-// sessions, not 4.
 {
   const u = leagueUsers.find((row) => row.cid === '70cd…a7');
   if (!u) throw new Error('missing 70cd league fixture');
@@ -484,8 +436,6 @@ const leagueUsers: LeagueUser[] = [
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };
   prev.events = ['league-nudge-card-shown', 'league-nudge-card-cta'];
-  // Changes that keep every line: gym 1 swaps one Eevee branch for another,
-  // and gyms 1 and 2 trade a line. The diff is the 30 lines of the new gyms.
   if (!prev.cards || !last.cards) throw new Error('70cd fixture missing card structure');
   prev.cards[0].l[3] = { b: [133, 134] };
   last.cards[0].l[3] = { b: [133, 136] };
@@ -502,7 +452,6 @@ const leagueUsers: LeagueUser[] = [
   ];
 }
 
-// Popular / dropped picks — a slice of the mockup's grid, real Pokémon ids.
 const popularFinal: [string, number][] = [
   ['25', 84], ['1', 80], ['4', 73], ['7', 72], ['133', 70], ['6', 66], ['9', 65],
   ['3', 64], ['5', 64], ['150', 64], ['143', 63], ['94', 60], ['131', 58], ['149', 58], ['130', 52],
@@ -512,8 +461,6 @@ const mostDropped: [string, number][] = [
   ['821', 80], ['736', 70], ['587', 58], ['504', 44], ['659', 40], ['633', 36],
   ['401', 32], ['290', 28], ['172', 24], ['16', 20], ['777', 18], ['311', 14],
 ];
-/** Per-section placement counts for demo. Line-aware: stage-1 is ~28% of the
- *  fully-evolved count so the Pichu-dropped case is visible. */
 function demoPicksBySection(): Record<string, [string, number][]> {
   const out: Record<string, [string, number][]> = {};
   for (const g of BUILD_GROUPS) {
@@ -553,11 +500,9 @@ const picksBySectionAll = demoPicksBySection();
 function curveRec(points: [number, number][], n: number) {
   return curve(points, n);
 }
-// Build depth by dex size (1–151): where builders stop.
 const depthPts: [number, number][] = [
   [1, 388], [10, 300], [20, 250], [40, 200], [60, 150], [80, 120], [100, 100], [120, 85], [151, 65],
 ];
-// Build depth by distinct evolution lines.
 const linePts: [number, number][] = [
   [1, 388], [3, 320], [5, 270], [8, 210], [11, 170], [20, 120], [40, 90], [80, 72], [151, 65],
 ];
@@ -573,7 +518,6 @@ const lineFullCurves = {
   longest: curveRec(linePts, 388),
   all: curveRec(linePts, 388),
 };
-// Build depth by device: mobile drops off sooner, desktop goes deeper.
 const mobilePts: [number, number][] = [
   [1, 120], [10, 82], [20, 60], [40, 40], [60, 26], [80, 18], [100, 13], [120, 10], [151, 8],
 ];
@@ -793,7 +737,6 @@ export const sampleResponse: ApiResponse = {
   },
 };
 
-// Picker demo records are fabricated from valid coordinate eligibility, not production data.
 const fullFills:Record<string,number> = {};
 for(const [key,cell] of Object.entries(favoriteCells)) {
   const c = cell as {kind:string;ids?:number[];sources?:string[]};
@@ -818,10 +761,8 @@ const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
   return r;
 });
 const favoriteUsers = pickerRecords.map((r) => favoriteUser(r, false));
-// The Newest browsers lists, built the way the server builds them.
 sampleResponse.browsers = browserIndex(records, leagueUsers, favoriteUsers, new Set(records.filter((r) => r.archived).map((r) => bareCid(r.cid))));
 
-/** One demo browser's full records, as `/api/submissions?cid=` answers. */
 export function sampleBrowser(cid: string, country?: string): BrowserRecords {
   const dex = records.find((r) => r.cid === `${cid}::${country}`) ?? records.find((r) => r.cid === cid);
   return {
@@ -841,4 +782,3 @@ if(sampleResponse.crossTool){
   const era=sampleResponse.crossTool.eras.at(-1)!;
   era.regions.favorites=pickerRecords.length;era.browsers+=pickerRecords.length;
 }
-export default sampleResponse;

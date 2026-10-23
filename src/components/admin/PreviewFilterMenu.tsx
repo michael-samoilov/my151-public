@@ -4,19 +4,13 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { pressedOutside } from '@/lib/outsidePress';
 import { cn } from '@/lib/utils';
 
-export type FilterOption<K extends string = string> = {
+type FilterOption<K extends string = string> = {
   key: K;
   label: string;
   chipLabel?: string;
   icon?: ReactNode;
 };
 
-/**
- * One visible chip that opens the rest of a filter's options.
- *
- * Mobile uses a bottom sheet of wrapping chips (same shape as the language
- * picker and the builder filters). Desktop uses an anchored chip dropdown.
- */
 export function PreviewFilterMenu<K extends string>({
   name,
   value,

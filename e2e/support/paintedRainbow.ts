@@ -1,7 +1,7 @@
 import { inflateSync } from 'node:zlib';
 import type { Page } from '@playwright/test';
 
-export type RgbImage = { w: number; h: number; rgb: Uint8Array };
+type RgbImage = { w: number; h: number; rgb: Uint8Array };
 
 const MIN_CHANGED_INK_RATIO = 0.01;
 
@@ -15,8 +15,7 @@ function paeth(a: number, b: number, c: number): number {
   return c;
 }
 
-/** Decode an 8-bit RGB or RGBA PNG. Playwright card screenshots use this form. */
-export function decodePng(buf: Buffer): RgbImage {
+function decodePng(buf: Buffer): RgbImage {
   if (buf[0] !== 0x89 || buf.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('not a png');
   }
@@ -79,7 +78,6 @@ export function decodePng(buf: Buffer): RgbImage {
   return { w: width, h: height, rgb };
 }
 
-/** Share of interior pixels the gleam layer changes. The red frame is excluded. */
 export function interiorChangeRatio(live: RgbImage, hidden: RgbImage): number {
   const w = Math.min(live.w, hidden.w);
   const h = Math.min(live.h, hidden.h);
@@ -110,10 +108,6 @@ async function cardClip(page: Page): Promise<{ x: number; y: number; width: numb
   });
 }
 
-/**
- * Open-state rainbow: hide the gleam layer and count interior pixels that change.
- * A frame-only mask leaves the ink unchanged.
- */
 export async function paintedInkRainbow(page: Page): Promise<{ ok: boolean; reason: string }> {
   await page.evaluate(() => {
     const win = window as Window & { __rafFrozen?: boolean };

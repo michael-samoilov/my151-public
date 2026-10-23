@@ -1,4 +1,3 @@
-/** Ranking for the Picker's Most picked page. Pure: reads the catalog only. */
 import { labelOf } from '@/favorites/components/spriteLabel';
 import { getPickerMon, type PickerMon } from '@/favorites/model/catalog';
 import { parseCellKey, type GenAxisId, type TypeAxisId } from '@/favorites/model/cells';
@@ -6,9 +5,8 @@ import { eligibleFor, kindFor } from '@/favorites/model/eligibility';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 
 export type PickCell = { type: TypeAxisId; gen: GenAxisId };
-export type Ranked = { mon: PickerMon; picks: number };
+type Ranked = { mon: PickerMon; picks: number };
 
-/** Sprite and name for the dashboard's Most picked preview. */
 export function pickerFace(id: number): { sprite: string; alt: string; name: string } | undefined {
   const mon = getPickerMon(id);
   if (!mon) return undefined;
@@ -16,11 +14,6 @@ export function pickerFace(id: number): { sprite: string; alt: string; name: str
   return { sprite: mon.sprite, alt: name, name };
 }
 
-/**
- * A cell's Pokémon, most picked first. Equal counts keep the Picker's own
- * order. A pick cell lists every Pokémon it allows, picked or not. A pointer
- * cell offers each chart its own picks, so it lists only what charts hold.
- */
 export function rankCell({ type, gen }: PickCell, rows: [number, number][]): Ranked[] {
   const counts = new Map(rows);
   const pool = kindFor(type, gen) === 'pick' ? eligibleFor(type, gen) : [];
@@ -36,8 +29,6 @@ export function rankCell({ type, gen }: PickCell, rows: [number, number][]): Ran
     .map(({ mon, picks }) => ({ mon, picks }));
 }
 
-/** Each cell's most-picked Pokémon. The server sorts each cell, so only a tie
- *  at the top needs the cell ranking. */
 export function topFills(cells: FavoritePicks['cells']): Record<string, number> {
   const fills: Record<string, number> = {};
   for (const [key, rows] of Object.entries(cells)) {
@@ -59,7 +50,6 @@ export function formatPreferenceStrength(score: number): string {
   return `${score < 0.1 ? '<0.1' : score >= 1000 ? compactStrength.format(score) : score.toFixed(1)}×`;
 }
 
-/** Use the fitted score order; unavailable estimates never fall back to counts. */
 export function preferencePreview(preference: FavoritePicks['preference']): [string, number][] {
   if (!preference?.converged || preference.choices <= 0) return [];
   return preference.entries

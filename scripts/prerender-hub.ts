@@ -1,41 +1,43 @@
-/**
- * Prerenders the hub (`/`) into dist/index.html after the client build.
- *
- * Without it the hub's HTML holds only a spinner, and the page appears after
- * about 250 KiB of JavaScript. With it, the hub paints as soon as the HTML and
- * the stylesheet arrive, and the client hydrates the same markup.
- *
- * The plugin builds `src/home/prerender.ts` for Node with the client build's
- * aliases and defines, so asset URLs and the footer's build version match the
- * client. It then writes three things into dist/index.html:
- *
- * - The markup, in `#root`, marked `data-prerendered`.
- * - A head script that runs before the first paint. It sets the root font
- *   size with the formula in src/lib/layoutFontSize.ts, so nothing shifts when
- *   that module runs. It adds `p151-saved-<tool>` to <html> for each tool with
- *   saved work in this browser, which hides the count on that card's "saved
- *   in this browser" line until the app reads it, so it never shows 0 first
- *   (src/index.css). It adds
- *   `p151-wait` when the visitor will not get this exact page: another
- *   language, `?admin`, `?demo`, or a returning visitor while the Tools menu's
- *   favorites notice runs. Those visitors see the spinner until the app
- *   renders, as before.
- * - A preload for the Inter font. The fallback in src/index.css keeps the
- *   layout when Inter arrives; the preload makes it arrive with the first
- *   paint more often, and Lighthouse counts the font in the first paint.
- */
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { build, type Plugin, type ResolvedConfig } from 'vite';
+import { copyHomeArtwork } from './home-artwork/manifest.mjs';
+import type { ArtworkPose } from '../src/home/artwork-types';
 
 const ENTRY = 'src/home/prerender.ts';
-// Saved Pokédex key; its `state.locale` is the language the visitor chose.
 const STORE_KEY = 'personal-151-pokedex-v3';
 
-/** What the server entry exports for the head script. */
+function initialInter(root: string, markup: string): string {
+  const directory = path.join(root, 'src/assets/fonts');
+  const metadata = JSON.parse(fs.readFileSync(path.join(directory, 'inter-home-initial.json'), 'utf8')) as {
+    sha256: string; sourceSha256: string; codepoints: number[];
+  };
+  const font = fs.readFileSync(path.join(directory, 'inter-home-initial.woff2'));
+  const source = fs.readFileSync(path.join(root, 'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'));
+  const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+  if (hash(font) !== metadata.sha256 || hash(source) !== metadata.sourceSha256) {
+    throw new Error('prerender-hub: regenerate the initial Inter font after a font change');
+  }
+  const text = markup.replace(/<[^>]*>/g, '').replace(/&(?:amp|lt|gt|quot|#x27|#39);/g, entity => ({
+    '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'", '&#39;': "'",
+  })[entity] ?? entity);
+  const supported = new Set(metadata.codepoints);
+  const missing = [...new Set(Array.from(text).map(character => character.codePointAt(0)!))]
+    .filter(codepoint => codepoint >= 32 && !supported.has(codepoint));
+  if (missing.length) throw new Error(`prerender-hub: initial Inter lacks ${missing.map(value => `U+${value.toString(16)}`).join(', ')}`);
+  const range = metadata.codepoints.map(value => `U+${value.toString(16)}`).join(',');
+  return `<style>@font-face{font-family:'P151 Inter Initial';font-style:normal;font-weight:100 900;font-display:block;src:url(data:font/woff2;base64,${font.toString('base64')}) format('woff2-variations');unicode-range:${range}}html.p151-hub-inter-initial body{font-family:'P151 Inter Initial','Inter Variable','Inter Fallback',system-ui,-apple-system,sans-serif}html.p151-hub-font-pending #root{visibility:hidden}</style>
+<script>(function(){var d=document.documentElement;d.classList.add('p151-hub-inter-initial','p151-hub-font-pending');Promise.all([400,700,800].map(function(w){return document.fonts.load(w+' 16px "P151 Inter Initial"','my151.app Pokédex 0123456789').then(function(f){if(!f.length||f.some(function(x){return x.status!=='loaded'}))throw Error('Initial Inter is unavailable')})})).then(function(){d.classList.remove('p151-hub-font-pending')},function(){d.classList.add('p151-hub-font-failed')})})();</script>`;
+}
+
 interface BootInputs {
+  HOME_ARTWORK: ArtworkPose[];
+  HOME_MOBILE_MEDIA: string;
   LOCALES: readonly string[];
   SLOT_COUNT: number;
   FAVORITES_NOTICE_START: number;
@@ -45,25 +47,58 @@ interface BootInputs {
 }
 
 /**
- * The head script. Its language choice mirrors `resolveLocale` in
- * src/i18n/detect.ts. Its saved-work tests mirror the hub's counts in
- * HomePage.tsx, and its notice test mirrors the Tools menu's launch notice.
- */
-/**
  * The root font-size before the app mounts: the same layout-viewport width and
- * formula as `src/lib/layoutFontSize.ts`. It runs right after the stylesheet
- * link, so the browser holds it until that stylesheet has loaded. Reading
- * `visualViewport.width` forces layout, and Firefox paints a page as soon as
- * its layout starts: read before the stylesheet, it showed the hub unstyled
- * for about 600 ms on every load.
+ * formula as `src/lib/layoutFontSize.ts`. It runs right after the inline
+ * stylesheet. Reading `visualViewport.width` forces layout, and Firefox paints
+ * a page as soon as its layout starts: read before the stylesheet, it showed
+ * the hub unstyled for about 600 ms on every load.
  */
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
+
+export function splitImagePreloads(markup: string): { preloads: string[]; markup: string } {
+  // Explicit React preloads put href before as; automatic preloads do not.
+  const imagePreload = /<link\b(?=[^>]*\srel="preload")(?=[^>]*\sas="image")[^>]*\/>/g;
+  return { preloads: markup.match(imagePreload) ?? [], markup: markup.replace(imagePreload, '') };
+}
+
+function prioritizeHubImages(html: string): string {
+  const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/;
+  const preloads = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g;
+  const src = entry.exec(html)?.[1];
+  if (!src) throw new Error('prerender-hub: the client entry is missing');
+  const files = JSON.stringify([src, ...[...html.matchAll(preloads)].map(match => match[1])]);
+  const startup = `(function(){
+var d=document.documentElement,started=false,preloaded=false,observer;
+function preload(){if(preloaded)return;preloaded=true;${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})}
+function loaded(){var imgs=Array.from(document.querySelectorAll(d.dataset.homeScene==='mobile'?'[data-card-scene][data-scene-slot="'+d.dataset.homeSlot+'"]':'[data-artwork] img[alt]:not([alt=""])'));if(imgs.length&&imgs.every(function(i){return i.complete&&i.naturalWidth&&i.currentSrc&&!i.currentSrc.startsWith('data:')}))preload()}
+function intent(e){var t=e.target;if(e.type==='keydown'||t&&t.closest&&t.closest('button'))start()}
+function error(e){if(e.target instanceof HTMLImageElement)start()}
+function start(){
+if(started)return;started=true;if(observer)observer.disconnect();
+document.removeEventListener('load',loaded,true);document.removeEventListener('error',error,true);
+['pointerdown','click','keydown'].forEach(function(t){window.removeEventListener(t,intent,true)});
+preload();
+function run(){var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run()
+}
+function painted(){if(!d.classList.contains('p151-hub-images-pending'))requestAnimationFrame(function(){setTimeout(start)})}
+if(d.classList.contains('p151-wait')||document.visibilityState!=='visible'){start();return}
+observer=new MutationObserver(painted);observer.observe(d,{attributes:true,attributeFilter:['class']});
+document.addEventListener('load',loaded,true);document.addEventListener('error',error,true);
+['pointerdown','click','keydown'].forEach(function(t){window.addEventListener(t,intent,true)});
+loaded();painted()
+})();`;
+  return html.replace(entry, () => `<script>${startup}</script>`).replace(preloads, '');
+}
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
   return `(function(){
 var d=document.documentElement;
+d.classList.add('p151-hub-images-pending');
+var earlyButton=null;
+function earlyClick(e){var root=document.getElementById('root'),t=e.target,b=t&&t.closest&&t.closest('button');if(!root||!b||!root.contains(b)||d.classList.contains('p151-wait'))return;e.preventDefault();e.stopImmediatePropagation();earlyButton=b}
 function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
 function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
@@ -79,7 +114,11 @@ league:!!lg&&Array.isArray(lg.cards)&&some(lg.cards.slice(0,${input.SLOT_COUNT})
 favorites:!!fv&&some(fv.fills,function(x){return typeof x==='number'})},any=false;
 for(var t in saved)if(saved[t]){any=true;d.classList.add('p151-saved-'+t)}
 var now=Date.now(),notice=now>=${input.FAVORITES_NOTICE_START}&&now<${input.FAVORITES_NOTICE_END}&&G(${j(input.FAVORITES_NOTICE_SEEN_KEY)})!=='1'&&(any||${j(input.RETURNING_KEYS)}.some(function(k){return G(k)!==null}));
-if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait')})();`;
+if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait');
+if(!d.classList.contains('p151-wait')){
+document.addEventListener('click',earlyClick,true);
+document.addEventListener('p151-hub-interactive',function(){document.removeEventListener('click',earlyClick,true);var b=earlyButton;earlyButton=null;if(b&&b.isConnected)b.click()},{once:true})}
+})();`;
 }
 
 export function prerenderHub(): Plugin {
@@ -95,6 +134,7 @@ export function prerenderHub(): Plugin {
       const outDir = path.resolve(config.root, config.build.outDir);
       const htmlFile = path.join(outDir, 'index.html');
       if (!fs.existsSync(htmlFile)) return;
+      if (process.env.MY151_HOME_ARTWORK_CAPTURE !== '1') copyHomeArtwork(config.root, outDir);
       // Inside the project, so the server bundle resolves react from node_modules.
       const ssrDir = path.join(config.root, 'node_modules/.cache/my151-prerender', path.basename(outDir));
       try {
@@ -131,22 +171,56 @@ export function prerenderHub(): Plugin {
         // was painted. `blocking="render"` holds the first paint until the
         // marker is parsed (Chromium); the `:has()` rule hides the hub until
         // then in other browsers.
-        html = html.replace(root, () => `<div id="root" data-prerendered>${markup}</div><span id="p151-end" hidden></span>`);
-        const head = [
-          `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
-          '<link rel="expect" href="#p151-end" blocking="render">',
-          '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
-          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}</style>',
-          `<script>${bootScript(inputs)}</script>`,
-        ].join('\n    ');
-        // Before any stylesheet: an inline script after one waits for it.
+        // React puts the screenshots' preloads at the start of the markup. They
+        // go first in the head instead, so the browser starts the images
+        // before it has read the styles.
+        const { preloads, markup: body } = splitImagePreloads(markup);
+        const poses = inputs.HOME_ARTWORK;
+        const imagePreloads = preloads.map(tag => poses.length && !tag.includes(' media=')
+          ? tag.replace(/\/?>$/, ` media="not all and ${inputs.HOME_MOBILE_MEDIA}"/>`) : tag);
+        poses.forEach((pose, index) => {
+          const lo = index ? (poses[index - 1].viewportWidth + pose.viewportWidth) / 2 + 0.001 : 0;
+          const hi = index === poses.length - 1 ? 480 : (pose.viewportWidth + poses[index + 1].viewportWidth) / 2;
+          const media = `${inputs.HOME_MOBILE_MEDIA} and (min-width:${lo}px) and (max-width:${hi}px)`;
+          pose.cards.forEach(card => imagePreloads.push(`<link rel="preload" as="image" type="image/avif" fetchpriority="high" media="${media}" href="/assets/home-mobile/${card.avif.file}">`));
+        });
+        html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
-        html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
-        const sheets = [...html.matchAll(/<link rel="stylesheet"[^>]*>/g)];
-        const lastSheet = sheets.at(-1);
-        if (!lastSheet || lastSheet.index === undefined) throw new Error('prerender-hub: index.html links no stylesheet');
-        const after = lastSheet.index + lastSheet[0].length;
+        html = html.replace(viewport, (tag) => [tag, ...imagePreloads].join('\n    '));
+        const head = [
+          initialInter(config.root, markup),
+          '<link rel="expect" href="#p151-end" blocking="render">',
+
+          '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-hub-images-pending:has(.hub-grid) .p151-boot{display:flex}html.p151-hub-images-pending .p151-boot{pointer-events:none}html.p151-hub-font-pending .p151-boot{visibility:hidden}html.p151-wait #root{display:none}</style>',
+          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}html.p151-hub-images-pending .hub-home:has(.hub-grid),html.p151-hub-images-pending #root:has(.hub-grid) div:has(>footer){visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
+          '<style>[data-card-scene]{display:none;position:absolute;pointer-events:none;max-width:none}html[data-home-scene="mobile"] [data-artwork]{display:none!important}html[data-home-scene="mobile"][data-home-slot="0"] [data-card-scene][data-scene-slot="0"],html[data-home-scene="mobile"][data-home-slot="1"] [data-card-scene][data-scene-slot="1"]{display:block}'+['dex','league','favorites'].map(key=>`[data-card-scene="${key}"]{left:var(--scene-${key}-left);top:var(--scene-${key}-top);width:var(--scene-${key}-width);height:var(--scene-${key}-height)}`).join('')+'</style>',
+          `<script>${bootScript(inputs)}</script>`,
+        ].join('\n    ');
+        // Before any stylesheet, because an inline script after one waits for
+        // it. After the title and share tags, because link previews read only
+        // the first 32 KB or so, and the inline font alone is about 40 KB.
+        const firstStyle = html.indexOf('<style');
+        if (firstStyle === -1 || firstStyle > html.indexOf('</head>')) throw new Error('prerender-hub: index.html has no <style> in its head');
+        html = `${html.slice(0, firstStyle)}${head}\n    ${html.slice(firstStyle)}`;
+
+        const sheets = [...html.matchAll(/<link rel="stylesheet" crossorigin href="([^"]+\.css)">/g)];
+        if (sheets.length === 0) throw new Error('prerender-hub: index.html links no stylesheet');
+        for (const [tag, href] of sheets) {
+          const css = fs.readFileSync(path.join(outDir, href.slice(config.base.length)), 'utf8');
+          if (css.includes('</style')) throw new Error(`prerender-hub: ${href} cannot be inlined`);
+          html = html.replace(tag, () => `<style>${css}</style>`);
+          const prefetch = `addEventListener('load',function(){var l=document.createElement('link');l.rel='prefetch';l.href=${JSON.stringify(href)};document.head.appendChild(l)})`;
+          html = html.replace('</body>', () => `<script>${prefetch}</script>\n  </body>`);
+        }
+
+        const controller = fs.readFileSync(path.join(config.root, 'src/home/artwork-controller.js'), 'utf8')
+          .replace('export function installHomeArtwork', 'function installHomeArtwork');
+        const ready = `(${controller})(${JSON.stringify(inputs.HOME_ARTWORK)})`;
+        html = html.replace('</body>', () => `<script>${ready}</script>\n  </body>`);
+        html = prioritizeHubImages(html);
+        const lastSheet = html.lastIndexOf('</style>');
+        const after = lastSheet + '</style>'.length;
         html = `${html.slice(0, after)}\n    <script>${FONT_SIZE_SCRIPT}</script>${html.slice(after)}`;
         fs.writeFileSync(htmlFile, html);
       } finally {

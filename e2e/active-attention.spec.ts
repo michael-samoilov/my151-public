@@ -19,7 +19,6 @@ async function boot(page:Page,tool:typeof tools[number],optedOut=false) {
  await page.clock.install({time:t0-1000});await page.clock.pauseAt(t0);
  await page.goto(`${tool.path}${optedOut?'?notme':''}`);await expect(page.locator('main').first()).toBeVisible();
  await page.bringToFront();
- // Initial store progress proves React's collector effects mounted before the baseline activity.
  if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(0);
  await page.keyboard.press('ArrowRight');
  return posts;

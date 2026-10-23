@@ -1,14 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
-/**
- * Four behaviours the preview asked for, each driven end to end.
- *
- * They share the seeded league because each one needs a card that already
- * holds six lines, a powerup and a legendary — building that by hand in every
- * test would be most of the test.
- */
-
 const openCard = async (page: Page, slot: number) => {
   await seededLeague(page);
   await page.goto('/custom-gym-leader');
@@ -19,7 +11,6 @@ const openCard = async (page: Page, slot: number) => {
   await page.waitForTimeout(900);
 };
 
-/** The store, as it is actually persisted. */
 const stored = (page: Page, slot: number) =>
   page.evaluate(
     (i) => JSON.parse(window.localStorage.getItem('league-builder')!).state.cards[i],
@@ -32,8 +23,6 @@ test.describe('round 10', () => {
     const signature = () =>
       page.evaluate(() => {
         const slot = document.querySelector('[data-testid="slot-ace"]');
-        // The heading is two runs now, so it arrives with no space between
-        // them. Strip each rather than the phrase.
         return (slot?.textContent ?? '').replace('ACE', '').replace('POKÉMON', '');
       });
     expect(await signature()).toContain('Onix');
@@ -43,10 +32,6 @@ test.describe('round 10', () => {
     await page.locator('[role="menuitemradio"]:visible', { hasText: '日本語' }).first().click();
     await page.waitForTimeout(2500);
 
-    // The name is the whole check now. It used not to switch at all, because
-    // the snapshot behind `useNamesVersion` ignored the locale; the type
-    // badges that once sat under it were the control, and the ace/partner
-    // split dropped them for the room they cost.
     const after = await signature();
     expect(after, 'the name is translated').toContain('イワーク');
     expect(after, 'the old English name is gone').not.toContain('Onix');
@@ -54,14 +39,7 @@ test.describe('round 10', () => {
 
   test('a powerup travels with its line, not its seat', async ({ page }) => {
     await openCard(page, 12);
-    // A seeded card carries the pre-split field, which meant both rows; a
-    // card the app has touched carries `powerups`, keyed by row. The spec
-    // reads whichever it finds, because both are states the app produces.
     const CHAMPION_ROW = 10;
-    // Three shapes are on disk now: the card-wide `powerup` from before the
-    // rows could differ, a single `Powerup` per row from before a row could
-    // hold more than one, and today's list per row. All three are states the
-    // app produces, so the spec reads whichever it finds.
     type Pick = { seat: number };
     const rowPowerup = (card: {
       powerup?: Pick | null;
@@ -77,7 +55,6 @@ test.describe('round 10', () => {
     const line = before.lines[seat - 1].branch as number[];
     expect(seat, 'the seeded champion carries a Mega').toBeGreaterThan(0);
 
-    // Drag that column to the far end of the row.
     const from = (await page.locator(`[data-testid="card-cell-10-${seat}"]`).boundingBox())!;
     const to = (await page.locator('[data-testid="card-cell-10-6"]').boundingBox())!;
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -100,8 +77,6 @@ test.describe('round 10', () => {
   test('the legendary can be removed without touching the lines', async ({ page }) => {
     await openCard(page, 13);
     type Pick = { pokemonId: number; seat: number };
-    // A card may hold one legendary per seat now, so the seeded single reads
-    // as a one-entry list; both shapes are on disk.
     const legends = (card: { legend?: Pick | null; legends?: Pick[] }): Pick[] =>
       card.legends ?? (card.legend ? [card.legend] : []);
 
@@ -125,7 +100,6 @@ test.describe('round 10', () => {
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
 
-    /** How many Pokémon a row draws. Type icons carry no alt text. */
     const team = (slot: number) =>
       page.evaluate(
         (i) =>
@@ -137,7 +111,6 @@ test.describe('round 10', () => {
     const gym1 = await team(0);
     expect(gym1, 'gym 1 fields a small team on the way through').toBeLessThan(6);
 
-    // One press on the tool bar's own toggle: the gear and its menu are gone.
     await page.locator('[data-league-view="rematch"]:visible').first().click();
     await page.waitForTimeout(600);
 

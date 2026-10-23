@@ -1,10 +1,10 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { isDashboardRange } from '../api/_range';
 
 const DAY = 86_400_000;
 
-/** A small store: two browsers active this week, one last month. */
 function source(now: number): DashboardSource {
   const dex = (cid: string, ts: number) => ({
     cid,
@@ -38,12 +38,10 @@ function source(now: number): DashboardSource {
   };
 }
 
-/** Answers /api/submissions like the server does and lists the ranges asked. */
 async function stubDashboard(page: Page): Promise<string[]> {
   const asked: string[] = [];
   await page.route('**/api/submissions?**', (route) => {
     const url = new URL(route.request().url());
-    // The Suite tab's Database card reads Upstash stats once; not a dashboard ask.
     if (url.searchParams.get('usage') === '1') return route.fulfill({ json: { status: 'not_configured' } });
     const range = url.searchParams.get('range') ?? 'all';
     asked.push(range);
@@ -59,9 +57,8 @@ async function stubDashboard(page: Page): Promise<string[]> {
 test.describe('admin date range', () => {
   test('a press asks for its range once, and a return within a minute asks nothing', async ({ page }, testInfo) => {
     const asked = await stubDashboard(page);
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const ribbon = page.getByRole('group', { name: 'Date range' });
-    // The Who caption ends with the Suite's browser count.
     const who = page.getByRole('heading', { name: /^Who/ });
     await expect(ribbon.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
     await expect(who).toHaveText(/· 3$/);
@@ -78,7 +75,6 @@ test.describe('admin date range', () => {
     await expect(who).toHaveText(/· 2$/);
     expect(asked).toEqual(['all', '7d']);
 
-    // The choice survives a reload, and the first request asks for it.
     await page.reload();
     await expect(ribbon.getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'true');
     await expect.poll(() => asked.length).toBe(3);
@@ -87,7 +83,7 @@ test.describe('admin date range', () => {
   });
 
   test('the ribbon sits on the nav in one bar', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     const ribbon = page.getByRole('group', { name: 'Date range' });
     const nav = page.getByRole('navigation', { name: 'Admin section' });
     await expect(ribbon).toBeVisible();
@@ -120,7 +116,6 @@ test.describe('admin date range', () => {
     expect(boxes.pageOverflow).toBeLessThanOrEqual(0);
     const width = page.viewportSize()!.width;
     if (width < 1024) {
-      // The bar touches the screen bottom; about 1rem of padding keeps its buttons clear of rounded phone corners.
       expect(Math.abs(boxes.bar.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
       expect(boxes.viewport - boxes.nav.bottom).toBeGreaterThanOrEqual(13);
       expect(boxes.navButtons.left).toBeGreaterThanOrEqual(12);
@@ -130,7 +125,7 @@ test.describe('admin date range', () => {
   });
 
   test('a user page holds its session scrubber in the ribbon row, with no chips', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
     await page.getByRole('link', { name: /Open user 74d5/ }).click();
     const slot = page.locator('[data-admin-range-slot]');
@@ -146,7 +141,7 @@ test.describe('admin date range', () => {
   });
 
   test('Feedback hides the ribbon, and a picks page keeps it under the header', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     const nav = page.getByRole('navigation', { name: 'Admin section' });
     const ribbon = page.getByRole('group', { name: 'Date range' });
     await nav.getByRole('button', { name: 'Feedback' }).click();

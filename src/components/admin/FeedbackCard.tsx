@@ -15,18 +15,6 @@ import {
   type FeedbackTool,
 } from './feedbackList';
 
-/**
- * The feedback inbox.
- *
- * Its own file rather than another section of AdminPage.tsx, which is already
- * ~1800 lines. It reads the shared list in feedbackList.ts, which the detail
- * page reuses, so the page fetches the endpoint once.
- *
- * Read/unread lives in this browser's localStorage, not in Redis. There is
- * exactly one admin; a server-side flag would be a second source of truth that
- * can only drift.
- */
-
 const SEEN_KEY = 'p151-feedback-seen';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -35,7 +23,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   idea: 'Idea',
   data: 'Data',
   other: 'Other',
+  crash: 'Crash',
 };
+
+function rowText(item: FeedbackItem): string {
+  if (item.message) return item.message;
+  const err = item.context?.error as { name?: string; message?: string } | undefined;
+  return err ? `${err.name ?? 'Error'}: ${err.message ?? ''}` : '';
+}
 
 function loadSeen(): Set<string> {
   try {
@@ -47,20 +42,18 @@ function loadSeen(): Set<string> {
 
 function saveSeen(seen: Set<string>): void {
   try {
-    // Bounded: the list only needs to cover what the endpoint can still return.
     localStorage.setItem(SEEN_KEY, JSON.stringify([...seen].slice(-5000)));
   } catch {
-    // storage unavailable — everything just reads as unread
+    return;
   }
 }
 
-/** GitHub-ready markdown for one report, for the "copy as issue" button. */
 function asIssue(item: FeedbackItem): string {
   const ctx = item.context ?? {};
   const lines = [
     `**${CATEGORY_LABELS[item.category] ?? item.category}** — ${new Date(item.ts).toISOString()}`,
     '',
-    item.message,
+    rowText(item),
     '',
     '<details><summary>Context</summary>',
     '',
@@ -87,7 +80,6 @@ function Row({
   seen: boolean;
   onToggle: () => void;
   openTool: FeedbackTool | null;
-  /** False when the browser's tools load only after the link opens it. */
   toolKnown: boolean;
   onOpen: () => void;
 }) {
@@ -127,7 +119,7 @@ function Row({
         </button>
       </div>
 
-      <p className="whitespace-pre-wrap break-words">{item.message}</p>
+      <p className="whitespace-pre-wrap break-words">{rowText(item)}</p>
 
       <div className="flex gap-3">
         <button
@@ -182,11 +174,8 @@ export function FeedbackCard({
   onClearCid,
 }: {
   token: string;
-  /** The tools the loaded dashboard holds a record of for this browser, or
-   *  null when it does not hold the browser. */
   toolsOf?: (cid: string) => FeedbackTool[] | null;
   onOpen?: (tool: FeedbackTool, cid: string, country?: string) => void;
-  /** Show only this browser's reports. */
   cidFilter?: string | null;
   onClearCid?: () => void;
 }) {
@@ -209,8 +198,6 @@ export function FeedbackCard({
   const ofBrowser = cidFilter ? items.filter((i) => i.cid === cidFilter) : items;
   const shown = category === 'all' ? ofBrowser : ofBrowser.filter((i) => i.category === category);
   const unread = items.filter((i) => !seen.has(i.id)).length;
-  // Which surface reports come from. Folded out of the page already fetched:
-  // the endpoint keeps per-day counts by category, not by route.
   const byRoute = useMemo(() => routeCounts(items), [items]);
   const pagePartial = (data?.total ?? 0) > items.length;
 
@@ -296,8 +283,6 @@ export function FeedbackCard({
         <ul className="flex flex-col gap-1.5 max-h-[28rem] overflow-y-auto">
           {shown.map((item) => {
             const cid = item.cid;
-            // Every sender with a browser id gets a link. A browser the loaded
-            // pages do not hold opens on its report's tool and loads there.
             const tools = cid && toolsOf ? toolsOf(cid) : null;
             const route = item.context?.route;
             const tool = !cid || !onOpen ? null : tools ? openToolFor(route, tools) : (routeTool(route) ?? 'dex');

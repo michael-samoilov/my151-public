@@ -1,4 +1,3 @@
-// keeps: API preference aggregation is stubbed by browser tests; guard form-count bias and chart deduplication.
 import {describe, expect, it, vi} from 'vitest';
 import cellData from '../../../api/_favoriteCells.json';
 import {favoritePicks, favoritePreference, fitFavoritePreference, favoriteSpeciesId} from '../../../api/_favoriteAggregate';
@@ -27,6 +26,32 @@ describe('favorite preference evidence', () => {
     expect(picks.cells['gimmick|1']).toEqual([[10034, 1]]);
     expect(picks.cells['fire|gimmick']).toEqual([[10035, 1]]);
     expect(picks.top).toContainEqual([10034, 1]);
+  });
+
+  it('counts a species once per selector pane, however many forms the pane lists', () => {
+    // A pick of another Pokémon must not count as one loss per listed form of a
+    // repeated species (psychic|2 lists 26 Unown forms). One chart picks another
+    // Pokémon in every such pane; a second picks the repeated species itself.
+    const panes = Object.entries(cells).filter(([, cell]) =>
+      cell.kind === 'pick' && new Set(cell.ids!.map(favoriteSpeciesId)).size < cell.ids!.length);
+    expect(panes.length).toBeGreaterThan(100);
+    const other: Record<string, number> = {};
+    const repeatedPick: Record<string, number> = {};
+    const pools = panes.flatMap(([key, cell]) => {
+      const species = cell.ids!.map(favoriteSpeciesId);
+      const repeated = new Set(species.filter((id, i) => species.indexOf(id) !== i));
+      other[key] = cell.ids!.find(id => !repeated.has(favoriteSpeciesId(id))) ?? cell.ids![0];
+      repeatedPick[key] = cell.ids!.find(id => repeated.has(favoriteSpeciesId(id)))!;
+      const ids = [...new Set(species)];
+      return [other[key], repeatedPick[key]].map(pick => ({ids, wins: ids.map(id => id === favoriteSpeciesId(pick) ? 1 : 0)}));
+    });
+    const result = favoritePreference([record(other), record(repeatedPick)]);
+    const expected = fitFavoritePreference(pools);
+    expect(result.converged).toBe(true);
+    expect(result.candidates).toBe(expected.ids.length);
+    const scored = result.entries.filter(entry => entry.score !== null);
+    expect(scored.length).toBeGreaterThan(100);
+    for (const entry of scored) expect(entry.score).toBeCloseTo(expected.scores[expected.ids.indexOf(entry.id)], 8);
   });
 
   it('does not treat favorite pointers between forms of one species as comparisons', () => {
@@ -141,6 +166,33 @@ describe('favorite preference evidence', () => {
 });
 
 describe('favorite preference numerical fit', () => {
+  it('finishes a fit whose last Newton step gains less than the objective value can resolve', () => {
+    // Near the optimum of this seeded 120-chart cohort, a step's predicted gain
+    // is below the rounding of the objective value. A value-only line search
+    // shrank every step to nothing and stopped at the iteration limit, so the
+    // admin showed "Preference strength unavailable".
+    let seed = 4;
+    const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const keys = Object.keys(cells);
+    const charts = Array.from({length: 120}, () => {
+      const fills: Record<string, number> = {};
+      for (const key of keys) {
+        const ids = cells[key].ids;
+        if (cells[key].kind === 'pick' && ids && rand() < 0.55) fills[key] = ids[Math.floor(rand() * ids.length)];
+      }
+      for (const key of keys) {
+        if (cells[key].kind !== 'pointer' || rand() > 0.5) continue;
+        const options = (cells[key].sources ?? []).map(source => fills[source]).filter((id): id is number => id !== undefined);
+        if (options.length) fills[key] = options[Math.floor(rand() * options.length)];
+      }
+      return record(fills);
+    });
+    const result = favoritePreference(charts);
+    expect(result.converged).toBe(true);
+    expect(result.gradientResidual).toBeLessThanOrEqual(1e-7);
+    expect(result.entries.filter(entry => entry.score !== null).length).toBeGreaterThan(100);
+  });
+
   it('keeps every displayed estimate unavailable when a numerical time budget expires', () => {
     const clock = vi.spyOn(Date, 'now');
     clock.mockReturnValueOnce(0).mockReturnValue(3000);

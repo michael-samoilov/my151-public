@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
 import { impliedActivityGrowth, type ImpliedActivityGrowth } from '../../../../api/_aggregate';
@@ -32,14 +32,10 @@ function fmtWeekday(ms: number): string {
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(ms).getUTCDay()];
 }
 
-/** Left plot inset. Holds the y-axis labels. */
 const GRID_LEFT = 36;
-/** X-axis label ribbon under the plot. Month partitions live only in this band. */
 const GRID_BOTTOM = 22;
-/** Gap from the last plotted x into the gutter. */
 const LABEL_INSET = 6;
 const GRID_TOP = 8;
-/** Gap from the end of the longest window label to the canvas edge. */
 const LABEL_TAIL = 10;
 const LABEL_FACE = 'ui-sans-serif, system-ui, sans-serif';
 
@@ -129,31 +125,31 @@ function TrendChart({
   shown: Record<'daily' | 'weekly' | 'monthly', boolean>;
   growth: ImpliedActivityGrowth;
 }) {
-  const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
-  const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
-  const days = series.map((p) => p.day);
-  const daily = chartDailyValues(series);
-  const weekly = chartWeeklyValues(series, historyOriginDay);
-  const monthly = chartMonthlyValues(series);
-  const labels = days.map(fmtDay);
-  const provisional = lastPointIsToday(series, nowMs);
-  const dailySplit = splitProvisional(daily.map(v => shown.daily ? v : null), provisional);
-  const weeklySplit = splitProvisional(weekly.map(v => shown.weekly ? v : null), provisional);
-  const monthlySplit = splitProvisional(monthly.map(v => shown.monthly ? v : null), provisional);
-  const monthDividers = monthDividerIndices(days);
-  const monthTicks = monthLabelTicks(days);
-  const counts = { ...windowCounts(series), days30: series.at(-1)?.label720h ?? series.at(-1)?.recordedLabel720h ?? null };
-  const scrubLabel = (i: number) => {
-    const w = weekly[i];
-    const m = monthly[i];
-    const monthlyLowerBound = i === series.length - 1 ? series[i].label720h == null : series[i].rolling30 == null;
-    return [labels[i], ...(shown.daily ? [`<b>${daily[i]}</b> daily`] : []),
-      ...(shown.weekly && w != null ? [`<b>${w}</b> weekly`] : []),
-      ...(shown.monthly && m != null ? [`<b>${monthlyLowerBound ? '≥' : ''}${m}</b> monthly (recorded)`] : [])];
-  };
+  const { daily, labels, counts, weeklyGrowth, monthlyGrowth, scrubLabel, build } = useMemo(() => {
+    const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
+    const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
+    const days = series.map((p) => p.day);
+    const daily = chartDailyValues(series);
+    const weekly = chartWeeklyValues(series, historyOriginDay);
+    const monthly = chartMonthlyValues(series);
+    const labels = days.map(fmtDay);
+    const provisional = lastPointIsToday(series, nowMs);
+    const dailySplit = splitProvisional(daily.map(v => shown.daily ? v : null), provisional);
+    const weeklySplit = splitProvisional(weekly.map(v => shown.weekly ? v : null), provisional);
+    const monthlySplit = splitProvisional(monthly.map(v => shown.monthly ? v : null), provisional);
+    const monthDividers = monthDividerIndices(days);
+    const monthTicks = monthLabelTicks(days);
+    const counts = { ...windowCounts(series), days30: series.at(-1)?.label720h ?? series.at(-1)?.recordedLabel720h ?? null };
+    const scrubLabel = (i: number) => {
+      const w = weekly[i];
+      const m = monthly[i];
+      const monthlyLowerBound = i === series.length - 1 ? series[i].label720h == null : series[i].rolling30 == null;
+      return [labels[i], ...(shown.daily ? [`<b>${daily[i]}</b> daily`] : []),
+        ...(shown.weekly && w != null ? [`<b>${w}</b> weekly`] : []),
+        ...(shown.monthly && m != null ? [`<b>${monthlyLowerBound ? '≥' : ''}${m}</b> monthly (recorded)`] : [])];
+    };
 
-  const ref = useECharts(
-    (el): EChartsOption => {
+    const build = (el: HTMLDivElement): EChartsOption => {
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
@@ -324,10 +320,10 @@ function TrendChart({
           },
         ],
       };
-    },
-    [series, nowMs, historyOriginDay, shown, growth],
-    { scrub: { count: labels.length, label: scrubLabel } },
-  );
+    };
+    return { daily, labels, counts, weeklyGrowth, monthlyGrowth, scrubLabel, build };
+  }, [series, nowMs, historyOriginDay, shown, growth]);
+  const ref = useECharts(build, { scrub: { count: labels.length, label: scrubLabel } });
 
   if (series.length < 2) {
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
@@ -345,30 +341,30 @@ function TrendChart({
   );
 }
 
+interface UniqueUsersModel {
+  values: number[];
+  axisLabels: string[];
+  showTick: (index: number, last: number) => boolean;
+  scrubLabel: (index: number) => string[];
+}
+
 function UniqueUsersLineChart({
-  values,
-  axisLabels,
-  showTick,
-  scrubLabel,
+  model,
   ariaLabel,
   seriesName,
   provisional,
   counts,
-  source,
 }: {
-  values: number[];
-  axisLabels: string[];
-  showTick: (i: number, last: number) => boolean;
-  scrubLabel: (i: number) => string[];
+  model: UniqueUsersModel;
   ariaLabel: string;
   seriesName: 'hourly' | 'daily';
   provisional: boolean;
   counts: { hours24: number };
-  source: DailyPoint[] | HourlyPoint[];
 }) {
-  const split = splitProvisional(values, provisional);
-  const ref = useECharts(
-    (el): EChartsOption => {
+  const build = useCallback(
+    (el: HTMLDivElement): EChartsOption => {
+      const { values, axisLabels, showTick } = model;
+      const split = splitProvisional(values, provisional);
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const axisFont = el.clientWidth < 600 ? 8 : 9;
@@ -438,11 +434,11 @@ function UniqueUsersLineChart({
         ],
       };
     },
-    [source, seriesName, provisional, counts.hours24],
-    { scrub: { count: axisLabels.length, label: scrubLabel } },
+    [model, seriesName, provisional, counts.hours24],
   );
+  const ref = useECharts(build, { scrub: { count: model.axisLabels.length, label: model.scrubLabel } });
 
-  if (values.length < 2) {
+  if (model.values.length < 2) {
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   }
   return (
@@ -464,22 +460,26 @@ function HourlyTrendChart({
   counts: { hours24: number; days7: number | null };
   nowMs: number;
 }) {
-  const values = series.map((p) => p.unique);
-  const hourLabels = series.map((p) => fmtHour(p.hour));
-  const last = Math.max(values.length - 1, 1);
-  const lo = values.length ? Math.min(...values) : 0;
-  const hi = values.length ? Math.max(...values) : 0;
+  const model = useMemo<UniqueUsersModel>(() => {
+    const values = series.map((p) => p.unique);
+    const hourLabels = series.map((p) => fmtHour(p.hour));
+    const last = Math.max(values.length - 1, 1);
+    return {
+      values,
+      axisLabels: hourLabels,
+      showTick: (i) => i === 0 || i === last || i % 6 === 0,
+      scrubLabel: (i) => [hourLabels[i], `<b>${values[i]}</b> hourly`],
+    };
+  }, [series]);
+  const lo = model.values.length ? Math.min(...model.values) : 0;
+  const hi = model.values.length ? Math.max(...model.values) : 0;
   return (
     <UniqueUsersLineChart
-      values={values}
-      axisLabels={hourLabels}
-      showTick={(i) => i === 0 || i === last || i % 6 === 0}
-      scrubLabel={(i) => [hourLabels[i], `<b>${values[i]}</b> hourly`]}
+      model={model}
       ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
       seriesName="hourly"
       provisional={lastPointIsCurrentHour(series, nowMs)}
       counts={counts}
-      source={series}
     />
   );
 }
@@ -493,24 +493,28 @@ function DailyWeekdayChart({
   counts: { hours24: number; days7: number | null };
   nowMs: number;
 }) {
-  const values = series.map((p) => p.dau);
-  const ticks = dailyWeekdayTicks(series);
-  const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
-  const axisLabels = series.map((_, i) => tickAt.get(i) ?? '');
-  const lo = values.length ? Math.min(...values) : 0;
-  const hi = values.length ? Math.max(...values) : 0;
-  const weekdayList = ticks.map((t) => t.weekday).join(', ');
+  const { model, weekdayList } = useMemo(() => {
+    const values = series.map((p) => p.dau);
+    const ticks = dailyWeekdayTicks(series);
+    const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
+    const axisLabels = series.map((_, i) => tickAt.get(i) ?? '');
+    const model: UniqueUsersModel = {
+      values,
+      axisLabels,
+      showTick: (i) => tickAt.has(i),
+      scrubLabel: (i) => [fmtWeekday(series[i].day), `<b>${values[i]}</b> daily`],
+    };
+    return { model, weekdayList: ticks.map((t) => t.weekday).join(', ') };
+  }, [series]);
+  const lo = model.values.length ? Math.min(...model.values) : 0;
+  const hi = model.values.length ? Math.max(...model.values) : 0;
   return (
     <UniqueUsersLineChart
-      values={values}
-      axisLabels={axisLabels}
-      showTick={(i) => tickAt.has(i)}
-      scrubLabel={(i) => [fmtWeekday(series[i].day), `<b>${values[i]}</b> daily`]}
+      model={model}
       ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
       seriesName="daily"
       provisional={lastPointIsToday(series, nowMs)}
       counts={counts}
-      source={series}
     />
   );
 }
@@ -526,7 +530,7 @@ export function ActiveUsersPanel({
   nowMs: number;
   range: DashboardRange;
 }) {
-  const [shown, setShown] = useState({ daily: true, weekly: true, monthly: true });
+  const [shown, setShown] = useState({ daily: true, weekly: true, monthly: false });
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
   const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);

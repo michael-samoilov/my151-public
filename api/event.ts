@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { FUNNEL_DAY_TTL_S } from './_range.js';
+import { parseAutoFlag } from './_automation.js';
 import {
   appendExportSurveySkip,
   EXPORT_SURVEY_SKIP_EVENT,
@@ -17,28 +19,7 @@ import {
   JOURNAL_TTL_S,
 } from './_events.js';
 
-/**
- * Lightweight funnel-event counters. Deliberately SEPARATE from the per-client
- * records in submit.ts and league.ts: those represent people who placed
- * something (the tools' "users"), whereas these events include top-of-funnel
- * signals that fire with zero placements (saw the hub, saw the intro,
- * bounced). Recording them as their own aggregate counters keeps the user
- * analytics from ballooning with every page-load visitor. The client de-dupes
- * once-per-user events in localStorage, so a raw count ≈ distinct users for
- * those.
- *
- * Storage, three shapes:
- *  - HINCRBY into `funnel` (all-time totals) and `funnel:<YYYY-MM-DD>`
- *    (per-day, expiring): cheap reads for the dashboard.
- *  - RPUSH into `journal:<YYYY-MM-DD>`: one compact raw entry per event,
- *    with the cid, tool and page. Counters answer only the questions they
- *    were created for; the journal lets a question asked later be answered
- *    from launch day. Capped per day and expiring, so it cannot grow without
- *    bound.
- */
-
 const FUNNEL_KEY = 'funnel';
-const DAILY_TTL_S = 120 * 24 * 60 * 60; // keep ~4 months of daily buckets
 
 const burstLimiter = new Ratelimit({
   redis,
@@ -46,9 +27,6 @@ const burstLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:evburst',
 });
-// Per browser. Once-per-browser events cost one each for the life of the
-// browser; the per-click ones (hub cards, league exports) are what the
-// budget is for. 200 is well past a real day and well short of a script.
 const clientLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(200, '1 d'),
@@ -57,7 +35,7 @@ const clientLimiter = new Ratelimit({
 });
 
 function dayKey(now: number): string {
-  return new Date(now).toISOString().slice(0, 10); // UTC YYYY-MM-DD
+  return new Date(now).toISOString().slice(0, 10);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -72,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       page?: unknown;
       exportTool?: unknown;
       reason?: unknown;
+      auto?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
@@ -90,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       skipFields?.tool ??
       (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
-    if (isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
+    if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
@@ -132,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     await Promise.all(writes);
     await Promise.all([
-      redis.expire(dailyKey, DAILY_TTL_S),
+      redis.expire(dailyKey, FUNNEL_DAY_TTL_S),
       redis.expire(journalKey, JOURNAL_TTL_S),
       redis.ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1),
     ]);

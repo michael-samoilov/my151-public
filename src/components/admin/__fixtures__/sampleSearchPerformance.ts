@@ -57,7 +57,6 @@ function scaled<T extends SearchDimensionRow | SearchPageQueryRow>(rows: T[], fa
   });
 }
 
-/** One provider's reported rows, repeated for each range of its granularity. */
 function sampleProvider(
   provider: 'google' | 'bing',
   series: SearchSeriesPoint[],
@@ -92,7 +91,6 @@ const googleRows = {
     { key: 'https://my151.app/custom-gym-leader', clicks: 31, impressions: 148, ctr: 31 / 148, position: 8.2 },
     { key: 'https://my151.app/pokedex-builder', clicks: 3, impressions: 56, ctr: 3 / 56, position: 10.8 },
     { key: 'https://my151.app/favorite-pokemon-picker', clicks: 4, impressions: 40, ctr: 4 / 40, position: 9.1 },
-    // An old path that redirects to the Picker.
     { key: 'https://my151.app/favorite-pokemon-by-type', clicks: 1, impressions: 12, ctr: 1 / 12, position: 14.5 },
   ],
   queries: [
@@ -127,7 +125,7 @@ const bingRows = {
   pageQueries: [],
 };
 
-export const sampleSearchPerformance: SearchPerformanceSnapshot = {
+const sampleSearchPerformance: SearchPerformanceSnapshot = {
   daily: {
     generatedAt: GENERATED_AT,
     providers: {

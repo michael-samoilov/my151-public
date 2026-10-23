@@ -33,9 +33,6 @@ import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
 import { DesktopPane } from './DesktopPane';
 
-// Keep the chain picker available for a possible future opt-in, but default to
-// the direct replacement flow until its choices are understandable at a glance.
-// `?packing=1` turns it on outside production so its specs keep running.
 const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('packing') === '1';
 
@@ -66,7 +63,6 @@ export function PickerSheet({
   onPlace: (id: number) => void;
   onApplyPack: (path: PackMove[]) => void;
   onClear: () => void;
-  /** Opens another cell, from the button of an empty selector. */
   onOpenCell: (type: TypeAxisId, gen: GenAxisId, keyboard: boolean) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -124,8 +120,6 @@ export function PickerSheet({
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
-  // Starter rows keep whole evolution lines. Starter × Gimmick keeps debut
-  // order instead, so a line's forms from later games do not pull forward.
   const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? evolutionLineKey : undefined;
   const widestRow = Math.max(0, ...prettyRows(mons, maxCols, lineKey).map((row) => row.length));
   const paneWidth = Math.max(
@@ -201,7 +195,6 @@ export function PickerSheet({
     </div>
   );
 
-  // Mobile reserves the measured action width and a 4px gap before fitting badges.
   const title = <PickerTitle type={type} gen={gen}
     maxWidth={desktop ? undefined : Math.max(1, viewportPx - (mons.length > 0 ? iconToggleWidth : 0) - 16 - (packing ? 20 : 0))}
     gapPx={desktop ? 6 : 2} />;
@@ -226,8 +219,6 @@ export function PickerSheet({
   );
   const mobileTitle = (
     <span className="flex w-full items-center gap-1 px-1 py-0.5 text-left">
-      {/* The sheet closes by a drag, a tap on the header, or a tap outside,
-          so only packing, where the header steps back, shows a back mark. */}
       {packing ? <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
       {title}
     </span>
@@ -315,20 +306,12 @@ function PackList({
 
 type Cell = { type: TypeAxisId; gen: GenAxisId };
 
-/** A row or column name: "Gen I", "Fire", "Starter". */
 function axisLabel(axis: TypeAxisId | GenAxisId): string {
   if (isGenNumber(axis)) return generationLabel(axis);
   if (isTypeName(axis)) return typeLabel(axis);
   return translate(`favorites.axis.${axis}`);
 }
 
-/**
- * The cell that an empty favorite selector's button opens: the first source
- * cell the person can fill now. That is a pick cell, or a favorite cell that
- * already has picks to choose from. When no source can be filled yet, as for
- * the overall favorite on a new grid, it is that cell for the first favorite
- * source.
- */
 function nextCell(type: TypeAxisId, gen: GenAxisId, fills: Record<string, number>): Cell | null {
   const sources = pointerSourceKeys(type, gen).map(parseCellKey).filter((cell): cell is Cell => cell != null);
   const ready = sources.find((cell) => {
@@ -340,11 +323,6 @@ function nextCell(type: TypeAxisId, gen: GenAxisId, fills: Record<string, number
   return deeper ? nextCell(deeper.type, deeper.gen, fills) : null;
 }
 
-/**
- * The copy of a selector with nothing to choose. A favorite cell names where
- * its choices come from and opens the next cell to fill. A pick cell with no
- * Pokémon is empty by design, so it gets no button.
- */
 function emptyCopy(
   type: TypeAxisId,
   gen: GenAxisId,
@@ -369,8 +347,6 @@ function emptyCopy(
     const name = axisLabel(gen);
     return { title: translate('favorites.empty.row.title', { gen: name }), body: translate('favorites.empty.row.body', { gen: name }), action };
   }
-  // A type or Starter column's favorite, or the Legendary or Gimmick favorite,
-  // which reads both its row and its column.
   const name = axisLabel(type);
   const both = type === gen;
   return {

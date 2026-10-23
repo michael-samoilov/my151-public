@@ -3,6 +3,7 @@ import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { AUTOMATED } from '@/lib/automation';
 import { getLocale } from '@/i18n/core';
 import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage } from '@/lib/tool';
@@ -22,14 +23,6 @@ import {
 } from '../export/exportPersonalization';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { describeLeague, summarizeLeague } from '../model/leagueSummary';
-
-/**
- * The gym leader maker's build beacon, the dex builder's useCompletionBeacon
- * for a league: a debounced 'progress' report to /api/league as the league
- * changes, and an 'export' report from the export button. Same debouncer,
- * same cadence, same flush at the moments a page can vanish, same reasons
- * (see useCompletionBeacon.ts).
- */
 
 function postLeagueBeacon(
   kind: 'progress' | 'export',
@@ -67,6 +60,7 @@ function postLeagueBeacon(
     attention: attentionPayload('league'),
     activity: minuteActivityPayload('league'),
     notme: isOptedOut() || undefined,
+    auto: AUTOMATED || undefined,
     events: events.length ? events : undefined,
   });
   return fetch('/api/league', {
@@ -126,7 +120,6 @@ export function useLeagueBeacon() {
   }, [debouncer]);
 }
 
-/** One-shot export report, with the league as it was exported. */
 export function sendLeagueExportBeacon(
   exportKind: LeagueExportKind,
   pokemonIds: number[],

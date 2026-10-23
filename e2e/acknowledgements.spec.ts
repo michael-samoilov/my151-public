@@ -1,10 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
-/**
- * The footer's Acknowledgements panel: a bottom sheet on a phone and a
- * right-hand pane on desktop, with a list of credits and a detail level that
- * loads the license text only when an entry opens.
- */
+const top = async (locator: Locator) => (await locator.boundingBox())!.y;
+
 test.describe('acknowledgements', { tag: '@viewport' }, () => {
   test('opens from the hub footer, shows a license, goes back, and closes', async ({ page }, testInfo) => {
     await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
@@ -20,15 +17,34 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
 
     const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
     await expect(dialog).toBeVisible();
-    for (const group of ['Sprites', 'Icons and art', 'Fonts', 'Data', 'Code']) {
+    for (const group of ['Sprite projects', 'Additional sprites', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
-    // The count matches the rows: a sprite source with no sprite in this build has no row.
     const rows = await dialog.locator('[data-ack-id]').count();
     await expect(dialog.getByText(`${rows} credits`)).toBeVisible();
 
-    // The container differs by width: a sheet along the bottom on a phone, a
-    // full-height pane along the right on desktop.
+    await expect(dialog.locator('[data-ack-id="pokemon-showdown"]')).toHaveCount(0);
+    await dialog.locator('[data-ack-id="smogon-sprite-project"]').click();
+    await expect(dialog.getByTestId('ack-detail').getByText('Non-profit use, with credit', { exact: true })).toBeVisible();
+    await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
+    await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
+    const smogonArtists = dialog.getByTestId('ack-artists');
+    const smogonUse = dialog.getByTestId('ack-detail').getByText(/^Its artists drew \d+ of the app's fan-made sprites\. \d+ of them reach the app through PokéAPI\.$/);
+    await expect(smogonUse).toBeVisible();
+    expect((await smogonUse.textContent())!).toContain(`drew ${(await smogonArtists.getByTestId('ack-artists-summary').textContent())!.match(/^\d+/)![0]} of`);
+    await expect(smogonArtists.getByTestId('ack-artists-summary')).toHaveText(/^\d+ fan-made sprites in the app are credited through this project\.$/);
+    // The threads and the license come before the artists, and the list shows every artist.
+    const artistSection = dialog.getByTestId('ack-detail').locator('section').filter({ has: page.getByTestId('ack-artists') });
+    const artistTotal = Number(await artistSection.locator('h4 > span').last().textContent());
+    expect(artistTotal).toBeGreaterThan(10);
+    await expect(smogonArtists.locator(':scope > ol > li')).toHaveCount(artistTotal);
+    expect(await top(dialog.getByRole('link', { name: 'Generation 8 and later thread' }))).toBeLessThan(await top(artistSection));
+    expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(artistSection));
+    // The panel never says which sprites my151 changed (Michael, 2026-10-20).
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
+    await expect(smogonArtists.getByTestId('ack-artists-unconfirmed')).toHaveText(/^Artist not confirmed\d+ sprites?$/);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+
     const viewport = page.viewportSize()!;
     const box = (await dialog.boundingBox())!;
     const desktop = viewport.width >= 1024;
@@ -39,36 +55,78 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
       expect(Math.round(box.width)).toBe(viewport.width);
       expect(Math.round(box.y + box.height)).toBe(viewport.height);
     }
-    expect(licenseRequests, 'no license text loads before an entry opens').toEqual([]);
+    const licenseTexts = () => licenseRequests.filter((url) => url.endsWith('.txt'));
+    expect(licenseTexts(), 'no license text loads before an entry opens').toEqual([]);
 
     const row = dialog.locator('[data-ack-id="pokeapi"]');
     await row.click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI');
     const license = dialog.getByTestId('ack-license-text');
     await expect(license).toContainText('Redistribution and use in source and binary forms');
-    await expect(dialog.getByRole('button', { name: 'Back' })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Back', exact: true })).toBeFocused();
     const licenseChars = (await license.textContent())!.length;
 
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // A sprite source lists the sprites my151 chose from it, each with the
-    // people its row credits: Kyle Dove's post asks to credit MyMarshlands
-    // for Victreebel.
-    await dialog.locator('[data-ack-id="kyle-dove"]').click();
+    await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
+    const pokeapiUse = dialog.getByTestId('ack-detail').getByText(/^The source of \d+ official sprites from the games, and \d+ sprites by Smogon Sprite Project artists\. We also use it for \d+ additional fan-made sprites\.$/);
+    await expect(pokeapiUse).toBeVisible();
+    const pokeapiOwn = (await pokeapiUse.textContent())!.match(/for (\d+) additional/)![1];
+    await expect(dialog.getByTestId('ack-artists-summary')).toHaveText(`${pokeapiOwn} fan-made sprites in the app are credited through this project.`);
+    expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(dialog.getByTestId('ack-artists')));
+    await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
+    await expect(dialog.getByTestId('ack-sprites')).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
+    await expect(artists).toHaveCount(4);
+    await artists.first().click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByRole('heading', { name: /^Sprites chosen for my151 \d+$/ })).toBeVisible();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Mega Victreebel' })).toHaveText('Mega Victreebel with MyMarshlands');
-    const kyleDoveSprites = Number(/(\d+)$/.exec((await sprites.getByRole('heading').textContent())!.trim())?.[1]);
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText('In addition to their sprites in the projects above, we use these 13 additional sprites from their own uploads.');
+    const generations = sprites.getByTestId('ack-sprites-generation');
+    await expect(generations).toHaveCount(2);
+    for (const summary of await generations.locator('summary').all()) await summary.click();
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Stereo Rotom');
+    await expect(sprites.getByRole('listitem')).toHaveCount(13);
+    await expect(dialog.getByTestId('ack-also-credited').getByRole('listitem')).toHaveCount(3);
+    const kingSprites = await sprites.getByRole('listitem').count();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    await dialog.locator('[data-ack-id="artist:JoeTEStrikesBack"]').click();
+    await expect(dialog.getByTestId('ack-sprites-summary')).toHaveText('2 sprites from their own uploads');
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+
+    for (const id of ['partywhale-type-icons', 'elginive-type-icons']) {
+      await dialog.locator(`[data-ack-id="${id}"]`).click();
+      await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Gen 9 Type Icons');
+      await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    }
+    await dialog.locator('[data-ack-id="bulbagarden-archives"]').click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Pokémon symbols and item icons');
+    await expect(dialog.getByRole('link', { name: /archives.bulbagarden.net/ })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await dialog.locator('[data-ack-id="npm-packages"]').click();
+    const packages = dialog.getByTestId('ack-packages');
+    await expect(packages.getByRole('listitem').filter({ hasText: /^react \d/ })).toBeVisible();
+    const packageCount = await packages.getByRole('listitem').count();
+    await expect(dialog.getByTestId('ack-package-files').getByRole('link')).toHaveText([
+      /^License texts of \d+ packagesnpm-packages\.txt$/,
+      /^License texts of 4 packagestailwindcss, modern-normalize, country-flag-icons, and echarts NOTICE$/,
+    ]);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(link).toBeFocused();
 
-    // A press outside the panel closes it too.
     await link.click();
     await expect(dialog).toBeVisible();
     await page.mouse.click(8, 8);
@@ -79,10 +137,36 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
       body: JSON.stringify({
         container: desktop ? 'side pane' : 'bottom sheet',
         licenseRequests: licenseRequests.map((url) => new URL(url).pathname),
+        packageCount,
         licenseChars,
         rows,
-        kyleDoveSprites,
+        kingSprites,
       }, null, 2),
     });
+  });
+
+  test('keeps the full Partywhale author credit on one line', async ({ page }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Acknowledgements' }).last().click();
+    const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+    await expect(dialog).toBeVisible();
+    const row = dialog.locator('[data-ack-id="partywhale-type-icons"]');
+    await row.scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.fonts.ready);
+    const geometry = await row.evaluate((element) => {
+      const label = element.firstElementChild!.firstElementChild!;
+      const author = [...label.children].find((child) => child.textContent === 'by Partywhale (James Watkins)');
+      if (!author) throw new Error('Missing full Partywhale author credit');
+      const range = document.createRange();
+      range.selectNodeContents(author);
+      const rects = [...range.getClientRects()].filter((rect) => rect.width > 0);
+      const row = element.getBoundingClientRect();
+      const chevron = element.querySelector('svg')!.getBoundingClientRect();
+      return { authorLines: rects.length, authorRight: Math.max(...rects.map((rect) => rect.right)), chevronLeft: chevron.left, chevronRight: chevron.right, rowRight: row.right };
+    });
+    expect(geometry.authorLines).toBe(1);
+    expect(geometry.authorRight).toBeLessThanOrEqual(geometry.chevronLeft);
+    expect(geometry.chevronRight).toBeLessThanOrEqual(geometry.rowRight);
+    await testInfo.attach('author-credit-geometry', { body: JSON.stringify(geometry), contentType: 'application/json' });
   });
 });

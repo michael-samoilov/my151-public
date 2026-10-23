@@ -1,18 +1,10 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Locator } from '@playwright/test';
 import { buildDashboard } from '../api/_dashboard';
 
-/**
- * Admin Flows Sankey, driven against `/?admin&demo` so it needs no token.
- *
- * Locks the three promises of this slice: unknown referrers stay on the
- * referrer chart, the dex incomplete peel is five size tiers in one column,
- * and the gym leader maker has its own usage funnel. The chart is an
- * echarts Sankey at every width; on phone and narrow viewports it must not
- * need a sideways pan.
- */
 test.describe('admin flows', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
@@ -123,7 +115,7 @@ test.describe('admin flows', () => {
     };
     await page.route('**/api/submissions**', (route) => route.fulfill({ json: fixture }));
     await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     await page.getByRole('button', { name: 'League', exact: true }).click();
     const funnel = page.getByRole('img', { name: /League usage funnel/ });
     await expect(funnel.locator('canvas')).toBeVisible();
@@ -139,7 +131,6 @@ test.describe('admin flows', () => {
         if (current && typeof current.getModel === 'function') instance = current;
       }
       if (!instance) throw new Error('Rendered export chart missing');
-      // Measure whole label blocks so wrapped words still count as one name.
       return instance.getModel().getSeriesByIndex(0).getGraph().nodes.filter((n) => /^(League export|Gym export|Both exported)$/.test(n.id)).map((n) => {
         const g = n.getGraphicEl().getTextContent();
         const r = g.getBoundingRect().clone(), matrix = g.getComputedTransform();

@@ -38,7 +38,6 @@ const listed = new Set();
 const sourceDirs = new Set();
 let count = 0;
 
-/** The file's first comment, without comment markers or line breaks. */
 function leadingText(buffer) {
   return buffer
     .toString('utf8', 0, 600)
@@ -91,7 +90,6 @@ for (const file of walk(path.join(root, PUBLISHED))) {
   if (!listed.has(rel)) errors.push(`${rel} is not listed in ${MANIFEST}.`);
 }
 
-// A source folder holds only published files, so nothing in it ships unpublished.
 const sources = new Set(Object.values(manifest).flatMap(({ files }) => Object.values(files ?? {})));
 for (const dir of sourceDirs) {
   for (const file of walk(path.join(root, dir))) {
