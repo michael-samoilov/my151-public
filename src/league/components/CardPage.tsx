@@ -257,12 +257,12 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
+  const dpr = useDevicePixelRatio();
   const fit = useFitScale(
     fitRef,
     0.55,
-    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96 } : undefined,
+    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96, dpr } : undefined,
   );
-  const dpr = useDevicePixelRatio();
   const rendering = spriteRendering(
     spriteScreen(isDesktop, dpr),
     SPRITE_REM * getAppliedRootFontSizePx() * fit.scale,

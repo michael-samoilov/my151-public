@@ -28,6 +28,7 @@ interface Grow {
   baseWidthRem: number;
   spriteRem: number;
   targetSpritePx: number;
+  dpr: number;
 }
 
 interface Compact {
@@ -62,10 +63,11 @@ export function useFitScale(
   const roomiestRem = compact?.heightRem(Infinity);
   const shortestRem = compact?.heightRem(0);
   const hasGrow = grow !== undefined;
-  const { baseWidthRem, spriteRem, targetSpritePx } = grow ?? {
+  const { baseWidthRem, spriteRem, targetSpritePx, dpr } = grow ?? {
     baseWidthRem: 0,
     spriteRem: 1,
     targetSpritePx: 1,
+    dpr: 1,
   };
   useLayoutEffect(() => {
     const el = ref.current;
@@ -174,6 +176,8 @@ export function useFitScale(
           floor,
           baseWidth,
           spriteCeil: ceiling,
+          spritePx: spriteRem * rootFont,
+          dpr,
           prevScale: last.scale,
           prevWidth: last.width,
         });
@@ -217,6 +221,7 @@ export function useFitScale(
     baseWidthRem,
     spriteRem,
     targetSpritePx,
+    dpr,
     roomiestRem,
     shortestRem,
     compact?.holds,
@@ -224,9 +229,37 @@ export function useFitScale(
   return fit;
 }
 
+/**
+ * Divide a container query length by this inside a fitted block.
+ *
+ * WebKit sizes `cqw` from the container's zoomed width and then zooms the
+ * length again. Measured on WebKitGTK 2.52, the harness's iOS lane: inside
+ * `zoom: 0.784`, `100cqw` in a 130px container is 102px, and Blink and Gecko
+ * make it 130px. The probe sets this to the zoom only where an engine does
+ * that, so everywhere else the division is by 1.
+ */
+export const CQ_ZOOM_VAR = '--cq-zoom';
+
+let cqUnitsZoomed: boolean | undefined;
+
+function containerUnitsZoomed(): boolean {
+  if (cqUnitsZoomed !== undefined) return cqUnitsZoomed;
+  if (typeof document === 'undefined' || !document.body) return false;
+  const box = document.createElement('div');
+  box.style.cssText = 'position:absolute;visibility:hidden;zoom:0.5;width:100px;container-type:inline-size';
+  const unit = document.createElement('div');
+  unit.style.width = '100cqw';
+  box.append(unit);
+  document.body.append(box);
+  cqUnitsZoomed = unit.offsetWidth < 75;
+  box.remove();
+  return cqUnitsZoomed;
+}
+
 export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto'): React.CSSProperties {
   return {
     zoom: fit.scale,
+    [CQ_ZOOM_VAR as string]: containerUnitsZoomed() ? fit.scale : 1,
     width: fit.width || undefined,
     marginInline: 'auto',
     // The margin sits on the zoomed block, so it is zoomed too.

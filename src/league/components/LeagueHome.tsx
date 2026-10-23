@@ -268,7 +268,7 @@ export function LeagueHome() {
     fitRef,
     0.55,
     rule.homeCeilingPx
-      ? { baseWidthRem: 26, spriteRem: HOME_SPRITE_REM, targetSpritePx: rule.homeCeilingPx(dpr) }
+      ? { baseWidthRem: 26, spriteRem: HOME_SPRITE_REM, targetSpritePx: rule.homeCeilingPx(dpr), dpr }
       : undefined,
     {
       heightRem: (budgetRem) => homeHeightRem(fitHomeLayout(budgetRem, rootPx), rootPx),

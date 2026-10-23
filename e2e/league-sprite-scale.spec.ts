@@ -150,6 +150,67 @@ test.describe('a Retina desktop', () => {
   });
 });
 
+async function cardSprites(page: Page, sizes: number[][]) {
+  await openLeague(page);
+  await page.click('[data-testid="league-slot-0"]');
+  await page.waitForSelector('[data-testid="card-cell-1-1"]');
+  await page.waitForFunction(() => {
+    const imgs = [...document.querySelectorAll('[data-lg-card-root] img')] as HTMLImageElement[];
+    return imgs.length > 0 && imgs.every((i) => i.complete && i.naturalWidth > 0);
+  });
+  const steps = [];
+  for (const [width, height] of sizes) {
+    await page.setViewportSize({ width, height });
+    await settle(page);
+    steps.push(await page.evaluate(() => {
+      const card = document.querySelector('[data-lg-card-root]')!;
+      const pane = card.closest('[data-lg-viewport]')!;
+      const scales = [...card.querySelectorAll('img')]
+        .filter((i) => i.src.includes('/sprites/pokemon/'))
+        .map((i) => (i.getBoundingClientRect().width * devicePixelRatio) / i.naturalWidth);
+      return {
+        size: `${innerWidth}x${innerHeight}@${devicePixelRatio}`,
+        scales: [...new Set(scales.map((s) => +s.toFixed(4)))],
+        overflow: pane.scrollHeight - pane.clientHeight,
+        cardHeight: card.getBoundingClientRect().height,
+      };
+    }));
+  }
+  return steps;
+}
+
+function expectWholeAndInPane(steps: Awaited<ReturnType<typeof cardSprites>>) {
+  for (const s of steps) {
+    expect(s.overflow, `the pane scrolls 10% of the card or less at ${s.size}`).toBeLessThanOrEqual(0.1 * s.cardHeight + 1);
+    for (const scale of s.scales) {
+      expect(scale, `a whole multiple of 1x at ${s.size}`).toBeGreaterThanOrEqual(1 - 1e-3);
+      expect(Math.abs(scale - Math.round(scale)), `${scale}x is whole at ${s.size}`).toBeLessThan(1e-3);
+    }
+  }
+}
+
+test.describe('a Retina desktop with a gym card open', () => {
+  test.use({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 });
+
+  test('draws every card sprite at whole device pixels, with the pane scrolling 10% at most', async ({ page }, info) => {
+    // 1440x812 is a 13-inch MacBook Air window: there the card grows past
+    // its pane to reach 1x, where snapping down alone stayed soft.
+    const steps = await cardSprites(page, [[1920, 1080], [1440, 900], [1440, 812]]);
+    await info.attach('card-sprites.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
+    expectWholeAndInPane(steps);
+  });
+});
+
+test.describe('a 2560x1440 monitor at 1x with a gym card open', () => {
+  test.use({ viewport: { width: 2560, height: 1440 }, deviceScaleFactor: 1 });
+
+  test('draws every card sprite at whole device pixels, with the pane scrolling 10% at most', async ({ page }, info) => {
+    const steps = await cardSprites(page, [[2560, 1440]]);
+    await info.attach('card-sprites.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
+    expectWholeAndInPane(steps);
+  });
+});
+
 test.describe('a short phone', () => {
   test.use({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 

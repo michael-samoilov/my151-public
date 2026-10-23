@@ -8,7 +8,7 @@ import { useAnchoredCard } from '@/hooks/useAnchoredCard';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { raw, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
-import { LaurelIcon } from './LaurelIcon';
+import { ArceusCrestIcon } from './ArceusCrestIcon';
 
 function ResetDisc() {
   return (
@@ -62,7 +62,7 @@ const GESTURES: Gesture[] = [
   },
   {
     id: 'legend',
-    Icon: LaurelIcon,
+    Icon: ArceusCrestIcon,
     title: 'league.help.legend.title',
     body: () => raw('league.help.legend.body'),
   },
