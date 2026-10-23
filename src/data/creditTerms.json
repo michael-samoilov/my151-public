@@ -214,21 +214,6 @@
     }
    ]
   },
-  "tabler-icons": {
-   "name": "Tabler Icons",
-   "urls": [
-    "https://github.com/tabler/tabler-icons"
-   ],
-   "status": "read (GitHub); blocked: tabler.io",
-   "terms": [
-    {
-     "text": "MIT License\n\nCopyright (c) 2020-2026 Paweł Kuna",
-     "url": "https://github.com/tabler/tabler-icons/blob/HEAD/LICENSE",
-     "read": "2026-10-13",
-     "verified": true
-    }
-   ]
-  },
   "simple-icons": {
    "name": "Simple Icons and react-icons",
    "urls": [

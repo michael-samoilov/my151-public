@@ -157,15 +157,6 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         links: ['https://lucide.dev'],
       },
       {
-        id: 'tabler-icons',
-        name: 'Tabler Icons',
-        by: 'Paweł Kuna',
-        usedFor: 'The laurel wreath icons.',
-        license: 'MIT',
-        texts: [{ name: 'MIT', file: 'tabler-icons-MIT.txt' }],
-        links: ['https://github.com/tabler/tabler-icons'],
-      },
-      {
         id: 'simple-icons',
         name: 'Simple Icons',
         usedFor: 'The social logos in the league export survey, through react-icons.',

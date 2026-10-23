@@ -12,7 +12,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getPokemonById } from '@/league/data/catalog';
 import { getLocale, localeUppercase, pokemonLabel, raw, spriteAlt, t as translate, useNamesVersion, useT, type NoArgKey } from '@/i18n';
 import { useDndAccessibility } from '@/lib/dndAccessibility';
@@ -50,7 +50,6 @@ import {
   formAt, formsFor, isPowerupRow, powerupSymbol, type PowerupForm, type PowerupKind, type PowerupSymbol,
 } from '../model/powerups';
 import { powerupFormName } from '../powerupFormName';
-import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
   ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_HALO, CAPTION_LEADING, CAPTION_MIN_REM, fitHeadings,
@@ -1990,29 +1989,17 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           );
         })}
       </div>
-      <div
-        data-fit-tail
-        className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
-      >
-        {card.lines.length === 0 && (
-          <>
-            <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-            <span>{t('league.hint.add')}</span>
-          </>
-        )}
-        <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>{t('league.hint.evolve')}</span>
-        <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>{t('league.hint.reorder')}</span>
-        {card.lines.length > 0 && (
-          <>
-            <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
-            <span>
-              {legendsOf(card).length > 0 ? t('league.hint.legendMove') : t('league.hint.legendAdd')}
-            </span>
-          </>
-        )}
-      </div>
+      {/* The gestures are in the card's info menu. An empty card still says
+          how to start one. */}
+      {card.lines.length === 0 && (
+        <div
+          data-fit-tail
+          className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
+        >
+          <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
+          <span>{t('league.hint.add')}</span>
+        </div>
+      )}
       {/* Portalled out of the card's `zoom` so its pixel size is the one
           measured from the cell, not that size zoomed a second time. */}
       {createPortal(

@@ -52,12 +52,14 @@ test.describe('the fit', { tag: '@viewport' }, () => {
       expect(tight.kept, 'and it is the tail only, not the card').toBeGreaterThan(0.9);
     });
 
+  // Only an empty gym card has a hint under it: the gestures moved to the
+  // card's info menu. Slot 6 is empty in the sample league.
   test('pays for a gym card the same way', async ({ page }) => {
     const { width } = page.viewportSize()!;
     await page.setViewportSize({ width, height: TIGHT });
     await page.goto('/custom-gym-leader');
-    await page.waitForSelector('[data-testid="league-slot-0"]');
-    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="league-slot-6"]');
+    await page.click('[data-testid="league-slot-6"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await settle(page);
     const tight = await paid(page);

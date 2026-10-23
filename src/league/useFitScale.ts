@@ -28,6 +28,7 @@ interface Grow {
   baseWidthRem: number;
   spriteRem: number;
   targetSpritePx: number;
+  dpr: number;
 }
 
 interface Compact {
@@ -62,10 +63,11 @@ export function useFitScale(
   const roomiestRem = compact?.heightRem(Infinity);
   const shortestRem = compact?.heightRem(0);
   const hasGrow = grow !== undefined;
-  const { baseWidthRem, spriteRem, targetSpritePx } = grow ?? {
+  const { baseWidthRem, spriteRem, targetSpritePx, dpr } = grow ?? {
     baseWidthRem: 0,
     spriteRem: 1,
     targetSpritePx: 1,
+    dpr: 1,
   };
   useLayoutEffect(() => {
     const el = ref.current;
@@ -174,6 +176,8 @@ export function useFitScale(
           floor,
           baseWidth,
           spriteCeil: ceiling,
+          spritePx: spriteRem * rootFont,
+          dpr,
           prevScale: last.scale,
           prevWidth: last.width,
         });
@@ -217,6 +221,7 @@ export function useFitScale(
     baseWidthRem,
     spriteRem,
     targetSpritePx,
+    dpr,
     roomiestRem,
     shortestRem,
     compact?.holds,

@@ -20,6 +20,13 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
  *
  * The phone and standard summaries give up the same spacing, but only once
  * their zoom reaches the fit's floor.
+ *
+ * On both desktop screens, a block that grows to fill its pane (the gym card,
+ * and the standard summary) draws each sprite pixel as a whole number of
+ * device pixels (`fitScaleMath.ts`): the next whole size up when the pane
+ * scrolls 10% or less for it, else the largest one that fits. Michael picked
+ * this over snapping down only, which left a 13-inch MacBook Air soft. Only
+ * a pane too small for 1x keeps the fluid fit.
  */
 type SpriteScreen = 'phone' | 'standard' | 'retina';
 
