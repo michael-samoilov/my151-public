@@ -1,5 +1,5 @@
 import {minuteActivityPayload} from '@/lib/minuteActivity';
-import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
+import {attentionPayload,seenPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE, PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
@@ -19,13 +19,14 @@ function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt =
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
   const attention=attentionPayload('favorites');
+  const seen=seenPayload('favorites');
   const activity=minuteActivityPayload('favorites');
-  const content = JSON.stringify({fills,attention,activity});
+  const content = JSON.stringify({fills,attention,seen,activity});
   const exported = report?.kind==='export' ? report : undefined;
   delivery.send({cid:getClientId(),tool:'favorites',page:currentPage(),
     kind:report?.kind ?? (snapshot.completion.filled===snapshot.completion.total?'completion':'progress'),
     exportKind:exported?.exportKind,stats:exported?.stats||undefined,
-    snapshot:{v:1,fills},attention,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined,auto:AUTOMATED||undefined},content,!!report);
+    snapshot:{v:1,fills},attention,seen,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined,auto:AUTOMATED||undefined},content,!!report);
 }
 export function useFavoriteBeacon() {
   const fills=useFavoritesStore(state=>state.fills);

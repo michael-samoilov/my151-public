@@ -170,4 +170,29 @@ describe('Active users count engaged days only', () => {
     expect(dash(source({ clients }), '24h').byTool.all.users).toBe(2);
     expect(d.bounces).toEqual({ dex: 0, league: 0, favorites: 0 });
   });
+
+  it('counts a day the page stayed on screen 10 seconds, with no input or pick change that day', () => {
+    // Built a Dex on day 1, then kept it on screen on day 2 without input.
+    const viewer = visits('viewer', { attention: attention([[day1, day1 + 5 * MIN]]), seenDays: [Date.UTC(2026, 9, 9)] });
+    const d = dash(source({ clients: { viewer, glance: clients.glance } }), 'all');
+    const dau = (ts: number) => d.byTool.dex.activity.find((p) => p.day === Date.UTC(2026, 9, new Date(ts).getUTCDate()))?.dau;
+    expect([dau(day1), dau(day2)]).toEqual([2, 1]);
+    expect(d.lastPointLabels.label24h).toBe(1);
+  });
+
+  it('keeps a Picker visit under 10 seconds, with no input or picks, out of the users and in the funnel', () => {
+    const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+    let visit: FavoriteRecord | null = null;
+    for (const [i, now] of [NOW - MIN - 8_000, NOW - MIN].entries()) {
+      visit = mergeFavoriteRecord(visit, { cid: 'p-visit', id: `p-visit-${i}`, now, kind: 'progress', snapshot: empty, events: i ? [] : ['favorites-open'], country: 'US' });
+    }
+    const d = dash(source({ picker: { 'p-visit': visit, 'p-user': picker('p-user', NOW - MIN, 2) } }), '7d');
+    expect(d.byTool.favorites.activity.find((p) => p.day === Date.UTC(2026, 9, 9))?.dau).toBe(1);
+    expect(d.lastPointLabels.label24h).toBe(1);
+    expect(d.bounces).toEqual({ dex: 0, league: 0, favorites: 1 });
+    expect(d.favoriteFunnel.opened).toBe(2);
+    expect(d.favoriteFunnel.buckets.find((b) => b.label === 'Not started')?.count).toBe(1);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-visit')?.bounced).toBe(true);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.bounced).toBeUndefined();
+  });
 });

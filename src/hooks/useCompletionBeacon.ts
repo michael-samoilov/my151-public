@@ -1,5 +1,5 @@
 import {minuteActivityPayload,acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
-import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
+import {attentionPayload,seenPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -91,6 +91,7 @@ function postBeacon(
     ref: externalReferrerHost() || undefined,
     ts: capturedAt ?? Date.now(),
     attention: attentionPayload('dex'),
+    seen: seenPayload('dex'),
     activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
     auto: AUTOMATED || undefined,
@@ -187,6 +188,7 @@ export async function sendExportBeacon(
     ref: externalReferrerHost() || undefined,
     ts: Date.now(),
     attention: attentionPayload('dex'),
+    seen: seenPayload('dex'),
     activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
     auto: AUTOMATED || undefined,

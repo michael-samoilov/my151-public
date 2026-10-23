@@ -2,7 +2,10 @@ import {recordMinuteActivity,canScheduleMinuteActivity} from '@/lib/minuteActivi
 import {DEMO_MODE,PREVIEW_DEPLOY} from '@/lib/demoMode';
 import {isOptedOut} from '@/lib/clientId';
 import type {AttentionPayload,AttentionSegment} from '../../api/_attention';
-const GAP=5*60_000,MAX_SPAN=24*60*60_000;
+const GAP=5*60_000,MAX_SPAN=24*60*60_000,DAY=86_400_000;
+// Google Analytics' engaged-session threshold, in milliseconds on screen.
+const ENGAGED_ON_SCREEN_MS=10_000;
+const dayOf=(ms:number)=>Math.floor(ms/DAY)*DAY;
 type Tool='dex'|'league'|'favorites';
 class AttentionTracker {
  private tool:Tool;
@@ -14,11 +17,36 @@ class AttentionTracker {
  private current:AttentionSegment|undefined;
  private subscribers=new Set<()=>void>();
  private notified=-Infinity;
+ private onScreen=new Map<number,number>();
+ private seen=new Set<number>();
+ // Monotonic, so a sleeping device or a clock change adds no on-screen time.
+ private since:number|undefined;
+ private timer:ReturnType<typeof setTimeout>|undefined;
  private allowed(){return !DEMO_MODE&&!PREVIEW_DEPLOY&&!isOptedOut();}
  private foreground(){return document.visibilityState==='visible'&&document.hasFocus();}
  private reset(){this.segments=[];this.current=undefined;this.notified=-Infinity;this.run=undefined;this.dirty=false;this.lastActivity=-Infinity;}
- private stop=()=>{this.current=undefined;this.run=undefined;if(this.dirty){this.dirty=false;if(canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();}};
- private hidden=()=>{if(document.visibilityState!=='visible')this.stop();};
+ private resume=()=>{
+  if(this.since!==undefined||!this.subscribers.size||!this.allowed()||!this.foreground())return;
+  this.since=performance.now();this.arm();
+ };
+ private pause(){if(this.since===undefined)return;this.accrue();clearTimeout(this.timer);this.since=undefined;}
+ private accrue(){
+  const now=Date.now(),mono=performance.now();let from=now-(mono-this.since!),crossed=false;
+  while(from<now){
+   const day=dayOf(from),until=Math.min(now,day+DAY),ms=(this.onScreen.get(day)??0)+until-from;
+   this.onScreen.set(day,ms);from=until;
+   if(ms>=ENGAGED_ON_SCREEN_MS&&!this.seen.has(day)&&this.allowed()){this.seen.add(day);crossed=true;}
+  }
+  this.since=mono;
+  if(crossed&&canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();
+ }
+ private arm(){
+  clearTimeout(this.timer);
+  const now=Date.now(),day=dayOf(now),ms=this.onScreen.get(day)??0;
+  this.timer=setTimeout(()=>{this.accrue();this.arm();},ms>=ENGAGED_ON_SCREEN_MS?day+DAY-now+ENGAGED_ON_SCREEN_MS:ENGAGED_ON_SCREEN_MS-ms);
+ }
+ private stop=()=>{this.pause();this.current=undefined;this.run=undefined;if(this.dirty){this.dirty=false;if(canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();}};
+ private visibility=()=>{if(document.visibilityState==='visible')this.resume();else this.stop();};
  private activity=(event:Event)=>{
   if(!this.allowed()){recordMinuteActivity(this.tool,'',Date.now());this.reset();return;}
   if(!event.isTrusted||!this.foreground())return;
@@ -42,17 +70,21 @@ class AttentionTracker {
  subscribe(notify:()=>void){
   if(!this.subscribers.size){
    for(const event of this.events)window.addEventListener(event,this.activity,{capture:true,passive:true});
-   document.addEventListener('visibilitychange',this.hidden);window.addEventListener('blur',this.stop);window.addEventListener('pagehide',this.stop);
+   document.addEventListener('visibilitychange',this.visibility);window.addEventListener('focus',this.resume);window.addEventListener('blur',this.stop);window.addEventListener('pagehide',this.stop);
   }
-  this.subscribers.add(notify);
+  this.subscribers.add(notify);this.resume();
   return ()=>{
    if(this.subscribers.size===1)this.stop();
    this.subscribers.delete(notify);
    if(!this.subscribers.size){
     for(const event of this.events)window.removeEventListener(event,this.activity,true);
-    document.removeEventListener('visibilitychange',this.hidden);window.removeEventListener('blur',this.stop);window.removeEventListener('pagehide',this.stop);this.stop();
+    document.removeEventListener('visibilitychange',this.visibility);window.removeEventListener('focus',this.resume);window.removeEventListener('blur',this.stop);window.removeEventListener('pagehide',this.stop);this.stop();
    }
   };
+ }
+ seenDays():number[]|undefined {
+  if(!this.allowed()){this.seen.clear();return undefined;}
+  return this.seen.size?[...this.seen].sort((a,b)=>a-b).slice(-8):undefined;
  }
  snapshot():AttentionPayload|undefined {
   if(!this.allowed()){this.reset();return undefined;}
@@ -61,4 +93,5 @@ class AttentionTracker {
 }
 const trackers:Record<Tool,AttentionTracker>={dex:new AttentionTracker('dex'),league:new AttentionTracker('league'),favorites:new AttentionTracker('favorites')};
 export const attentionPayload=(tool:Tool)=>trackers[tool].snapshot();
+export const seenPayload=(tool:Tool)=>trackers[tool].seenDays();
 export const subscribeAttention=(tool:Tool,notify:()=>void)=>trackers[tool].subscribe(notify);

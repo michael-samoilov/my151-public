@@ -1,5 +1,5 @@
 import {mergeAttention,type AttentionPayload} from './_attention.js';
-import { alignSessionMs, isSubsetRegression, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, sanitizeRecordingFields, type RecordingFields } from './_sessionize.js';
+import { alignSessionMs, isSubsetRegression, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, sanitizeRecordingFields, mergeSeenDays, type RecordingFields } from './_sessionize.js';
 
 export const LEAGUE_SESSION_GAP_MS = 30 * 60_000;
 const LEAGUE_MAX_SESSIONS = 50;
@@ -277,6 +277,7 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
 
 export interface LeagueBeaconInput {
   attention?: AttentionPayload;
+  seen?: number[];
   receivedAt?: number;
   cid: string;
   kind: LeagueBeaconKind;
@@ -325,6 +326,8 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
 
   const attention=mergeAttention(existing?.attention,b.attention,b.receivedAt ?? b.now);
   if(attention)rec.attention=attention;
+  const seenDays=mergeSeenDays(existing?.seenDays,b.seen,b.receivedAt ?? b.now);
+  if(seenDays)rec.seenDays=seenDays;
   rec.submits += 1;
   rec.maxCards = Math.max(rec.maxCards, b.summary.cards);
   rec.maxSeats = Math.max(rec.maxSeats, b.summary.seats);

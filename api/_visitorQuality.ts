@@ -1,11 +1,12 @@
 import type { AttentionRecording } from './_attention.js';
 import { DAY_MS, dayStart } from './_aggregate.js';
 
-// A browser becomes a user of a tool once it places a Pokémon there or gives
-// the page real input. Attention time comes only from trusted input events in
-// the foreground (src/lib/activeAttention.ts). A record with neither is a page
-// load: a bounce, a crawler, or a bot. The admin counts keep page loads apart
-// instead of counting them as users.
+// A browser becomes a user of a tool once it places a Pokémon there, gives the
+// page real input, or keeps the page on screen for 10 seconds. Attention time
+// comes only from trusted input events in the foreground, and on-screen time
+// only from a visible, focused page (src/lib/activeAttention.ts). A record with
+// none of these is a page load: a bounce, a crawler, or a bot. The admin counts
+// keep page loads apart instead of counting them as users.
 
 const touched = (attention: AttentionRecording | undefined) => (attention?.totalMs ?? 0) > 0;
 
@@ -70,8 +71,9 @@ export function suspectReasons(browsers: SuspectInput[]): Map<string, SuspectRea
 }
 
 /** Input a browser must give in a UTC day, without a pick change, to count as
- *  active that day. It matches the 10-second engaged session of Google
- *  Analytics: a shorter visit is a bounce. */
+ *  active that day. Seen days implement Google Analytics' rule, 10 seconds on
+ *  screen with no input needed. This input rule covers tabs opened before seen
+ *  days shipped, and the days before that release, which have no seen days. */
 export const ENGAGED_INPUT_MS = 10_000;
 
 /** Production clients sent input timing from 2026-10-10 19:31 UTC, so from the
@@ -95,16 +97,21 @@ interface ActivityRecord<E extends { ts: number }> {
   sessions?: number;
   sessionLog?: E[];
   activeDays?: number[];
+  seenDays?: number[];
   attention?: AttentionRecording;
 }
 
 /**
- * The UTC days a tool record counts as an active user: days a session changed
- * its picks, or days with ENGAGED_INPUT_MS of input. `picksOf` gives a
- * session's picks as a comparable key, '' when it holds none. A day whose input
- * was not recorded (before input timing, or among retired segments) keeps the
- * earlier rule: it counts when the record ever placed a Pokémon or saw input,
- * which `engagedEver` reports.
+ * The UTC days a tool record counts as an active user. A day counts when:
+ *
+ * - a session changed its picks that day,
+ * - one page load stayed on screen 10 seconds or more that day (`seenDays`), or
+ * - the browser gave ENGAGED_INPUT_MS of input that day.
+ *
+ * `picksOf` gives a session's picks as a comparable key, '' when it holds none.
+ * A day whose input was not recorded (before input timing, or among retired
+ * segments) replaces the input rule with the earlier one: it counts when the
+ * record ever placed a Pokémon or saw input, which `engagedEver` reports.
  */
 export function engagedDays<E extends { ts: number }>(r: ActivityRecord<E>, picksOf: (entry: E) => string, engagedEver: boolean): number[] {
   const log = r.sessionLog ?? [];
@@ -113,7 +120,7 @@ export function engagedDays<E extends { ts: number }>(r: ActivityRecord<E>, pick
     const day = dayStart(ts);
     earliest.set(day, Math.min(earliest.get(day) ?? Infinity, ts));
   }
-  for (const day of r.activeDays ?? []) if (!earliest.has(day)) earliest.set(day, day);
+  for (const day of [...(r.activeDays ?? []), ...(r.seenDays ?? [])]) if (!earliest.has(day)) earliest.set(day, day);
 
   const changed = new Set<number>();
   // A truncated log's first session may repeat an evicted one, so it proves no change.
@@ -127,8 +134,9 @@ export function engagedDays<E extends { ts: number }>(r: ActivityRecord<E>, pick
   const attention = r.attention;
   const measuredFrom = Math.max(Math.min(attention?.coverageFrom ?? Infinity, INPUT_TIMING_SINCE), attention?.retiredThrough ?? -Infinity);
   const inputOn = (day: number) => (attention ? inputMsOn(attention, day) : 0);
+  const seen = new Set(r.seenDays);
   return [...earliest]
-    .filter(([day, first]) => changed.has(day) || (first < measuredFrom ? engagedEver : inputOn(day) >= ENGAGED_INPUT_MS))
+    .filter(([day, first]) => changed.has(day) || seen.has(day) || (first < measuredFrom ? engagedEver : inputOn(day) >= ENGAGED_INPUT_MS))
     .map(([day]) => day)
     .sort((a, b) => a - b);
 }

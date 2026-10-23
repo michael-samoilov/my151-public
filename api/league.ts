@@ -5,7 +5,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
-import { parseCapturedAt } from './_sessionize.js';
+import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import {
   LEAGUE_CLIENTS_KEY,
   LEAGUE_VERSION_KEY,
@@ -60,6 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       page?: unknown;
       attention?: unknown;
+      seen?: unknown;
       activity?: unknown;
       ts?: unknown;
       notme?: unknown;
@@ -126,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       now: captured ?? receivedAt,
       receivedAt,
       attention,
+      seen: parseSeenDays(body.seen, receivedAt),
       capturedKnown: captured !== null,
       geo: getGeo(req),
       ua: getClient(req),

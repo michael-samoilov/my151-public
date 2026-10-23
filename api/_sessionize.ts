@@ -117,11 +117,14 @@ export interface RecordingFields {
   recording?: RecordingCheckpoint;
   activeDays?: number[];
   activityCoverageFrom?: number;
+  /** UTC days on which one page load stayed on screen 10 seconds or more. */
+  seenDays?: number[];
 }
 type RecordingSpan = {start: number; end: number};
 const UTC_DAY_MS = 86_400_000;
 const stamp = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= 8_640_000_000_000_000;
 const utcDay = (n: number) => Math.floor(n / UTC_DAY_MS) * UTC_DAY_MS;
+const utcDays = (days: unknown[]) => [...new Set(days.filter((d): d is number => stamp(d) && d === utcDay(d)))].sort((a,b)=>a-b);
 
 export function parseRecordingFields(raw: unknown): RecordingFields {
   if (!raw || typeof raw !== 'object') return {};
@@ -139,9 +142,19 @@ export function parseRecordingFields(raw: unknown): RecordingFields {
   }
   if (stamp(r.activityCoverageFrom) && Array.isArray(r.activeDays)) {
     out.activityCoverageFrom = r.activityCoverageFrom;
-    out.activeDays = [...new Set(r.activeDays.filter((d): d is number => stamp(d) && d === utcDay(d)))].sort((a,b)=>a-b).slice(-90);
+    out.activeDays = utcDays(r.activeDays).slice(-90);
   }
+  const seenDays = Array.isArray(r.seenDays) ? utcDays(r.seenDays).slice(-90) : [];
+  if (seenDays.length) out.seenDays = seenDays;
   return out;
+}
+
+/** Reads a beacon's `seen` days. A bad entry is dropped, never the beacon. */
+export function parseSeenDays(raw: unknown, receivedAt: number): number[] | undefined {
+  if (!Array.isArray(raw) || raw.length > 8) return undefined;
+  const today = utcDay(receivedAt);
+  const days = utcDays(raw).filter(d => d >= Date.UTC(2024, 0, 1) && d <= today);
+  return days.length ? days : undefined;
 }
 
 export function retiredCapture(record: RecordingFields, capturedAt: number, earliestRetainedStart = Infinity, gapMs = 30 * 60_000): boolean {
@@ -183,6 +196,13 @@ export function checkpointRecording(
   return {recording,activeDays,activityCoverageFrom:previous.activityCoverageFrom ?? receivedAt};
 }
 
+/** Adds a beacon's seen days to a record's, in the 90-day window of `activeDays`. */
+export function mergeSeenDays(previous: number[] | undefined, seen: number[] | undefined, receivedAt: number): number[] | undefined {
+  const earliest = utcDay(receivedAt)-89*UTC_DAY_MS;
+  const days = [...new Set([...(previous ?? []),...(seen ?? [])])].filter(d => d >= earliest).sort((a,b)=>a-b);
+  return days.length ? days : undefined;
+}
+
 export function endStampedSpans(record: {sessionLog?: {ts:number}[];sessionMs?: number[]}): RecordingSpan[] {
   const log = record.sessionLog ?? [];
   const durations = record.sessionMs ?? [];
@@ -199,5 +219,6 @@ export function sanitizeRecordingFields<T extends RecordingFields>(record: T): T
   delete copy.recording;
   delete copy.activeDays;
   delete copy.activityCoverageFrom;
+  delete copy.seenDays;
   return Object.assign(copy,parseRecordingFields(record));
 }
