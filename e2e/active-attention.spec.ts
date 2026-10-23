@@ -106,7 +106,7 @@ for(const tool of tools) {
    await expect.poll(()=>posts.at(-1)?.attention).toBeDefined();
    const old=measured(posts).segments[0].id;
    const beforeReload=posts.length;
-   await page.reload();await expect(page.locator('main').first()).toBeVisible();await page.bringToFront();
+   await page.reload();await expect(page.locator('main').first()).toBeVisible();await mounted(page);await page.bringToFront();
    await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(beforeReload);
    await page.keyboard.press('ArrowRight');
    await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);
