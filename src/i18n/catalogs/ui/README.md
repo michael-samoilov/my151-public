@@ -149,11 +149,17 @@ translated too, so the browser's filters can show them.
   no name in every language, and Chinese has no Black 2 or White 2.
 - **One cell.** Outline labels on the View page shorten from the section name
   to `sectionShort` to `sectionTiny`, and the tiny form is what a one-cell
-  outline shows. Every section has a tiny key. Where English has no shorter
-  word, its tiny form repeats its shortest one, and the repeat is skipped, so
-  English renders as before. Each translated tiny form fits one cell at the
-  0.72 squash floor or at the English label's own scale, whichever is lower.
-  `e2e/dev/i18n-layout.spec.ts` checks every language.
+  outline shows. Every section has a tiny key. Where a language has no
+  shorter form, its tiny form repeats its shortest one, and the repeat is
+  skipped. Michael set the rule on 2026-10-23: a short name keeps the
+  section's meaning. A full name stays even when it is squeezed to about
+  60% of its width, as English Evil Team, Domestic and Volcanic do. A
+  different word is not a short name: Pets for Domestic, Lava for Volcanic,
+  Neige for Toundra and Spettri for Infestato were all replaced. Only a name
+  squeezed below 54% is too long, and its tiny form then keeps the same
+  words: it drops a qualifier (Oiseau for Oiseau régional) or abbreviates
+  (Legend, Indust., Domest., Embruj.). `e2e/dev/i18n-layout.spec.ts` renders
+  one Pokémon per section in every language and fails below 54%.
 
 ### The league and gym leader builder
 

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { expandTemplate } from '@/lib/richTemplate';
-import { formatNumber, raw, t } from '@/i18n';
+import { raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
-
-const SPECIES_TOTAL = 1025;
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { TYPE_ICONS } from '@/data/type-icons';
@@ -117,6 +115,13 @@ const SHOT_DIMS = [
  *  randomiser, so the bare term invites visitors expecting one. The words are
  *  catalog keys, so each language describes the images in its own terms. */
 const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
+
+/** The export shot is two framed panels with rounded corners, transparent
+ *  outside the frame and in the notches where the panels meet. A box shadow
+ *  stops at the card's box, so those notches showed as white wedges inside the
+ *  shadow. A drop shadow follows the image's own outline. Tuned by eye to
+ *  match `shadow-lg` on the other two cards. */
+const EXPORT_SHOT_SHADOW = 'drop-shadow(0 8px 8px rgb(0 0 0 / 0.1)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.08))';
 
 function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean }) {
   const { dots, shapes, viewBox, strokeW } = useMemo(() => {
@@ -239,10 +244,14 @@ const FINE_POINTER =
     ? window.matchMedia('(pointer: fine)')
     : null;
 
+// Each card floats at half the speed of its index.css class, as Michael asked
+// on 13 October. The classes keep the keyframes and the reduced-motion rule;
+// the timing lives here because index.css is an input of the pre-rendered
+// homepage artwork, and any edit to it means regenerating that artwork.
 const STAIR = [
-  { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a' },
-  { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c' },
-  { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b' },
+  { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a', floatTiming: { animationDuration: '13s' } },
+  { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c', floatTiming: { animationDuration: '17s', animationDelay: '-10s' } },
+  { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b', floatTiming: { animationDuration: '15s', animationDelay: '-5s' } },
 ] as const;
 
 function ShowcaseStaircase() {
@@ -275,13 +284,18 @@ function ShowcaseStaircase() {
           <div
             key={i}
             className={`relative ${s.z} ${s.float}`}
-            style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})` }}
+            style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})`, ...s.floatTiming }}
           >
             <div
-              className={FACE === 'shots' && i === 2
-                ? 'h-full rounded-md border border-transparent shadow-lg'
-                : 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'}
-              style={{ transform: `rotate(${s.rotate})` }}
+              className={FACE === 'dots'
+                ? 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'
+                : i === 2
+                  ? 'h-full'
+                  : 'h-full rounded-md bg-white shadow-lg overflow-hidden'}
+              style={{
+                transform: `rotate(${s.rotate})`,
+                filter: FACE === 'shots' && i === 2 ? EXPORT_SHOT_SHADOW : undefined,
+              }}
             >
               {FACE === 'shots' ? (
                 <picture className="contents">
@@ -518,8 +532,8 @@ export function IntroCard({
                 count: () => [<span key="n" className="text-primary">{DEX_TOTAL}</span>],
               })}
             </h2>
-            <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-pretty">
-              {t('intro.body', { total: formatNumber(SPECIES_TOTAL) })}
+            <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-balance">
+              {t('intro.body')}
             </p>
             <StarterButton onClick={chooseStarters} />
           </div>
