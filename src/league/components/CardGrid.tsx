@@ -61,6 +61,7 @@ import { FONT_STACK } from '../export/paint';
 import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
+import { CQ_ZOOM_VAR } from '../useFitScale';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 const ROW_H = 3.375;
@@ -1125,9 +1126,15 @@ const MARK_PAD = '0.28125rem';
 const MARK_GAP = '0.28125rem';
 const MARK_TRAIL = '0.0625rem';
 const MARK_GLYPH = '72%';
-const MARK_COL = 'min(2.75rem, 26cqw)';
+const MARK_COL = `min(2.75rem, 26cqw / var(${CQ_ZOOM_VAR}, 1))`;
 const MARK_LABEL_ROOM = `(${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem)`;
-const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[1.4]';
+// The line height is a length, not 1.4. WebKit raises text that the card's
+// zoom takes below 9px back up to 9px, and a unitless line height grew with
+// it: at zoom 0.652 the label computed 13.8px against 10.2px, the column
+// stretched, and its gaps above and below the move came out 3.7px apart. A
+// length keeps the line box the size the layout math assumes. Where nothing
+// raises the text, it computes to the same value as 1.4.
+const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[calc(var(--mark-label)*1.4)]';
 const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
 
 interface MarkWord {
