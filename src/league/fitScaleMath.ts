@@ -1,5 +1,4 @@
 import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
-import type { FitMode } from './fitMode';
 
 export interface FitProposal {
   scale: number;
@@ -41,7 +40,6 @@ interface GrowInput {
   /** The sprite's CSS px at zoom 1. */
   spritePx: number;
   dpr: number;
-  wholePixel: FitMode;
   prevScale: number;
   prevWidth: number;
 }
@@ -107,11 +105,10 @@ const WHOLE_PIXEL_OVERFLOW = 1.1;
  * is then the fallback.
  */
 function wholePixelScale(fluid: number, input: GrowInput): number | null {
-  if (input.wholePixel === 'fluid') return null;
   const devicePerSpritePx = (input.spritePx * input.dpr) / SPRITE_NATIVE;
   const up = Math.ceil(fluid * devicePerSpritePx - 1e-6) / devicePerSpritePx;
   const roomUp = Math.min(input.room / input.baseWidth, (input.avail / input.natural) * WHOLE_PIXEL_OVERFLOW, input.spriteCeil);
-  if (input.wholePixel === 'up' && up > 0 && up <= roomUp + 1e-6 && up >= input.floor) return up;
+  if (up > 0 && up <= roomUp + 1e-6 && up >= input.floor) return up;
   const multiple = Math.floor(fluid * devicePerSpritePx + 1e-6);
   if (multiple < 1) return null;
   const scale = multiple / devicePerSpritePx;

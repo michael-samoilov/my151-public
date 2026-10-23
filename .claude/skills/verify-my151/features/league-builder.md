@@ -115,6 +115,13 @@ and `.powerups[row]`.
   holds its sprites at exactly 1x instead, and gives up its own spacing to
   keep all 14 rows on screen (`src/league/homeLayout.ts`). No harness surface
   runs there; `e2e/league-sprite-scale.spec.ts` covers it on Blink.
+- On a desktop, the gym card and a summary that grows to fill its pane draw
+  each sprite pixel as a whole number of device pixels
+  (`wholePixelScale` in `src/league/fitScaleMath.ts`). The zoom rounds up to
+  the next whole size when the pane then scrolls 10% or less, and otherwise
+  down to the largest whole size that fits. A pane too small for 1x, such as
+  every harness desktop surface at a device pixel ratio of 1, keeps the fluid
+  fit.
 - On a phone or a desktop under a device pixel ratio of 2, the summary zooms
   as before down to the 0.55 floor. A shorter window then gives up the same
   spacing, hint lines first, to keep all 14 rows on screen. The harness
