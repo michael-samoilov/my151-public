@@ -72,3 +72,17 @@ describe('seen days use existing ingestion',()=>{
   }
  });
 });
+
+describe('the Picker saves a visitor only after the first Pokémon',()=>{
+ it('stores nothing and counts no event for a first beacon with an empty board, and saves a later cleared board',async()=>{
+  const body={cid:'empty-browser',kind:'progress',id:'empty-request',snapshot:{v:1,fills:{}},seen:[start],ts:start+20*minute};
+  const first=await send(favoriteHandler,body,{});
+  expect(first.status).toBe(200);
+  expect(first.writes).toEqual([]);
+  expect(first.commands.filter(cmd=>['hset','hincrby','rpush'].includes(cmd[0].toLowerCase()))).toEqual([]);
+  const placed=await send(favoriteHandler,{...body,id:'placed-request',snapshot:{v:1,fills:{'water|1':7}}},{});
+  const cleared=await send(favoriteHandler,{...body,id:'cleared-request'},{'empty-browser':JSON.stringify(placed.records[0])});
+  expect(cleared.records.map(r=>(r as unknown as {latest:{filled:number}}).latest.filled)).toEqual([0]);
+ });
+});
+

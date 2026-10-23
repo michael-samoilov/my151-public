@@ -2,11 +2,13 @@ import type { AttentionRecording } from './_attention.js';
 import { DAY_MS, dayStart } from './_aggregate.js';
 
 // A browser becomes a user of a tool once it places a Pokémon there, gives the
-// page real input, or keeps the page on screen for 10 seconds. Attention time
-// comes only from trusted input events in the foreground, and on-screen time
-// only from a visible, focused page (src/lib/activeAttention.ts). A record with
-// none of these is a page load: a bounce, a crawler, or a bot. The admin counts
-// keep page loads apart instead of counting them as users.
+// page real input, or keeps the page on screen for 10 seconds. A Picker user
+// must also have placed a Pokémon, because the server saves only those Picker
+// visitors (api/favorites.ts). Attention time comes only from trusted input
+// events in the foreground, and on-screen time only from a visible, focused
+// page (src/lib/activeAttention.ts). A record with none of these is a page
+// load: a bounce, a crawler, or a bot. The admin counts keep page loads apart
+// instead of counting them as users.
 
 const touched = (attention: AttentionRecording | undefined) => (attention?.totalMs ?? 0) > 0;
 
@@ -15,9 +17,6 @@ export const engagedDex = (r: { latestIds?: number[]; everIds?: number[]; attent
 
 export const engagedLeague = (r: { maxSeats?: number; maxCards?: number; attention?: AttentionRecording }) =>
   (r.maxSeats ?? 0) > 0 || (r.maxCards ?? 0) > 0 || touched(r.attention);
-
-export const engagedPicker = (r: { maxFilled?: number; attention?: AttentionRecording }) =>
-  (r.maxFilled ?? 0) > 0 || touched(r.attention);
 
 /** Why a browser looks automated. A reason is a lead for the owner to review,
  *  not proof, so it never removes a browser from a count by itself. */
@@ -156,8 +155,9 @@ export const pickerPickKey = (entry: { snapshot?: { fills: Record<string, number
 
 type DexActivity = ActivityRecord<{ ts: number } & Parameters<typeof dexPickKey>[0]> & Parameters<typeof engagedDex>[0];
 type LeagueActivity = ActivityRecord<{ ts: number } & Parameters<typeof leaguePickKey>[0]> & Parameters<typeof engagedLeague>[0];
-type PickerActivity = ActivityRecord<{ ts: number } & Parameters<typeof pickerPickKey>[0]> & Parameters<typeof engagedPicker>[0];
+type PickerActivity = ActivityRecord<{ ts: number } & Parameters<typeof pickerPickKey>[0]> & { maxFilled?: number };
 
 export const dexEngagedDays = (r: DexActivity) => engagedDays(r, dexPickKey, engagedDex(r));
 export const leagueEngagedDays = (r: LeagueActivity) => engagedDays(r, leaguePickKey, engagedLeague(r));
-export const pickerEngagedDays = (r: PickerActivity) => engagedDays(r, pickerPickKey, engagedPicker(r));
+// A Picker record that never placed a Pokémon is a bounce, whatever its input or seen days.
+export const pickerEngagedDays = (r: PickerActivity) => ((r.maxFilled ?? 0) > 0 ? engagedDays(r, pickerPickKey, true) : []);

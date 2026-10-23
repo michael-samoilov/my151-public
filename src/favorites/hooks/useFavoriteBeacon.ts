@@ -9,6 +9,7 @@ import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
 import { createBeaconDebouncer, PROGRESS_DEBOUNCE_MS, PROGRESS_MAX_WAIT_MS } from '@/lib/beaconScheduler';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import type { FavoriteExportKind } from '../../../api/_favoriteRecord';
 import { createFavoriteBeaconDelivery } from './favoriteBeaconDelivery';
 import { useFavoritesStore } from '../store/useFavoritesStore';
@@ -18,6 +19,8 @@ type FavoriteReport = {kind:'export-shown'|'nudge-shown'} | {kind:'export';expor
 function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt = Date.now()) {
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
+  // Like the Dex and the League, the Picker saves a visitor only after the first Pokémon.
+  if (!Object.keys(fills).length) return;
   const attention=attentionPayload('favorites');
   const seen=seenPayload('favorites');
   const activity=minuteActivityPayload('favorites');
@@ -31,6 +34,11 @@ function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt =
 export function useFavoriteBeacon() {
   const fills=useFavoritesStore(state=>state.fills);
   const [debouncer]=useState(()=>createBeaconDebouncer({delayMs:PROGRESS_DEBOUNCE_MS,maxWaitMs:PROGRESS_MAX_WAIT_MS}));
+  useEffect(()=>{
+    // Counts the openers who leave before placing a Pokémon. A browser that
+    // already holds picks is a returning builder, not a new opener.
+    if(!buildFavoritesSnapshot(useFavoritesStore.getState().fills).completion.filled)sendEventBeacon('favorites-visit',{once:true});
+  },[]);
   useEffect(()=>{
     const snapshot=buildFavoritesSnapshot(fills);
     const capturedAt=Date.now();

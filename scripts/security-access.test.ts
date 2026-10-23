@@ -226,7 +226,7 @@ describe('Anonymous cid ownership: known-id integrity attacks', () => {
     expect(local.hashes.get('league:clients')?.[cid]).toMatchObject({submits: 2, latest: {cards: 2}});
   });
   it('Picker: a second unauthenticated caller can replace another cid’s analytics snapshot', async () => {
-    const first = {cid, id: 'fixture-request-1', kind: 'progress', snapshot: {v: 1, fills: {}}, ts: fixedNow - 1000};
+    const first = {cid, id: 'fixture-request-1', kind: 'progress', snapshot: {v: 1, fills: {'water|1': 7}}, ts: fixedNow - 1000};
     expect((await request('favorites', favorites, {method: 'POST', body: first})).status).toBe(200);
     expect((await request('favorites', favorites, {method: 'POST', body: {...first, id: 'fixture-request-2', snapshot: {v: 1, fills: {'fire|1': 4}}, ts: fixedNow}, headers: {'x-real-ip': '198.51.100.20'}})).status).toBe(200);
     expect(local.hashes.get('favorites:clients')?.[cid]).toMatchObject({submits: 2, seenIds: ['fixture-request-1', 'fixture-request-2'], latest: {fills: {'fire|1': 4}, filled: 1}});

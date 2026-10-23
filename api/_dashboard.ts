@@ -858,7 +858,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     funnelEvents,
     dexFunnel,
     leagueFunnel,
-    favoriteFunnel:favoriteUsageFunnel(favoriteNew),
+    favoriteFunnel:favoriteUsageFunnel(favoriteNew, funnelEventCount(cohortEvents, 'favorites-visit')),
     bounces,
     favorite:favoriteSummary(favoriteIn),
     favoritePicks:favoritePicks(favoriteIn),

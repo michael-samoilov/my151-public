@@ -212,3 +212,25 @@ describe('Active users count engaged days only', () => {
     expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.bounced).toBeUndefined();
   });
 });
+
+describe('The Picker saves a visitor only after the first Pokémon', () => {
+  const oct = (date: number, hour = 12) => Date.UTC(2026, 9, date, hour);
+  const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+
+  it('opens the funnel at placers plus bounces: saved no-pick records and visits beyond the placers saved after October 23', () => {
+    // Before October 23 the server saved every Picker visitor.
+    const legacy = mergeFavoriteRecord(null, { cid: 'p-legacy', id: 'p-legacy-0', now: oct(20), kind: 'progress', snapshot: empty, events: ['favorites-open'], country: 'US' });
+    const src = { ...source({ picker: { 'p-legacy': legacy, 'p-a': picker('p-a', oct(24)), 'p-b': picker('p-b', oct(24, 14)) } }), funnelWindow: { 'favorites-visit': 4 } };
+    const funnel = buildDashboard(src, { range: '7d' }, oct(25)).favoriteFunnel;
+    expect(funnel.opened).toBe(5);
+    expect(funnel.buckets.find((b) => b.label === 'Not started')?.count).toBe(3);
+  });
+
+  it('never counts a record with no Pokémon placed as a user, even with a seen day', () => {
+    const viewer = mergeFavoriteRecord(null, { cid: 'p-viewer', id: 'p-viewer-0', now: NOW - MIN, kind: 'progress', snapshot: empty, seen: [Date.UTC(2026, 9, 9)], events: ['favorites-open'], country: 'US' });
+    const d = dash(source({ picker: { 'p-viewer': viewer } }), '7d');
+    expect(d.byTool.favorites.activity.find((p) => p.day === Date.UTC(2026, 9, 9))?.dau ?? 0).toBe(0);
+    expect(d.bounces.favorites).toBe(1);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-viewer')?.bounced).toBe(true);
+  });
+});
