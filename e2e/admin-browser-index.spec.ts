@@ -8,6 +8,10 @@ const N = 1200;
 const COUNTRIES = ['US', 'GB', 'DE', 'FR', 'JP', 'BR', 'CA', 'AU'];
 const MAX_ROWS = 70;
 
+// Scrolling through 1,200 virtual rows takes 18-21 s on a loaded machine,
+// too close to the 30 s default when the whole suite runs in parallel.
+test.describe.configure({ timeout: 60_000 });
+
 const cidAt = (i: number) => `idx-${String(i).padStart(4, '0')}`;
 const leagueOnly = (i: number) => `lg-only-${String(i).padStart(4, '0')}`;
 const label = (cid: string) => `Open user ${cid.length <= 8 ? cid : `${cid.slice(0, 2)}…${cid.slice(-4)}`}`;
