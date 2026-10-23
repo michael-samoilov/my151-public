@@ -244,10 +244,14 @@ const FINE_POINTER =
     ? window.matchMedia('(pointer: fine)')
     : null;
 
+// Each card floats at half the speed of its index.css class, as Michael asked
+// on 13 October. The classes keep the keyframes and the reduced-motion rule;
+// the timing lives here because index.css is an input of the pre-rendered
+// homepage artwork, and any edit to it means regenerating that artwork.
 const STAIR = [
-  { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a' },
-  { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c' },
-  { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b' },
+  { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a', floatTiming: { animationDuration: '13s' } },
+  { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c', floatTiming: { animationDuration: '17s', animationDelay: '-10s' } },
+  { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b', floatTiming: { animationDuration: '15s', animationDelay: '-5s' } },
 ] as const;
 
 function ShowcaseStaircase() {
@@ -280,7 +284,7 @@ function ShowcaseStaircase() {
           <div
             key={i}
             className={`relative ${s.z} ${s.float}`}
-            style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})` }}
+            style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})`, ...s.floatTiming }}
           >
             <div
               className={FACE === 'dots'

@@ -358,9 +358,9 @@ img[data-failed] {
   from { transform: translateY(3px) rotate(0.5deg); }
   to   { transform: translateY(-3px) rotate(-0.5deg); }
 }
-.intro-float-a { animation: intro-float-a 13s ease-in-out infinite alternate; }
-.intro-float-b { animation: intro-float-b 15s ease-in-out infinite alternate; animation-delay: -5s; }
-.intro-float-c { animation: intro-float-c 17s ease-in-out infinite alternate; animation-delay: -10s; }
+.intro-float-a { animation: intro-float-a 6.5s ease-in-out infinite alternate; }
+.intro-float-b { animation: intro-float-b 7.5s ease-in-out infinite alternate; animation-delay: -2.5s; }
+.intro-float-c { animation: intro-float-c 8.5s ease-in-out infinite alternate; animation-delay: -5s; }
 @media (prefers-reduced-motion: reduce) {
   .intro-float-a, .intro-float-b, .intro-float-c { animation: none; }
 }
