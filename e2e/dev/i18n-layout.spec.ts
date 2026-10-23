@@ -69,7 +69,11 @@ test.describe('section outline labels in every language', () => {
     volcanic: [58], tundra: [124], industrial: [81], mimic: [132], 'rivalry-pair': [115], 'evil-team': [109],
     other: [200], fossil: [138], 'pseudo-legendary': [147], legendary: [144], mythical: [151],
   };
-  const FLOOR = 0.72;
+  // Michael's rule (October 23): a short name keeps the section's meaning. A
+  // full name stays even when squeezed to about 60% of its width (Evil Team,
+  // Domestic). Below 54% it is too long, and its one-cell form keeps the same
+  // words (Legend for Legendary), never a different word (Pets, Lava).
+  const FLOOR = 0.54;
   const CELL_EM = 0.86 / 0.26;
 
   async function labels(page: Page, lang: string) {
@@ -103,17 +107,15 @@ test.describe('section outline labels in every language', () => {
   test('the shortest label fits a one-cell outline', async ({ page }, testInfo) => {
     test.setTimeout(120_000);
     await page.addInitScript(() => localStorage.setItem('p151-league-promo-seen', '1'));
-    const english = await labels(page, 'en');
-    const results: Record<string, { text: string; scale: number; widthEm: number }[]> = { en: english };
+    const results: Record<string, { text: string; scale: number; widthEm: number }[]> = {};
     const bad: string[] = [];
-    for (const lang of LOCALES.filter((l) => l !== 'en')) {
+    for (const lang of LOCALES) {
       const found = await labels(page, lang);
       results[lang] = found;
-      found.forEach((l, i) => {
-        const bar = Math.min(FLOOR, english[i].scale) * 0.97;
-        if (l.scale < bar) bad.push(`${lang} "${l.text}" squashed to ${l.scale.toFixed(2)}, English to ${english[i].scale.toFixed(2)}`);
+      for (const l of found) {
+        if (l.scale < FLOOR) bad.push(`${lang} "${l.text}" squashed to ${l.scale.toFixed(2)}`);
         if (l.widthEm > CELL_EM + 0.05) bad.push(`${lang} "${l.text}" is ${l.widthEm.toFixed(2)}em wide in a ${CELL_EM.toFixed(2)}em cell`);
-      });
+      }
     }
     await testInfo.attach('outline-labels', { body: JSON.stringify(results, null, 1), contentType: 'application/json' });
     expect(bad, 'outline labels that do not fit one cell').toEqual([]);
