@@ -419,7 +419,7 @@ export const enUi = {
   'home.league.title': 'League & Gym Leader Maker',
   'home.next.blurb': 'Share an idea or feedback,\nwe read everything that comes in!',
   'home.next.title': 'What would you like to see next?',
-  'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
+  'intro.body': 'Curate your regional Pokédex, analyze detailed stats, then export as an image to save a copy and share.',
   'intro.cta': 'Choose your starters',
   'intro.dismiss': 'Dismiss intro',
   'intro.headline': 'Build your own {count}',

@@ -66,7 +66,7 @@
   "header.tagline": " — 制作你自己的宝可梦图鉴",
   "header.toolNameCore": "宝可梦图鉴制作器",
   "header.toolNameQualifier": "自定义",
-  "intro.body": "从全部{total}只宝可梦中亲手挑选你的最爱，打造完全属于你的图鉴。",
+  "intro.body": "打造你的地区图鉴，分析详细统计，再导出为图片，保存副本并分享。",
   "intro.cta": "选择最初伙伴",
   "intro.dismiss": "关闭简介",
   "intro.headline": "打造你自己的{count}只",
