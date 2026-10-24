@@ -5,7 +5,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
-import { parseCapturedAt } from './_sessionize.js';
+import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
 import { parseAutoFlag } from './_automation.js';
 import { FUNNEL_DAY_TTL_S } from './_range.js';
@@ -60,6 +60,9 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     for(let attempt=0;attempt<6;attempt++){
       const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,b.cid),redis.hget(FAVORITE_VERSION_KEY,b.cid)]);
       const existing=parseFavoriteRecord(raw);
+      // As in the Dex and the League, a browser gets a record only after it
+      // places a Pokémon. Tabs that still run older code send empty boards too.
+      if(!existing&&snapshot.filled===0)return res.status(200).json({ok:true,activityAck:acknowledgeUnstored(b.activity,received)});
       const session=existing?favoriteSessionAt(existing.sessionLog,now):undefined;
       const events:string[]=session?[]:['favorites-open'];
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
@@ -69,7 +72,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);
       if(stats)events.push('favorites-export-stats');
-      const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,receivedAt:received,attention,kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
+      const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,receivedAt:received,attention,seen:parseSeenDays(b.seen,received),kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
         ...geo,...ua,lang:getLang(req),locale:parseLocale(b.locale),switched:parseLocale(b.switched),referrer:parseReferrerHost(b.ref)});
       const entries=events.map(ev=>({t:now,cid:b.cid,tool:'favorites',ev,...(parsePage(b.page)?{page:parsePage(b.page)}:{})}));
       const result=await redis.eval(CAS,[FAVORITE_CLIENTS_KEY,FAVORITE_VERSION_KEY,`favorites:request:${b.cid}:${b.id}`,'funnel',`funnel:${day}`,`journal:${day}`],

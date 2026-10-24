@@ -1,5 +1,5 @@
 import {mergeAttention,type AttentionPayload} from './_attention.js';
-import {checkpointRecording, retiredCapture, sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
+import {checkpointRecording, mergeSeenDays, retiredCapture, sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
 import cellData from './_favoriteCells.json' with { type: 'json' };
 const cells = cellData as Record<string, {kind:string;ids?:number[];sources?:string[]}>;
 export const FAVORITE_CLIENTS_KEY = 'favorites:clients';
@@ -57,6 +57,7 @@ export interface FavoriteRecord extends RecordingFields {
 }
 export interface FavoriteBeaconInput {
   attention?: AttentionPayload;
+  seen?: number[];
   receivedAt?: number;
   cid: string;
   id: string;
@@ -132,6 +133,8 @@ export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: Favo
   };
   const attention=mergeAttention(existing?.attention,input.attention,input.receivedAt ?? input.now);
   if(attention)rec.attention=attention;
+  const seenDays=mergeSeenDays(existing?.seenDays,input.seen,input.receivedAt ?? input.now);
+  if(seenDays)rec.seenDays=seenDays;
   rec.seenIds = [...rec.seenIds,input.id].slice(-256);
   rec.submits++;
   const log = rec.sessionLog;

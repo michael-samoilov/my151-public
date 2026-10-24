@@ -25,7 +25,7 @@ import {
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
-import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture } from './_sessionize.js';
+import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, parseSeenDays, mergeSeenDays } from './_sessionize.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 
 function isDexId(id: unknown): id is number {
@@ -152,6 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool?: unknown;
       page?: unknown;
       attention?: unknown;
+      seen?: unknown;
       activity?: unknown;
       ts?: unknown;
       notme?: unknown;
@@ -165,6 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const receivedAt=Date.now();
     const attention=parseAttentionForIngest(body.attention,receivedAt);
     if(attention===null)return res.status(400).json({error:'invalid attention'});
+    const seen=parseSeenDays(body.seen,receivedAt);
 
     if (typeof body.kind !== 'string' || !isBeaconKind(body.kind)) {
       return res.status(400).json({ error: 'invalid kind' });
@@ -250,6 +252,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const measured=mergeAttention(existing?.attention,attention,receivedAt);
       if(measured)rec.attention=measured;
+      const seenDays=mergeSeenDays(existing?.seenDays,seen,receivedAt);
+      if(seenDays)rec.seenDays=seenDays;
       rec.submits += 1;
       rec.maxDepth = Math.max(rec.maxDepth, depth);
       rec.country = geo.country;

@@ -774,7 +774,7 @@ export function sampleBrowser(cid: string, country?: string): BrowserRecords {
 }
 sampleResponse.favorite=favoriteSummary(pickerRecords);
 sampleResponse.favoritePicks=favoritePicks(pickerRecords);
-sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);
+sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords,0);
 sampleResponse.byTool!.favorites=aggregateRecords(pickerRecords,pickerNow+120000);
 sampleResponse.byTool!.all!.users+=pickerRecords.length;
 if(sampleResponse.crossTool){

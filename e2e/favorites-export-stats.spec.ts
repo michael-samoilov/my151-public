@@ -193,6 +193,7 @@ test('Japanese empty stats use the active localized control', async ({ page }, t
 });
 
 test('failed stats share records only the later successful retry', async ({ page }, testInfo) => {
+  await seed(page);
   const exportKinds: unknown[] = [];
   await page.addInitScript(() => {
     let attempts = 0;

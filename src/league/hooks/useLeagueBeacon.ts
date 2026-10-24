@@ -1,5 +1,5 @@
 import {minuteActivityPayload,acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
-import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
+import {attentionPayload,seenPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
@@ -58,6 +58,7 @@ function postLeagueBeacon(
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
     attention: attentionPayload('league'),
+    seen: seenPayload('league'),
     activity: minuteActivityPayload('league'),
     notme: isOptedOut() || undefined,
     auto: AUTOMATED || undefined,

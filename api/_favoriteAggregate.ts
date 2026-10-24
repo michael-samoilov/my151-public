@@ -6,7 +6,19 @@ export interface FavoriteUsageFunnel {
   opened: number;
   buckets: {label:string;count:number;exports:{full:number;simplified:number;both:number};notExported:number}[];
 }
-export function favoriteUsageFunnel(records: FavoriteRecord[]): FavoriteUsageFunnel {
+/** From this UTC day the server saves only Picker visitors who placed a
+ *  Pokémon, and the `favorites-visit` count gives the rest. */
+const PICKER_VISIT_SINCE = Date.UTC(2026, 9, 23);
+
+/**
+ * The Picker funnel of the records first seen in a range. `visits` is the
+ * range's `favorites-visit` count. Bounces are the records that never placed a
+ * Pokémon, plus the visits beyond the placers saved from PICKER_VISIT_SINCE.
+ * The **Not started** bucket holds the bounces.
+ */
+export function favoriteUsageFunnel(records: FavoriteRecord[], visits: number): FavoriteUsageFunnel {
+  const savedPlacers = records.filter(r=>r.maxFilled>0 && r.firstTs>=PICKER_VISIT_SINCE).length;
+  const unsaved = Math.max(0, visits-savedPlacers);
   const buckets = [
     {label:'Not started',min:0,max:0},
     {label:'1–64 cells',min:1,max:64},
@@ -16,12 +28,13 @@ export function favoriteUsageFunnel(records: FavoriteRecord[]): FavoriteUsageFun
     {label:'Completed',min:FAVORITE_TOTAL_CELLS,max:FAVORITE_TOTAL_CELLS},
   ].map(({label,min,max}) => {
     const rows = records.filter(r=>r.maxFilled >= min && r.maxFilled <= max);
+    const count = rows.length+(min===0 ? unsaved : 0);
     const full = rows.filter(r=>r.exportsFull>0 && r.exportsSimplified===0).length;
     const simplified = rows.filter(r=>r.exportsSimplified>0 && r.exportsFull===0).length;
     const both = rows.filter(r=>r.exportsFull>0 && r.exportsSimplified>0).length;
-    return {label,count:rows.length,exports:{full,simplified,both},notExported:rows.length-full-simplified-both};
+    return {label,count,exports:{full,simplified,both},notExported:count-full-simplified-both};
   });
-  return {opened:records.length,buckets};
+  return {opened:records.length+unsaved,buckets};
 }
 export function favoriteSummary(records: FavoriteRecord[]) {
   return {
