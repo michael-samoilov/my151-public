@@ -225,9 +225,7 @@ export function LeagueApp() {
               inert={openCard === null}
               className="h-full w-1/2 overflow-y-auto"
             >
-              {/* At least a screen tall, so the app footer starts at the fold
-                  even when the card is shorter than the screen. */}
-              <div className="mx-auto min-h-full w-full max-w-[26rem]">
+              <div className="mx-auto w-full max-w-[26rem]">
                 <CardPage cardIndex={shownCard} showBack />
               </div>
               <PageFooter />

@@ -3,6 +3,8 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 export interface FitProposal {
   scale: number;
   width: number;
+  /** Whether the block's hint lines show. Only a grow fit with a tail decides it. */
+  tail?: boolean;
 }
 
 export const SCALE_EPS = 0.015;
@@ -40,6 +42,19 @@ interface GrowInput {
   /** The sprite's CSS px at zoom 1. */
   spritePx: number;
   dpr: number;
+  /**
+   * The hint lines' height, or 0 for a block without them. `natural` then
+   * leaves them out: the sprites size from the block alone, and the lines
+   * show only where they fit whole below it.
+   */
+  tail?: number;
+  /**
+   * The height the block and its lines may take together: the pane's
+   * current height, down to its bottom padding. Not held still like
+   * `avail`, since showing the lines never changes it.
+   */
+  tailRoom?: number;
+  prevTail?: boolean;
   prevScale: number;
   prevWidth: number;
 }
@@ -67,15 +82,19 @@ export function proposeFit(input: FitInput): FitProposal | null {
 
   if (input.mode === 'grow') {
     const wScale = input.room / input.baseWidth;
-    const hScale = input.avail / input.natural;
-    const fluid = Math.max(input.floor, Math.min(wScale, hScale, input.spriteCeil));
+    const fluid = Math.max(input.floor, Math.min(wScale, input.avail / input.natural, input.spriteCeil));
     width = input.baseWidth;
+    const lines = input.tail ?? 0;
     const whole = wholePixelScale(fluid, input);
     if (whole !== null) {
-      if (whole === input.prevScale && Math.abs(width - input.prevWidth) <= WIDTH_EPS) return null;
-      return { scale: whole, width };
+      const tail = lines > 0 && (input.natural + lines) * whole <= (input.tailRoom ?? input.avail) + 1e-6;
+      if (whole === input.prevScale && Math.abs(width - input.prevWidth) <= WIDTH_EPS && tail === (input.prevTail ?? tail)) return null;
+      return lines > 0 ? { scale: whole, width, tail } : { scale: whole, width };
     }
-    scale = fluid;
+    // No whole size fits, so the sprites cannot be sharp: the fluid fit
+    // keeps the lines and shrinks the block to make room for them.
+    scale = Math.max(input.floor, Math.min(wScale, input.avail / (input.natural + lines), input.spriteCeil));
+    if (lines > 0 && input.prevTail === false) return { scale: quantizeScale(scale), width, tail: true };
   } else {
     const body = Math.max(1, input.natural - input.tailNatural);
     const squash = Math.min(1, Math.max(input.floor, input.avail / body));

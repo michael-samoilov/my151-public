@@ -16,6 +16,8 @@ export interface Fit {
   width: number;
   budgetRem: number;
   gutterPx: number;
+  /** Whether the block's `[data-fit-tail]` hint lines show. See `Grow.tail`. */
+  tail: boolean;
 }
 
 /**
@@ -29,6 +31,13 @@ interface Grow {
   spriteRem: number;
   targetSpritePx: number;
   dpr: number;
+  /**
+   * The block's `[data-fit-tail]` hint lines show only where they fit whole
+   * below the block at its sharp size, so they never cost the sprites their
+   * whole pixels. Hidden, the tail stays in the block at zero height, and its
+   * `scrollHeight` still measures it.
+   */
+  tail?: boolean;
 }
 
 interface Compact {
@@ -48,8 +57,9 @@ export function useFitScale(
   grow?: Grow,
   compact?: Compact,
 ): Fit {
-  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity, gutterPx: 0 });
+  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity, gutterPx: 0, tail: true });
   const scaleRef = useRef(1);
+  const tailRef = useRef(true);
   const budgetRef = useRef(Infinity);
   const widthRef = useRef(0);
   const availRef = useRef(0);
@@ -63,6 +73,7 @@ export function useFitScale(
   const roomiestRem = compact?.heightRem(Infinity);
   const shortestRem = compact?.heightRem(0);
   const hasGrow = grow !== undefined;
+  const growTail = grow?.tail ?? false;
   const { baseWidthRem, spriteRem, targetSpritePx, dpr } = grow ?? {
     baseWidthRem: 0,
     spriteRem: 1,
@@ -76,7 +87,8 @@ export function useFitScale(
     const compute = () => {
       // Unzoomed layout height — not getBoundingClientRect()/scale. Zoomed
       // rects re-enter this observer when zoom changes; offsetHeight does not.
-      const measured = el.offsetHeight;
+      const hints = hasGrow && growTail ? el.querySelector<HTMLElement>('[data-fit-tail]') : null;
+      const measured = el.offsetHeight - (hints?.offsetHeight ?? 0);
       const natural = stabilizeMeasure(measured, naturalRef.current);
       naturalRef.current = natural;
       if (natural <= 0) return;
@@ -112,11 +124,12 @@ export function useFitScale(
       }
       const commit = (next: FitProposal, budgetRem: number, gutterPx = 0) => {
         scaleRef.current = next.scale;
+        tailRef.current = next.tail ?? true;
         widthRef.current = next.width;
         budgetRef.current = budgetRem;
-        setFit({ ...next, budgetRem, gutterPx });
+        setFit({ ...next, tail: next.tail ?? true, budgetRem, gutterPx });
       };
-      const last = { scale: scaleRef.current, width: widthRef.current };
+      const last = { scale: scaleRef.current, width: widthRef.current, tail: tailRef.current };
       const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const baseWidth = hasGrow ? baseWidthRem * rootFont : undefined;
       const ceiling = hasGrow ? targetSpritePx / (spriteRem * rootFont) : 1;
@@ -163,6 +176,7 @@ export function useFitScale(
           return;
         }
       }
+      const liveAvail = avail;
       avail = stabilizeMeasure(avail, availRef.current);
       availRef.current = avail;
       room = stabilizeMeasure(room, roomRef.current);
@@ -178,6 +192,11 @@ export function useFitScale(
           spriteCeil: ceiling,
           spritePx: spriteRem * rootFont,
           dpr,
+          tail: hints?.scrollHeight ?? 0,
+          // The lines may take the gap kept under the block, down to the
+          // pane's bottom padding, so the pane never scrolls for them.
+          tailRoom: liveAvail + 2 + gapBelow,
+          prevTail: last.tail,
           prevScale: last.scale,
           prevWidth: last.width,
         });
@@ -222,6 +241,7 @@ export function useFitScale(
     spriteRem,
     targetSpritePx,
     dpr,
+    growTail,
     roomiestRem,
     shortestRem,
     compact?.holds,
