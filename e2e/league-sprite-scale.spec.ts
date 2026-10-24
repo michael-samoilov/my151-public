@@ -168,11 +168,15 @@ async function cardSprites(page: Page, sizes: number[][]) {
       const scales = [...card.querySelectorAll('img')]
         .filter((i) => i.src.includes('/sprites/pokemon/'))
         .map((i) => (i.getBoundingClientRect().width * devicePixelRatio) / i.naturalWidth);
+      const hints = card.parentElement!.querySelector<HTMLElement>('[data-fit-tail]');
+      const lastLine = hints ? [...hints.querySelectorAll('span')].at(-1)! : null;
       return {
         size: `${innerWidth}x${innerHeight}@${devicePixelRatio}`,
         scales: [...new Set(scales.map((s) => +s.toFixed(4)))],
         overflow: pane.scrollHeight - pane.clientHeight,
         cardHeight: card.getBoundingClientRect().height,
+        hints: !!hints && hints.offsetHeight > 0,
+        hintsPastEdge: lastLine ? lastLine.getBoundingClientRect().bottom - pane.getBoundingClientRect().bottom : 0,
       };
     }));
   }
@@ -182,6 +186,10 @@ async function cardSprites(page: Page, sizes: number[][]) {
 function expectWholeAndInPane(steps: Awaited<ReturnType<typeof cardSprites>>) {
   for (const s of steps) {
     expect(s.overflow, `the pane scrolls 10% of the card or less at ${s.size}`).toBeLessThanOrEqual(0.1 * s.cardHeight + 1);
+    if (s.hints) {
+      expect(s.hintsPastEdge, `the hint lines are whole on screen at ${s.size}`).toBeLessThanOrEqual(0);
+      expect(s.overflow, `and the pane does not scroll for them at ${s.size}`).toBe(0);
+    }
     for (const scale of s.scales) {
       expect(scale, `a whole multiple of 1x at ${s.size}`).toBeGreaterThanOrEqual(1 - 1e-3);
       expect(Math.abs(scale - Math.round(scale)), `${scale}x is whole at ${s.size}`).toBeLessThan(1e-3);
@@ -192,12 +200,15 @@ function expectWholeAndInPane(steps: Awaited<ReturnType<typeof cardSprites>>) {
 test.describe('a Retina desktop with a gym card open', () => {
   test.use({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 });
 
-  test('draws every card sprite at whole device pixels, with the pane scrolling 10% at most', async ({ page }, info) => {
-    // 1440x812 is a 13-inch MacBook Air window: there the card grows past
-    // its pane to reach 1x, where snapping down alone stayed soft.
-    const steps = await cardSprites(page, [[1920, 1080], [1440, 900], [1440, 812]]);
+  test('draws every card sprite at whole device pixels, with the hint lines only where they fit', async ({ page }, info) => {
+    // 1440x790 is a 13-inch MacBook Air window: there the card grows past
+    // its pane to reach 1x, where snapping down alone stayed soft, and the
+    // hint lines give way.
+    const steps = await cardSprites(page, [[1920, 1080], [1440, 900], [1440, 812], [1440, 790]]);
     await info.attach('card-sprites.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
     expectWholeAndInPane(steps);
+    expect(steps.find((s) => s.size.startsWith('1440x900'))!.hints, 'a pane with room shows the hint lines').toBe(true);
+    expect(steps.find((s) => s.size.startsWith('1440x790'))!.hints, 'a pane without room hides them').toBe(false);
   });
 });
 

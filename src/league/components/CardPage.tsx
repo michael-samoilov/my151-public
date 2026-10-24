@@ -261,7 +261,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const fit = useFitScale(
     fitRef,
     0.55,
-    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96, dpr } : undefined,
+    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96, dpr, tail: true } : undefined,
   );
   const rendering = spriteRendering(
     spriteScreen(isDesktop, dpr),
@@ -282,7 +282,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
       )}
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={fitStyle(fit, rendering)}>
-          <CardGrid cardIndex={cardIndex} view={view} />
+          <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />
         </div>
       </div>
       {/* Both pickers are `position: fixed`, and a transformed ancestor
