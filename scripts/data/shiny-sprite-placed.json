@@ -1,0 +1,832 @@
+{
+  "offset": "[dy, dx] in our pixels: after an integer downscale by scale, shift the source down dy rows and right dx columns onto our normal sprite's canvas.",
+  "archive": "Generation_9_Pack_v3.3.8.rar is the Generation 9 Resource Pack, https://eeveeexpo.com/resources/1101/. Extract it so that <cache>/gen9pack/x/Graphics/Pokemon holds its Front and Front shiny folders.",
+  "placed": [
+    {
+      "file": "666",
+      "name": "Vivillon (Meadow Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Wobblebuns"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "10065",
+      "name": "Mega Sceptile",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/sceptile-mega.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/sceptile-mega.png",
+      "scale": 1,
+      "offset": [
+        6,
+        1
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "TrainerSplash",
+        "The Cynical Poet"
+      ],
+      "canon": "https://www.serebii.net/pokedex-xy/254.shtml"
+    },
+    {
+      "file": "10197",
+      "name": "Gigantamax Blastoise",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/master/src/sprites/gen5/sblastoise-g.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/master/src/sprites/gen5/sblastoise-g-s.png",
+      "scale": 1,
+      "offset": [
+        4,
+        2
+      ],
+      "source": "Smogon Sprite Project (smogon/sprites)",
+      "artists": [
+        "leParagon"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/blastoise/"
+    },
+    {
+      "file": "10290",
+      "name": "Mega Eelektross",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/EELEKTROSS_1.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/EELEKTROSS_1.png",
+      "scale": 2,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokedex-sv/eelektross/"
+    },
+    {
+      "file": "10299",
+      "name": "Mega Dragalge",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/DRAGALGE_1.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/DRAGALGE_1.png",
+      "scale": 2,
+      "offset": [
+        -2,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokedex-sv/dragalge/"
+    },
+    {
+      "file": "10305",
+      "name": "Mega Raichu Y",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/RAICHU_3.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/RAICHU_3.png",
+      "scale": 2,
+      "offset": [
+        -9,
+        2
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokedex-sv/raichu/"
+    },
+    {
+      "file": "10311",
+      "name": "Mega Heatran",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/HEATRAN_1.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/HEATRAN_1.png",
+      "scale": 2,
+      "offset": [
+        -7,
+        -1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokedex-sv/heatran/"
+    },
+    {
+      "file": "11002",
+      "name": "Oinkologne ♀",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/10254.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10254.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11003",
+      "name": "Dudunsparce (Three-Segment Form)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/dudunsparce-threesegment.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/dudunsparce-threesegment.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "G.E.Z."
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11004",
+      "name": "Palafin (Hero Form)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/palafin-hero.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/palafin-hero.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Travis"
+      ],
+      "canon": "https://www.serebii.net/Shiny/SV/new/964-h.png"
+    },
+    {
+      "file": "11005",
+      "name": "Maushold (Family of Three)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/10257.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10257.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11006",
+      "name": "Tatsugiri (Droopy Form)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/tatsugiri-droopy.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/tatsugiri-droopy.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Blaquaza"
+      ],
+      "canon": "https://www.serebii.net/Shiny/SV/new/978-d.png"
+    },
+    {
+      "file": "11007",
+      "name": "Tatsugiri (Stretchy Form)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/tatsugiri-stretchy.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/tatsugiri-stretchy.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Blaquaza"
+      ],
+      "canon": "https://www.serebii.net/Shiny/SV/new/978-s.png"
+    },
+    {
+      "file": "11018",
+      "name": "Vivillon (Archipelago Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-archipelago.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-archipelago.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11019",
+      "name": "Vivillon (Continental Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-continental.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-continental.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11020",
+      "name": "Vivillon (Elegant Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-elegant.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-elegant.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11021",
+      "name": "Vivillon (Fancy Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-fancy.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-fancy.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-sv/vivillon/"
+    },
+    {
+      "file": "11022",
+      "name": "Vivillon (Garden Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-garden.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-garden.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11023",
+      "name": "Vivillon (High Plains Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-highplains.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-highplains.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11024",
+      "name": "Vivillon (Icy Snow Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-icysnow.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-icysnow.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11025",
+      "name": "Vivillon (Jungle Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-jungle.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-jungle.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11026",
+      "name": "Vivillon (Marine Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-marine.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-marine.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11027",
+      "name": "Vivillon (Modern Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-modern.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-modern.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11028",
+      "name": "Vivillon (Monsoon Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-monsoon.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-monsoon.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11029",
+      "name": "Vivillon (Ocean Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-ocean.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-ocean.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11031",
+      "name": "Vivillon (Polar Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-polar.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-polar.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11032",
+      "name": "Vivillon (River Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-river.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-river.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11033",
+      "name": "Vivillon (Sandstorm Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-sandstorm.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-sandstorm.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11034",
+      "name": "Vivillon (Savanna Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-savanna.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-savanna.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11035",
+      "name": "Vivillon (Sun Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-sun.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-sun.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11036",
+      "name": "Vivillon (Tundra Pattern)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/vivillon-tundra.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/vivillon-tundra.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11097",
+      "name": "Furfrou (Star Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_2.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_2.png",
+      "scale": 2,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11098",
+      "name": "Furfrou (Diamond Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_3.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_3.png",
+      "scale": 2,
+      "offset": [
+        0,
+        2
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11099",
+      "name": "Furfrou (Debutante Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_4.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_4.png",
+      "scale": 2,
+      "offset": [
+        0,
+        4
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11100",
+      "name": "Furfrou (Matron Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_5.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_5.png",
+      "scale": 2,
+      "offset": [
+        0,
+        3
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11101",
+      "name": "Furfrou (Dandy Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_6.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_6.png",
+      "scale": 2,
+      "offset": [
+        0,
+        2
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11102",
+      "name": "Furfrou (La Reine Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_7.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_7.png",
+      "scale": 2,
+      "offset": [
+        0,
+        1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11103",
+      "name": "Furfrou (Kabuki Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_8.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_8.png",
+      "scale": 2,
+      "offset": [
+        0,
+        1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "11104",
+      "name": "Furfrou (Pharaoh Trim)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_9.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU_9.png",
+      "scale": 2,
+      "offset": [
+        0,
+        1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+    },
+    {
+      "file": "alcremie-berry",
+      "name": "Alcremie (Vanilla Cream Berry Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-berry-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-berry-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-clover",
+      "name": "Alcremie (Vanilla Cream Clover Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-clover-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-clover-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-flower",
+      "name": "Alcremie (Vanilla Cream Flower Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-flower-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-flower-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-love",
+      "name": "Alcremie (Vanilla Cream Love Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-love-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-love-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-ribbon",
+      "name": "Alcremie (Vanilla Cream Ribbon Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-ribbon-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-ribbon-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-star",
+      "name": "Alcremie (Vanilla Cream Star Sweet)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/869-vanilla-cream-star-sweet.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/869-vanilla-cream-star-sweet.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "RadicalCharizard",
+        "leParagon",
+        "PumpkinPastel"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    },
+    {
+      "file": "alcremie-strawberry",
+      "name": "Alcremie (Vanilla Cream Strawberry Sweet)",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/alcremie.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/alcremie.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "PumpkinPastel"
+      ],
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+    }
+  ]
+}

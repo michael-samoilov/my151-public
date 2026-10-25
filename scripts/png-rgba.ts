@@ -1,4 +1,4 @@
-import { inflateSync } from 'node:zlib';
+import { crc32, deflateSync, inflateSync } from 'node:zlib';
 
 export interface Raster {
   width: number;
@@ -22,6 +22,7 @@ function chunks(png: Buffer): Map<string, Buffer[]> {
   return out;
 }
 
+const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
 const CHANNELS: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
 /** Adam7 passes as [first column, first row, column step, row step]. */
 const ADAM7 = [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]];
@@ -144,4 +145,23 @@ export function maskDifference(a: Raster, b: Raster): number | null {
   let count = 0;
   for (let i = 3; i < a.data.length; i += 4) if ((a.data[i] === 0) !== (b.data[i] === 0)) count++;
   return count;
+}
+
+/** Encode RGBA as an 8-bit RGBA PNG. scripts/optimize-sprites.py shrinks the result. */
+export function encode({ width, height, data }: Raster): Buffer {
+  const chunk = (type: string, body: Buffer) => {
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(body.length, 0);
+    head.write(type, 4, 'ascii');
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(Buffer.concat([head.subarray(4), body])), 0);
+    return Buffer.concat([head, body, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr.set([8, 6, 0, 0, 0], 8);
+  const rows = Buffer.alloc(height * (width * 4 + 1));
+  for (let y = 0; y < height; y++) rows.set(data.subarray(y * width * 4, (y + 1) * width * 4), y * (width * 4 + 1) + 1);
+  return Buffer.concat([PNG_SIGNATURE, chunk('IHDR', ihdr), chunk('IDAT', deflateSync(rows, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }

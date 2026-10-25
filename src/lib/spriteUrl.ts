@@ -21,17 +21,18 @@ export function pokemonSpriteUrl(id: number | string): string {
   return revisedSprite(`/sprites/pokemon/${id}.png`);
 }
 
-const SPRITE_FILE = /^\/sprites\/pokemon\/(\d+)\.png(?:\?|$)/;
-let shinyFiles: Set<number> | undefined;
+const SPRITE_FILE = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/;
+let shinyFiles: Set<string> | undefined;
 
 /**
  * The shiny version of a normal Pokémon sprite URL, or null when that art has
  * none (`src/data/shinySprites.json`, written by scripts/fetch-shiny-sprites.ts).
  * It looks up the file, not the Pokémon id: Palafin shows 10256.png in the
- * league builder, while the picker's 10256 is an Alcremie with its own file.
+ * league builder, while the picker's 10256 is an Alcremie with its own file,
+ * alcremie-star.png.
  */
 export function shinySpriteUrl(sprite: string): string | null {
   const file = SPRITE_FILE.exec(sprite)?.[1];
   shinyFiles ??= new Set(shinySprites);
-  return file && shinyFiles.has(Number(file)) ? revisedSprite(`/sprites/pokemon/shiny/${file}.png`) : null;
+  return file && shinyFiles.has(file) ? revisedSprite(`/sprites/pokemon/shiny/${file}.png`) : null;
 }

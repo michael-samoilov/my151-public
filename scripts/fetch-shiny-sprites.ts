@@ -1,35 +1,42 @@
 /**
  * Harvests the shiny sprites that the Favorite Pokémon Picker and the league
- * builder show when their Shiny switch is on, and writes the sorted ids that
- * have one to src/data/shinySprites.json.
+ * builder show when their Shiny switch is on, and writes the sorted names of
+ * the sprite files that have one to src/data/shinySprites.json.
  *
  * A source's shiny is taken only when it passes two checks against our normal
  * sprite:
  *
- * - Same art: the source's normal sprite shows the same pixels as ours.
- * - Same outline: the shiny's alpha mask equals our normal's, pixel for pixel.
- *   A shiny drawn from another design fails here even when the source's normal
- *   matches, as Terapagos Stellar (10277) did.
+ * - Same art: the source's normal sprite, placed on our canvas, shows the same
+ *   pixels as ours.
+ * - Same outline: the shiny, placed the same way, has our normal's alpha mask,
+ *   pixel for pixel. A shiny drawn from another design fails here even when the
+ *   source's normal matches, as Terapagos Stellar (10277) did.
  *
- * The sources, tried in this order, all from PokéAPI at one pinned commit:
+ * The sources, tried in this order:
  *
- * 1. `sprites/pokemon/shiny/<id>.png`.
- * 2. For a picker form drawn from the Black and White folder (its
+ * 1. PokéAPI `sprites/pokemon/shiny/<id>.png`.
+ * 2. For a picker form drawn from PokéAPI's Black and White folder (its
  *    `spritePath`, or a slug in `blackWhiteSlugs` in
  *    scripts/data/shiny-sprite-sources.json), that folder's shiny file.
+ * 3. The art found by hand in scripts/data/shiny-sprite-placed.json, with the
+ *    integer downscale and offset that put it on our canvas, and its credits.
+ *
+ * Every PokéAPI URL reads one pinned commit (POKEAPI_COMMIT).
  *
  * A run converges on the same files whatever an earlier run left: it writes a
  * missing or changed shiny, and deletes one that no longer passes along with
  * its scripts/sprite-reencodes.json entry. It never touches the shiny files
  * that were on production before the harvest (PROTECTED); it only reports one
- * whose outline differs. It prints the ids it rejected with their count of
- * mismatched pixels, and the ids with no shiny. After a run that adds files,
+ * whose outline differs. It prints the files it rejected with their count of
+ * mismatched pixels, and the files with no shiny. After a run that adds files,
  * commit them and shrink them as the normal sprites were:
  * `python3 scripts/optimize-sprites.py HEAD public/sprites/pokemon/shiny`.
  *
  * `--cache <dir>` reads downloads from `<dir>/cache/<key>` and saves new ones
  * there, so a rerun needs no network. The key is the first 20 hex digits of
- * the URL's SHA-1.
+ * the URL's SHA-1. A source inside the Generation 9 Resource Pack archive is
+ * read from `<dir>/gen9pack/x/<path in the archive>`. Without it, a shiny from
+ * that archive is kept as it is, unchecked, and the run says so.
  *
  * Usage: npx tsx scripts/fetch-shiny-sprites.ts [--cache <dir>]
  */
@@ -38,27 +45,39 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { runnerImport } from 'vite';
-import { decode, maskDifference, samePixels } from './png-rgba';
+import { decode, encode, maskDifference, samePixels, type Raster } from './png-rgba';
 import powerupForms from '../src/league/data/powerupForms.json';
 import sources from './data/shiny-sprite-sources.json';
+import found from './data/shiny-sprite-placed.json';
 
-const POKEAPI = 'https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon';
+const POKEAPI_COMMIT = 'https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/';
+const POKEAPI = `${POKEAPI_COMMIT}sprites/pokemon`;
 const BLACK_WHITE = `${POKEAPI}/versions/generation-v/black-white`;
-const PROTECTED = new Set([77, 130, 147, 443, 612]);
+const ARCHIVE = 'Generation_9_Pack_v3.3.8.rar:';
+const PROTECTED = new Set(['77', '130', '147', '443', '612']);
 const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
-const SPRITE_ID = /^\/sprites\/pokemon\/(\d+)\.png(?:\?|$)/;
+const SPRITE_FILE = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/;
 
 const root = process.cwd();
-const ours = (id: number) => join(root, 'public/sprites/pokemon', `${id}.png`);
-const target = (id: number) => join(root, 'public/sprites/pokemon/shiny', `${id}.png`);
+const ours = (file: string) => join(root, 'public/sprites/pokemon', `${file}.png`);
+const target = (file: string) => join(root, 'public/sprites/pokemon/shiny', `${file}.png`);
 const OUTPUT = join(root, 'src/data/shinySprites.json');
 const REENCODES = join(root, 'scripts/sprite-reencodes.json');
 const cache = parseArgs({ options: { cache: { type: 'string' } } }).values.cache;
 
-interface Source { normal: string; shiny: string }
-interface Catalogs { picker: Set<number>; slugs: Map<number, string>; league: Set<number> }
-type Verdict = { kind: 'pass'; shiny: Buffer } | { kind: 'outline'; mismatched: number | null } | { kind: 'none' };
-type Result = 'added' | 'replaced' | 'kept' | 'removed' | 'protected' | 'none';
+interface Source { normal: string; shiny: string; scale: number; offset: readonly number[] }
+interface Catalogs { picker: Set<string>; slugs: Map<string, string>; league: Set<string> }
+type Verdict =
+  | { kind: 'pass'; shiny: Buffer }
+  | { kind: 'outline'; mismatched: number | null }
+  | { kind: 'unavailable' }
+  | { kind: 'none' };
+type Result = 'added' | 'replaced' | 'kept' | 'unchecked' | 'removed' | 'protected' | 'none';
+
+const placed = new Map<string, Source>(found.placed.map((entry) => [entry.file, entry]));
+for (const url of found.placed.flatMap((entry) => [entry.normal, entry.shiny])) {
+  if (url.startsWith('https://raw.githubusercontent.com/PokeAPI/') && !url.startsWith(POKEAPI_COMMIT)) throw new Error(`Read PokéAPI at ${POKEAPI_COMMIT}: ${url}`);
+}
 
 async function loadCatalogs(): Promise<Catalogs> {
   const load = async <T>(file: string) => (await runnerImport<T>(join(root, file), {
@@ -70,45 +89,53 @@ async function loadCatalogs(): Promise<Catalogs> {
   const picker = await load<{ allPickerMons(): readonly { sprite: string }[] }>('src/favorites/model/catalog.ts');
   const forms = await load<{ ALTERNATE_PICKER_FORMS: readonly { id: number; spritePath?: string }[] }>('src/favorites/model/alternateForms.ts');
   const league = await load<{ getAllPokemon(): { sprite: string }[] }>('src/league/data/catalog.ts');
-  const spriteIds = (mons: readonly { sprite: string }[]) => mons.flatMap((mon) => {
-    const id = SPRITE_ID.exec(mon.sprite)?.[1];
-    return id ? [Number(id)] : [];
+  const spriteFiles = (mons: readonly { sprite: string }[]) => mons.flatMap((mon) => {
+    const file = SPRITE_FILE.exec(mon.sprite)?.[1];
+    return file ? [file] : [];
   });
   return {
-    picker: new Set(spriteIds(picker.allPickerMons())),
+    picker: new Set(spriteFiles(picker.allPickerMons())),
     slugs: new Map([
-      ...forms.ALTERNATE_PICKER_FORMS.flatMap((form) => (form.spritePath ? [[form.id, form.spritePath] as const] : [])),
-      ...Object.entries(sources.blackWhiteSlugs).map(([id, slug]) => [Number(id), slug] as const),
+      ...forms.ALTERNATE_PICKER_FORMS.flatMap((form) => (form.spritePath ? [[String(form.id), form.spritePath] as const] : [])),
+      ...Object.entries(sources.blackWhiteSlugs),
     ]),
     league: new Set([
-      ...spriteIds(league.getAllPokemon()),
-      ...Object.values(powerupForms).flatMap((kinds) => [...kinds.mega, ...kinds.dynamax].map((form) => form.id)),
+      ...spriteFiles(league.getAllPokemon()),
+      ...Object.values(powerupForms).flatMap((kinds) => [...kinds.mega, ...kinds.dynamax].map((form) => String(form.id))),
     ]),
   };
 }
 
-function sourcesFor(id: number, catalogs: Catalogs): Source[] {
-  const list = [{ normal: `${POKEAPI}/${id}.png`, shiny: `${POKEAPI}/shiny/${id}.png` }];
-  const slug = catalogs.slugs.get(id);
-  if (slug) list.push({ normal: `${BLACK_WHITE}/${slug}.png`, shiny: `${BLACK_WHITE}/shiny/${slug}.png` });
-  return list;
+function sourcesFor(file: string, catalogs: Catalogs): Source[] {
+  const at = (folder: string, name: string) => ({ normal: `${folder}/${name}.png`, shiny: `${folder}/shiny/${name}.png`, scale: 1, offset: [0, 0] });
+  const slug = catalogs.slugs.get(file);
+  return [
+    ...(/^\d+$/.test(file) ? [at(POKEAPI, file)] : []),
+    ...(slug ? [at(BLACK_WHITE, slug)] : []),
+    ...(placed.has(file) ? [placed.get(file)!] : []),
+  ];
 }
 
-async function download(url: string): Promise<Buffer | null> {
-  const key = createHash('sha1').update(url).digest('hex').slice(0, 20);
+/** The file's bytes, null when the source has no such file, or 'unavailable' for an archive that is not in the cache. */
+async function load(ref: string): Promise<Buffer | null | 'unavailable'> {
+  if (ref.startsWith(ARCHIVE)) {
+    const member = cache && join(cache, 'gen9pack/x', ref.slice(ARCHIVE.length));
+    return member && existsSync(member) ? readFileSync(member) : 'unavailable';
+  }
+  const key = createHash('sha1').update(ref).digest('hex').slice(0, 20);
   const saved = cache && join(cache, 'cache', key);
   if (saved && existsSync(saved)) return readFileSync(saved);
   if (saved && existsSync(`${saved}.missing`)) return null;
   for (let attempt = 1; ; attempt++) {
     try {
-      const response = await fetch(url, { headers: { 'User-Agent': 'curl/8.5.0' } });
+      const response = await fetch(ref, { headers: { 'User-Agent': 'curl/8.5.0' } });
       if (response.status === 404) {
         if (saved) writeFileSync(`${saved}.missing`, '404');
         return null;
       }
-      if (!response.ok) throw new Error(`${response.status} ${url}`);
+      if (!response.ok) throw new Error(`${response.status} ${ref}`);
       const bytes = Buffer.from(await response.arrayBuffer());
-      if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`Not a PNG file: ${url}`);
+      if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`Not a PNG file: ${ref}`);
       if (saved) writeFileSync(saved, bytes);
       return bytes;
     } catch (error) {
@@ -117,74 +144,103 @@ async function download(url: string): Promise<Buffer | null> {
   }
 }
 
-async function judge(id: number, catalogs: Catalogs): Promise<Verdict> {
-  const normal = decode(readFileSync(ours(id)));
+/** The source downscaled by `scale` and shifted by `offset` ([down, right]) onto a canvas the size of `like`. */
+function place(art: Raster, { scale, offset: [dy, dx] }: Source, like: Raster): Raster {
+  const { width, height } = like;
+  if (scale === 1 && dy === 0 && dx === 0 && art.width === width && art.height === height) return art;
+  const data = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const [sy, sx] = [(y - dy) * scale, (x - dx) * scale];
+      if (sy < 0 || sx < 0 || sy >= art.height || sx >= art.width) continue;
+      const from = (sy * art.width + sx) * 4;
+      if (art.data[from + 3] > 0) data.set(art.data.subarray(from, from + 4), (y * width + x) * 4);
+    }
+  }
+  return { width, height, data };
+}
+
+async function judge(file: string, catalogs: Catalogs): Promise<Verdict> {
+  const normal = decode(readFileSync(ours(file)));
   let mismatched: number | null | undefined;
-  for (const source of sourcesFor(id, catalogs)) {
-    const theirs = await download(source.normal);
-    if (!theirs || !samePixels(decode(theirs), normal)) continue;
-    const shiny = await download(source.shiny);
-    if (!shiny) continue;
-    const difference = maskDifference(decode(shiny), normal);
-    if (difference === 0) return { kind: 'pass', shiny };
+  let unavailable = false;
+  for (const source of sourcesFor(file, catalogs)) {
+    const theirs = await load(source.normal);
+    if (theirs === 'unavailable') unavailable = true;
+    if (!(theirs instanceof Buffer) || !samePixels(place(decode(theirs), source, normal), normal)) continue;
+    const bytes = await load(source.shiny);
+    if (!(bytes instanceof Buffer)) continue;
+    const art = decode(bytes);
+    const shiny = place(art, source, normal);
+    const difference = maskDifference(shiny, normal);
+    if (difference === 0) return { kind: 'pass', shiny: shiny === art ? bytes : encode(shiny) };
     mismatched ??= difference;
   }
-  return mismatched === undefined ? { kind: 'none' } : { kind: 'outline', mismatched };
+  if (mismatched !== undefined) return { kind: 'outline', mismatched };
+  return unavailable ? { kind: 'unavailable' } : { kind: 'none' };
 }
 
 const reencodes: Record<string, string> = JSON.parse(readFileSync(REENCODES, 'utf8'));
-const verdicts = new Map<number, Verdict>();
-const protectedMismatch = new Map<number, number | null>();
+const verdicts = new Map<string, Verdict>();
+const protectedMismatch = new Map<string, number | null>();
 
-async function harvest(id: number, catalogs: Catalogs): Promise<Result> {
-  if (!existsSync(ours(id))) return 'none';
-  const file = target(id);
-  const present = existsSync(file);
-  if (PROTECTED.has(id)) {
+async function harvest(file: string, catalogs: Catalogs): Promise<Result> {
+  if (!existsSync(ours(file))) return 'none';
+  const shinyFile = target(file);
+  const present = existsSync(shinyFile);
+  if (PROTECTED.has(file)) {
     if (!present) return 'none';
-    const difference = maskDifference(decode(readFileSync(file)), decode(readFileSync(ours(id))));
-    if (difference !== 0) protectedMismatch.set(id, difference);
+    const difference = maskDifference(decode(readFileSync(shinyFile)), decode(readFileSync(ours(file))));
+    if (difference !== 0) protectedMismatch.set(file, difference);
     return 'protected';
   }
-  const verdict = await judge(id, catalogs);
-  verdicts.set(id, verdict);
-  if (verdict.kind === 'pass' && present && samePixels(decode(readFileSync(file)), decode(verdict.shiny))) return 'kept';
-  delete reencodes[`/sprites/pokemon/shiny/${id}.png`];
+  const verdict = await judge(file, catalogs);
+  verdicts.set(file, verdict);
+  if (verdict.kind === 'unavailable') return present ? 'unchecked' : 'none';
+  if (verdict.kind === 'pass' && present && samePixels(decode(readFileSync(shinyFile)), decode(verdict.shiny))) return 'kept';
+  delete reencodes[`/sprites/pokemon/shiny/${file}.png`];
   if (verdict.kind === 'pass') {
-    writeFileSync(file, verdict.shiny);
+    writeFileSync(shinyFile, verdict.shiny);
     return present ? 'replaced' : 'added';
   }
   if (!present) return 'none';
-  rmSync(file);
+  rmSync(shinyFile);
   return 'removed';
 }
+
+const byFile = (a: string, b: string) => {
+  const [x, y] = [/^\d+$/.test(a), /^\d+$/.test(b)];
+  return x && y ? Number(a) - Number(b) : x !== y ? (x ? -1 : 1) : a.localeCompare(b);
+};
 
 if (!existsSync(join(root, 'src/favorites/model/catalog.ts'))) throw new Error('Run this script from the repository root.');
 if (cache) mkdirSync(join(cache, 'cache'), { recursive: true });
 const catalogs = await loadCatalogs();
-const ids = [...new Set([...catalogs.picker, ...catalogs.league])].sort((a, b) => a - b);
-const results = new Map<number, Result>();
+const files = [...new Set([...catalogs.picker, ...catalogs.league])].sort(byFile);
+const results = new Map<string, Result>();
 let next = 0;
 await Promise.all(Array.from({ length: 16 }, async () => {
-  while (next < ids.length) {
-    const id = ids[next++];
-    results.set(id, await harvest(id, catalogs));
+  while (next < files.length) {
+    const file = files[next++];
+    results.set(file, await harvest(file, catalogs));
   }
 }));
 
-const shipped = ids.filter((id) => ['added', 'replaced', 'kept', 'protected'].includes(results.get(id)!));
+const shipped = files.filter((file) => ['added', 'replaced', 'kept', 'unchecked', 'protected'].includes(results.get(file)!));
 writeFileSync(OUTPUT, `${JSON.stringify(shipped)}\n`);
 writeFileSync(REENCODES, `${JSON.stringify(reencodes, null, 2)}\n`);
-const count = (result: Result) => ids.filter((id) => results.get(id) === result).length;
+const count = (result: Result) => files.filter((file) => results.get(file) === result).length;
 const pixels = (mismatched: number | null) => (mismatched === null ? 'another size' : `${mismatched} px`);
-const outline = ids.flatMap((id) => {
-  const verdict = verdicts.get(id);
-  return verdict?.kind === 'outline' ? [`${id} (${pixels(verdict.mismatched)})`] : [];
+const outline = files.flatMap((file) => {
+  const verdict = verdicts.get(file);
+  return verdict?.kind === 'outline' ? [`${file} (${pixels(verdict.mismatched)})`] : [];
 });
-const without = (set: Set<number>) => ids.filter((id) => set.has(id) && !shipped.includes(id));
-const leagueOnly = new Set([...catalogs.league].filter((id) => !catalogs.picker.has(id)));
-console.log(`${shipped.length} of ${ids.length} sprites have a shiny: ${count('added')} added, ${count('replaced')} replaced, ${count('kept')} kept, ${count('protected')} protected, ${count('removed')} removed.`);
+const unchecked = files.filter((file) => results.get(file) === 'unchecked');
+const without = (set: Set<string>) => files.filter((file) => set.has(file) && !shipped.includes(file));
+const leagueOnly = new Set([...catalogs.league].filter((file) => !catalogs.picker.has(file)));
+console.log(`${shipped.length} of ${files.length} sprites have a shiny: ${count('added')} added, ${count('replaced')} replaced, ${count('kept')} kept, ${count('protected')} protected, ${count('removed')} removed.`);
 console.log(`Rejected because the shiny's outline differs from our normal sprite (${outline.length}): ${outline.join(', ')}`);
-for (const [id, mismatched] of protectedMismatch) console.log(`Protected ${id} kept, but its outline differs from the normal sprite (${pixels(mismatched)}).`);
-console.log(`Picker ids without a shiny (${without(catalogs.picker).length}): ${without(catalogs.picker).join(' ')}`);
-console.log(`League-only ids without a shiny (${without(leagueOnly).length}): ${without(leagueOnly).join(' ')}`);
+if (unchecked.length) console.log(`Kept unchecked because ${ARCHIVE.slice(0, -1)} is not in the cache (${unchecked.length}): ${unchecked.join(' ')}`);
+for (const [file, mismatched] of protectedMismatch) console.log(`Protected ${file} kept, but its outline differs from the normal sprite (${pixels(mismatched)}).`);
+console.log(`Picker sprites without a shiny (${without(catalogs.picker).length}): ${without(catalogs.picker).join(' ')}`);
+console.log(`League-only sprites without a shiny (${without(leagueOnly).length}): ${without(leagueOnly).join(' ')}`);
