@@ -20,6 +20,12 @@ export const GEN_FILL = Object.fromEntries(
 
 export const WORD_BADGE_MARGIN = 22;
 
+// Gen badges carry plain white text, as the type badges do. Gen V's right
+// half is near-white (#f0f0f0), so only its text keeps a dark outline.
+export function generationOutlined(gen: GenNumber): boolean {
+  return gen === 5;
+}
+
 export function generationLabel(gen: GenNumber): string {
   return t('favorites.axis.generation', { gen: ROMAN[gen] });
 }

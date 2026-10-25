@@ -4,7 +4,7 @@ import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry'
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import type { ExtraTypeAxis, GenNumber } from '../model/cells';
-import { AXIS_FILL, GEN_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generationLabel, type BadgeStops } from './badgeStyle';
+import { AXIS_FILL, GEN_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generationLabel, generationOutlined, type BadgeStops } from './badgeStyle';
 
 const OUTLINE_PER_FONT = 1.25 / 15;
 const OUTLINE_MIN_PX = 0.6;
@@ -26,6 +26,7 @@ function WordBadge({
   fill,
   units = TYPE_BADGE_W,
   split = false,
+  outlined = false,
   className,
   height,
   data,
@@ -34,6 +35,7 @@ function WordBadge({
   fill: string | BadgeStops;
   units?: number;
   split?: boolean;
+  outlined?: boolean;
   data: Record<`data-${string}`, string | number>;
 }) {
   const gradientId = `word-badge-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -96,7 +98,7 @@ function WordBadge({
         stroke={split ? '#d4d4d8' : undefined}
         strokeWidth={split ? EDGE : undefined}
       />
-      {split ? (
+      {outlined ? (
         <g opacity={0.85} aria-hidden>
           {OUTLINE_SPREAD.map((step) => (
             <g key={step} transform={`translate(${step * spread} 0)`}>
@@ -119,5 +121,5 @@ export function AxisBadge({ id, ...sizing }: Sizing & { id: ExtraTypeAxis }) {
 export function GenerationBadge({ gen, maxUnits, ...sizing }: Sizing & { gen: GenNumber; maxUnits?: number }) {
   useLocale();
   const units = Math.min(generationBadgeUnits(), maxUnits ?? Infinity);
-  return <WordBadge spoken={generationLabel(gen)} fill={GEN_FILL[gen]} units={units} split data={{ 'data-gen': gen }} {...sizing} />;
+  return <WordBadge spoken={generationLabel(gen)} fill={GEN_FILL[gen]} units={units} split outlined={generationOutlined(gen)} data={{ 'data-gen': gen }} {...sizing} />;
 }

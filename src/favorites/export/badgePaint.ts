@@ -15,7 +15,7 @@ export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeSt
 }
 
 export function drawWordBadge(ctx: CanvasRenderingContext2D, label: string,
-  paint: string | CanvasGradient, cx: number, edgeY: number, width: number, height: number, split = false): void {
+  paint: string | CanvasGradient, cx: number, edgeY: number, width: number, height: number, split = false, outlined = false): void {
   const scale = height / 40;
   const units = width / scale;
   const spoken = localeUppercase(label);
@@ -31,6 +31,8 @@ export function drawWordBadge(ctx: CanvasRenderingContext2D, label: string,
     ctx.strokeStyle = '#d4d4d8';
     ctx.lineWidth = scale;
     ctx.stroke();
+  }
+  if (outlined) {
     const outline = Math.max(fit.fontSize * (1.25 / 15) / 2, 0.6 / scale);
     const spread = outline * (1 - fit.scaleX);
     const x = Math.floor(left), y = Math.floor(top);
