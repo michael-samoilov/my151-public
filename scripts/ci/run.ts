@@ -34,7 +34,7 @@ async function main() {
     if (selection.effectiveMode !== 'docs') {
       await journal.stage('lint', 'npm', ['run', 'lint']);
       await journal.stage('unit', 'npm', ['test']);
-      for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
+      for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
         await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
       }
       await journal.stage('verify-harness-types', process.execPath, ['node_modules/typescript/bin/tsc', '-p', '.claude/skills/verify-my151/harness']);
