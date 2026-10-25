@@ -9,16 +9,24 @@ import {
 } from './constants';
 import { arrivalLevel } from './impliedLevels';
 
+/** A shiny Pokémon stays shiny through evolution, Mega Evolution, and Gigantamax, so the flag is the line's. */
 export interface PlacedLine {
   branch: number[];
   boundaries: number[];
   boundaryMode?: 'auto' | 'manual';
+  shiny?: true;
 }
 
 export interface CardCell {
   seat: number;
   pokemonId: number | null;
   isLegend: boolean;
+  shiny: boolean;
+}
+
+/** On a whole card, the star marks a shiny line once, on its first cell, and every shiny legend. */
+export function showsShinyStar(cell: CardCell, row: number): boolean {
+  return cell.shiny && (cell.isLegend || row === joinRow(cell.seat));
 }
 
 export function levelBoundaries(branch: number[]): number[] {
@@ -49,8 +57,8 @@ export function defaultBoundaries(branch: number[]): number[] {
   return boundaries;
 }
 
-export function makePlacedLine(branch: number[]): PlacedLine {
-  return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto' };
+export function makePlacedLine(branch: number[], shiny = false): PlacedLine {
+  return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto', ...(shiny ? { shiny: true } : null) };
 }
 
 export function effectiveBoundaries(line: PlacedLine): number[] {
@@ -88,6 +96,7 @@ export function setBoundary(line: PlacedLine, stage: number, row: number): numbe
 export interface LegendPick {
   pokemonId: number;
   seat: number;
+  shiny?: true;
 }
 
 export function deriveRow(
@@ -101,14 +110,17 @@ export function deriveRow(
     const line = lines[seat - 1];
     let pokemonId: number | null = null;
     let isLegend = false;
+    let shiny = false;
     const legend = legends.find((l) => l.seat === seat);
     if (row === BOSS_ROW && legend) {
       pokemonId = legend.pokemonId;
       isLegend = true;
+      shiny = legend.shiny === true;
     } else if (line && row >= joinRow(seat)) {
       pokemonId = line.branch[stageAt(line, row)];
+      shiny = line.shiny === true;
     }
-    cells.push({ seat, pokemonId, isLegend });
+    cells.push({ seat, pokemonId, isLegend, shiny });
   }
   return cells;
 }

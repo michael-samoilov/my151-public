@@ -11,7 +11,7 @@ const LAPRAS = [131];
 const RHYHORN = [111, 112, 464];
 
 function cardWith(lines: number[][]) {
-  return { ...emptyCard(), lines: lines.map(makePlacedLine) };
+  return { ...emptyCard(), lines: lines.map((branch) => makePlacedLine(branch)) };
 }
 
 function card() {

@@ -5,7 +5,7 @@ import { getAllPokemon, getEvolutionLine, branchEndingAt } from '../data/catalog
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { t } from '@/i18n';
-import { placedIds } from '../model/engine';
+import { placedIds, type LegendPick } from '../model/engine';
 import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
@@ -34,7 +34,24 @@ function sectionKey(card: number): string {
   return `slot-${card}`;
 }
 
+type ShinyRule = (switchOn: boolean) => boolean | 'keep';
+const followSwitch: ShinyRule = (on) => on;
+const onlyWhenOn: ShinyRule = (on) => (on ? true : 'keep');
+
+/**
+ * The shiny flag a tap gives, by what was tapped (a new pick, or a Pokémon the
+ * card already holds) and why the browser is open. Tapping a held line to
+ * replace or duplicate it is how a line changes look.
+ */
+const SHINY_FLAG: Record<'pick' | 'held', Record<BrowserPurpose, ShinyRule>> = {
+  pick: { lines: followSwitch, replace: followSwitch, signature: followSwitch, partner: followSwitch, legend: followSwitch },
+  held: { lines: followSwitch, replace: followSwitch, signature: onlyWhenOn, partner: followSwitch, legend: followSwitch },
+};
+
+const legendPick = (pokemonId: number, seat: number, shiny: boolean): LegendPick => (shiny ? { pokemonId, seat, shiny: true } : { pokemonId, seat });
+
 interface BridgeState extends BrowserStoreState {
+  shinyView: boolean;
   openFor: (card: number) => void;
   refresh: () => void;
   typeBeforeScope?: string[] | null;
@@ -79,6 +96,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     scopeFilterLockedHint: undefined,
     typeBeforeScope: null,
     standaloneTiles: false,
+    shinyView: false,
 
     openFor: (card) => {
       useFavoriteBrowserStore.getState().refreshFavorites();
@@ -132,21 +150,19 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       if (ids.length === 0) return;
       const card = cardIndex();
       const purpose = ui().browserPurpose;
+      const shiny = SHINY_FLAG.pick[purpose](get().shinyView) === true;
       const branch = branchEndingAt(ids[ids.length - 1], ids);
       if (purpose === 'legend') {
-        league().setLegend(card, {
-          pokemonId: branch[branch.length - 1],
-          seat: ui().targetSeat,
-        });
+        league().setLegend(card, legendPick(branch[branch.length - 1], ui().targetSeat, shiny));
         ui().closeBrowser();
       } else if (purpose === 'replace') {
-        league().replaceLine(card, ui().targetSeat, branch);
+        league().replaceLine(card, ui().targetSeat, branch, shiny);
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
         const before = league().cards[card]?.lines.length ?? 0;
-        league().placeBranch(card, line, 'front');
+        league().placeBranch(card, line, 'front', shiny);
         if ((league().cards[card]?.lines.length ?? 0) > before) fieldStage(card, 1, line, picked);
         league().setSignatureSeat(card, 1, picked);
         ui().closeBrowser();
@@ -154,13 +170,13 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
         const before = league().cards[card]?.lines.length ?? 0;
-        league().placeBranch(card, line);
+        league().placeBranch(card, line, 'end', shiny);
         const after = league().cards[card]?.lines.length ?? 0;
         if (after > before) fieldStage(card, after, line, picked);
-        league().setPartner(card, picked);
+        league().setPartner(card, picked, shiny);
         ui().closeBrowser();
       } else {
-        league().placeBranch(card, branch);
+        league().placeBranch(card, branch, 'end', shiny);
       }
       get().refresh();
     },
@@ -168,10 +184,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     removeEvoLine: (_sectionId, pokemonId) => {
       const card = cardIndex();
       const purpose = ui().browserPurpose;
+      const shiny = SHINY_FLAG.held[purpose](get().shinyView);
       if (purpose === 'legend') {
         const final = branchEndingAt(pokemonId).pop();
         if (final !== undefined) {
-          useLeagueStore.getState().setLegend(card, { pokemonId: final, seat: ui().targetSeat });
+          useLeagueStore.getState().setLegend(card, legendPick(final, ui().targetSeat, shiny === true));
         }
         ui().closeBrowser();
       } else if (purpose === 'replace') {
@@ -179,21 +196,26 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         const lines = useLeagueStore.getState().cards[card]?.lines ?? [];
         const held = lines.find((l) => l.branch.includes(pokemonId));
         const own = lines[seat - 1];
-        if (!own?.branch.includes(pokemonId)) {
-          useLeagueStore.getState().replaceLine(card, seat, held ? [...held.branch] : branchEndingAt(pokemonId));
+        if (own?.branch.includes(pokemonId)) {
+          useLeagueStore.getState().setLineShiny(card, seat, shiny === true);
+        } else {
+          useLeagueStore.getState().replaceLine(card, seat, held ? [...held.branch] : branchEndingAt(pokemonId), shiny === true);
         }
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         const seat =
           useLeagueStore.getState().cards[card]?.lines.findIndex((l) => l.branch.includes(pokemonId)) ?? -1;
-        if (seat >= 0) useLeagueStore.getState().setSignatureSeat(card, seat + 1, pokemonId);
+        if (seat >= 0) {
+          useLeagueStore.getState().setSignatureSeat(card, seat + 1, pokemonId);
+          if (shiny !== 'keep') useLeagueStore.getState().setLineShiny(card, seat + 1, shiny);
+        }
         ui().closeBrowser();
       } else if (purpose === 'partner') {
-        useLeagueStore.getState().setPartner(card, pokemonId);
+        useLeagueStore.getState().setPartner(card, pokemonId, shiny === true);
         ui().closeBrowser();
       } else {
         const held = useLeagueStore.getState().cards[card]?.lines.find((l) => l.branch.includes(pokemonId));
-        useLeagueStore.getState().placeBranch(card, held ? [...held.branch] : branchEndingAt(pokemonId));
+        useLeagueStore.getState().placeBranch(card, held ? [...held.branch] : branchEndingAt(pokemonId), 'end', shiny === true);
       }
       get().refresh();
     },
@@ -247,6 +269,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       }),
     setEvoLineSizeFilter: (evoLineSizeFilter) => set({ evoLineSizeFilter }),
     setMyDexFilter: (on) => set({ myDexFilter: on }),
+    setShinyView: (on) => set({ shinyView: on }),
     setScopeFilter: (on) =>
       set((s) => {
         if (on) {

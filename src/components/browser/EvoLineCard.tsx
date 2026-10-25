@@ -11,6 +11,9 @@ import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import { ShapeIcon } from '@/components/shared/ShapeIcon';
+import { shinySpriteUrl } from '@/lib/spriteUrl';
+import { NoShinyMark } from '@/components/shiny/ShinyMarks';
+import { NO_SHINY } from '@/components/shiny/shinyMarks';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -102,6 +105,8 @@ interface EvoLineGridProps {
   onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  /** Show every tile shiny, or faded under the no-shiny mark when it has no shiny. */
+  shinyView?: boolean;
   cols?: number;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
@@ -118,7 +123,7 @@ const GRID_CLASSES: Record<number, string> = {
   6: 'grid grid-cols-6 gap-x-0 gap-y-1',
 };
 
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, shinyView = false, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
   const spritePx = useTileSpritePx();
   const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -152,6 +157,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             onToggleRemoval={onToggleRemoval}
             shinyIds={shinyIds}
             spriteOverrides={spriteOverrides}
+            shinyView={shinyView}
             variant={variant}
             showGenBadges={showGenBadges}
             showShapeBadges={showShapeBadges}
@@ -168,7 +174,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
       }
     }
     return result;
-  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles, hideAssignedMark]);
+  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, shinyView, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles, hideAssignedMark]);
 
   const filler = (key: string, height: number) => (
     <div key={key} aria-hidden="true" style={{ gridColumn: '1 / -1', height }} />
@@ -204,6 +210,7 @@ interface EvoLineCardProps {
   onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  shinyView?: boolean;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
   showShapeBadges?: boolean;
@@ -233,7 +240,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, shinyView = false, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   useNamesVersion();
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
@@ -295,6 +302,8 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
         const isLast = i === members.length - 1;
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
         const showShapeBadge = showShapeBadges && (mutedIds?.has(pokemon.id) ?? false);
+        const shinySprite = shinyView ? shinySpriteUrl(pokemon.sprite) : null;
+        const noShiny = shinyView && !shinySprite;
 
         return (
           <div
@@ -369,9 +378,13 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                   displayLabel={label}
                   imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
+                    ?? shinySprite
                     ?? (shinyIds?.has(pokemon.id)
                       ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                       : pokemon.sprite)}
+                  spriteStyle={noShiny ? NO_SHINY.sprite : undefined}
+                  spriteOverlay={noShiny ? <NoShinyMark size="calc(var(--tile-sprite) * 0.28)" top="calc(var(--tile-sprite) * 0.05)"
+                    left={showGenBadge ? 'calc(var(--tile-sprite) * 0.37)' : 'calc(var(--tile-sprite) * 0.05)'} /> : undefined}
                   contentClassName={cn(
                     markedForRemoval
                       ? 'opacity-30'

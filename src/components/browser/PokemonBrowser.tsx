@@ -25,6 +25,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
+import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -135,6 +136,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const myDexIds = useBrowserStore((s) => s.myDexIds);
   const myDexSections = useBrowserStore((s) => s.myDexSections);
   const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
+  const shinyView = useBrowserStore((s) => s.shinyView) ?? false;
+  const setShinyView = useBrowserStore((s) => s.setShinyView);
   const restrictIds = useBrowserStore((s) => s.restrictIds);
   const scopeFilter = useBrowserStore((s) => s.scopeFilter);
   const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
@@ -889,6 +892,11 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           <span className="sr-only" aria-live="polite" aria-atomic="true">
             {tn('browser.results', announcedCount)}
           </span>
+          {setShinyView && (
+            <span className="shrink-0 self-stretch flex items-center pl-2 border-l border-border">
+              <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} compact={!isDesktop} testId="browser-shiny-toggle" />
+            </span>
+          )}
         </div>
       </div>
 
@@ -1211,6 +1219,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       onToggleStage={handleToggleStage}
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
+                      shinyView={shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1224,6 +1233,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       onToggleStage={handleToggleStage}
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
+                      shinyView={shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1252,6 +1262,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                     onToggleRemoval={handleToggleRemoval}
                     shinyIds={model.shinyIds}
                     spriteOverrides={model.spriteOverrides}
+                    shinyView={shinyView}
                     showGenBadges={showGenBadges}
                     windowed
                   />

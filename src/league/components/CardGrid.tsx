@@ -32,6 +32,7 @@ import {
   effectiveBoundaries,
   deriveRows,
   moveSeat as reorderLines,
+  showsShinyStar,
   signatureMember,
   stageAt,
 } from '../model/engine';
@@ -63,7 +64,9 @@ import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 import { CQ_ZOOM_VAR } from '../useFitScale';
-import { pokemonSpriteUrl } from '@/lib/spriteUrl';
+import { shinySpriteUrl } from '@/lib/spriteUrl';
+import { leagueSpriteUrl } from '../leagueSprite';
+import { ShinyStar } from '@/components/shiny/ShinyMarks';
 
 const ROW_H = 3.375;
 const BAND_H = 1.25;
@@ -288,16 +291,14 @@ function stageTint(pokemonId: number): string {
   return `${colour}2e`;
 }
 
-function formSprite(form: PowerupForm): string {
-  return pokemonSpriteUrl(form.id);
-}
-
-function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
   cardIndex: number;
   datum: CellDatum;
   columnHovered?: boolean;
   pokemonId: number | null;
   form: PowerupForm | null;
+  shiny: boolean;
+  star: boolean;
   powerupKind: PowerupKind | null;
   onPowerup?: (kind: PowerupKind) => void;
   held: boolean;
@@ -321,6 +322,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
     data: datum as unknown as Record<string, unknown>,
   });
   const pokemon = pokemonId !== null ? getPokemonById(pokemonId) : undefined;
+  const sprite = pokemon ? leagueSpriteUrl(pokemon.id, form, shiny) : undefined;
 
   const onTap = () => {
     if (!datum.filled) {
@@ -406,8 +408,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           // team under the second gym's name and colours until the new
           // sprites arrived. A new element paints nothing instead.
           <img
-            key={form ? formSprite(form) : pokemon.sprite}
-            src={form ? formSprite(form) : pokemon.sprite}
+            key={sprite}
+            src={sprite}
             alt={form ? powerupFormName(form) : spriteAlt(pokemon.name, pokemon.id)}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
@@ -415,6 +417,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         ) : (
           <EmptySlotBall />
         )}
+        {star && pokemon ? (
+          <ShinyStar
+            className="pointer-events-none absolute z-[14]"
+            // Beside the reset disc when the line shows one, since both take the top-left corner.
+            style={{ left: onReset ? '1.1125rem' : '0.1125rem', top: '-0.225rem', width: '0.8125rem', height: '0.8125rem' }}
+          />
+        ) : null}
       </button>
       {onPowerup && pokemon && (
         <>
@@ -635,7 +644,7 @@ function PowerupButton({ kind, symbol, active, onPress, side }: {
 }
 
 function SlotHalf({
-  testId, half, heading, fit, place, pokemon, onPick, onRemove,
+  testId, half, heading, fit, place, pokemon, shiny, onPick, onRemove,
 }: {
   testId: string;
   half: 'ace' | 'partner';
@@ -643,12 +652,14 @@ function SlotHalf({
   fit: HalfFit;
   place: { left: number; top: number } | { right: number; top: number };
   pokemon: ReturnType<typeof getPokemonById>;
+  shiny: boolean;
   onPick: () => void;
   onRemove: () => void;
 }) {
   useNamesVersion();
   const mirrored = half === 'partner';
   const nameLabel = pokemon ? pokemonLabel(pokemon.id, pokemon.name) : null;
+  const sprite = pokemon ? (shiny ? shinySpriteUrl(pokemon.sprite) : null) ?? pokemon.sprite : undefined;
   const formMarked = Boolean(nameLabel?.mark);
   const label = (
     <HeadRuns
@@ -715,12 +726,15 @@ function SlotHalf({
             <PokeballBg pokemon={pokemon} />
           </span>
           <img
-            key={pokemon.sprite}
-            src={pokemon.sprite}
+            key={sprite}
+            src={sprite}
             alt={spriteAlt(pokemon.name, pokemon.id)}
             className="relative z-[1] h-full w-full max-w-none"
             style={{ imageRendering: SPRITE_RENDERING }}
           />
+          {shiny ? (
+            <ShinyStar className="pointer-events-none absolute z-[14]" style={{ left: '0.0625rem', top: '0.0625rem', width: '1rem', height: '1rem' }} />
+          ) : null}
           <SlotRemove label={heading.remove} onRemove={onRemove} />
         </>
       ) : (
@@ -1105,6 +1119,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         fit={fit.ace}
         place={{ left: squares.ace.cx, top: squares.ace.cy - squares.ace.size / 2 }}
         pokemon={ace}
+        shiny={line?.shiny === true}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
       />
@@ -1115,6 +1130,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         fit={fit.partner}
         place={partnerPlace}
         pokemon={partner}
+        shiny={card.partnerShiny === true}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />
@@ -1616,11 +1632,13 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
   // in stages no row showed before. Powerup forms come too, because the
   // powerup rides its seat and a reorder hands it to another line. The
   // legendaries come with theirs, because a press swaps their sprite too.
-  const warmable = [...new Set([...card.lines.flatMap((line) => line.branch), ...legendsOf(card).map((l) => l.pokemonId)]
-    .flatMap((id) => {
-      const sprite = getPokemonById(id)?.sprite;
+  const warmable = [...new Set([
+    ...card.lines.flatMap((line) => line.branch.map((id) => ({ id, shiny: line.shiny === true }))),
+    ...legendsOf(card).map((l) => ({ id: l.pokemonId, shiny: l.shiny === true })),
+  ]
+    .flatMap(({ id, shiny }) => {
       const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
-      return [...(sprite ? [sprite] : []), ...forms.map(formSprite)];
+      return [null, ...forms].map((form) => leagueSpriteUrl(id, form, shiny));
     }))]
     .sort()
     .join('|');
@@ -1643,6 +1661,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
   const [held, setHeld] = useState<{
     ids: number[];
     form?: PowerupForm | null;
+    shiny: boolean;
     sprite: number;
     face: { width: number; height: number; radius: number; shadow: string; rendering?: React.CSSProperties['imageRendering'] };
   } | null>(null);
@@ -1672,11 +1691,12 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
         setHeld({
           ids: legend ? [legend.pokemonId] : [],
           form: formAt(powerupsAt(card, BOSS_ROW), BOSS_ROW, d.seat, legend?.pokemonId ?? null),
+          shiny: legend?.shiny === true,
           sprite,
           face,
         });
       } else if (grabbed) {
-        const column = { ids: grabbed.branch, sprite, face };
+        const column = { ids: grabbed.branch, shiny: grabbed.shiny === true, sprite, face };
         if (pickedUp) {
           setHeld(column);
           setPreviewMove({ from: d.seat, to: d.seat });
@@ -1967,6 +1987,8 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
                       tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
                       form={form}
+                      shiny={cell.shiny}
+                      star={showsShinyStar(cell, row)}
                       powerupKind={form ? previewPowerups(row).find((p) => p.seat === cell.seat)?.kind ?? null : null}
                       onPowerup={
                         !inHand && isPowerupRow(row) && cell.pokemonId !== null
@@ -2045,7 +2067,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
                 {heldPokemon.map((p) => (
                   <img
                     key={p.id}
-                    src={held.form ? formSprite(held.form) : p.sprite}
+                    src={leagueSpriteUrl(p.id, held.form ?? null, held.shiny)}
                     alt=""
                     className="max-w-none"
                     style={{ width: held.sprite, height: held.sprite, imageRendering: held.face.rendering ?? 'pixelated' }}

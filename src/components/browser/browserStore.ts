@@ -51,6 +51,8 @@ export interface BrowserStoreState {
   setScopeFilter?: (on: boolean) => void;
   scopeFilterLines?: number[][];
   standaloneTiles?: boolean;
+  shinyView?: boolean;
+  setShinyView?: (on: boolean) => void;
 }
 
 type BrowserStoreHook = UseBoundStore<Omit<StoreApi<BrowserStoreState>, 'setState'>>;
