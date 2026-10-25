@@ -1,5 +1,5 @@
 import type { ColorName, ShapeName } from '@/types/pokemon';
-import { GEN_FILL, generationLabel } from '@/favorites/components/badgeStyle';
+import { GEN_BADGE_FILL, generationLabel, generationOutlined, generationWord } from '@/favorites/components/badgeStyle';
 import type { GenNumber } from '@/favorites/model/cells';
 import { badgePaint, drawWordBadge } from '@/favorites/export/badgePaint';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from './typeBadgeGeometry';
@@ -60,7 +60,8 @@ export function drawShapeBadge(ctx: CanvasRenderingContext2D, shape: ShapeName, 
 
 export function drawGenerationBadge(ctx: CanvasRenderingContext2D, gen: GenNumber, x: number, y: number, height: number): void {
   const width = height * TYPE_BADGE_W / TYPE_BADGE_H;
-  drawWordBadge(ctx, generationLabel(gen), badgePaint(ctx, GEN_FILL[gen], x, y, width, height), x + width / 2, y + height / 2, width, height, true);
+  drawWordBadge(ctx, generationLabel(gen), badgePaint(ctx, GEN_BADGE_FILL[gen], x, y, width, height), x + width / 2, y + height / 2, width, height,
+    true, generationOutlined(gen), generationWord(gen));
 }
 
 export type { EvolutionRole } from './attributeBadgeStyle';

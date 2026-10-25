@@ -183,12 +183,14 @@ function scriptBand(c: CanvasRenderingContext2D, cohort: readonly string[]): Scr
   return band;
 }
 
+/** `extraEm` is drawn beside the text, not in it: a width in em of the font size. */
 export function typeBadgeFit(
   label: string,
   cohort: readonly string[] = [label],
   textWidth: number = TYPE_BADGE_TEXT_WIDTH,
+  extraEm = 0,
 ): TypeBadgeFit {
-  const cacheKey = `${label} @ ${cohort.join(' ')} @ ${textWidth}`;
+  const cacheKey = `${label} @ ${cohort.join(' ')} @ ${textWidth} @ ${extraEm}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
@@ -200,7 +202,7 @@ export function typeBadgeFit(
 
   c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
   let scaleX = TYPE_BADGE.textScaleX;
-  const natural = c.measureText(label).width * scaleX;
+  const natural = (c.measureText(label).width + extraEm * fontSize) * scaleX;
   if (natural > textWidth) {
     const needed = textWidth / natural;
     const condense = Math.max(needed, MIN_CONDENSE);
@@ -224,7 +226,7 @@ export function typeBadgeFit(
     // So the width is not predicted, it is checked. One extra `measureText`
     // makes the fit exact on whatever engine is actually running.
     c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
-    const painted = c.measureText(label).width;
+    const painted = c.measureText(label).width + extraEm * fontSize;
     if (painted * scaleX > textWidth) scaleX = textWidth / painted;
   }
 
@@ -233,12 +235,19 @@ export function typeBadgeFit(
   return fit;
 }
 
-export function typeBadgeNaturalWidth(label: string, cohort: readonly string[] = [label]): number | null {
+export function typeBadgeNaturalWidth(label: string, cohort: readonly string[] = [label], extraEm = 0): number | null {
   const c = measureContext();
   if (!c) return null;
   const { fontSize } = scriptBand(c, cohort);
   c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
-  return c.measureText(label).width * TYPE_BADGE.textScaleX;
+  return (c.measureText(label).width + extraEm * fontSize) * TYPE_BADGE.textScaleX;
+}
+
+export function typeBadgeTextWidth(text: string, fontSize: number): number {
+  const c = measureContext();
+  if (!c || !text) return 0;
+  c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
+  return c.measureText(text).width;
 }
 
 export function typeBadgeFontStack(): string {
