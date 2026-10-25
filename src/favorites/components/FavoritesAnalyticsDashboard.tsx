@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
+import { CHART_BAR_RED } from '@/components/analytics/butterflyRow';
 import { PickerBstHistogram } from './PickerBstHistogram';
 import { FavoritesDrillDown, type FavoritesDrillDownSelection } from './FavoritesDrillDown';
 import { colorChartIcon, shapeBadgeChartIcon, evolutionChartIcon } from '@/components/shared/attributeBadgeSvg';
@@ -63,7 +64,7 @@ function Distribution({ dimension, stats, onOpen, activeKey }: { dimension: Dime
     } else {
       icon = evolutionChartIcon(row.key as EvolutionRole);
     }
-    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation ?? 0, unavailable: row.deviation === null, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_BADGE_FILLS[row.key as ColorName] : '#dc2626', barOpacity: dimension === 'type' || dimension === 'color' ? 1 : undefined, barStroke: dimension === 'color' && row.key === 'white' ? '#a3a3a3' : undefined, icon }];
+    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation ?? 0, unavailable: row.deviation === null, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_BADGE_FILLS[row.key as ColorName] : CHART_BAR_RED, barOpacity: dimension === 'type' || dimension === 'color' ? 1 : undefined, barStroke: dimension === 'color' && row.key === 'white' ? '#a3a3a3' : undefined, icon }];
   }).sort((a, b) => Number(a.unavailable) - Number(b.unavailable) || (sort === 'label' ? a.label.localeCompare(b.label) : (sort === 'count' ? b.count - a.count : b.deviation - a.deviation) || a.label.localeCompare(b.label)));
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
   const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : dimension === 'color' ? t('chart.header.color') : undefined;

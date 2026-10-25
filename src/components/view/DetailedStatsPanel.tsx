@@ -6,7 +6,7 @@ import { useAnalytics, fullBaseline } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
 import { ButterflyChart } from '@/components/analytics/ButterflyChart';
-import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
+import { CHART_BAR_RED, rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
 import { t, useT } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { generationChartIcon } from '@/components/shared/attributeBadgeSvg';
@@ -16,8 +16,6 @@ import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import type { TypeName } from '@/types/pokemon';
 
 const STATS_TEXT = 'text-[0.625rem]';
-
-const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
 export const STATS_MIN_POKEMON = 100;
 
@@ -147,14 +145,14 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
   const tr = useT();
   const genRows = useMemo<ButterflyRow[]>(
     () =>
-      analytics.generationDeviation.map((d, i) => {
+      analytics.generationDeviation.map((d) => {
         const gen = d.generation;
         return {
           key: String(gen),
           label: tr('browser.genChip', { gen }),
           count: d.count,
           deviation: d.deviation,
-          color: GEN_COLORS[i % GEN_COLORS.length],
+          color: CHART_BAR_RED,
           icon: generationChartIcon(gen as GenNumber),
         };
       }),

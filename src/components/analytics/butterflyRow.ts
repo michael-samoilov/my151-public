@@ -1,3 +1,7 @@
+// Bars for rows with no colour of their own, such as generations and shapes,
+// in the Pokédex and favorite picker charts alike.
+export const CHART_BAR_RED = '#dc2626';
+
 export interface ButterflyRow {
   key?: string;
   label: string;
