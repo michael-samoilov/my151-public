@@ -11,7 +11,11 @@ color type. scripts/sprite-reencodes.json records the first 8 hex digits of the
 MD5 of each written file, so check-sprite-revisions.mjs can tell a re-encode
 from new art.
 
-Usage: python3 scripts/optimize-sprites.py [base-ref]
+Usage: python3 scripts/optimize-sprites.py [base-ref] [folder]
+
+`folder` limits the run to one folder under public/sprites, such as
+public/sprites/pokemon/shiny after scripts/fetch-shiny-sprites.ts adds files
+there. Commit the new files first and pass that commit as `base-ref`.
 """
 from collections import Counter
 from pathlib import Path
@@ -26,6 +30,9 @@ from PIL import Image
 
 root = Path(__file__).resolve().parent.parent
 base = sys.argv[1] if len(sys.argv) > 1 else 'origin/claude/pokedex-region-builder-AviYF'
+folder = (root / (sys.argv[2] if len(sys.argv) > 2 else 'public/sprites')).resolve()
+if not folder.is_relative_to(root / 'public/sprites'):
+    sys.exit(f'{folder} is not under public/sprites.')
 manifest_file = root / 'scripts/sprite-reencodes.json'
 # Other files pin these bytes: scripts/type-icons/game-calibration.json hashes
 # types/small, and public/sprites/export/README.md promises the original files.
@@ -37,11 +44,13 @@ SBIT_LENGTH = {0: 1, 2: 3, 3: 3, 4: 2, 6: 4}
 
 
 def chunks(data):
-    """Yield (type, whole chunk) pairs. Each whole chunk keeps its length and CRC."""
+    """Yield (type, whole chunk) pairs up to IEND. Each whole chunk keeps its length and CRC."""
     pos = 8
     while pos < len(data):
         length = struct.unpack('>I', data[pos:pos + 4])[0]
         yield data[pos + 4:pos + 8], data[pos:pos + 12 + length]
+        if data[pos + 4:pos + 8] == b'IEND':
+            return
         pos += 12 + length
 
 
@@ -82,7 +91,7 @@ production = {line.split('\t')[1]: line.split()[2] for line in listing.splitline
 manifest = json.loads(manifest_file.read_text()) if manifest_file.exists() else {}
 counts = Counter()
 before = after = 0
-for path in sorted((root / 'public/sprites').rglob('*.png')):
+for path in sorted(folder.rglob('*.png')):
     name = path.relative_to(root).as_posix()
     data = path.read_bytes()
     if name.startswith(PINNED):
