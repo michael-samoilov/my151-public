@@ -4,7 +4,7 @@ import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore'
 import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart } from './ButterflyChart';
-import { rowKey, type ButterflyRow } from './butterflyRow';
+import { CHART_BAR_RED, rowKey, type ButterflyRow } from './butterflyRow';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { getPokemonById, getPokemonByIds, getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
@@ -21,7 +21,6 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { StageDistributionChart } from './StageDistributionChart';
 
-const CHART_BAR_RED = '#ef4444';
 
 function alignHistograms(
   yours: { bin: string; pct: number }[],

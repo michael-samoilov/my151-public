@@ -1,3 +1,6 @@
+// Bars for rows with no colour of their own, such as generations and shapes.
+export const CHART_BAR_RED = '#ef4444';
+
 export interface ButterflyRow {
   key?: string;
   label: string;

@@ -3,10 +3,8 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { useAnalytics, fullBaseline, type computeAnalytics } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
-import { rowKey } from '@/components/analytics/butterflyRow';
+import { CHART_BAR_RED, rowKey } from '@/components/analytics/butterflyRow';
 import type { TypeName } from '@/types/pokemon';
-
-const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
 export interface StatsTypeDatum { type: TypeName; label: string; count: number; deviation: number; color: string }
 export interface StatsGenDatum { gen: number; count: number; deviation: number; color: string }
@@ -74,11 +72,11 @@ export function detailedStatsData(
           .map((r) => ({ type: rowKey(r) as TypeName, label: r.label, count: r.count, deviation: r.deviation, color: r.color }));
 
   const genData: StatsGenDatum[] = analytics.generationDeviation
-    .map((d, i) => ({
+    .map((d) => ({
       gen: d.generation,
       count: d.count,
       deviation: d.deviation,
-      color: GEN_COLORS[i % GEN_COLORS.length],
+      color: CHART_BAR_RED,
     }))
     .sort((a, b) => a.gen - b.gen);
 
