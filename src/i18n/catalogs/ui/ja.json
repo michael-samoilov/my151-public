@@ -803,6 +803,7 @@
   "browser.scope": "範囲",
   "browser.search.clear": "検索をクリア",
   "browser.search.placeholder": "名前か番号で検索",
+  "browser.search.placeholderShort": "検索",
   "browser.sheet.archetypes": "アーキタイプ",
   "browser.sheet.classification": "分類",
   "browser.sheet.color": "色",

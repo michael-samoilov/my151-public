@@ -803,6 +803,7 @@
   "browser.scope": "범위",
   "browser.search.clear": "검색 지우기",
   "browser.search.placeholder": "이름 또는 번호",
+  "browser.search.placeholderShort": "검색",
   "browser.sheet.archetypes": "아키타입",
   "browser.sheet.classification": "분류",
   "browser.sheet.color": "색상",

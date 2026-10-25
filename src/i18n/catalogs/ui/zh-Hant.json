@@ -803,6 +803,7 @@
   "browser.scope": "範圍",
   "browser.search.clear": "清除搜尋",
   "browser.search.placeholder": "名稱或編號",
+  "browser.search.placeholderShort": "搜尋",
   "browser.sheet.archetypes": "原型",
   "browser.sheet.classification": "分類",
   "browser.sheet.color": "顏色",

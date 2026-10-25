@@ -141,6 +141,7 @@ export const enUi = {
   'browser.scope': 'Scope',
   'browser.search.clear': 'Clear search',
   'browser.search.placeholder': 'Search by name or number...',
+  'browser.search.placeholderShort': 'Search',
   'browser.sheet.archetypes': 'Archetypes',
   'browser.sheet.classification': 'Classification',
   'browser.sheet.color': 'Color',

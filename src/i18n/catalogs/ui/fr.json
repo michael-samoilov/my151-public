@@ -826,6 +826,7 @@
   "browser.scope": "Portée",
   "browser.search.clear": "Effacer la recherche",
   "browser.search.placeholder": "Nom ou numéro",
+  "browser.search.placeholderShort": "Rechercher",
   "browser.sheet.archetypes": "Archétypes",
   "browser.sheet.classification": "Catégorie",
   "browser.sheet.color": "Couleur",

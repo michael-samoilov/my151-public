@@ -857,7 +857,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onCompositionStart={() => setComposingFrom(searchQuery)}
               onCompositionEnd={() => setComposingFrom(null)}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('browser.search.placeholder')}
+              placeholder={t(setShinyView ? 'browser.search.placeholderShort' : 'browser.search.placeholder')}
               aria-label={t('browser.search.placeholder')}
               className="pl-9 pr-9"
             />

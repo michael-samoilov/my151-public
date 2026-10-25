@@ -826,6 +826,7 @@
   "browser.scope": "Ambito",
   "browser.search.clear": "Cancella ricerca",
   "browser.search.placeholder": "Nome o numero",
+  "browser.search.placeholderShort": "Cerca",
   "browser.sheet.archetypes": "Archetipi",
   "browser.sheet.classification": "Categoria",
   "browser.sheet.color": "Colore",
