@@ -8,6 +8,7 @@ import type { FavoritesSnapshot } from './snapshot';
 import { drawExportButterfly, drawExportStatsTitle, type IconDrawer } from '@/lib/exportButterfly';
 import { drawExportHistogram } from '@/lib/exportStats';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { CHART_BAR_RED } from '@/components/analytics/butterflyRow';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { drawColorBadge, drawShapeBadge, drawEvolutionBadge, type EvolutionRole } from '@/lib/drawAttributeBadge';
 import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
@@ -41,7 +42,7 @@ function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCondition
  function card(d:Dimension,x:number,y:number,h:number){
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];
-  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,unavailable:row.expected===0,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:'#dc2626',barOpacity:d==='type'||d==='color'?1:undefined,barStroke:d==='color'&&row.key==='white'?'#a3a3a3':undefined,icon:rowIcon(d,row.key,images)}));
+  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,unavailable:row.expected===0,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:CHART_BAR_RED,barOpacity:d==='type'||d==='color'?1:undefined,barStroke:d==='color'&&row.key==='white'?'#a3a3a3':undefined,icon:rowIcon(d,row.key,images)}));
   const rowHeight=Math.min(28,(h-100)/rows.length);
   ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
   drawExportButterfly(ctx,20,36,rows,rowHeight,1,headers()[d],true,{alignBaselines:true,fixedIndexDomain:pickerIndexDomain(rows)});
