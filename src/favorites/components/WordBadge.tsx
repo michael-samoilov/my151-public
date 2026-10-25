@@ -4,7 +4,7 @@ import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry'
 import { typeBadgeFit, typeBadgeTextWidth } from '@/lib/typeBadgeFit';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import type { ExtraTypeAxis, GenNumber } from '../model/cells';
-import { AXIS_FILL, GEN_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generationLabel, generationOutlined, generationWord, type BadgeStops, type GenerationWord } from './badgeStyle';
+import { AXIS_FILL, GEN_BADGE_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generationLabel, generationOutlined, generationWord, type BadgeStops, type GenerationWord } from './badgeStyle';
 
 const OUTLINE_PER_FONT = 1.25 / 15;
 const OUTLINE_MIN_PX = 0.6;
@@ -146,6 +146,6 @@ export function AxisBadge({ id, ...sizing }: Sizing & { id: ExtraTypeAxis }) {
 export function GenerationBadge({ gen, maxUnits, ...sizing }: Sizing & { gen: GenNumber; maxUnits?: number }) {
   useLocale();
   const units = Math.min(generationBadgeUnits(), maxUnits ?? Infinity);
-  return <WordBadge spoken={generationLabel(gen)} numeral={generationWord(gen)} fill={GEN_FILL[gen]} units={units} split
+  return <WordBadge spoken={generationLabel(gen)} numeral={generationWord(gen)} fill={GEN_BADGE_FILL[gen]} units={units} split
     outlined={generationOutlined(gen)} data={{ 'data-gen': gen }} {...sizing} />;
 }

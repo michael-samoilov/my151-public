@@ -19,6 +19,21 @@ export const GEN_FILL = Object.fromEntries(
   Object.entries(GEN_STOPS).map(([gen, stops]) => [gen, stops.map((s) => [parseFloat(s.offset) / 100, s.color] as const)]),
 ) as unknown as Record<GenNumber, BadgeStops>;
 
+// The badge's white text has no outline (Gen V aside), so its palest
+// segments are a shade darker than the discs'. White text reads on each at
+// least as well as on the Flying type badge, 2.08:1.
+const BADGE_SHADE: Record<string, string> = {
+  '#C0C0C0': '#B3B3B3',
+  '#7FC8E8': '#75BDDD',
+  '#AACCEE': '#96B7D9',
+  '#FFAACC': '#EF9BBD',
+  '#F5A623': '#F2A31E',
+};
+
+export const GEN_BADGE_FILL = Object.fromEntries(
+  Object.entries(GEN_FILL).map(([gen, stops]) => [gen, stops.map(([offset, color]) => [offset, BADGE_SHADE[color] ?? color] as const)]),
+) as unknown as Record<GenNumber, BadgeStops>;
+
 export const WORD_BADGE_MARGIN = 22;
 
 // Gen badges carry plain white text, as the type badges do. Gen V's right
