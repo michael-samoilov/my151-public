@@ -21,3 +21,15 @@ for number, label in enumerate(['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'
         x += advance - .4
     result[str(number)] = pen.getCommands()
 (root / 'src/favorites/fonts/roman-disc-paths.json').write_text(json.dumps(result, indent=2) + '\n')
+
+# Single glyphs in font units, y down from the baseline, for gen badges that
+# set the numeral at any size beside text.
+upm = font['head'].unitsPerEm
+letters = {}
+for char in 'IVX':
+    name = font.getBestCmap()[ord(char)]
+    pen = SVGPathPen(glyphs)
+    glyphs[name].draw(TransformPen(pen, (1, 0, 0, -1, 0, 0)))
+    letters[char] = {'advance': font['hmtx'][name][0], 'd': pen.getCommands()}
+badge = {'capHeight': font['OS/2'].sCapHeight, 'tracking': round(-.4 / 15 * upm, 3), 'glyphs': letters}
+(root / 'src/favorites/fonts/roman-badge-glyphs.json').write_text(json.dumps(badge, indent=2) + '\n')

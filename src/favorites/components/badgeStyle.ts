@@ -1,9 +1,10 @@
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { localeUppercase, t } from '@/i18n';
-import { TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
+import { localeUppercase, raw, t } from '@/i18n';
+import { TYPE_BADGE, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
 import { typeBadgeNaturalWidth } from '@/lib/typeBadgeFit';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import { ROMAN, type ExtraTypeAxis, type GenNumber } from '../model/cells';
+import romanGlyphs from '../fonts/roman-badge-glyphs.json';
 
 export type BadgeStops = readonly (readonly [number, string])[];
 
@@ -30,16 +31,41 @@ export function generationLabel(gen: GenNumber): string {
   return t('favorites.axis.generation', { gen: ROMAN[gen] });
 }
 
+// The numeral is drawn in the gen discs' Noto Sans Bold outlines, between
+// the label's text, which stays in the badge font.
+export type GenerationWord = {
+  before: string;
+  after: string;
+  numeral: { d: string; x: number }[];
+  /** Font units to em, so the numeral caps match the badge text caps. */
+  scale: number;
+  /** Numeral width in em. */
+  width: number;
+};
+
+export function generationWord(gen: GenNumber): GenerationWord {
+  const [before, after = ''] = raw('favorites.axis.generation').split('{gen}');
+  const scale = TYPE_BADGE.capHeightRatio / romanGlyphs.capHeight;
+  let x = 0;
+  const numeral = [...ROMAN[gen]].map((letter) => {
+    const glyph = romanGlyphs.glyphs[letter as keyof typeof romanGlyphs.glyphs];
+    const at = x;
+    x += glyph.advance + romanGlyphs.tracking;
+    return { d: glyph.d, x: at };
+  });
+  return { before: localeUppercase(before), after: localeUppercase(after), numeral, scale, width: (x - romanGlyphs.tracking) * scale };
+}
+
 let unitsCache: { key: string; units: number } | null = null;
 
 export function generationBadgeUnits(): number {
-  const labels = ([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((gen) => localeUppercase(generationLabel(gen)));
+  const words = ([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map(generationWord);
   const cohort = localeTypeLabels();
   // Keyed by the font state too: a width measured against the fallback font
   // is thrown away once the webfont arrives.
-  const key = `${labels.join('|')}|${typeof document !== 'undefined' ? document.fonts?.status : ''}`;
+  const key = `${words.map((word) => word.before + word.after).join('|')}|${typeof document !== 'undefined' ? document.fonts?.status : ''}`;
   if (unitsCache?.key === key) return unitsCache.units;
-  const widest = Math.max(...labels.map((label) => typeBadgeNaturalWidth(label, cohort) ?? 0));
+  const widest = Math.max(...words.map((word) => typeBadgeNaturalWidth(word.before + word.after, cohort, word.width) ?? 0));
   const units = Math.max(TYPE_BADGE_W, Math.ceil(widest + 2 * WORD_BADGE_MARGIN + 2));
   unitsCache = { key, units };
   return units;

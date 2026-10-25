@@ -22,6 +22,11 @@ mobile, desktop, origin markers or native exports. Numeral outlines retain the
 existing 15-unit font size, −0.4-unit tracking and 1.25-unit rounded stroke.
 The baseline uses the original Linux text's measured 21.5-unit baseline.
 
+Gen badges draw their numeral from the same font, so it matches the discs.
+`roman-badge-glyphs.json` holds the single I, V and X outlines in font units,
+with their advances and the disc tracking. The badge scales them so their cap
+height matches the badge text's cap height.
+
 Regenerate the geometry from the bundled font, without network access:
 
 ```sh
