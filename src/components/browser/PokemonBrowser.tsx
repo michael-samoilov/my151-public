@@ -1,12 +1,10 @@
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
-import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { startTransition, useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
-import { useFilteredPokemonGrouped, getAllPokemon, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
+import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
 import { mergeEvolutionBranches } from './chainMerge';
 import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { readFavoritePickerIds } from './favoritePickerBridge';
@@ -75,14 +73,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   deferRows?: boolean;
 } = {}) {
   const searchQuery = useBrowserStore((s) => s.searchQuery);
-  const namesVersion = useNamesVersion();
-  const [formIndicatorsOnly, setFormIndicatorsOnly] = useState(() => PREVIEW_FEATURES && typeof location !== 'undefined'
-    && new URLSearchParams(location.search).get('form-indicators') === '1');
-  const indicatorIds = useMemo(() => {
-    void namesVersion;
-    if (!formIndicatorsOnly) return new Set<number>();
-    return new Set((dataSource?.pokemon ?? getAllPokemon()).filter(mon => pokemonLabel(mon.id, mon.name).mark).map(mon => mon.id));
-  }, [dataSource, namesVersion, formIndicatorsOnly]);
   /**
    * The text as it stood when an IME began composing, or null when nothing is
    * being composed.
@@ -335,13 +325,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const restrictToIds = useMemo(() => {
     const active: Set<number>[] = [];
     if (restrictIds) active.push(restrictIds);
-    if (formIndicatorsOnly) active.push(indicatorIds);
     if (favoritesFilter) active.push(favoriteIds);
     if (myDexFilter && myDexIds) active.push(myDexIds);
     if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
     if (active.length === 0) return undefined;
     return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
-  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds, formIndicatorsOnly, indicatorIds]);
+  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds]);
 
   const filterOptions = useMemo(() => ({
     dataSource,
@@ -528,7 +517,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
       if (sub.lines) {
         const drawn = sub.lines
-          .map((line) => line.map((id) => lookupPokemon(id)).filter((p): p is Pokemon => !!p && (!standaloneTiles || !formIndicatorsOnly || indicatorIds.has(p.id))))
+          .map((line) => line.map((id) => lookupPokemon(id)).filter((p): p is Pokemon => !!p))
           .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
           .map((members) => {
             let gen = Infinity;
@@ -553,7 +542,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       if (matching.length === 0) continue;
       if (claimedPokemonIds) {
         matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).flatMap((group) => {
-          const members = group.members.filter(member => matchesMember(subIdSet, member.id) && (!formIndicatorsOnly || indicatorIds.has(member.id)) && !claimedPokemonIds.has(member.id));
+          const members = group.members.filter(member => matchesMember(subIdSet, member.id) && !claimedPokemonIds.has(member.id));
           for (const member of members) claimedPokemonIds.add(member.id);
           return members.length > 0 ? [{ ...group, members }] : [];
         });
@@ -615,7 +604,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       }
     }
     return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles, lookupPokemon, deferredOptions.dataSource, formIndicatorsOnly, indicatorIds]);
+  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles, lookupPokemon, deferredOptions.dataSource]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const shownCount = useMemo(() => {
     if (!scopedToLines && !standaloneTiles) return totalCount;
@@ -640,7 +629,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
   const resultsScrollRef = useRef<HTMLDivElement>(null);
-  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${deferredOptions.search}-${evoSizeKey}-${formIndicatorsOnly}`;
+  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${deferredOptions.search}-${evoSizeKey}`;
   useEffect(() => {
     resultsScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [resultsResetKey]);
@@ -903,10 +892,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
-          {PREVIEW_FEATURES && <button type="button" data-i18n-exempt="preview-debug" data-filter-chip="form-indicators"
-            aria-pressed={formIndicatorsOnly} onClick={() => setFormIndicatorsOnly(value => !value)}
-            className={cn('shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border', formIndicatorsOnly ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground')}
-          >Form indicators</button>}
           {favoritesFilter ? (
             <FilterChip
               label={<FavoriteLabel count={favoriteIds.size} />}

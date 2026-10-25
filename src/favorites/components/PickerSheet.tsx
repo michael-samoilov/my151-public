@@ -3,10 +3,10 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
-import { t as translate, typeLabel, useNamesVersion, useT } from '@/i18n';
+import { t as translate, typeLabel, useT } from '@/i18n';
 import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { PREVIEW_FEATURES, PRODUCTION_DEPLOY } from '@/lib/demoMode';
+import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { cellKey, isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
@@ -28,7 +28,6 @@ import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
 import { isShinyCell, pickerShinySprite } from '../model/shiny';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { coordinateLabel } from './coordinatePresentation';
-import { pickerLabelOf } from './spriteLabel';
 import { generationLabel } from './badgeStyle';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
@@ -84,9 +83,6 @@ export function PickerSheet({
     return () => cancelAnimationFrame(frame);
   }, [autoFocus, type, gen]);
   const t = useT();
-  const namesVersion = useNamesVersion();
-  const [formIndicatorsOnly, setFormIndicatorsOnly] = useState(() => PREVIEW_FEATURES && typeof location !== 'undefined'
-    && new URLSearchParams(location.search).get('form-indicators') === '1');
   const desktop = useIsDesktop();
   const viewportPx = useLayoutViewportCssPx();
   const spritePx = pickerSpriteCssPx(viewportPx);
@@ -112,7 +108,7 @@ export function PickerSheet({
     else setPacking(null);
   }
 
-  const eligibleMons = useMemo(() => {
+  const mons = useMemo(() => {
     if (kind === 'pointer') {
       return pointerPool(type, gen, fills)
         .map(getPickerMon)
@@ -120,10 +116,6 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
-  const mons = useMemo(() => {
-    void namesVersion;
-    return formIndicatorsOnly ? eligibleMons.filter(mon => pickerLabelOf(mon).mark) : eligibleMons;
-  }, [eligibleMons, formIndicatorsOnly, namesVersion]);
   const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
@@ -176,10 +168,6 @@ export function PickerSheet({
     />
   ) : (
     <div ref={bodyRef} id="favorites-selector" className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
-      {PREVIEW_FEATURES && <div className="px-2 pb-2"><button type="button" data-i18n-exempt="preview-debug"
-        aria-pressed={formIndicatorsOnly} onClick={() => setFormIndicatorsOnly(value => !value)}
-        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium cursor-pointer ${formIndicatorsOnly ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground'}`}
-      >Form indicators</button></div>}
       {empty && currentId == null ? (
         <EmptyState testId="favorites-picker-empty" className="max-w-[17rem] px-5" {...empty} />
       ) : (
