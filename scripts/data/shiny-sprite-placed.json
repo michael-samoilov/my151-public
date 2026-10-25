@@ -1,7 +1,240 @@
 {
   "offset": "[dy, dx] in our pixels: after an integer downscale by scale, shift the source down dy rows and right dx columns onto our normal sprite's canvas.",
   "archive": "Generation_9_Pack_v3.3.8.rar is the Generation 9 Resource Pack, https://eeveeexpo.com/resources/1101/. Extract it so that <cache>/gen9pack/x/Graphics/Pokemon holds its Front and Front shiny folders.",
+  "shinyArtists": "Who drew the shiny, as src/data/spriteAttribution.json credits it: 'Game Freak' for official art, empty when no source names an artist. `artists` drew the normal sprite.",
+  "sha256": "SHA-256 of the normal and shiny source files the harvest reads (for a Sta.sh page, the image it shows; for a GIF frame, the whole GIF), and of the shiny file we ship.",
   "placed": [
+    {
+      "file": "59",
+      "name": "Arcanine",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/59.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/59.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "4e4ee7f1f2417f9cb14094cc2acabc5705d94be3ff1ca26c34dbcad18df1d55f",
+        "shiny": "ac53700f808bd4198e0c6ce079eb77283a925831b57b44121d4433091149709d",
+        "placed": "77de1fc624fc34023d82c550507fbb631bb6795ec6052e87c3d6599f8656267f"
+      }
+    },
+    {
+      "file": "495",
+      "name": "Snivy",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/495.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/495.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "19406f6694bb4ebdaba4c152a982b6a900394cfe9beaa866d7ba7e883b7a6098",
+        "shiny": "bcd403ee736ac3e04170322d11a10a11863e34fa0c96a3f19af0315a3e1dcc10",
+        "placed": "15dd610ef561b37696c5d0b0bde3c3cfb920d28788011175914dd9c5a36f25c2"
+      }
+    },
+    {
+      "file": "496",
+      "name": "Servine",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/496.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/496.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "b7264569870335bc58cd5ab73eb13993d02ab6481c5e9f8012e974f8d1109d4c",
+        "shiny": "4ec6363bdaa801ac2706e65d9cf107a36f2936751d649d7a76dc405ae4a2ba07",
+        "placed": "0eb6b049ddcefa38b328c9493cdd598a82722458b622666192b7af7d31978265"
+      }
+    },
+    {
+      "file": "497",
+      "name": "Serperior",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/497.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/497.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "421d1b3658edf174fc90b021ab2f12f5183a25959fd4299ea3a289c2bc3c73b1",
+        "shiny": "4f93254bfe0e61f4c814a4ba31b1bd13d19b8ede618b575fd35f5a58ad3c55e4",
+        "placed": "4de091cc18c3244dcf81e0f5782df14f0d8d84c4ceb38754828077d6dcf40cd7"
+      }
+    },
+    {
+      "file": "498",
+      "name": "Tepig",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/498.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/498.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "bfe1995e97daddd42bcd6125a5e2ae848dccd808077d7bee1b6c5ae1e7f30065",
+        "shiny": "8db9fabc45077d219772d7299a4ed4a5f81e708f07367c83a25f498ac6d6224f",
+        "placed": "8969b3fdb63f7a14086b3f7f17d99f8fe9793ca74ee741d3603b9f131d16225b"
+      }
+    },
+    {
+      "file": "499",
+      "name": "Pignite",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/499.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/499.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "bf2fba10c1dc6e16a7409014affd0dfb8d27688da281b086483493a86754539b",
+        "shiny": "a24d015244bb9c8074d3d316cdd6198aa0ad54115ffffa18facc800784ab1486",
+        "placed": "f5c40ac35bd0c575898b445a0e121d93e638e3e3551af6e956cf7ae9b9092a3f"
+      }
+    },
+    {
+      "file": "500",
+      "name": "Emboar",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/500.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/500.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "233041c17989869c2ae800f95ae21305c9fcf45c6b4607be1dbe529eed7bea36",
+        "shiny": "8e8c14d27b65ecdc3aae75065c12132a0cc1044f59c17e47ea7e474461161b62",
+        "placed": "5f5fcdd030095acb863e41b88ea995eaae0c01de735e4fb6408d47b2be522fa0"
+      }
+    },
+    {
+      "file": "501",
+      "name": "Oshawott",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/501.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/501.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "895731b6910334e5c79f777a4021639df85c7f95ac3e527f0fa64db96ce8d31b",
+        "shiny": "7730ac36eab6d089f29929178439246a8e504d79178b69162e824924f92c2d47",
+        "placed": "515ac70b660dbaaab6a7e747c01e7fcfe2db1b95b9a032ccbb9fcb5dc11e512b"
+      }
+    },
+    {
+      "file": "502",
+      "name": "Dewott",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/502.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/502.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "b828a1a6ee0fe87669fb9658d7d6abaf74e13ea31f2b4c0d127a306bc039a4a3",
+        "shiny": "40c305d97ce3a4c157ac6c380f0ae6b7c62fd58d9b26cbb07cfc3665b2875805",
+        "placed": "9f0cee80697a9e0b7486fce1195033ebb948b59c0cd07cca25cb074848ad84ff"
+      }
+    },
+    {
+      "file": "503",
+      "name": "Samurott",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/503.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/503.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "6e9daa7a8003f343f40b765b69f55b500639850d3a3e5e3a4ca533889719b120",
+        "shiny": "3fed708eef1ac482ce1da1ce3f7450cc900229305265c529eccbe8aa76482563",
+        "placed": "10fd15965ca1f9204c65ac4691052b96f3aed03895ccb6c444164effbb4bcd6b"
+      }
+    },
+    {
+      "file": "546",
+      "name": "Cottonee",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/546.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/546.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "f5697ee85fd823e545dfdee1fed68b0f0cd8693c60dce8c8b0f6363c02690142",
+        "shiny": "4ecc1c13f2a096179cd56c5b68e949443bc18dc6322b8e0736b0ff73e4194153",
+        "placed": "e049b82693107760224c6fa49514db42037846e7b77ef4399dbd3d54702e103d"
+      }
+    },
     {
       "file": "666",
       "name": "Vivillon (Meadow Pattern)",
@@ -19,7 +252,184 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "bf43759325d2a0e5e40240686e33ddd8813cc18503a77fe755e2252f92c7cf44",
+        "shiny": "385aa791b3a64b77c7ef22d68faa252c615ca45134402630a2526353b3198424",
+        "placed": "385aa791b3a64b77c7ef22d68faa252c615ca45134402630a2526353b3198424"
+      }
+    },
+    {
+      "file": "676",
+      "name": "Furfrou (Natural Form)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/FURFROU.png",
+      "scale": 2,
+      "offset": [
+        0,
+        1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "04e3b7f65623366bf0e27cb623c2eb567ea50998139f581ac2edb2dd5d35fd44",
+        "shiny": "4329dad28a336e50725a9bf9e1d368166210bac5d83c4ca73166b9f852b54824",
+        "placed": "2e5049f47a351b6d6fe70e3cd691e15088dc191a0af14b25a5c74f1467822090"
+      }
+    },
+    {
+      "file": "778",
+      "name": "Mimikyu",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/smimikyu.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/smimikyu-s.png",
+      "scale": 1,
+      "offset": [
+        24,
+        28
+      ],
+      "source": "Smogon Sprite Project (smogon/sprites)",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "a50b9d3bb018cbca5a4704ebc5f96aa57920aac80cbcbe1d5709ca5afe2bcc8e",
+        "shiny": "677dab6aa90700e3b12210734cff8938acb09acddbd2a7598aea5cf65d7e663c",
+        "placed": "bb93a478ab5122aac29a07afe639831a61a84ffbda06176291a58ac9feeb8cd6"
+      }
+    },
+    {
+      "file": "807",
+      "name": "Zeraora",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/szeraora.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/szeraora-s.png",
+      "scale": 1,
+      "offset": [
+        5,
+        7
+      ],
+      "source": "Smogon Sprite Project (smogon/sprites)",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "08765aef7cb2081ab4a4327e83a0e00e48d67b5829ab43d455986f7ef8e233a3",
+        "shiny": "25e3cf02b3061ad172f16a5f794356ed93d219f9594b7ed5de6c974133dd0bfb",
+        "placed": "f4633c30ec4c172e9fd911c254faaede6700802d0dd20b5a97bd886e2be32e31"
+      }
+    },
+    {
+      "file": "910",
+      "name": "Crocalor",
+      "normal": "https://www.smogon.com/forums/attachments/910-png.653066/",
+      "shiny": "https://www.smogon.com/forums/attachments/910s-png.653067/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "7ebafacff3ef2ad53d135f0462d300611717b8206938497201130be9c6c734ff",
+        "shiny": "b52b5658674e22b46a9ae66fc328870be4ae6d63053b9245b136bb3cb0c3f405",
+        "placed": "360c6f2264103f567585d03535b42ce7305421f3f24037ae426d9ee7923d941e"
+      }
+    },
+    {
+      "file": "924",
+      "name": "Tandemaus",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/standemaus.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/standemaus-s.png",
+      "scale": 1,
+      "offset": [
+        26,
+        16
+      ],
+      "source": "Smogon Sprite Project (smogon/sprites)",
+      "artists": [
+        "Travis"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "3b2881c0243ce288fcb4c03ab0c87cd1e863cda9fa21bba3c4bcd362b818bdd9",
+        "shiny": "7e43da20e21bdd6e3a9e3fc3da3c43a7c834e6f0bb7a9c17784e8ddb6524e63e",
+        "placed": "1bd9ec0a0821c4287af9a05162d17f0f6f8087b392302e9ca33564231f5af1df"
+      }
+    },
+    {
+      "file": "928",
+      "name": "Smoliv",
+      "normal": "https://play.pokemonshowdown.com/sprites/gen5/smoliv.png",
+      "shiny": "https://play.pokemonshowdown.com/sprites/gen5-shiny/smoliv.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project via Pokémon Showdown",
+      "artists": [
+        "Katten"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "34aae4e60b6be400efb70613a3e4be389fcf487a6a87c621ec66956f99add0f2",
+        "shiny": "531ea65a85b9ea0b4f565f360657954e0e7d99f6e05dfb3bccb18718c64f1b40",
+        "placed": "531ea65a85b9ea0b4f565f360657954e0e7d99f6e05dfb3bccb18718c64f1b40"
+      }
+    },
+    {
+      "file": "1003",
+      "name": "Ting-Lu",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/TINGLU.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/TINGLU.png",
+      "scale": 2,
+      "offset": [
+        0,
+        -1
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "7feec25482dd08332650c33638e8d7f64e8d856e8bea87fff17d23934a22f282",
+        "shiny": "853e5047de76f5e54594b79fa08ff6f0e20e984a78393dd57fd4f423d3356d8e",
+        "placed": "6418eabc1d3d6a92e72ce4be12e20f99a466ed275ba66aa46a71f3338bd75bb4"
+      }
+    },
+    {
+      "file": "1017",
+      "name": "Ogerpon (Teal Mask)",
+      "normal": "https://sta.sh/06ggsxxo7i8",
+      "shiny": "https://sta.sh/01b21485f3le",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "7f2c790ce4f5c291317f3288108d9eb3900b41d0d8b5176389ce32da7a42fbc1",
+        "shiny": "62a4928a14912878853fa611e1a28ac45406373e206bcc60e01834893dc7c20e",
+        "placed": "af4e9de79eae6439538189650c8e417bb8ad2b724a46789759e3d5071ddcc172"
+      }
     },
     {
       "file": "10065",
@@ -36,13 +446,22 @@
         "TrainerSplash",
         "The Cynical Poet"
       ],
-      "canon": "https://www.serebii.net/pokedex-xy/254.shtml"
+      "canon": "https://www.serebii.net/pokedex-xy/254.shtml",
+      "shinyArtists": [
+        "TrainerSplash",
+        "The Cynical Poet"
+      ],
+      "sha256": {
+        "normal": "c246e1da887ba942ce4f27dd964de05022d43c600c0664a284318ebaecb20afd",
+        "shiny": "8ab4829e0d4acd52574341c87801e4f074a26df1540146cc84111afa754475eb",
+        "placed": "1086ac5eba9dd56b23113f8de0045879fca8f363aaaefd53e94b4c3718f99fca"
+      }
     },
     {
       "file": "10197",
       "name": "Gigantamax Blastoise",
-      "normal": "https://raw.githubusercontent.com/smogon/sprites/master/src/sprites/gen5/sblastoise-g.png",
-      "shiny": "https://raw.githubusercontent.com/smogon/sprites/master/src/sprites/gen5/sblastoise-g-s.png",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/sblastoise-g.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/sblastoise-g-s.png",
       "scale": 1,
       "offset": [
         4,
@@ -52,7 +471,126 @@
       "artists": [
         "leParagon"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/blastoise/"
+      "canon": "https://www.serebii.net/pokedex-swsh/blastoise/",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "fcdacffdd3740bed2180cbbf0e3210b251f9a8919e6deff8906004a998ec2b9f",
+        "shiny": "3426f5e788cd1b2dc879c2fff107d4cff436d5f788bf8a9d92412b7b0cbc3fbe",
+        "placed": "c7422ab705c22206dac622ea2e939a4f495dd0191fc9f4422ac0ee17ae02cb17"
+      }
+    },
+    {
+      "file": "10208",
+      "name": "Gigantamax Melmetal",
+      "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/smelmetal-g.png",
+      "shiny": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/smelmetal-g-s.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project (smogon/sprites)",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "46783b1f0dde821e32d36c6197c87f466ed9f0aa5da5487178b07de144a3b253",
+        "shiny": "d6b830eaf7b05c6b78b961912dda7e53d3ce9018fa81057cc1faf2bb5974e7d0",
+        "placed": "d6b830eaf7b05c6b78b961912dda7e53d3ce9018fa81057cc1faf2bb5974e7d0"
+      }
+    },
+    {
+      "file": "10273",
+      "name": "Ogerpon (Wellspring Mask)",
+      "normal": "https://sta.sh/01juz4fne5n",
+      "shiny": "https://sta.sh/02f9gymlfwaf",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "78436051a7bc6e42b437a41e819b0a495bc93a5ff164d0c2713254ef961926b8",
+        "shiny": "09ef9b26c044c817853ff9a1262e26dcc75053954cb778119154111bc9d265c5",
+        "placed": "e264a0f24a1d3d09b3c76a45e8d05748635278acd9e8df71e828917e4146c593"
+      }
+    },
+    {
+      "file": "10274",
+      "name": "Ogerpon (Hearthflame Mask)",
+      "normal": "https://sta.sh/01r7h3c3ltl",
+      "shiny": "https://sta.sh/0faii1cdql6",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "e39ba0aaee4981ee0ab6b3022b6eb5e89b70286fd4b6bd4e75146546cf2ec3a4",
+        "shiny": "212ed62912a50e272ce12a486f08c7b766f58595c91c97c1a35afb36315a9779",
+        "placed": "c3ee17ed50695fc85bfc44f09a31899b65f829eb4e77d14c6692259956f90ad3"
+      }
+    },
+    {
+      "file": "10275",
+      "name": "Ogerpon (Cornerstone Mask)",
+      "normal": "https://sta.sh/01b2qwauwmzn",
+      "shiny": "https://sta.sh/027607y4twf7",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "558d486f095e33596c61229084dacf27fed6b718fbc88af3a0eb44d238ee8bc0",
+        "shiny": "8ad27d62a1b949b8ead24b2d7a9e626f03b90cca57bd8de9a0a8befc8231ace2",
+        "placed": "f9351e54a1a191e4b0c01b3bb2579488cd4ade9d963b99a7bb261d2805e062a7"
+      }
+    },
+    {
+      "file": "10277",
+      "name": "Terapagos (Stellar Form)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/TERAPAGOS_2.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/TERAPAGOS_2.png",
+      "scale": 2,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "380bb6369c0c3ae407c781ac4714b54525ac28deeabe7520e6f6a23a2d0cbb78",
+        "shiny": "f61f4d8ebea2b7f79366c4ecd5d95ffb1558b58fc869e4ddf92a8162384a08b9",
+        "placed": "9c89391a568c13c6856412be4bcc9ad7c93bdf126cb0ce718a189c60f0e9413d"
+      }
     },
     {
       "file": "10290",
@@ -68,7 +606,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokedex-sv/eelektross/"
+      "canon": "https://www.serebii.net/pokedex-sv/eelektross/",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "658eadf1717b857856cd5d9b9b6c73470de6f4e716662f4d6a5d7a869a1b9d7b",
+        "shiny": "28256d4b5e05604aa6c4d4292bd805e94ecdfdebcb2ad91af110b4eced8d0617",
+        "placed": "f3aea8873abfba8f880b5943f209fb08e64452531aca05c14a270ee4069f2d57"
+      }
     },
     {
       "file": "10299",
@@ -84,7 +630,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokedex-sv/dragalge/"
+      "canon": "https://www.serebii.net/pokedex-sv/dragalge/",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "4f78bc0103efeb3a3fd5a195c6a3102925c2793272e45e3a51d6ab0ad50ddbc0",
+        "shiny": "5ad69f25d1ae0039b2113c6e7cffbbba422a0fa25f1d968e01d6a56068871534",
+        "placed": "83b2ce12627302907d05a3db6e746fd6603fd8a79561d2a752af5aefe4b508cd"
+      }
     },
     {
       "file": "10305",
@@ -100,7 +654,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokedex-sv/raichu/"
+      "canon": "https://www.serebii.net/pokedex-sv/raichu/",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "25865bb51abd34dffdc582ea9fa0ca12caa4885fba54aebbe31c3bc511539b63",
+        "shiny": "b90d3822655237fdb3f596e90bfea5b66bc859761076da06da26f32a246ab0b5",
+        "placed": "c054d7d5b7cbc73fea6c485fb96e866526cbc67610946dd33275e13070c96677"
+      }
     },
     {
       "file": "10311",
@@ -116,7 +678,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokedex-sv/heatran/"
+      "canon": "https://www.serebii.net/pokedex-sv/heatran/",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "880e563840b15e268228cdd419917eeedcb86eb44b3a206d5c9a6502962de566",
+        "shiny": "01e8b8ba80f9ecd221b4644085a6cabbd570e9389492215268c552e1c34a2bb9",
+        "placed": "b2cc133f80585f1e06faf1f5478ae51f9d39e8ee1f4ba84e1ea39966c7121b73"
+      }
     },
     {
       "file": "11002",
@@ -132,7 +702,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "ed92ff75b9e3a091609db61d0d6327f67869251cc462d63c57db665b15e8dbf1",
+        "shiny": "3b56cf07ea7e1c77863edaae922e266afb5764bc3c70424c1faf7f7991336b0f",
+        "placed": "3ffba5e700c03ff8bb75a43a81139bb10f64cae20121d0964d962b4ad1f84fa3"
+      }
     },
     {
       "file": "11003",
@@ -148,7 +726,15 @@
       "artists": [
         "G.E.Z."
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [
+        "G.E.Z."
+      ],
+      "sha256": {
+        "normal": "1b19d0b8acf173c6626fb0ec0fec4cab339e50431edb10de3c0d835e78b43bb2",
+        "shiny": "e85c3c2532853fcffa61e0f720bbf4efdbbd982c874c8b7cd1a9ac84489f4c10",
+        "placed": "e85c3c2532853fcffa61e0f720bbf4efdbbd982c874c8b7cd1a9ac84489f4c10"
+      }
     },
     {
       "file": "11004",
@@ -164,7 +750,15 @@
       "artists": [
         "Travis"
       ],
-      "canon": "https://www.serebii.net/Shiny/SV/new/964-h.png"
+      "canon": "https://www.serebii.net/Shiny/SV/new/964-h.png",
+      "shinyArtists": [
+        "Travis"
+      ],
+      "sha256": {
+        "normal": "a744688da17f71c36b6862418b51f5cf2848cfdb236edf615893ab4b06bfd14d",
+        "shiny": "54ad6bde4bbd72972fe35ccd72cf1f43796cc63efa6498512b3cea14b6cfceea",
+        "placed": "54ad6bde4bbd72972fe35ccd72cf1f43796cc63efa6498512b3cea14b6cfceea"
+      }
     },
     {
       "file": "11005",
@@ -180,7 +774,15 @@
       "artists": [
         "KingOfThe-X-Roads"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "d5c2c437f3c4bdaca4eda7dd9c101f1e088ed33beddd0637d498daedf225f859",
+        "shiny": "f08bf8826d4eb60c136510e11cb6c5343ea4eb1485e8a08510503d809c6293f5",
+        "placed": "e3bcb4b956815c694d0478ccbf79a6df42e6c40faacf82ff6ce2512241e34d9e"
+      }
     },
     {
       "file": "11006",
@@ -196,7 +798,15 @@
       "artists": [
         "Blaquaza"
       ],
-      "canon": "https://www.serebii.net/Shiny/SV/new/978-d.png"
+      "canon": "https://www.serebii.net/Shiny/SV/new/978-d.png",
+      "shinyArtists": [
+        "Blaquaza"
+      ],
+      "sha256": {
+        "normal": "9a9c3fad5be56c029edaff644e2125e139f1028017da01d4dfad1a19811b12ba",
+        "shiny": "b5d30ad6e168ae32b5487f1a66af58cabe6c7a2c63c51a2ea838fc74357a8860",
+        "placed": "b5d30ad6e168ae32b5487f1a66af58cabe6c7a2c63c51a2ea838fc74357a8860"
+      }
     },
     {
       "file": "11007",
@@ -212,7 +822,15 @@
       "artists": [
         "Blaquaza"
       ],
-      "canon": "https://www.serebii.net/Shiny/SV/new/978-s.png"
+      "canon": "https://www.serebii.net/Shiny/SV/new/978-s.png",
+      "shinyArtists": [
+        "Blaquaza"
+      ],
+      "sha256": {
+        "normal": "30d15b660af5457aebba6c0c7ee923c978e42ec6eeb8da71222a7c572802db98",
+        "shiny": "4a72a8a53b20c3db513316c1ec5381aacb4a83e141b952275cd0318118fc649e",
+        "placed": "4a72a8a53b20c3db513316c1ec5381aacb4a83e141b952275cd0318118fc649e"
+      }
     },
     {
       "file": "11018",
@@ -232,7 +850,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "bd39b4811ef16b9b253f321b3b7b8999ef07c756de276c95e108970270e4c75f",
+        "shiny": "3a3fa62fe756d70fc6d7c1c907e31a6804e4ca2cb1bc3bb27ce5848ea31adf5c",
+        "placed": "3a3fa62fe756d70fc6d7c1c907e31a6804e4ca2cb1bc3bb27ce5848ea31adf5c"
+      }
     },
     {
       "file": "11019",
@@ -252,7 +875,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "0e8fbb26d4f3a82618720a3a71fd684810c4db1378b8eb115a5becd63e387c75",
+        "shiny": "98c1a1726f94a0be35a7308c94cb153e06819030e7dfc57d99ec269c78bf16d5",
+        "placed": "98c1a1726f94a0be35a7308c94cb153e06819030e7dfc57d99ec269c78bf16d5"
+      }
     },
     {
       "file": "11020",
@@ -272,7 +900,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "0a7d8b87bfccec6e47141a112fb8100176958f2cc830db989f1fb5830b05e794",
+        "shiny": "375d9a4c4f376f38fcbab3f7ad084dc5abb60fd5e137bd4fb91b8a3a5c99386c",
+        "placed": "375d9a4c4f376f38fcbab3f7ad084dc5abb60fd5e137bd4fb91b8a3a5c99386c"
+      }
     },
     {
       "file": "11021",
@@ -292,7 +925,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-sv/vivillon/"
+      "canon": "https://www.serebii.net/pokedex-sv/vivillon/",
+      "sha256": {
+        "normal": "e406cc56ce90ad8c06cc55bd5ff2e6d52466317e6edf8ac2f4c4436516f81f09",
+        "shiny": "d2c2be96a3bd65dc64f887e13505c4f360d640e23e391c09571de598e0c8b884",
+        "placed": "d2c2be96a3bd65dc64f887e13505c4f360d640e23e391c09571de598e0c8b884"
+      }
     },
     {
       "file": "11022",
@@ -312,7 +950,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "f13deb8b49ab2ee533044ee2eb422d74908bc1a352cef821cf775d9fa6e68e92",
+        "shiny": "f9e89a4306cc5e5678b75d072bfcd3dc14b5b127ef56de10a923f5fffb001b65",
+        "placed": "f9e89a4306cc5e5678b75d072bfcd3dc14b5b127ef56de10a923f5fffb001b65"
+      }
     },
     {
       "file": "11023",
@@ -332,7 +975,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "7167dd0ac47122a2b7328f506177601c3968e9f0939c70347c5b3aa19b9c99fb",
+        "shiny": "71bf872e51634d77b43317d16922394f29518e3dd3d855e947993deac8492da7",
+        "placed": "71bf872e51634d77b43317d16922394f29518e3dd3d855e947993deac8492da7"
+      }
     },
     {
       "file": "11024",
@@ -352,7 +1000,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "25288a0936555fe1d14628b8c4e2aeddb57fe55500ac5de1f116b138f7c1c3cf",
+        "shiny": "abb5e29b5f59cfedc668bdf3b3863be5698231008bc5f55d51590775e2105f25",
+        "placed": "abb5e29b5f59cfedc668bdf3b3863be5698231008bc5f55d51590775e2105f25"
+      }
     },
     {
       "file": "11025",
@@ -372,7 +1025,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "4054742e80c15efaed42ffca513f621bac9fc64f067c70f6588b279f3b2c1329",
+        "shiny": "e26c2fc71f801690eb4e4d540ac3a37eccb6dba86e3d257551d30e038d0b0e80",
+        "placed": "e26c2fc71f801690eb4e4d540ac3a37eccb6dba86e3d257551d30e038d0b0e80"
+      }
     },
     {
       "file": "11026",
@@ -392,7 +1050,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "981d641ec1fc5f3605297be7429e4c53826899b0f58df4db4880d50d3e21e617",
+        "shiny": "2573e994a1e5ac223e95aa5d50ac02c3f12cecf9771d5aea90df6f3f343a42e1",
+        "placed": "2573e994a1e5ac223e95aa5d50ac02c3f12cecf9771d5aea90df6f3f343a42e1"
+      }
     },
     {
       "file": "11027",
@@ -412,7 +1075,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "67cdf27451823bbf1596761c2b346570296156bc7597c2c2efa86c4fde0ed5fe",
+        "shiny": "c94521a67cc0cbea25509821ee72b4108b7a703fad15de34eee7eeb4930c67f9",
+        "placed": "c94521a67cc0cbea25509821ee72b4108b7a703fad15de34eee7eeb4930c67f9"
+      }
     },
     {
       "file": "11028",
@@ -432,7 +1100,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "707270b7288024e86030124856aa6ebbc4a45ed9c210fe4da15e342008a02cdf",
+        "shiny": "f07fcd69b93e2ec2edd84c360093376abb3e05614bb0252114396e574a50056a",
+        "placed": "f07fcd69b93e2ec2edd84c360093376abb3e05614bb0252114396e574a50056a"
+      }
     },
     {
       "file": "11029",
@@ -452,7 +1125,36 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "01d0ad742e2ccfac0abef8c40fb1b5aaefead2bb0416eecf670f77ed5c853ad4",
+        "shiny": "5317400f9e25e0da847b248b2d52156dccbb3e2531eeaf7649cc210698d8d743",
+        "placed": "5317400f9e25e0da847b248b2d52156dccbb3e2531eeaf7649cc210698d8d743"
+      }
+    },
+    {
+      "file": "11030",
+      "name": "Vivillon (Poké Ball Pattern)",
+      "normal": "https://www.smogon.com/forums/attachments/666_20-png.273618/",
+      "shiny": "https://www.smogon.com/forums/attachments/666_20s-png.273619/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "Basic Vanillite",
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "TheAetherPlayer"
+      ],
+      "sha256": {
+        "normal": "51c36ec527e842b8d2a36764bfde7f3f9e29d0f9148bd96542a91ba5ef82e7b6",
+        "shiny": "78926aa918aecd1266e3716e8c0c33c4e10c5d6833f2b094cf43f6307569a33a",
+        "placed": "85d3105d1fba2bf9ad251c78ebe978ad5dab870956aa367490d793cb8e414f5f"
+      }
     },
     {
       "file": "11031",
@@ -472,7 +1174,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "9904576ceb4ea05ab5b96aa9e5f1e736a1ea8dcbaf9b75110bd2bbc93c161897",
+        "shiny": "9ed6f7b9bcdcd476d8b01ef7cecd471dbb1bc57e49c51c6c33992f9e3ab8dc25",
+        "placed": "9ed6f7b9bcdcd476d8b01ef7cecd471dbb1bc57e49c51c6c33992f9e3ab8dc25"
+      }
     },
     {
       "file": "11032",
@@ -492,7 +1199,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "042a8ea304b2cc442f17d439fd733ef67afc0c962e487e57523bdbcadf981bec",
+        "shiny": "f7009ac99946f08f8da91f5654b4060da4a584d95f12ebe661a32da23cda11cb",
+        "placed": "f7009ac99946f08f8da91f5654b4060da4a584d95f12ebe661a32da23cda11cb"
+      }
     },
     {
       "file": "11033",
@@ -512,7 +1224,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "f154ec35039ad812c3a26ad6f0cd3f5231ae7198fb924bf99b4dec0e61c33046",
+        "shiny": "aeea63a4ec461864fb1687edb2771927bb1fb29f7d2f4a78b0dbcda3fcfb0820",
+        "placed": "aeea63a4ec461864fb1687edb2771927bb1fb29f7d2f4a78b0dbcda3fcfb0820"
+      }
     },
     {
       "file": "11034",
@@ -532,7 +1249,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "bbb2ea0d7b2fe7b487495f890f1c84776fad60c418e15e9c838bcc316374f820",
+        "shiny": "619de7bf03bcd97f6d9d5bb6763067dd2c44a3d48e6342ccfb7de2b49fbd37f3",
+        "placed": "619de7bf03bcd97f6d9d5bb6763067dd2c44a3d48e6342ccfb7de2b49fbd37f3"
+      }
     },
     {
       "file": "11035",
@@ -552,7 +1274,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "a0b7d2841fbd820120aed542e4ff202461b6e2e4f0e185cd2fb828dfe73e45b3",
+        "shiny": "3b64e694b6fa22e674bb14b7f6928e3757ecac6f7898588fdb098416c468f222",
+        "placed": "3b64e694b6fa22e674bb14b7f6928e3757ecac6f7898588fdb098416c468f222"
+      }
     },
     {
       "file": "11036",
@@ -572,7 +1299,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "sha256": {
+        "normal": "2f4217c99f515c1f40d185d4f093c7622368d13f986c14e258b85d12ec2b4a48",
+        "shiny": "4ba919b4ab53b8fbe9e1b3b2243f098b01f27e8298febd0c28f8511c97474d60",
+        "placed": "4ba919b4ab53b8fbe9e1b3b2243f098b01f27e8298febd0c28f8511c97474d60"
+      }
     },
     {
       "file": "11097",
@@ -586,7 +1318,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "07b63511c1d1827acb7c11b3b7dfc3ea4cb03c8fd7171889b8f2ab2df7d253e7",
+        "shiny": "c114fda832b1cd0727c0bb0a7b2d262f1bd7fd8a0e2dacf386d563675b086619",
+        "placed": "a428528f1604d4a5bcb01ae1fac6261ab7773abcdedd2ca26e8dc501b884173b"
+      }
     },
     {
       "file": "11098",
@@ -600,7 +1338,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "5768fd9ecd3ccdbf306aa6ed401a9409eb2eaa0ecdf77403682ac1538d679812",
+        "shiny": "8ab5714d1dd00df15336be54fae347028f3c84037ed4cf5471922ce14dacd515",
+        "placed": "8738be7327c1a9868a7faeab734e51ec067245d6d6bb864c7643173a006b7f11"
+      }
     },
     {
       "file": "11099",
@@ -614,7 +1358,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "34be87aa1a9f912f662cbcdb60f8ff5388feb3a5b8acac5c24e7d4fb526b7a56",
+        "shiny": "1710ae956388323ee4a7b54ea0adfa1b76c676d57442c23e23ae7a0223ac4c8d",
+        "placed": "a9d9eb9644036ab6df6555964bc5b10d9dbce2c2615df2e3eec33cb70da31e18"
+      }
     },
     {
       "file": "11100",
@@ -628,7 +1378,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "cbcc6ee17a9df5322123d30df38efc18449a116d1b3251c2ab67be83a69b2615",
+        "shiny": "3e54c775204d7dca39b4e5ff6278d19f0dde1d5943429d0c9bae091f63f1cbb0",
+        "placed": "d6353cd7b0855511a5434e9d35e2b57612e0fb54ca78725426893b078347c6d0"
+      }
     },
     {
       "file": "11101",
@@ -642,7 +1398,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "fe7d3b231b760d05c9a8ce20c6b213b21e9fe4b9f53e7fb0bafd1db2c4400c60",
+        "shiny": "a96203b8647e6dfd5dae67122dccba87989e55224160d72ca0ecddb513ec5334",
+        "placed": "a3f3e7bfa168c3ec7d3c0da1526f67d5bab0b5a484f97f5e98bf8a2b7b3a9fd0"
+      }
     },
     {
       "file": "11102",
@@ -656,7 +1418,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "4e526a8309be082f7d463da09f39d21f6d4cd45c5559c4622bd2e2865c353fe9",
+        "shiny": "51225ebff7be44b46f08b9cb92e4ba3416eda38c1fa3b0895e389a58141cee89",
+        "placed": "12363c19cf00ac7d112221da5d99330791f5ed5707c85d6a35948280ffb3519a"
+      }
     },
     {
       "file": "11103",
@@ -670,7 +1438,13 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "7f39e3ff10176fd49a130543f716af30879a109c7ac5b0cbd711751d32195009",
+        "shiny": "3da56d987fd9398aac6b2764742944319834248f80364a49164908f764eb166b",
+        "placed": "c66195c036f386dc569603b18ae119ce5c5c195f6816d5d7b2138adb50ead192"
+      }
     },
     {
       "file": "11104",
@@ -684,7 +1458,260 @@
       ],
       "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
       "artists": [],
-      "canon": "https://www.serebii.net/pokemongo/shiny.shtml"
+      "canon": "https://www.serebii.net/pokemongo/shiny.shtml",
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "32f113a2a1790ea7d308895c3c37989b4baafe0675b1156e6455989410f09828",
+        "shiny": "ae27ceff4cb6d8e6f47e04d253e6ea623491ccc5a4a6a476cef1f521e7183c63",
+        "placed": "a415a200c352773d37c45d67c8d89721958cc0fa8c55add4efd17c3dfc77d653"
+      }
+    },
+    {
+      "file": "11105",
+      "name": "Reshiram (Overdrive)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/643.gif#frame=48",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/shiny/643.gif#frame=48",
+      "scale": 1,
+      "offset": [
+        5,
+        -7
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "4320d4f2bb7b368ef1addc8c1acd93c7a405178286c14aeecd3495e0ce17a12b",
+        "shiny": "f770d1005c80929044411b110990d340ac98872aeb62d9d28af3b112e4be9e16",
+        "placed": "460854b2f8969c5e377f9df7a836db9b68cdff04dd1825b222096ecf91ee1fa7"
+      }
+    },
+    {
+      "file": "11107",
+      "name": "Black Kyurem (Overdrive)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/10022.gif#frame=0",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/shiny/10022.gif#frame=0",
+      "scale": 1,
+      "offset": [
+        -5,
+        -8
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "61a02fc766ddf45e349e09b4c2684aabbf20cb0cc1338a3c92f17c91dd2e4765",
+        "shiny": "aa2700eae5b787572f8af9db525c91405bb59b2e5d744da0d8479887fe429cb9",
+        "placed": "2d46b2613456b32e53dc25af6d153405fb804ed5715e4f3e28d8347bcafc0249"
+      }
+    },
+    {
+      "file": "11109",
+      "name": "Solgaleo (Radiant Sun Phase)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/SOLGALEO_1.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/SOLGALEO_1.png",
+      "scale": 2,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "c582b2d893b0483b824898d00954dfa9574f984c8074b6b9a86c35fa8893bbba",
+        "shiny": "d9baf12783ee1fe13c020360fa58cb04731023798451cdbbee14cc785b97e9c5",
+        "placed": "59930f4855b00184dc199a2acffc5a36432a37674ac351c34f9382fb1ec12452"
+      }
+    },
+    {
+      "file": "11110",
+      "name": "Lunala (Full Moon Phase)",
+      "normal": "https://www.smogon.com/forums/attachments/792_2-png.272370/",
+      "shiny": "https://www.smogon.com/forums/attachments/792_2s-png.272371/",
+      "scale": 1,
+      "offset": [
+        -1,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [
+        "leParagon"
+      ],
+      "sha256": {
+        "normal": "28dd6e4d3c1d86eb2504e618f860436596c255b098f2828ca114880710b53141",
+        "shiny": "3a46bc237cd3c3fcb0b47e9bd894f5e782b1b5d27e9675937005237c48365788",
+        "placed": "fcfcfc5592ff23d643dc4b8aa5c0fe568ef24c2f0102abbc0b3c2bc3d6e2df97"
+      }
+    },
+    {
+      "file": "11111",
+      "name": "Marshadow (Zenith)",
+      "normal": "https://www.smogon.com/forums/attachments/802_2-png.272391/",
+      "shiny": "https://www.smogon.com/forums/attachments/802_2s-png.272393/",
+      "scale": 1,
+      "offset": [
+        0,
+        1
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "leParagon"
+      ],
+      "shinyArtists": [
+        "leParagon"
+      ],
+      "sha256": {
+        "normal": "56aff1a2e19009b4989c824fe8f9d02036e7a4b561ff98b781498db7b7982dc9",
+        "shiny": "c7b200cbf94653bb22d7add1d7afa4f348a15a903779c966f26cd64d92d3e4c0",
+        "placed": "8da66b01c291c3e969ce10bf622be388d6b5ab38a13878392d8f30211dd17b84"
+      }
+    },
+    {
+      "file": "11113",
+      "name": "Ogerpon (Teal Mask, Terastallized)",
+      "normal": "https://sta.sh/0jzbalocru5",
+      "shiny": "https://sta.sh/011t2nbet5w4",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "eec8ca721c2efac8eb910cd782f636fc575ac32cc5f611bd026f20a2c94fef78",
+        "shiny": "9a34e1782c745f8ef30cd4ff589ccb22d9c0be02c80be0abeced067d28c7ad0e",
+        "placed": "18b976e58dfb4f7d5bdfc8ac89b7048d180cd0c522139b6155e5fdeea8f655fc"
+      }
+    },
+    {
+      "file": "11114",
+      "name": "Ogerpon (Wellspring Mask, Terastallized)",
+      "normal": "https://sta.sh/02ctsdxqkwa4",
+      "shiny": "https://sta.sh/0fe7i25djby",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "8510d4a770aa90784d6ad0f8746efac985d74836b2801224cf35e7d1561049dc",
+        "shiny": "5549b577e2c4cacdf537640158d73686e6ffb9cc2d8c70a2899bf26e673d5862",
+        "placed": "98d6b699d49487d02d6f04bd4d8574ca1c7806232adb63e4c01d49503ccc20f9"
+      }
+    },
+    {
+      "file": "11115",
+      "name": "Ogerpon (Hearthflame Mask, Terastallized)",
+      "normal": "https://sta.sh/01ft9j4y6bg0",
+      "shiny": "https://sta.sh/02cyo7emcar0",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "4ea7ea0f47e7acb9c13ce9dd6ffc5b882367fdecd50a6b5425267f086edc8585",
+        "shiny": "17ee0fda13b2c67301872c299c35233f3bb6b9ccef5505681771a775c17ba17c",
+        "placed": "74f43b2198da47fc1e668f9b927917d0f1f8dc26824d3ba1c5b5ce17c22c2c96"
+      }
+    },
+    {
+      "file": "11116",
+      "name": "Ogerpon (Cornerstone Mask, Terastallized)",
+      "normal": "https://sta.sh/01423lw1pqim",
+      "shiny": "https://sta.sh/01ym3tbv4jln",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "b93e420bf37f09776e8751167bdf1698fd0ea2a3ee40100ae447f1a656bf373b",
+        "shiny": "665a18893f1ad423ec8eaf942aa45e2c6193b2c6cc9b252e2ab3c3be774159b1",
+        "placed": "aa76e06f6589a9e2ab8d5916bdec4f5abd2bbb439ea3cd64a2c15c179a695686"
+      }
+    },
+    {
+      "file": "11118",
+      "name": "Koraidon (Limited Build)",
+      "normal": "https://sta.sh/01ppvyo9gx1l",
+      "shiny": "https://sta.sh/01z16sers54u",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "22052a1cf3ad1dae28e5b31a730690240b0c284e10df58eccc4b70547c559e8c",
+        "shiny": "26d14bbda8ab9cdf48e91be5467ace22aa8eac06b92c9b6a4189f96fef1a075f",
+        "placed": "cb2b7bacd6d5be87243bc1e0a750c31eb9a800e48e0f2a6fdcb42141d960f71d"
+      }
+    },
+    {
+      "file": "11119",
+      "name": "Miraidon (Low-Power Mode)",
+      "normal": "https://sta.sh/0p5wp0lgq01",
+      "shiny": "https://sta.sh/0yo3kyxfsk3",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "KingOfThe-X-Roads's Sta.sh uploads",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "287beffbf9fc0a5a151972186160633fe9d731861eba5d78c4c7193296f763f0",
+        "shiny": "78179f52063cc4bdce2af2ca3d0ac82c58800d976b2ffa2ec0b2e40652538c7f",
+        "placed": "39ce1e495c977e89cae34fc754b51b9e9dd8d2f52e7a47282d8fcada203957e6"
+      }
     },
     {
       "file": "alcremie-berry",
@@ -705,7 +1732,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "06ec2585485a1c7da6f364ccf488501e54563e2f3b3a0be096ea6a161f48f390",
+        "shiny": "d8fe2cfb3eb9056b4d08b16eeeca32517b333a1b4d5ae9613084d0a6155883a2",
+        "placed": "bf269920c4b596b0793e4b7b59a3c018d7adba22a5581d92ef367f2458d1cb19"
+      }
     },
     {
       "file": "alcremie-clover",
@@ -726,7 +1758,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "857f460c6fe43ed43bebb9ced4c7b800e89af9f9649e1479efba65cb3235ffa9",
+        "shiny": "9f0760d50f40cb4dfb01c9af9fe4ff9c9b3cd07e82b4de1840321342c83bee7b",
+        "placed": "9f0760d50f40cb4dfb01c9af9fe4ff9c9b3cd07e82b4de1840321342c83bee7b"
+      }
     },
     {
       "file": "alcremie-flower",
@@ -747,7 +1784,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "b3b9717ad01731016fe8c0e9a698eba60e19cc057786ad445ab7d77c6fd05ef0",
+        "shiny": "7761d590e38ea2d7e774dde758d3f5b0592cd30cc01acc6b8e7447308c23f8de",
+        "placed": "7761d590e38ea2d7e774dde758d3f5b0592cd30cc01acc6b8e7447308c23f8de"
+      }
     },
     {
       "file": "alcremie-love",
@@ -768,7 +1810,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "57398d30ca87c3fa23bfebd9ac5871baabce4491d4c3c77202c92ea73073871a",
+        "shiny": "fda3e2e1f60a2f046bbca0729beadb0b2a572c18a05d0e79c435336c616bc220",
+        "placed": "fda3e2e1f60a2f046bbca0729beadb0b2a572c18a05d0e79c435336c616bc220"
+      }
     },
     {
       "file": "alcremie-ribbon",
@@ -789,7 +1836,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "8ea0addb79909d2f17f9ed016b85d3855f6f950ee2ca0c14e4a10fe12d106595",
+        "shiny": "674e8f89ab27058f9a84ae5ab605f461419b6844adba2c891a0c5ce4118c7769",
+        "placed": "674e8f89ab27058f9a84ae5ab605f461419b6844adba2c891a0c5ce4118c7769"
+      }
     },
     {
       "file": "alcremie-star",
@@ -810,7 +1862,12 @@
       "shinyArtists": [
         "TheAetherPlayer"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "sha256": {
+        "normal": "e3f9f52a658c3c0a5f5391d29ff468c95e02ba7a0dd2b0d874f37d5f4f033e10",
+        "shiny": "f1c5f4624795e810394d3d3993648cb93b6aa3414858ec13ca7f77244316acf9",
+        "placed": "f1c5f4624795e810394d3d3993648cb93b6aa3414858ec13ca7f77244316acf9"
+      }
     },
     {
       "file": "alcremie-strawberry",
@@ -826,7 +1883,15 @@
       "artists": [
         "PumpkinPastel"
       ],
-      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/"
+      "canon": "https://www.serebii.net/pokedex-swsh/alcremie/",
+      "shinyArtists": [
+        "PumpkinPastel"
+      ],
+      "sha256": {
+        "normal": "f977b2ecb5a0f20278c01a9f2db5165ea7cd24f7bdfca803e910083d05d376f9",
+        "shiny": "7a60529512353450bc2812a9408fcf2cb06e1218cab9d2ee89f4fbbfa81a411f",
+        "placed": "7a60529512353450bc2812a9408fcf2cb06e1218cab9d2ee89f4fbbfa81a411f"
+      }
     }
   ]
 }

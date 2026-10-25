@@ -19,7 +19,8 @@
  *    `spritePath`, or a slug in `blackWhiteSlugs` in
  *    scripts/data/shiny-sprite-sources.json), that folder's shiny file.
  * 3. The art found by hand in scripts/data/shiny-sprite-placed.json, with the
- *    integer downscale and offset that put it on our canvas, and its credits.
+ *    integer downscale and offset that put it on our canvas, its credits, and
+ *    the SHA-256 of both source files and of the shiny we ship.
  *
  * Every PokéAPI URL reads one pinned commit (POKEAPI_COMMIT).
  *
@@ -28,15 +29,22 @@
  * its scripts/sprite-reencodes.json entry. It never touches the shiny files
  * that were on production before the harvest (PROTECTED); it only reports one
  * whose outline differs. It prints the files it rejected with their count of
- * mismatched pixels, and the files with no shiny. After a run that adds files,
- * commit them and shrink them as the normal sprites were:
+ * mismatched pixels, and the files with no shiny.
+ *
+ * A row whose source the run cannot read again keeps its file unchecked, and
+ * the run says why: a Sta.sh page or a frame of an animated GIF, which this
+ * script cannot decode; a source whose bytes no longer have the recorded
+ * SHA-256; or the archive below, when it is not in the cache. The run reports
+ * an unchecked file whose own SHA-256 differs from its row.
+ *
+ * After a run that adds files, commit them and shrink them as the normal
+ * sprites were:
  * `python3 scripts/optimize-sprites.py HEAD public/sprites/pokemon/shiny`.
  *
  * `--cache <dir>` reads downloads from `<dir>/cache/<key>` and saves new ones
  * there, so a rerun needs no network. The key is the first 20 hex digits of
  * the URL's SHA-1. A source inside the Generation 9 Resource Pack archive is
- * read from `<dir>/gen9pack/x/<path in the archive>`. Without it, a shiny from
- * that archive is kept as it is, unchecked, and the run says so.
+ * read from `<dir>/gen9pack/x/<path in the archive>`.
  *
  * Usage: npx tsx scripts/fetch-shiny-sprites.ts [--cache <dir>]
  */
@@ -45,7 +53,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { runnerImport } from 'vite';
-import { decode, encode, maskDifference, samePixels, type Raster } from './png-rgba';
+import { decode, encode, intact, maskDifference, samePixels, type Raster } from './png-rgba';
 import powerupForms from '../src/league/data/powerupForms.json';
 import sources from './data/shiny-sprite-sources.json';
 import found from './data/shiny-sprite-placed.json';
@@ -56,6 +64,7 @@ const BLACK_WHITE = `${POKEAPI}/versions/generation-v/black-white`;
 const ARCHIVE = 'Generation_9_Pack_v3.3.8.rar:';
 const PROTECTED = new Set(['77', '130', '147', '443', '612']);
 const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
+const UNREADABLE = /^https:\/\/sta\.sh\/|#frame=\d+$/;
 const SPRITE_FILE = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/;
 
 const root = process.cwd();
@@ -65,16 +74,19 @@ const OUTPUT = join(root, 'src/data/shinySprites.json');
 const REENCODES = join(root, 'scripts/sprite-reencodes.json');
 const cache = parseArgs({ options: { cache: { type: 'string' } } }).values.cache;
 
-interface Source { normal: string; shiny: string; scale: number; offset: readonly number[] }
+interface Source { normal: string; shiny: string; scale: number; offset: readonly number[]; sha256?: Digests }
+interface Digests { normal: string; shiny: string; placed: string }
+/** Why a run kept a shiny without checking it against its source. */
+interface Unread { unread: string }
 interface Catalogs { picker: Set<string>; slugs: Map<string, string>; league: Set<string> }
 type Verdict =
   | { kind: 'pass'; shiny: Buffer }
   | { kind: 'outline'; mismatched: number | null }
-  | { kind: 'unavailable' }
+  | { kind: 'unavailable'; reason: string }
   | { kind: 'none' };
 type Result = 'added' | 'replaced' | 'kept' | 'unchecked' | 'removed' | 'protected' | 'none';
 
-const placed = new Map<string, Source>(found.placed.map((entry) => [entry.file, entry]));
+const placed = new Map<string, Source & { sha256: Digests }>(found.placed.map((entry) => [entry.file, entry]));
 for (const url of found.placed.flatMap((entry) => [entry.normal, entry.shiny])) {
   if (url.startsWith('https://raw.githubusercontent.com/PokeAPI/') && !url.startsWith(POKEAPI_COMMIT)) throw new Error(`Read PokéAPI at ${POKEAPI_COMMIT}: ${url}`);
 }
@@ -116,11 +128,20 @@ function sourcesFor(file: string, catalogs: Catalogs): Source[] {
   ];
 }
 
-/** The file's bytes, null when the source has no such file, or 'unavailable' for an archive that is not in the cache. */
-async function load(ref: string): Promise<Buffer | null | 'unavailable'> {
+const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+
+/** The file's bytes, null when the source has no such file, or why the run cannot read it. */
+async function load(ref: string, recorded?: string): Promise<Buffer | null | Unread> {
+  const bytes = await download(ref);
+  if (bytes instanceof Buffer && recorded && sha256(bytes) !== recorded) return { unread: `${ref} changed since its row was written` };
+  return bytes;
+}
+
+async function download(ref: string): Promise<Buffer | null | Unread> {
+  if (UNREADABLE.test(ref)) return { unread: 'its source is a Sta.sh page or a GIF frame' };
   if (ref.startsWith(ARCHIVE)) {
     const member = cache && join(cache, 'gen9pack/x', ref.slice(ARCHIVE.length));
-    return member && existsSync(member) ? readFileSync(member) : 'unavailable';
+    return member && existsSync(member) ? readFileSync(member) : { unread: `${ARCHIVE.slice(0, -1)} is not in the cache` };
   }
   const key = createHash('sha1').update(ref).digest('hex').slice(0, 20);
   const saved = cache && join(cache, 'cache', key);
@@ -163,26 +184,34 @@ function place(art: Raster, { scale, offset: [dy, dx] }: Source, like: Raster): 
 async function judge(file: string, catalogs: Catalogs): Promise<Verdict> {
   const normal = decode(readFileSync(ours(file)));
   let mismatched: number | null | undefined;
-  let unavailable = false;
+  let unread: string | undefined;
   for (const source of sourcesFor(file, catalogs)) {
-    const theirs = await load(source.normal);
-    if (theirs === 'unavailable') unavailable = true;
-    if (!(theirs instanceof Buffer) || !samePixels(place(decode(theirs), source, normal), normal)) continue;
-    const bytes = await load(source.shiny);
-    if (!(bytes instanceof Buffer)) continue;
+    const theirs = await load(source.normal, source.sha256?.normal);
+    if (theirs && 'unread' in theirs) {
+      unread ??= theirs.unread;
+      continue;
+    }
+    if (!theirs || !samePixels(place(decode(theirs), source, normal), normal)) continue;
+    const bytes = await load(source.shiny, source.sha256?.shiny);
+    if (bytes && 'unread' in bytes) {
+      unread ??= bytes.unread;
+      continue;
+    }
+    if (!bytes) continue;
     const art = decode(bytes);
     const shiny = place(art, source, normal);
     const difference = maskDifference(shiny, normal);
-    if (difference === 0) return { kind: 'pass', shiny: shiny === art ? bytes : encode(shiny) };
+    if (difference === 0) return { kind: 'pass', shiny: shiny === art && intact(bytes) ? bytes : encode(shiny) };
     mismatched ??= difference;
   }
-  if (mismatched !== undefined) return { kind: 'outline', mismatched };
-  return unavailable ? { kind: 'unavailable' } : { kind: 'none' };
+  if (unread) return { kind: 'unavailable', reason: unread };
+  return mismatched === undefined ? { kind: 'none' } : { kind: 'outline', mismatched };
 }
 
 const reencodes: Record<string, string> = JSON.parse(readFileSync(REENCODES, 'utf8'));
 const verdicts = new Map<string, Verdict>();
 const protectedMismatch = new Map<string, number | null>();
+const unrecorded: string[] = [];
 
 async function harvest(file: string, catalogs: Catalogs): Promise<Result> {
   if (!existsSync(ours(file))) return 'none';
@@ -196,7 +225,12 @@ async function harvest(file: string, catalogs: Catalogs): Promise<Result> {
   }
   const verdict = await judge(file, catalogs);
   verdicts.set(file, verdict);
-  if (verdict.kind === 'unavailable') return present ? 'unchecked' : 'none';
+  if (verdict.kind === 'unavailable') {
+    if (!present) return 'none';
+    const recorded = placed.get(file)?.sha256.placed;
+    if (recorded && sha256(readFileSync(shinyFile)) !== recorded) unrecorded.push(file);
+    return 'unchecked';
+  }
   if (verdict.kind === 'pass' && present && samePixels(decode(readFileSync(shinyFile)), decode(verdict.shiny))) return 'kept';
   delete reencodes[`/sprites/pokemon/shiny/${file}.png`];
   if (verdict.kind === 'pass') {
@@ -235,12 +269,17 @@ const outline = files.flatMap((file) => {
   const verdict = verdicts.get(file);
   return verdict?.kind === 'outline' ? [`${file} (${pixels(verdict.mismatched)})`] : [];
 });
-const unchecked = files.filter((file) => results.get(file) === 'unchecked');
+const unchecked = new Map<string, string[]>();
+for (const file of files) {
+  const verdict = verdicts.get(file);
+  if (results.get(file) === 'unchecked' && verdict?.kind === 'unavailable') unchecked.set(verdict.reason, [...unchecked.get(verdict.reason) ?? [], file]);
+}
 const without = (set: Set<string>) => files.filter((file) => set.has(file) && !shipped.includes(file));
 const leagueOnly = new Set([...catalogs.league].filter((file) => !catalogs.picker.has(file)));
 console.log(`${shipped.length} of ${files.length} sprites have a shiny: ${count('added')} added, ${count('replaced')} replaced, ${count('kept')} kept, ${count('protected')} protected, ${count('removed')} removed.`);
 console.log(`Rejected because the shiny's outline differs from our normal sprite (${outline.length}): ${outline.join(', ')}`);
-if (unchecked.length) console.log(`Kept unchecked because ${ARCHIVE.slice(0, -1)} is not in the cache (${unchecked.length}): ${unchecked.join(' ')}`);
+for (const [reason, kept] of unchecked) console.log(`Kept unchecked because ${reason} (${kept.length}): ${kept.join(' ')}`);
+if (unrecorded.length) console.log(`Kept unchecked, but the file's SHA-256 differs from its row in scripts/data/shiny-sprite-placed.json (${unrecorded.length}): ${unrecorded.join(' ')}`);
 for (const [file, mismatched] of protectedMismatch) console.log(`Protected ${file} kept, but its outline differs from the normal sprite (${pixels(mismatched)}).`);
 console.log(`Picker sprites without a shiny (${without(catalogs.picker).length}): ${without(catalogs.picker).join(' ')}`);
 console.log(`League-only sprites without a shiny (${without(leagueOnly).length}): ${without(leagueOnly).join(' ')}`);

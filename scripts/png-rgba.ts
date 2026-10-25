@@ -147,6 +147,17 @@ export function maskDifference(a: Raster, b: Raster): number | null {
   return count;
 }
 
+/** Whether every chunk's CRC is right. A browser skips a damaged chunk, but Pillow and other tools refuse the file. */
+export function intact(png: Buffer): boolean {
+  for (let pos = 8; pos + 12 <= png.length;) {
+    const length = png.readUInt32BE(pos);
+    if (crc32(png.subarray(pos + 4, pos + 8 + length)) !== png.readUInt32BE(pos + 8 + length)) return false;
+    if (png.toString('ascii', pos + 4, pos + 8) === 'IEND') return true;
+    pos += 12 + length;
+  }
+  return false;
+}
+
 /** Encode RGBA as an 8-bit RGBA PNG. scripts/optimize-sprites.py shrinks the result. */
 export function encode({ width, height, data }: Raster): Buffer {
   const chunk = (type: string, body: Buffer) => {

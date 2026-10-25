@@ -34,8 +34,7 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   const heart = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/11096.png"]') });
   await expect(heart.getByTestId('no-shiny-mark')).toBeVisible();
   await expect(heart.locator('img[src*="/11096.png"]')).toHaveCSS('filter', 'grayscale(1)');
-  const furfrou = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/pokemon/676.png"]') });
-  await expect(furfrou.getByTestId('no-shiny-mark')).toBeVisible();
+  await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/676.png"]')).toBeVisible();
   await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/11097.png"]')).toBeVisible();
   await testInfo.attach('no-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
 
@@ -125,7 +124,7 @@ test('the Shiny switch sits after the count and a divider, at the end of the sea
   await expect(toggle.locator('path[d="M3 3l18 18"]')).toHaveCount(1);
   await toggle.click();
   await expect(toggle.locator('path[d="M3 3l18 18"]')).toHaveCount(0);
-  await search(page, 'vivillon');
+  await search(page, 'furfrou');
   await expect(page.getByTestId('no-shiny-mark').first()).toBeVisible();
   const row = await toggle.evaluate((button) => {
     const box = (el: Element) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
