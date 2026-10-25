@@ -34,7 +34,8 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   const heart = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/11096.png"]') });
   await expect(heart.getByTestId('no-shiny-mark')).toBeVisible();
   await expect(heart.locator('img[src*="/11096.png"]')).toHaveCSS('filter', 'grayscale(1)');
-  await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/676.png"]')).toBeVisible();
+  const furfrou = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/pokemon/676.png"]') });
+  await expect(furfrou.getByTestId('no-shiny-mark')).toBeVisible();
   await testInfo.attach('no-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
 
   await search(page, 'lapras');

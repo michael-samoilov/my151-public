@@ -51,7 +51,7 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(furfrou.getByTestId('no-shiny-mark')).toBeVisible();
   await expect(sprite(furfrou)).not.toHaveAttribute('src', SHINY);
   await expect(sprite(furfrou)).toHaveCSS('filter', 'grayscale(1)');
-  await expect(sprite(page.getByTestId('favorites-pick-676'))).toHaveAttribute('src', SHINY);
+  await expect(sprite(page.getByTestId('favorites-pick-659'))).toHaveAttribute('src', SHINY);
   await testInfo.attach('no-shiny-sheet.png', { body: await page.screenshot(), contentType: 'image/png' });
   await furfrou.click();
   const normal = page.getByTestId('favorites-cell-normal-6');
