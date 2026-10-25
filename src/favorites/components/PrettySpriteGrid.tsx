@@ -17,6 +17,9 @@ import { CoordinatePills } from './CoordinatePills';
 import { equalAreaDiscSize, originShapeGeometry, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
+import { shinySpriteUrl } from '@/lib/spriteUrl';
+import { NoShinyMark } from '@/components/shiny/ShinyMarks';
+import { NO_SHINY } from '@/components/shiny/shinyMarks';
 
 const ROW_GAP_PX = 4;
 
@@ -27,6 +30,8 @@ export function PrettySpriteGrid({
   lineKey,
   formKey,
   selectedId,
+  converting = false,
+  shinyFor,
   onPick,
   takenMarks,
   showIcons = true,
@@ -46,6 +51,10 @@ export function PrettySpriteGrid({
   lineKey?: (mon: PickerMon) => number;
   formKey?: (mon: PickerMon) => number;
   selectedId?: number;
+  /** The selected tile shows another look than the pick it stands for, so a tap converts the pick instead of clearing it. */
+  converting?: boolean;
+  /** Whether a tile shows its Pokémon shiny. One without a shiny then shows faded, under the no-shiny mark. */
+  shinyFor?: (mon: PickerMon) => boolean;
   onPick: (mon: PickerMon) => void;
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
@@ -126,6 +135,8 @@ export function PrettySpriteGrid({
                 mon={mon}
                 spritePx={spritePx}
                 selected={selectedId === mon.id}
+                converting={converting}
+                shiny={shinyFor?.(mon) ?? false}
                 taken={takenMarks?.(mon.id) ?? []}
                 showIcons={showIcons}
                 pointer={pointer}
@@ -149,6 +160,8 @@ function PickCell({
   mon,
   spritePx,
   selected,
+  converting,
+  shiny,
   taken,
   showIcons,
   pointer,
@@ -164,6 +177,8 @@ function PickCell({
   mon: PickerMon;
   spritePx: number;
   selected: boolean;
+  converting: boolean;
+  shiny: boolean;
   taken: PointerMark[];
   showIcons: boolean;
   pointer: boolean;
@@ -177,7 +192,9 @@ function PickCell({
   captionPx: number;
 }) {
   const originsId = useId();
-  const clearing = selected && Boolean(onClear);
+  const clearing = selected && !converting && Boolean(onClear);
+  const shinySprite = shiny ? shinySpriteUrl(mon.sprite) : null;
+  const noShiny = shiny && !shinySprite && !selected;
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const discSize = equalAreaDiscSize(mark);
@@ -187,7 +204,7 @@ function PickCell({
   const tile = (
     <button
       type="button"
-      onClick={() => selected && onClear ? onClear() : onPick(mon)}
+      onClick={() => clearing ? onClear?.() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
       aria-describedby={coordinates?.length ? originsId : undefined}
@@ -196,16 +213,17 @@ function PickCell({
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <PickerSprite
-        sprite={mon.sprite}
+        sprite={shinySprite ?? mon.sprite}
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
         className={clearing ? 'relative z-10 opacity-35' : 'relative z-10'}
-        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
+        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, ...(noShiny ? NO_SHINY.sprite : null) }}
         decoding="sync"
         draggable={false}
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
+      {noShiny ? <NoShinyMark size={`${mark}px`} inset="2px" /> : null}
       {showIcons ? <span
         className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}

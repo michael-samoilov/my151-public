@@ -22,6 +22,8 @@ import { kindFor } from '../model/eligibility';
 import { prefetchCell, usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
+import { isShinyCell, pickerShinySprite } from '../model/shiny';
+import { ShinyStar } from '@/components/shiny/ShinyMarks';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 import { AxisBadge, GenerationBadge } from './WordBadge';
@@ -104,8 +106,11 @@ type Preview = {
   pane: HTMLElement | null;
 };
 
+const NO_SHINY_PICKS: Readonly<Record<string, number>> = {};
+
 export function FavoritesGrid({
   fills,
+  shiny = NO_SHINY_PICKS,
   resolve,
   selected,
   onSelect,
@@ -114,6 +119,7 @@ export function FavoritesGrid({
   fitFrame = false,
 }: {
   fills: Record<string, number>;
+  shiny?: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
@@ -133,6 +139,7 @@ export function FavoritesGrid({
           key={String(gen)}
           gen={gen}
           fills={fills}
+          shiny={shiny}
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
@@ -669,6 +676,7 @@ function useZoomFrame(
 function GenRow({
   gen,
   fills,
+  shiny,
   resolve,
   selected,
   onSelect,
@@ -676,6 +684,7 @@ function GenRow({
 }: {
   gen: GenAxisId;
   fills: Record<string, number>;
+  shiny: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
@@ -692,6 +701,7 @@ function GenRow({
           gen={gen}
           banded={banded}
           fills={fills}
+          shiny={shiny}
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
@@ -778,6 +788,7 @@ function BodyCell({
   gen,
   banded,
   fills,
+  shiny,
   resolve,
   selected,
   onSelect,
@@ -787,6 +798,7 @@ function BodyCell({
   gen: GenAxisId;
   banded: boolean;
   fills: Record<string, number>;
+  shiny: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
@@ -796,6 +808,8 @@ function BodyCell({
   const dwell = useRef(0);
   const id = fills[cellKey(type, gen)];
   const mon = id == null ? undefined : resolve(id);
+  const shinyHere = mon != null && isShinyCell(fills, shiny, cellKey(type, gen));
+  const t = useT();
   const isSel = selected?.type === type && selected?.gen === gen;
   const tint = isTypeName(type) ? TYPE_COLORS[type] : undefined;
   const locked = kind === 'disabled' || kind === 'null';
@@ -813,7 +827,7 @@ function BodyCell({
       onPointerLeave={() => window.clearTimeout(dwell.current)}
       onPointerDown={locked ? undefined : () => prefetchCell(type, gen)}
       onFocus={locked ? undefined : () => prefetchCell(type, gen)}
-      aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}`}
+      aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}${shinyHere ? ` · ${t('shiny.label')}` : ''}`}
       aria-expanded={locked ? undefined : isSel}
       aria-controls={isSel ? 'favorites-selector' : undefined}
       aria-haspopup={locked ? undefined : 'dialog'}
@@ -837,7 +851,7 @@ function BodyCell({
     >
       {banded && !locked ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {mon ? (
-        <Filled mon={mon} desktop={desktop} />
+        <Filled mon={mon} shiny={shinyHere} desktop={desktop} />
       ) : locked ? null : (
         <span
           data-testid="favorites-empty-ball"
@@ -924,10 +938,10 @@ function ChartMinimap({
   );
 }
 
-function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
+function Filled({ mon, shiny, desktop }: { mon: PickerMon; shiny: boolean; desktop: boolean }) {
   const pokemon = { types: mon.types } as Pokemon;
   const size = gridSpriteSizePercent(mon.sprite);
-  const src = usePickerSprite(mon.sprite, true);
+  const src = usePickerSprite((shiny ? pickerShinySprite(mon.id) : null) ?? mon.sprite, true);
   // The ball behind the sprite skips layout off screen during a zoom. The
   // sprite stays outside it, because skipping clips overflow.
   return (
@@ -943,6 +957,12 @@ function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
         data-grid-sprite-size={desktop ? DESKTOP_CELL_PX : size}
         draggable={false}
       />
+      {shiny ? (
+        <ShinyStar
+          className="pointer-events-none absolute z-[11]"
+          style={{ width: 'calc(var(--cell) * 0.3)', height: 'calc(var(--cell) * 0.3)', top: 'calc(var(--cell) * 0.054)', right: 'calc(var(--cell) * 0.054)' }}
+        />
+      ) : null}
     </>
   );
 }

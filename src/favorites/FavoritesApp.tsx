@@ -35,6 +35,7 @@ import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
+const SHINY_VIEW_STORAGE_KEY = 'personal-151-favorites-shiny-view-v1';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
@@ -48,6 +49,11 @@ function completionShown() {
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
   catch { return true; }
+}
+
+function savedShinyView(): boolean {
+  try { return window.localStorage.getItem(SHINY_VIEW_STORAGE_KEY) === '1'; }
+  catch { return false; }
 }
 
 function GlobalHeader() {
@@ -93,10 +99,12 @@ function FavoritesContent({ sel, setSel }: {
   useDocumentLocale();
   const desktop = useIsDesktop();
   const fills = useFavoritesStore((s) => s.fills);
+  const shiny = useFavoritesStore((s) => s.shiny);
   const place = useFavoritesStore((s) => s.place);
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
+  const [shinyView, setShinyView] = useState(savedShinyView);
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
@@ -118,6 +126,11 @@ function FavoritesContent({ sel, setSel }: {
     try { window.localStorage.setItem(ICONS_STORAGE_KEY, showIcons ? '1' : '0'); }
     catch { /* Storage can be unavailable in private browsing. */ }
   }, [showIcons]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(SHINY_VIEW_STORAGE_KEY, shinyView ? '1' : '0'); }
+    catch { /* Storage can be unavailable in private browsing. */ }
+  }, [shinyView]);
 
   useEffect(() => {
     let alive = true;
@@ -157,17 +170,20 @@ function FavoritesContent({ sel, setSel }: {
       type={sel.type}
       gen={sel.gen}
       fills={fills}
+      shiny={shiny}
       currentId={fills[cellKey(sel.type, sel.gen)]}
       showIcons={showIcons}
+      shinyView={shinyView}
       sortOrder={sortOrder}
       onToggleIcons={() => setShowIcons((value) => !value)}
+      onToggleShiny={() => setShinyView((value) => !value)}
       onClose={() => {
         if (sel.keyboard) requestAnimationFrame(() => {
           document.querySelector<HTMLButtonElement>(`[data-testid="favorites-cell-${sel.type}-${sel.gen}"]`)?.focus({ preventScroll: true });
         });
         setSel(null);
       }}
-      onPlace={(id) => place(sel.type, sel.gen, id)}
+      onPlace={(id, shinyPick) => place(sel.type, sel.gen, id, shinyPick)}
       onApplyPack={(path: PackMove[]) => {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);
       }}
@@ -203,6 +219,7 @@ function FavoritesContent({ sel, setSel }: {
             <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
               <FavoritesGrid
                 fills={fills}
+                shiny={shiny}
                 resolve={getPickerMon}
                 selected={sel}
                 onSelect={open}
@@ -241,7 +258,7 @@ function FavoritesContent({ sel, setSel }: {
         onShown={completionShown}
       />
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
-        <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
+        <FavoritesExportOverlay fills={fills} shiny={shiny} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
       </Suspense>}
     </>

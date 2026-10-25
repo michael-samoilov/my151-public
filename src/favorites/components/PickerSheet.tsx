@@ -8,7 +8,7 @@ import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyStat
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PREVIEW_FEATURES, PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
-import { isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { cellKey, isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import type { SortOrder } from '../model/sortKeys';
@@ -25,6 +25,8 @@ import {
 } from '../model/packing';
 import { pointerMarks, pointerPool, pointerCoordinates, pointerSourceKeys } from '../model/pointers';
 import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
+import { isShinyCell, pickerShinySprite } from '../model/shiny';
+import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { coordinateLabel } from './coordinatePresentation';
 import { pickerLabelOf } from './spriteLabel';
 import { generationLabel } from './badgeStyle';
@@ -41,10 +43,13 @@ export function PickerSheet({
   gen,
   autoFocus = false,
   fills,
+  shiny,
   currentId,
   showIcons,
+  shinyView,
   sortOrder,
   onToggleIcons,
+  onToggleShiny,
   onClose,
   onPlace,
   onApplyPack,
@@ -55,12 +60,15 @@ export function PickerSheet({
   gen: GenAxisId;
   autoFocus?: boolean;
   fills: Record<string, number>;
+  shiny: Readonly<Record<string, number>>;
   currentId?: number;
   showIcons: boolean;
+  shinyView: boolean;
   sortOrder: SortOrder;
   onToggleIcons: () => void;
+  onToggleShiny: () => void;
   onClose: () => void;
-  onPlace: (id: number) => void;
+  onPlace: (id: number, shiny: boolean) => void;
   onApplyPack: (path: PackMove[]) => void;
   onClear: () => void;
   onOpenCell: (type: TypeAxisId, gen: GenAxisId, keyboard: boolean) => void;
@@ -86,16 +94,16 @@ export function PickerSheet({
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
-  const iconToggleRef = useRef<HTMLButtonElement>(null);
-  const [iconToggleWidth, setIconToggleWidth] = useState(0);
+  const headerButtonsRef = useRef<HTMLDivElement>(null);
+  const [headerButtonsWidth, setHeaderButtonsWidth] = useState(0);
 
   useLayoutEffect(() => {
-    const button = iconToggleRef.current;
-    if (!button) return;
-    const measure = () => setIconToggleWidth(button.getBoundingClientRect().width);
+    const buttons = headerButtonsRef.current;
+    if (!buttons) return;
+    const measure = () => setHeaderButtonsWidth(buttons.getBoundingClientRect().width);
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(button);
+    observer.observe(buttons);
     return () => observer.disconnect();
   }, [desktop, t, type, gen]);
 
@@ -129,8 +137,15 @@ export function PickerSheet({
 
   const empty = mons.length === 0 ? emptyCopy(type, gen, fills, onOpenCell) : null;
 
+  const key = cellKey(type, gen);
+  // A pick sheet shows the look the switch asks for; a pointer sheet shows each candidate as the cells it points at have it.
+  const shinyFor = kind === 'pointer' ? (mon: PickerMon) => isShinyCell({ ...fills, [key]: mon.id }, shiny, key) : () => shinyView;
+  const placesShiny = (mon: PickerMon) => kind === 'pick' && shinyView && pickerShinySprite(mon.id) !== null;
+  const current = currentId == null ? undefined : getPickerMon(currentId);
+  const converting = kind === 'pick' && current != null && placesShiny(current) !== isShinyCell(fills, shiny, key);
+
   function pick(mon: PickerMon) {
-    if (mon.id === currentId) {
+    if (mon.id === currentId && !converting) {
       onClose();
       return;
     }
@@ -144,7 +159,7 @@ export function PickerSheet({
         return;
       }
     }
-    onPlace(mon.id);
+    onPlace(mon.id, placesShiny(mon));
     onClose();
   }
 
@@ -173,6 +188,8 @@ export function PickerSheet({
           maxCols={maxCols}
           lineKey={lineKey}
           selectedId={currentId}
+          converting={converting}
+          shinyFor={shinyFor}
           onPick={pick}
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showIcons={showIcons}
@@ -196,12 +213,11 @@ export function PickerSheet({
   );
 
   const title = <PickerTitle type={type} gen={gen}
-    maxWidth={desktop ? undefined : Math.max(1, viewportPx - (mons.length > 0 ? iconToggleWidth : 0) - 16 - (packing ? 20 : 0))}
+    maxWidth={desktop ? undefined : Math.max(1, viewportPx - (mons.length > 0 ? headerButtonsWidth : 0) - 16 - (packing ? 20 : 0))}
     gapPx={desktop ? 6 : 2} />;
-  const iconToggle = mons.length === 0 ? null : (
+  const iconToggle = (
     <button
       type="button"
-      ref={iconToggleRef}
       data-testid="favorites-type-toggle"
       aria-pressed={showIcons}
       aria-label={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
@@ -216,6 +232,12 @@ export function PickerSheet({
         <span className="col-start-1 row-start-1">{showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}</span>
       </span>
     </button>
+  );
+  const headerButtons = mons.length === 0 ? null : (
+    <div ref={headerButtonsRef} className={`flex shrink-0 items-center ${desktop ? 'gap-2' : 'gap-1.5'}`}>
+      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} showLabel={desktop} testId="favorites-shiny-toggle" /> : null}
+      {iconToggle}
+    </div>
   );
   const mobileTitle = (
     <span className="flex w-full items-center gap-1 px-1 py-0.5 text-left">
@@ -236,7 +258,7 @@ export function PickerSheet({
             ) : null}
             {title}
           </div>
-          {iconToggle}
+          {headerButtons}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
       </DesktopPane>
@@ -249,7 +271,7 @@ export function PickerSheet({
       onHeaderClick={packing ? backFromPack : undefined}
       headerLabel={packing ? t('favorites.packing.back') : undefined}
       title={mobileTitle}
-      headerAccessory={iconToggle}
+      headerAccessory={headerButtons}
       closeLabel={t('favorites.close')}
       dialogLabel={coordinateLabel(type, gen)}
       size="content"
