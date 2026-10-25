@@ -3,7 +3,6 @@ import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { NoShinyGlyph } from './ShinyMarks';
 
-/** The Shiny switch: gold with sparkles while on, neutral with crossed-out sparkles while off. */
 export function ShinyToggle({ on, onToggle, compact, testId }: {
   on: boolean;
   onToggle: () => void;

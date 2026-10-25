@@ -13,7 +13,6 @@ export interface FavoritesExportCell {
   kind: ReturnType<typeof kindFor>;
   mon: PickerMon | null;
   shiny: boolean;
-  /** The sprite the cell shows: the shiny one when `shiny`. */
   sprite: string | null;
 }
 

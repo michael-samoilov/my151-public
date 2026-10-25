@@ -4,7 +4,6 @@ import { parseCellKey } from './cells';
 import { kindFor } from './eligibility';
 import { pointerSourceKeys } from './pointers';
 
-/** The picker Pokémon's shiny sprite, or null when its art has none. */
 export function pickerShinySprite(id: number): string | null {
   const mon = getPickerMon(id);
   return mon ? shinySpriteUrl(mon.sprite) : null;

@@ -28,7 +28,6 @@ export function NoShinyMark({ size, left, top }: { size: string; left: string; t
   );
 }
 
-/** Lucide's sparkles, crossed out: no shiny, or the Shiny switch while off. */
 export function NoShinyGlyph({ size, style }: { size?: number; style?: CSSProperties }) {
   return (
     <Sparkles size={size} strokeWidth={2.2} aria-hidden style={style}>
