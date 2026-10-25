@@ -455,6 +455,8 @@
   "poster.noOverPerform": "aucun type ne se démarque nettement",
   "poster.overPerforms": "{type} se démarque",
   "poster.separator": " · ",
+  "shiny.label": "Chromatique",
+  "shiny.none": "Pas de chromatique",
   "sort.build-order": "Ordre de création",
   "sort.build-order.desc": "Reprend exactement l’ordre et les sections de votre page de création.",
   "sort.custom": "Personnalisé",

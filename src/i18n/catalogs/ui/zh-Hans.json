@@ -444,6 +444,8 @@
   "poster.noOverPerform": "没有特别强势的属性",
   "poster.overPerforms": "{type}属性表现突出",
   "poster.separator": " · ",
+  "shiny.label": "异色",
+  "shiny.none": "无异色",
   "sort.build-order": "创建顺序",
   "sort.build-order.desc": "与创建页面完全一致，沿用你在那里设置的顺序和分区。",
   "sort.custom": "自定义",

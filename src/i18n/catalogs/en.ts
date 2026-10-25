@@ -637,6 +637,8 @@ export const enUi = {
   'sectionTiny.swamp': 'Swamp',
   'sectionTiny.tundra': 'Tundra',
   'sectionTiny.volcanic': 'Volcanic',
+  'shiny.label': 'Shiny',
+  'shiny.none': 'No shiny',
   'sort.build-order': 'Build Order',
   'sort.build-order.desc': 'Mirrors your build page exactly - the order and sections you set up there.',
   'sort.custom': 'Custom',

@@ -455,6 +455,8 @@
   "poster.noOverPerform": "nessun tipo spicca nettamente",
   "poster.overPerforms": "{type} spicca",
   "poster.separator": " · ",
+  "shiny.label": "Cromatico",
+  "shiny.none": "Nessuna forma cromatica",
   "sort.build-order": "Ordine di creazione",
   "sort.build-order.desc": "Rispecchia esattamente l’ordine e le sezioni della tua pagina di creazione.",
   "sort.custom": "Personalizzato",

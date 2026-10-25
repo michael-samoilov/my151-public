@@ -444,6 +444,8 @@
   "poster.noOverPerform": "突出して強いタイプはなし",
   "poster.overPerforms": "{type}が特に強い",
   "poster.separator": " · ",
+  "shiny.label": "色違い",
+  "shiny.none": "色違いなし",
   "sort.build-order": "作成順",
   "sort.build-order.desc": "作成ページで決めた順番とセクションをそのまま使います。",
   "sort.custom": "カスタム",

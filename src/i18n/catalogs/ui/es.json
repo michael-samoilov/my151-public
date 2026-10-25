@@ -455,6 +455,8 @@
   "poster.noOverPerform": "ningún tipo destaca claramente",
   "poster.overPerforms": "{type} destaca",
   "poster.separator": " · ",
+  "shiny.label": "Variocolor",
+  "shiny.none": "Sin variocolor",
   "sort.build-order": "Orden de creación",
   "sort.build-order.desc": "Refleja exactamente el orden y las secciones de tu página de creación.",
   "sort.custom": "Personalizado",

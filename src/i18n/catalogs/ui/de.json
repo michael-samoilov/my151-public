@@ -455,6 +455,8 @@
   "poster.noOverPerform": "kein Typ sticht stark hervor",
   "poster.overPerforms": "{type} sticht hervor",
   "poster.separator": " · ",
+  "shiny.label": "Schillernd",
+  "shiny.none": "Keine schillernde Form",
   "sort.build-order": "Erstellreihenfolge",
   "sort.build-order.desc": "Genau wie beim Erstellen: dieselbe Reihenfolge und dieselben Abschnitte.",
   "sort.custom": "Eigene",

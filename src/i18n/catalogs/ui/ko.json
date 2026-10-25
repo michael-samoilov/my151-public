@@ -444,6 +444,8 @@
   "poster.noOverPerform": "특별히 강한 타입 없음",
   "poster.overPerforms": "{type} 타입이 특히 강함",
   "poster.separator": " · ",
+  "shiny.label": "색이 다른",
+  "shiny.none": "색이 다른 모습 없음",
   "sort.build-order": "만든 순서",
   "sort.build-order.desc": "만들기 페이지에서 정한 순서와 섹션을 그대로 따릅니다.",
   "sort.custom": "사용자 지정",
