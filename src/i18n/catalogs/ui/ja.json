@@ -518,6 +518,7 @@
   "favorites.packing.heading": "このポケモンはすでにこの世代にいます。行の並べ替え方を選んでください。",
   "favorites.scrollMore": "スクロールで続きを見る",
   "favorites.title": "タイプ・世代別のお気に入りポケモン",
+  "favorites.icons": "アイコン",
   "favorites.icons.hide": "アイコンを隠す",
   "favorites.icons.show": "アイコンを表示",
   "error.body": "ページの一部でエラーが発生しました。たいていは再読み込みで直ります。",

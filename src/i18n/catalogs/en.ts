@@ -356,6 +356,7 @@ export const enUi = {
   'favorites.empty.unavailable.title': 'No Pokémon fit this cell',
   'favorites.packing.back': 'Pick a different Pokémon',
   'favorites.packing.heading': 'This Pokémon already sits on this generation. Choose how the row shifts.',
+  'favorites.icons': 'Icons',
   'favorites.icons.hide': 'Hide Icons',
   'favorites.icons.show': 'Show Icons',
   'feedback.category.bug': 'Bug',

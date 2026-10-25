@@ -108,12 +108,15 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   expect(simplified.star).toEqual([245, 179, 1, 255]);
 });
 
-test('the sheet header fits the Shiny switch beside Hide Icons @viewport', async ({ page }, testInfo) => {
+test('the sheet header fits the labelled Shiny and Icons toggles after the title @viewport', async ({ page }, testInfo) => {
   await seed(page, { fills: {} });
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-fire-1').click();
   const toggle = page.getByTestId('favorites-shiny-toggle');
+  const crossedOut = toggle.locator('path[d="M3 3l18 18"]');
+  await expect(crossedOut).toHaveCount(1);
   await toggle.click();
+  await expect(crossedOut).toHaveCount(0);
   const boxes = await page.evaluate(() => {
     const box = (selector: string) => {
       const rect = document.querySelector(selector)!.getBoundingClientRect();
@@ -129,9 +132,9 @@ test('the sheet header fits the Shiny switch beside Hide Icons @viewport', async
   });
   await testInfo.attach('sheet-header.png', { body: await page.screenshot(), contentType: 'image/png' });
   await testInfo.attach('sheet-header.json', { body: JSON.stringify(boxes, null, 2), contentType: 'application/json' });
-  const desktop = testInfo.project.name === 'desktop';
-  await expect(toggle).toHaveText(desktop ? 'Shiny' : '');
+  await expect(toggle).toHaveText('Shiny');
   await expect(toggle).toHaveAccessibleName('Shiny');
+  await expect(page.getByTestId('favorites-type-toggle')).toHaveText('Icons');
   expect(boxes.title.right).toBeLessThanOrEqual(boxes.shiny.left);
   expect(boxes.shiny.right).toBeLessThan(boxes.icons.left);
   expect(boxes.icons.right).toBeLessThanOrEqual(boxes.viewport);

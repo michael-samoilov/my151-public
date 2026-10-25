@@ -220,22 +220,17 @@ export function PickerSheet({
       type="button"
       data-testid="favorites-type-toggle"
       aria-pressed={showIcons}
-      aria-label={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
       className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${desktop ? 'gap-1.5 px-2.5' : 'gap-1 px-1'} whitespace-nowrap ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
-      {showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
-      <span className="grid">
-        <span className="invisible col-start-1 row-start-1" aria-hidden>{t('favorites.icons.hide')}</span>
-        <span className="invisible col-start-1 row-start-1" aria-hidden>{t('favorites.icons.show')}</span>
-        <span className="col-start-1 row-start-1">{showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}</span>
-      </span>
+      {showIcons ? <Eye size={16} aria-hidden /> : <EyeOff size={16} aria-hidden />}
+      <span>{t('favorites.icons')}</span>
     </button>
   );
   const headerButtons = mons.length === 0 ? null : (
     <div ref={headerButtonsRef} className={`flex shrink-0 items-center ${desktop ? 'gap-2' : 'gap-1.5'}`}>
-      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} showLabel={desktop} testId="favorites-shiny-toggle" /> : null}
+      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} compact={!desktop} testId="favorites-shiny-toggle" /> : null}
       {iconToggle}
     </div>
   );

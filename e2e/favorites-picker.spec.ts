@@ -699,8 +699,8 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-bug-6').click();
     const toggle = page.getByTestId('favorites-type-toggle');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(toggle).toHaveAccessibleName('Hide Icons');
-    await expect(toggle).toHaveText('Hide Icons', { useInnerText: true });
+    await expect(toggle).toHaveAccessibleName('Icons');
+    await expect(toggle).toHaveText('Icons', { useInnerText: true });
     const [headerBox, toggleBox] = await Promise.all([
       page.getByTestId('bottom-sheet-header-frame').boundingBox(),
       toggle.boundingBox(),

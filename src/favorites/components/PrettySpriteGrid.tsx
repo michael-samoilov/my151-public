@@ -223,7 +223,7 @@ function PickCell({
         draggable={false}
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
-      {noShiny ? <NoShinyMark size={`${mark}px`} inset="2px" /> : null}
+      {noShiny ? <NoShinyMark size={`${mark}px`} left="2px" top="2px" /> : null}
       {showIcons ? <span
         className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}
