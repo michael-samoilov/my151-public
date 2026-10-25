@@ -43,6 +43,14 @@ Decisions for Michael:
 - For a decision with no visual side, such as closing a PR, give the context, the alternatives, their consequences, and your recommendation.
 - Name each open decision by what it decides, in plain words, every time you mention it. Never use a code such as "D6" or "D1 to D5" in a message to Michael. Say where its context is: pictures in this chat, or a GitHub link to the file section that explains it.
 
+## Personal data
+
+Never send Michael's email address or other contact details to an outside service. This rule covers request headers such as `User-Agent`, URLs, query strings, form fields, and payloads. It also covers commit messages, PR and issue text, and subagent briefs. Send the address only when Michael approves that exact use in the conversation.
+
+When a site asks for contact details in a user agent, send a generic tool name with no contact details. If the site refuses that request, skip the site.
+
+`.claude/hooks/guard-owner-email.mjs` enforces this rule. It runs before every tool call and compares each email address in the call with stored SHA-256 hashes. On a match, Claude Code asks Michael for approval, also in auto mode. An agent that cannot show the prompt is denied. The repository stores only the hashes, never the address.
+
 ## Style guide
 
 Write all prose in [Google developer documentation style](https://developers.google.com/style). This covers responses, visible thinking, commit messages, PR text, code comments, and docs. The distilled rules are in `.claude/skills/google-style/SKILL.md`. A SessionStart hook in `.claude/settings.json` injects them into context each session. If the hook output is absent, read that file before your first response. For word-level questions, read `word-list.md` in the same directory.
