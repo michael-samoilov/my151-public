@@ -118,6 +118,16 @@ export const SCREENS: Screen[] = [
       await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
     },
   },
+  {
+    id: 'league-browser-cleared', path: '/custom-gym-leader?lang=en',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+      await page.getByRole('button', { name: 'Clear', exact: true }).click();
+      await page.locator('[data-result-count][hidden]').waitFor({ state: 'attached', timeout: 30_000 });
+    },
+  },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   {
