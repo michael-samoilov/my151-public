@@ -218,7 +218,7 @@ export function PickerSheet({
   );
   const headerButtons = mons.length === 0 ? null : (
     <div ref={headerButtonsRef} className={`flex shrink-0 items-center ${desktop ? 'gap-2' : 'gap-1.5'}`}>
-      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} compact={!desktop} testId="favorites-shiny-toggle" /> : null}
+      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} size={desktop ? 'full' : 'compact'} testId="favorites-shiny-toggle" /> : null}
       {iconToggle}
     </div>
   );
