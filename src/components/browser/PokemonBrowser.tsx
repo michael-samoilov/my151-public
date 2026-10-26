@@ -889,7 +889,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             {tn('browser.results', announcedCount)}
           </span>
           {setShinyView && (
-            <span className="shrink-0 self-stretch flex items-center pl-2 border-l border-border">
+            <span className={cn('shrink-0 self-stretch flex items-center', !countHidden && 'pl-2 border-l border-border')}>
               <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} size={tight ? 'icon' : isDesktop ? 'full' : 'compact'} testId="browser-shiny-toggle" />
             </span>
           )}

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 /** Room to type past the placeholder, in the search field's font size. */
 const TYPING_ROOM_EM = 2;
@@ -30,8 +30,10 @@ export function SearchRow({ layout, children }: {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [fit, setFit] = useState<{ key: string; tight: boolean } | null>(null);
+  // A web font that arrives after the first measure changes every text width.
+  const [fontLoads, setFontLoads] = useState(0);
   const measures = layout !== null;
-  const key = measures && width > 0 ? `${layout}|${width}` : null;
+  const key = measures && width > 0 ? `${layout}|${width}|${fontLoads}` : null;
   const measured = key !== null && fit?.key === key;
 
   useLayoutEffect(() => {
@@ -42,6 +44,13 @@ export function SearchRow({ layout, children }: {
     const observer = new ResizeObserver(read);
     observer.observe(row);
     return () => observer.disconnect();
+  }, [measures]);
+
+  useEffect(() => {
+    if (!measures) return;
+    const remeasure = () => setFontLoads((n) => n + 1);
+    document.fonts.addEventListener('loadingdone', remeasure);
+    return () => document.fonts.removeEventListener('loadingdone', remeasure);
   }, [measures]);
 
   useLayoutEffect(() => {
