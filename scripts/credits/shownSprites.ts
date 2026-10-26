@@ -17,6 +17,7 @@ interface Catalogs {
   archetypes: Archetype[];
   formsFor(pokemonId: number, kind: 'mega' | 'dynamax'): { id: number; label: string }[];
   allPickerMons(): readonly (CatalogMon & { source: string })[];
+  shinySpriteUrl(sprite: string): string | null;
 }
 
 async function loadCatalogs(root: string): Promise<Catalogs> {
@@ -31,12 +32,14 @@ async function loadCatalogs(root: string): Promise<Catalogs> {
   const league = await load<{ getAllPokemon(): CatalogMon[] }>('src/league/data/catalog.ts');
   const powerups = await load<Pick<Catalogs, 'formsFor'>>('src/league/model/powerups.ts');
   const picker = await load<Pick<Catalogs, 'allPickerMons'>>('src/favorites/model/catalog.ts');
+  const sprites = await load<Pick<Catalogs, 'shinySpriteUrl'>>('src/lib/spriteUrl.ts');
   return {
     dexPokemon: dex.getAllPokemon,
     leaguePokemon: league.getAllPokemon,
     archetypes: archetypes.ARCHETYPES,
     formsFor: powerups.formsFor,
     allPickerMons: picker.allPickerMons,
+    shinySpriteUrl: sprites.shinySpriteUrl,
   };
 }
 
@@ -88,13 +91,19 @@ function literalUses(root: string): Array<{ file: string; source: string }> {
 }
 
 export async function shownSprites(root = process.cwd()): Promise<Map<string, SpriteUse[]>> {
-  const { dexPokemon, leaguePokemon, archetypes, formsFor, allPickerMons } = await loadCatalogs(root);
+  const { dexPokemon, leaguePokemon, archetypes, formsFor, allPickerMons, shinySpriteUrl } = await loadCatalogs(root);
   const uses = new Map<string, SpriteUse[]>();
   const add = (url: string, use: SpriteUse) => {
     const key = file(url);
     const list = uses.get(key) ?? [];
     if (!list.some((u) => u.tool === use.tool && u.as === use.as)) list.push(use);
     uses.set(key, list);
+  };
+  // The league builder and the Favorite picker show each sprite's shiny when their Shiny switch is on.
+  const addWithShiny = (url: string, use: SpriteUse) => {
+    add(url, use);
+    const shiny = shinySpriteUrl(url);
+    if (shiny) add(shiny, { tool: use.tool, as: `${use.as} (shiny)`, via: `${use.via}, Shiny switch` });
   };
 
   const dex = dexPokemon();
@@ -121,16 +130,16 @@ export async function shownSprites(root = process.cwd()): Promise<Map<string, Sp
     }
   }
 
-  for (const p of league) add(p.sprite, { tool: 'League builder', as: p.name, via: 'league catalog sprite' });
+  for (const p of league) addWithShiny(p.sprite, { tool: 'League builder', as: p.name, via: 'league catalog sprite' });
   for (const p of league) {
     for (const kind of ['mega', 'dynamax'] as const) {
       for (const form of formsFor(p.id, kind)) {
-        add(`/sprites/pokemon/${form.id}.png`, { tool: 'League builder', as: form.label, via: `powerup ${kind} of ${p.name}` });
+        addWithShiny(`/sprites/pokemon/${form.id}.png`, { tool: 'League builder', as: form.label, via: `powerup ${kind} of ${p.name}` });
       }
     }
   }
 
-  for (const mon of allPickerMons()) add(mon.sprite, { tool: 'Favorite picker', as: mon.name, via: `picker catalog (${mon.source})` });
+  for (const mon of allPickerMons()) addWithShiny(mon.sprite, { tool: 'Favorite picker', as: mon.name, via: `picker catalog (${mon.source})` });
 
   for (const literal of literalUses(root)) {
     if (IMPORTED.has(literal.source)) continue;

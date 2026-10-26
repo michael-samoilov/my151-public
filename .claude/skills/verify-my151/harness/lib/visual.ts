@@ -143,6 +143,13 @@ export const SCREENS: Screen[] = [
   { id: 'favorites-tooltip-shadow-lugia-zh', path: '/favorite-pokemon-picker?lang=zh-Hant', act: pickTooltip('psychic-3', [11123]) },
   { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
   {
+    id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en',
+    act: async (page) => {
+      await openArtist('KingOfThe-X-Roads')(page);
+      for (const summary of await page.getByTestId('ack-sprites-generation').locator('summary').all()) await summary.click();
+    },
+  },
+  {
     id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,
     act: async (page) => {
       await click('[data-testid="favorites-export-open"]')(page);

@@ -4,6 +4,7 @@ import { useLocale, useT, useTn, type Locale } from '@/i18n';
 import altFormSpecies from '@/i18n/alt-form-species.json';
 import { pickerFullName, type PickerNameTables } from '@/favorites/pickerFullName';
 import { artistCredit, type CreditedSprite } from '@/data/spriteCredits';
+import { ShinyStar } from '@/components/shiny/ShinyMarks';
 
 interface SharedNames { species: string[]; forms: Record<string, string> }
 interface PickerNames { species: Record<string, number>; forms: Record<string, string> }
@@ -63,7 +64,12 @@ function SpriteList({ sprites }: { sprites: readonly CreditedSprite[] }) {
   if (!ready) return <p className="text-sm text-muted-foreground">{t('ack.loading')}</p>;
   const list = (items: readonly CreditedSprite[]) => (
     <ul className="list-disc ps-5 text-sm leading-relaxed marker:text-muted-foreground">
-      {items.map((sprite) => <li key={sprite.mon.id}>{pickerFullName(sprite.mon, ready)}</li>)}
+      {items.map((sprite) => (
+        <li key={`${sprite.mon.id}${sprite.shiny ? '-shiny' : ''}`}>
+          {pickerFullName(sprite.mon, ready)}
+          {sprite.shiny && <ShinyStar className="ms-1 inline-block h-[0.9em] w-[0.9em] align-[-0.1em]" />}
+        </li>
+      ))}
     </ul>
   );
   if (sprites.length <= FOLD_AFTER) return list(sprites);

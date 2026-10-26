@@ -1274,3 +1274,19 @@ Five picker-only appearances, each a byte copy of the sprite-lab selection Micha
 ## Cherrim Sunshine Form added on 2026-10-20
 
 Cherrim (Sunshine Form) (11128) is a picker-only battle form. The file is byte-identical to PokéAPI's `sprites/pokemon/versions/generation-v/black-white/421-sunshine.png`, which came in the Black and White import (96c282e, 2020-08-01); the parent commit has no such file, and the bytes are the same at 0dc105d and at the pinned ba40397. It is Game Freak's sprite, so it has no credit and no Acknowledgements entry.
+
+## Shiny sprites added on 2026-10-25
+
+The Favorite Pokémon Picker and the league builder show 1,396 shiny files when their Shiny switch is on: 1,395 in the picker and 1,326 in the league builder. The Pokédex builder already showed five of them through archetypes. Each file has a row in the JSON ledger. The rules are in [How my151 credits sprites](README.md#shiny-sprites).
+
+| Count | Evidence type |
+|---:|---|
+| 693 | Game Freak shiny: exact match to PokéAPI's Black and White shiny; two are frames of its shiny Overdrive animations |
+| 577 | Exact match to the Front shiny attachment of the Smogon sheet row that credits the shiny |
+| 40 | Pixels of the PokéAPI shiny added in the commit whose README line credits Kyle Dove for the Z-A Mega sprites |
+| 10 | Same pixels as the shiny that KingOfThe-X-Roads posted on Sta.sh |
+| 8 | Same pixels as the Generation 9 pack shiny on the sheet row that names the artist |
+| 17 | Pinned source identified; no source names the shiny's artist |
+| 51 | Counts under its normal sprite's entry; artist not confirmed |
+
+Four artists appear only through shiny files: TheAetherPlayer (75 files), AMVictory (3), arinoelle (1), and Mega-Pokebattlerz (1).

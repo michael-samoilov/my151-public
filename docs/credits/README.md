@@ -49,6 +49,18 @@ Tinkmaster (#959 by Travis, with tools from an image-model edit) and Chef Dente 
 
 my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
 
+## Shiny sprites
+
+On 2026-10-25 the Favorite Pokémon Picker and the league builder gained a Shiny switch. `scripts/credits/shownSprites.ts` lists every shiny file that the switch can show. Each one needs a ledger row like any other shown file, and the bundles count it. A shiny's row in `src/data/spriteAttribution.json` has the key `shiny/<file>`, so it stays apart from its normal sprite's row.
+
+Each shiny gets the credit of the source it came from:
+
+- `scripts/data/shiny-sprite-placed.json` names the source and the shiny artist of each shiny that the harvest takes from outside PokéAPI's own folders. The research run of 2026-10-25 traced these, and 60 more PokéAPI shinies, to their credit sheets. The run is not in the repository, so each ledger row keeps its source URLs and SHA-256 values.
+- Any other shiny is PokéAPI's file. It is Game Freak's when its pixels equal PokéAPI's Black and White shiny. A Smogon shiny is compared with the Front shiny attachment on the sheet row that credits its normal sprite. On an exact match, the artists that the row marks "(shiny)" are credited, or the row's artists when it marks none. A PokéAPI shiny is credited through the README only when the commit whose README line credits its normal sprite also added the shiny, and the line covers shinies.
+- A shiny with no such match counts under its normal sprite's entry as "Artist not confirmed". Its ledger row says `"evidenceType": "follows-normal"`.
+
+An artist's own entry lists each of their shiny uploads right after the matching normal sprite, marked with the shiny star.
+
 ## Non-profit
 
 "my151 makes no money and has no plans to" (Michael, 2026-10-13). Several terms allow non-profit use only, so this matters.

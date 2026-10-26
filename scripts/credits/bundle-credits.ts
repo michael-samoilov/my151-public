@@ -104,7 +104,8 @@ const terms = read<{ artists: Record<string, ArtistTerms> }>('src/data/creditTer
 const DELIVERY = 'docs/credits/pokeapi-delivery.json';
 const delivery = read<{ files: Record<string, DeliveryRow> }>(DELIVERY).files;
 
-const fileId = (file: string) => file.replace(/^.*\/|\.png$/g, '');
+/** A ledger file's key in src/data/spriteAttribution.json: `650`, or `shiny/650` for its shiny. */
+const fileId = (file: string) => file.replace(/^public\/sprites\/pokemon\/|\.png$/g, '');
 const fromPokeApi = (row: LedgerRow) => row.sources.some((s) => s.url?.startsWith('https://github.com/PokeAPI/sprites/'));
 
 /** The entry each shown fan-made file counts under; Game Freak's and my151's files are absent. */
