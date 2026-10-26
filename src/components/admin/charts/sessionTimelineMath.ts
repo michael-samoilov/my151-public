@@ -111,7 +111,7 @@ export function formatSessionMeta(cur: TimelinePoint, tz?: string): {
   const date = fmtDay(cur.t, tz);
   const window =
     cur.dur != null
-      ? `${fmtRange(cur.t - cur.dur * 1000, cur.t, tz)} · ${Math.round(cur.dur / 60)}m`
+      ? `${fmtRange(cur.t - cur.dur * 1000, cur.t, tz)} · ${Math.round(cur.dur / 60) ? `${Math.round(cur.dur / 60)}m` : `${Math.round(cur.dur)}s`}`
       : undefined;
   const added = cur.added > 0 ? cur.added : undefined;
   const removed = cur.removed > 0 ? cur.removed : undefined;

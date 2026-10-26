@@ -81,4 +81,10 @@ describe('formatSessionMeta', () => {
     const meta = formatSessionMeta(cur, 'UTC');
     expect(meta.text).toBe('Sep 13 · 11:59 AM–12:01 PM · 2m · +84 −84');
   });
+
+  it('gives a session that rounds to 0 minutes in seconds', () => {
+    const cur: TimelinePoint = { t: Date.parse('2026-09-13T12:01:00Z'), count: 14, net: 0, added: 0, removed: 0, dur: 12 };
+    expect(formatSessionMeta(cur, 'UTC').window).toBe('12:00–12:01 PM · 12s');
+    expect(formatSessionMeta({ ...cur, dur: 0 }, 'UTC').window).toBe('12:01–12:01 PM · 0s');
+  });
 });
