@@ -1287,6 +1287,17 @@ The Favorite Pokémon Picker and the league builder show 1,396 shiny files when 
 | 10 | Same pixels as the shiny that KingOfThe-X-Roads posted on Sta.sh |
 | 8 | Same pixels as the Generation 9 pack shiny on the sheet row that names the artist |
 | 17 | Pinned source identified; no source names the shiny's artist |
-| 51 | Counts under its normal sprite's entry; artist not confirmed |
+| 51 | Artist not confirmed; follows its normal sprite |
 
-Four artists appear only through shiny files: TheAetherPlayer (75 files), AMVictory (3), arinoelle (1), and Mega-Pokebattlerz (1).
+Under the [credit rule of 2026-10-26](README.md#shiny-sprites), the panel counts 85 of these files on their own. Each is an exact match to a Smogon sheet row that names a "(shiny)" artist who did not draw the normal sprite. The normal sprite's credit covers the other 1,311 files, which the bundles do not count. They include the five Game Freak shinies that the Pokédex builder already showed, so the panel's count of official sprites from PokéAPI goes from 700 to 695.
+
+| Files | Shiny artist |
+|---:|---|
+| 75 | TheAetherPlayer |
+| 3 | AMVictory |
+| 3 | leParagon |
+| 2 | G.E.Z. |
+| 1 | arinoelle |
+| 1 | Mega-Pokebattlerz |
+
+Four artists appear only through shiny files: TheAetherPlayer, AMVictory, arinoelle, and Mega-Pokebattlerz.

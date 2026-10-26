@@ -51,15 +51,22 @@ my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do n
 
 ## Shiny sprites
 
-On 2026-10-25 the Favorite Pokémon Picker and the league builder gained a Shiny switch. `scripts/credits/shownSprites.ts` lists every shiny file that the switch can show. Each one needs a ledger row like any other shown file, and the bundles count it. A shiny's row in `src/data/spriteAttribution.json` has the key `shiny/<file>`, so it stays apart from its normal sprite's row.
+On 2026-10-25 the Favorite Pokémon Picker and the league builder gained a Shiny switch. `scripts/credits/shownSprites.ts` lists every shiny file that the switch can show. Each one needs a ledger row like any other shown file, and the row records the shiny's source and artist.
 
-Each shiny gets the credit of the source it came from:
+Michael set the credit rule on 2026-10-26. When the same artist drew the normal and the shiny sprite, the credit for the normal sprite also covers the shiny. The panel credits a shiny on its own only when one of these holds:
+
+- A source confirms that another artist drew the shiny, such as a Smogon sheet row that names a different "(shiny)" spriter.
+- A source asks for normal and shiny forms to be credited separately.
+
+A shiny whose artist is not confirmed counts as the same artist's work. Only a shiny that the panel credits on its own has a row in `src/data/spriteAttribution.json`, with the key `shiny/<file>`. The bundles count it under its shiny artist, and they count no other shiny. `npx tsx scripts/credits/bundle-credits.ts --check` fails when a shiny's row names no confirmed artist beyond its normal sprite's. On 2026-10-26, 85 shinies had such a row, and no source asked for separate credit.
+
+The research found each shiny's source this way:
 
 - `scripts/data/shiny-sprite-placed.json` names the source and the shiny artist of each shiny that the harvest takes from outside PokéAPI's own folders. The research run of 2026-10-25 traced these, and 60 more PokéAPI shinies, to their credit sheets. The run is not in the repository, so each ledger row keeps its source URLs and SHA-256 values.
-- Any other shiny is PokéAPI's file. It is Game Freak's when its pixels equal PokéAPI's Black and White shiny. A Smogon shiny is compared with the Front shiny attachment on the sheet row that credits its normal sprite. On an exact match, the artists that the row marks "(shiny)" are credited, or the row's artists when it marks none. A PokéAPI shiny is credited through the README only when the commit whose README line credits its normal sprite also added the shiny, and the line covers shinies.
-- A shiny with no such match counts under its normal sprite's entry as "Artist not confirmed". Its ledger row says `"evidenceType": "follows-normal"`.
+- Any other shiny is PokéAPI's file. It is Game Freak's when its pixels equal PokéAPI's Black and White shiny. A Smogon shiny is compared with the Front shiny attachment on the sheet row that credits its normal sprite. On an exact match, the artists that the row marks "(shiny)" drew it, or the row's artists when it marks none. A PokéAPI shiny is credited through the README only when the commit whose README line credits its normal sprite also added the shiny, and the line covers shinies.
+- A shiny with no such match has an artist that is not confirmed. Its ledger row says `"evidenceType": "follows-normal"`.
 
-An artist's own entry lists each of their shiny uploads right after the matching normal sprite, marked with the shiny star.
+An artist's own entry lists a shiny only when the panel credits it on its own. The shiny follows the matching normal sprite, marked with the shiny star. On 2026-10-26 no own entry lists a shiny.
 
 ## Non-profit
 

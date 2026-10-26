@@ -17,12 +17,12 @@
    ]
   },
   "artist:KingOfThe-X-Roads": {
-   "sprites": 23,
+   "sprites": 13,
    "unconfirmed": 1,
    "artists": [
     [
      "KingOfThe-X-Roads",
-     22
+     12
     ]
    ]
   },
@@ -37,22 +37,22 @@
    ]
   },
   "gen9-resource-pack": {
-   "sprites": 35,
-   "unconfirmed": 20,
+   "sprites": 17,
+   "unconfirmed": 10,
    "artists": [
     [
      "KingOfThe-X-Roads",
-     15
+     7
     ]
    ]
   },
   "pokeapi-sprites": {
-   "sprites": 170,
-   "unconfirmed": 77,
+   "sprites": 91,
+   "unconfirmed": 38,
    "artists": [
     [
      "Kyle Dove",
-     82
+     42
     ],
     [
      "KingOfThe-X-Roads",
@@ -65,16 +65,16 @@
    ]
   },
   "smogon-sprite-project": {
-   "sprites": 1197,
-   "unconfirmed": 35,
+   "sprites": 686,
+   "unconfirmed": 16,
    "artists": [
     [
      "leParagon",
-     406
+     222
     ],
     [
      "KingOfThe-X-Roads",
-     143
+     75
     ],
     [
      "TheAetherPlayer",
@@ -82,46 +82,22 @@
     ],
     [
      "Blaquaza",
-     71
-    ],
-    [
-     "G.E.Z.",
-     67
-    ],
-    [
-     "princessofmusic",
-     43
-    ],
-    [
-     "Travis",
-     41
-    ],
-    [
-     "Falgaia",
      40
     ],
     [
-     "SpheX",
-     38
+     "G.E.Z.",
+     36
     ],
     [
-     "Katten",
-     35
-    ],
-    [
-     "Wobblebuns",
-     33
-    ],
-    [
-     "N-Kin",
-     27
-    ],
-    [
-     "Quanyails",
+     "princessofmusic",
      22
     ],
     [
-     "Layell",
+     "Falgaia",
+     21
+    ],
+    [
+     "Travis",
      21
     ],
     [
@@ -133,91 +109,71 @@
      19
     ],
     [
-     "The Cynical Poet",
-     17
+     "SpheX",
+     19
     ],
     [
-     "Cynda",
+     "Katten",
+     18
+    ],
+    [
+     "Wobblebuns",
+     18
+    ],
+    [
+     "N-Kin",
+     15
+    ],
+    [
+     "Layell",
      13
     ],
     [
-     "RedRooster",
-     12
+     "Quanyails",
+     11
     ],
     [
-     "Mintly",
-     10
-    ],
-    [
-     "Wyverii",
-     10
-    ],
-    [
-     "fishbowlsoul90",
+     "The Cynical Poet",
      9
     ],
     [
      "RadicalCharizard",
-     9
-    ],
-    [
-     "branflakes",
      8
     ],
     [
-     "PumpkinPastel",
-     8
-    ],
-    [
-     "Sleet",
-     8
-    ],
-    [
-     "Legitimate Username",
+     "Cynda",
      7
     ],
     [
-     "Arkeis",
+     "PumpkinPastel",
+     7
+    ],
+    [
+     "RedRooster",
      6
     ],
     [
-     "Banana Toast",
-     6
-    ],
-    [
-     "TrainerSplash",
-     6
-    ],
-    [
-     "Z-nogyroP",
-     6
-    ],
-    [
-     "Noscium",
+     "fishbowlsoul90",
      5
     ],
     [
-     "Bynine",
+     "Mintly",
+     5
+    ],
+    [
+     "Wyverii",
+     5
+    ],
+    [
+     "branflakes",
      4
     ],
     [
-     "GeoisEvil",
+     "Legitimate Username",
      4
     ],
     [
-     "Hematite",
-     4
-    ],
-    [
-     "Kyle Dove",
-     4
-    ],
-    [
-     "Spook",
-     4
-    ],
-    [
-     "Tooni",
+     "Sleet",
      4
     ],
     [
@@ -225,27 +181,35 @@
      3
     ],
     [
-     "Brylark",
+     "Arkeis",
+     3
+    ],
+    [
+     "Banana Toast",
+     3
+    ],
+    [
+     "Noscium",
+     3
+    ],
+    [
+     "TrainerSplash",
+     3
+    ],
+    [
+     "Z-nogyroP",
+     3
+    ],
+    [
+     "Bynine",
      2
     ],
     [
-     "Buna",
+     "GeoisEvil",
      2
     ],
     [
-     "Corson",
-     2
-    ],
-    [
-     "Farriella",
-     2
-    ],
-    [
-     "Galifia",
-     2
-    ],
-    [
-     "HeaLnDeaL",
+     "Hematite",
      2
     ],
     [
@@ -253,35 +217,15 @@
      2
     ],
     [
-     "KattenK",
+     "Kyle Dove",
      2
     ],
     [
-     "MrDollSteak",
+     "Spook",
      2
     ],
     [
-     "MyMarshlands",
-     2
-    ],
-    [
-     "paintseagull",
-     2
-    ],
-    [
-     "Siiilver",
-     2
-    ],
-    [
-     "TeraVolt",
-     2
-    ],
-    [
-     "Zermonious",
-     2
-    ],
-    [
-     "Zerudez",
+     "Tooni",
      2
     ],
     [
@@ -289,7 +233,35 @@
      1
     ],
     [
+     "Brylark",
+     1
+    ],
+    [
+     "Buna",
+     1
+    ],
+    [
+     "Corson",
+     1
+    ],
+    [
      "Dleep",
+     1
+    ],
+    [
+     "Farriella",
+     1
+    ],
+    [
+     "Galifia",
+     1
+    ],
+    [
+     "HeaLnDeaL",
+     1
+    ],
+    [
+     "KattenK",
      1
     ],
     [
@@ -301,16 +273,44 @@
      1
     ],
     [
+     "MrDollSteak",
+     1
+    ],
+    [
+     "MyMarshlands",
+     1
+    ],
+    [
+     "paintseagull",
+     1
+    ],
+    [
+     "Siiilver",
+     1
+    ],
+    [
+     "TeraVolt",
+     1
+    ],
+    [
      "WPS",
+     1
+    ],
+    [
+     "Zermonious",
+     1
+    ],
+    [
+     "Zerudez",
      1
     ]
    ]
   }
  },
  "pokeapi": {
-  "official": 1388,
-  "smogon": 1186,
-  "own": 170
+  "official": 695,
+  "smogon": 681,
+  "own": 91
  },
  "links": {
   "Falgaia": "https://www.deviantart.com/falgaia",

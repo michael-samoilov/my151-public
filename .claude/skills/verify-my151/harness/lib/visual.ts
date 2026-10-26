@@ -143,10 +143,14 @@ export const SCREENS: Screen[] = [
   { id: 'favorites-tooltip-shadow-lugia-zh', path: '/favorite-pokemon-picker?lang=zh-Hant', act: pickTooltip('psychic-3', [11123]) },
   { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
   {
-    id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en',
+    id: 'ack-smogon-artists', path: '/?lang=en',
     act: async (page) => {
-      await openArtist('KingOfThe-X-Roads')(page);
-      for (const summary of await page.getByTestId('ack-sprites-generation').locator('summary').all()) await summary.click();
+      const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
+      await link.scrollIntoViewIfNeeded();
+      await link.click();
+      const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+      await dialog.locator('[data-ack-id="smogon-sprite-project"]').click();
+      await dialog.getByTestId('ack-artists').scrollIntoViewIfNeeded();
     },
   },
   {
