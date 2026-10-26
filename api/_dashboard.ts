@@ -40,7 +40,7 @@ import {
   type ToolUsage,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { dexEngagedDays, isActiveUser, leagueEngagedDays, pickerEngagedDays, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
+import { dexEngagedDays, INPUT_TIMING_SINCE, isActiveUser, leagueEngagedDays, pickerEngagedDays, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
@@ -357,8 +357,12 @@ type PickerTool = SessionRecord & Sessions & Parameters<typeof pickerEngagedDays
   sessionLog?: { ts: number; endTs: number }[];
 };
 
-function foregroundTime(recordings: readonly (AttentionRecording | undefined)[]): BrowserTime | undefined {
-  const measured = recordings.filter((a): a is AttentionRecording => !!a);
+type Timed = { attention?: AttentionRecording; firstTs: number };
+
+// History is partial when a tool has no recording, retired some segments, or
+// was used before input timing existed and before its own recording began.
+function foregroundTime(tools: readonly Timed[]): BrowserTime | undefined {
+  const measured = tools.map(t => t.attention).filter((a): a is AttentionRecording => !!a);
   if (!measured.length) return undefined;
   const segments = measured.flatMap(a => a.segments.map(s => ({
     start: Math.max(s.start, a.coverageFrom), end: Math.min(s.end, a.asOf),
@@ -368,12 +372,13 @@ function foregroundTime(recordings: readonly (AttentionRecording | undefined)[])
     totalMs += Math.max(0, s.end - Math.max(s.start, end));
     end = Math.max(end, s.end);
   }
-  const partial = measured.length < recordings.length || measured.some(a => a.retiredThrough !== undefined);
+  const partial = measured.length < tools.length || measured.some(a => a.retiredThrough !== undefined)
+    || tools.some(t => !!t.attention && t.firstTs < Math.min(t.attention.coverageFrom, INPUT_TIMING_SINCE));
   return {sessions: attentionSessionCount(segments), totalMs, ...(partial ? {partial: true as const} : {})};
 }
 
-function toolStat(count: number, exported: boolean, usage: ToolUsage, attention?: AttentionRecording): ToolStat {
-  const active = foregroundTime([attention]);
+function toolStat(count: number, exported: boolean, usage: ToolUsage, tool: Timed): ToolStat {
+  const active = foregroundTime([tool]);
   return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs, ...(active ? {active} : {}) };
 }
 
@@ -386,7 +391,7 @@ function browserRow(
   const dexUsage = dex && endStampedUsage(dex);
   const leagueUsage = league && endStampedUsage(league);
   const pickerUsage = picker && spanUsage(picker);
-  const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t).map(t => t.attention));
+  const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t));
   const engaged = (!!dex && dexEngagedDays(dex).length > 0) || (!!league && leagueEngagedDays(league).length > 0) || (!!picker && pickerEngagedDays(picker).length > 0);
   return {
     cid: rec.cid,
@@ -403,9 +408,9 @@ function browserRow(
     locale: rec.locale,
     switched: rec.switched,
     archived,
-    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage, dex.attention),
-    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage, league.attention),
-    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage, picker.attention),
+    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage, dex),
+    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage, league),
+    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage, picker),
     total: browserTotal([dexUsage, leagueUsage, pickerUsage].filter((u): u is ToolUsage => !!u)),
     ...(activeTotal ? {activeTotal} : {}),
   };

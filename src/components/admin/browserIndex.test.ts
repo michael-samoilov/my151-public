@@ -234,3 +234,22 @@ describe('The Picker saves a visitor only after the first Pokémon', () => {
     expect(d.browsers.picker.find((r) => r.cid === 'p-viewer')?.bounced).toBe(true);
   });
 });
+
+describe('Browser card time', () => {
+  const oct = (date: number, hour = 12) => Date.UTC(2026, 9, date, hour);
+  const filled = parseFavoriteSnapshot({ v: 1, fills: { 'fire|1': 6 } })!;
+  const visit = (rec: FavoriteRecord | null, cid: string, i: number, now: number, inputMs?: number) =>
+    mergeFavoriteRecord(rec, {
+      cid, id: `${cid}-${i}`, now, receivedAt: now, kind: 'progress', snapshot: filled, events: [], country: 'US',
+      ...(inputMs ? { attention: { v: 1 as const, segments: [{ id: `${cid}-segment-${i}`, start: now - inputMs, end: now }] } } : {}),
+    });
+
+  it('marks input time partial when the tool was used before input timing and before its recording began', () => {
+    const early = visit(visit(null, 'p-early', 0, oct(8)), 'p-early', 1, oct(17), 7_000);
+    const late = visit(visit(null, 'p-late', 0, oct(20)), 'p-late', 1, oct(22), 7_000);
+    const rows = buildDashboard(source({ picker: { 'p-early': early, 'p-late': late } }), { range: 'all' }, oct(25)).browsers.picker;
+    expect(rows.find((r) => r.cid === 'p-early')?.picker?.active).toEqual({ sessions: 1, totalMs: 7_000, partial: true });
+    expect(rows.find((r) => r.cid === 'p-early')?.activeTotal?.partial).toBe(true);
+    expect(rows.find((r) => r.cid === 'p-late')?.picker?.active).toEqual({ sessions: 1, totalMs: 7_000 });
+  });
+});
