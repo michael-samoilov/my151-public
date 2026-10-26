@@ -3,9 +3,11 @@ import { fmtChipDuration, formatWhen } from './userPreview';
 
 export type UsageTool = 'dex' | 'league' | 'picker';
 export type UsageSource = 'active' | 'legacy';
-export type CardTime = BrowserTime & {missing?: boolean};
+// `alsoMissing` marks a sizer time whose column also holds rows that show
+// "not recorded", so the sizer reserves that label's width too.
+export type CardTime = BrowserTime & {missing?: boolean; alsoMissing?: true};
 
-export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number; missing?: boolean; partial?: true };
+export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number; missing?: boolean; partial?: true; alsoMissing?: true };
 
 const TOOLS: readonly UsageTool[] = ['dex', 'league', 'picker'];
 
@@ -28,7 +30,16 @@ function longest<T>(items: readonly T[], length: (item: T) => number): T {
 
 const progressLength = (s: ToolStat) => String(s.count).length + (s.exported ? 2 : 0);
 
-function widestStat(stats: readonly ToolStat[]): ToolStat {
+type SizerStat = ToolStat & { active?: CardTime };
+type SizerRow = BrowserRow & { dex: SizerStat; league: SizerStat; picker: SizerStat; activeTotal?: CardTime };
+
+function widestActive(times: readonly (BrowserTime | undefined)[]): CardTime | undefined {
+  const measured = times.filter((t): t is BrowserTime => !!t);
+  if (!measured.length) return undefined;
+  return {...widestTime(measured), ...(measured.length < times.length ? {alsoMissing: true as const} : {})};
+}
+
+function widestStat(stats: readonly ToolStat[]): SizerStat {
   if (stats.length === 0) return { count: 0, sessions: 0, totalMs: 0 };
   const progress = longest(stats, progressLength);
   return {
@@ -36,7 +47,7 @@ function widestStat(stats: readonly ToolStat[]): ToolStat {
     ...(progress.exported ? { exported: true as const } : {}),
     sessions: Math.max(...stats.map((s) => s.sessions)),
     totalMs: longest(stats, (s) => fmtChipDuration(s.totalMs).length).totalMs,
-    ...(stats.some(s => s.active) ? {active: widestTime(stats.flatMap(s => s.active ?? []))} : {}),
+    ...(stats.some(s => s.active) ? {active: widestActive(stats.map(s => s.active))} : {}),
   };
 }
 
@@ -60,13 +71,13 @@ export function whenShapes(rows: readonly BrowserRow[]): string[] {
   return [...new Set(rows.map(whenShape))];
 }
 
-export function widestRow(rows: readonly BrowserRow[]): BrowserRow | null {
+export function widestRow(rows: readonly BrowserRow[]): SizerRow | null {
   if (rows.length === 0) return null;
   const stats = (tool: UsageTool) => rows.flatMap((r) => r[tool] ?? []);
   const totals = rows.map((r) => r.total);
   return {
     ...rows[0],
-    activeTotal: rows.some(r => r.activeTotal) ? widestTime(rows.flatMap(r => r.activeTotal ?? [])) : undefined,
+    activeTotal: widestActive(rows.map(r => r.activeTotal)),
     dex: widestStat(stats('dex')),
     league: widestStat(stats('league')),
     picker: widestStat(stats('picker')),

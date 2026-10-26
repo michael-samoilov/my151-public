@@ -36,6 +36,7 @@ function TimeHalf({
   totalMs,
   missing,
   partial,
+  alsoMissing,
   className,
 }: {
   tool: UsageTool | 'total';
@@ -43,6 +44,7 @@ function TimeHalf({
   totalMs: number;
   missing?: boolean;
   partial?: boolean;
+  alsoMissing?: boolean;
   className?: string;
 }) {
   const parts = sessionChipParts(sessions, totalMs);
@@ -60,6 +62,7 @@ function TimeHalf({
       </span>
       <span className="sr-only">{' · '}</span>
       <span className="font-medium text-muted-foreground">{parts.duration}{partial ? '*' : ''}</span>
+      {alsoMissing && <span aria-hidden className="invisible h-0 overflow-hidden font-medium">not recorded</span>}
       </>}
     </span>
   );
@@ -88,6 +91,7 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: CardTime }) {
             totalMs={c.totalMs}
             missing={c.missing}
             partial={c.partial}
+            alsoMissing={c.alsoMissing}
             className={cn('md:row-start-2 md:self-stretch md:justify-self-stretch', DESKTOP_COL[c.tool], !c.used && 'md:opacity-40')}
           />
         </span>
@@ -108,6 +112,7 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: CardTime }) {
           totalMs={total.totalMs}
           missing={total.missing}
           partial={total.partial}
+          alsoMissing={total.alsoMissing}
           className={cn('md:row-start-2 md:self-stretch md:justify-self-stretch md:border-foreground/25 md:bg-muted', DESKTOP_COL.total)}
         />
       </span>
