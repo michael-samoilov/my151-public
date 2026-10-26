@@ -110,6 +110,14 @@ export const SCREENS: Screen[] = [
   { id: 'league-home', path: '/custom-gym-leader', seed: LEAGUE },
   { id: 'league-card', path: '/custom-gym-leader', seed: LEAGUE, act: click('[data-testid="league-slot-0"]') },
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
+  {
+    id: 'league-browser-es', path: '/custom-gym-leader?lang=es',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+    },
+  },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   {
