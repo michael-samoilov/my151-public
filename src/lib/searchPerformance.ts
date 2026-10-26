@@ -65,6 +65,8 @@ export interface SearchProviderSnapshot {
   dataThrough?: string;
   message?: string;
   series: SearchSeriesPoint[];
+  /** Google's days after `dataThrough`. Search Console can still change them. */
+  fresh?: SearchSeriesPoint[];
   ranges: Partial<Record<SearchRangeKey, SearchRangeDetail>>;
 }
 

@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SearchProviderKey, SearchProviderSnapshot, SearchProviderStatus, SearchSnapshotPart } from './searchPerformance';
 
-const { redisMget, redisMset, rebuildDaily, rebuildHourly } = vi.hoisted(() => ({
+const { readOnly, redisMget, redisMset, rebuildDaily, rebuildHourly } = vi.hoisted(() => ({
+  readOnly: vi.fn(() => false),
   redisMget: vi.fn(),
   redisMset: vi.fn(async (_values: Record<string, unknown>) => 'OK'),
   rebuildDaily: vi.fn(),
@@ -12,6 +13,7 @@ const { redisMget, redisMset, rebuildDaily, rebuildHourly } = vi.hoisted(() => (
 vi.mock('../../api/_shared', () => ({
   redis: { mget: redisMget, mset: redisMset },
   requireAdmin: vi.fn(async () => true),
+  isReadOnlyDeployment: readOnly,
   firstQueryValue: (value: unknown) => (Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')),
 }));
 vi.mock('../../api/_searchPerformance', () => ({
@@ -52,6 +54,7 @@ async function open(query: { refresh?: string }): Promise<void> {
 
 describe('search performance cache', () => {
   beforeEach(() => {
+    readOnly.mockReturnValue(false);
     redisMget.mockReset();
     redisMset.mockClear();
     rebuildDaily.mockReset();
@@ -78,8 +81,18 @@ describe('search performance cache', () => {
     expect(redisMset).toHaveBeenCalledTimes(rebuilt.length > 0 ? 1 : 0);
     if (rebuilt.length > 0) {
       expect(Object.keys(redisMset.mock.calls[0][0] as object)).toEqual(
-        rebuilt.map((part) => `admin:search-performance:v2:${part}`),
+        rebuilt.map((part) => `admin:search-performance:v3:${part}`),
       );
     }
+  });
+
+  it('builds both parts on a preview without reading or writing the shared cache', async () => {
+    readOnly.mockReturnValue(true);
+    redisMget.mockResolvedValue([daily(10), hourly(10)]);
+    await open({});
+    expect(rebuildDaily).toHaveBeenCalledTimes(1);
+    expect(rebuildHourly).toHaveBeenCalledTimes(1);
+    expect(redisMget).not.toHaveBeenCalled();
+    expect(redisMset).not.toHaveBeenCalled();
   });
 });

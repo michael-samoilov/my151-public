@@ -89,8 +89,11 @@ interface SearchKpi {
   color: string;
   emphasis?: boolean;
   inverse?: boolean;
+  /** Smallest gap between axis ticks, so whole-number metrics get whole-number ticks. */
+  minInterval?: number;
   pick: (metric: SearchMetric) => number | null;
   format: (value: number) => string;
+  axis: (value: number) => string;
   delta: (comparison: SearchRangeComparison | null) => string;
 }
 
@@ -99,19 +102,23 @@ const SEARCH_KPIS: SearchKpi[] = [
     key: 'clicks',
     label: 'Clicks',
     unit: 'clicks',
+    minInterval: 1,
     color: '#4285F4',
     emphasis: true,
     pick: (m) => m.clicks,
     format: compact,
+    axis: compact,
     delta: (c) => countDelta(c, 'clicks'),
   },
   {
     key: 'impressions',
     label: 'Impressions',
     unit: 'impr.',
+    minInterval: 1,
     color: '#5E35B1',
     pick: (m) => m.impressions,
     format: compact,
+    axis: compact,
     delta: (c) => countDelta(c, 'impressions'),
   },
   {
@@ -121,16 +128,19 @@ const SEARCH_KPIS: SearchKpi[] = [
     color: '#00897B',
     pick: (m) => m.ctr,
     format: percent,
+    axis: (value) => `${+(value * 100).toFixed(1)}%`,
     delta: (c) => (c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
   },
   {
     key: 'position',
     label: 'Position',
     unit: 'pos.',
+    minInterval: 1,
     color: '#E8710A',
     inverse: true,
     pick: (m) => m.position,
     format: position,
+    axis: (value) => String(+value.toFixed(1)),
     delta: (c) =>
       c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
   },
@@ -142,55 +152,97 @@ function shown(kpi: SearchKpi, value: number | null): string {
   return value == null ? '—' : kpi.format(value);
 }
 
+/** Search Console labels its axes only while one or two metrics are on. */
+const MAX_LABELED_AXES = 2;
+
 function SearchTrend({
-  series: rows,
+  series: final,
+  fresh,
   granularity,
   kpis,
 }: {
   series: SearchSeriesPoint[];
+  fresh: SearchSeriesPoint[];
   granularity: SearchGranularity;
   kpis: SearchKpi[];
 }) {
+  const rows = useMemo(() => [...final, ...fresh], [final, fresh]);
   const { lines, scrubLabel, build } = useMemo(() => {
+    const lastFinal = final.length - 1;
     const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
     const drawn = lines.filter((line) => line.values.some((value) => value != null));
+    const labeled = drawn.length <= MAX_LABELED_AXES;
     const scrubLabel = (i: number) => [
-      shortDate(rows[i].start),
+      i > lastFinal ? `${shortDate(rows[i].start)} · not final` : shortDate(rows[i].start),
       ...lines.map(({ kpi, values }) => `<b>${shown(kpi, values[i])}</b> ${kpi.unit}`),
     ];
     const build = (el: HTMLDivElement): EChartsOption => {
       const scale = Math.max(1, Math.min(el.clientWidth / 360, 2));
+      const font = Math.round(0.65 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16));
+      const faint = cssVar(el, '--color-muted-foreground', '#737373');
+      const gridLine = cssVar(el, '--color-muted', '#f5f5f5');
+      const last = rows.length - 1;
       return {
         animation: false,
-        grid: { left: 2, right: 2, top: 28, bottom: 1 },
+        grid: { left: 2, right: 2, top: Math.max(28, font * 2.5), bottom: 2, containLabel: true },
         xAxis: {
           type: 'category',
           data: rows.map((row) => row.start),
           boundaryGap: false,
           axisLine: { lineStyle: { color: cssVar(el, '--color-border', '#e5e5e5') } },
           axisTick: { show: false },
-          axisLabel: { show: false },
+          axisLabel: {
+            color: faint,
+            fontSize: font,
+            fontWeight: 600,
+            interval: (i: number) => i === 0 || i === last,
+            alignMinLabel: 'left',
+            alignMaxLabel: 'right',
+            formatter: (value: string) => shortDate(value),
+          },
         },
         yAxis: drawn.length
-          ? drawn.map(({ kpi }) =>
-              kpi.inverse
-                ? { type: 'value' as const, inverse: true, min: 1, max: 'dataMax', show: false }
-                : { type: 'value' as const, min: 0, max: 'dataMax', show: false },
-            )
+          ? drawn.map(({ kpi }, i) => {
+              const bounds = kpi.inverse ? { inverse: true, min: 1 } : { min: 0 };
+              if (!labeled) return { type: 'value' as const, ...bounds, max: 'dataMax', show: false };
+              const side = i === 0 ? 'left' : 'right';
+              return {
+                type: 'value' as const,
+                ...bounds,
+                position: side,
+                alignTicks: i > 0,
+                splitNumber: 3,
+                minInterval: kpi.minInterval,
+                name: kpi.label,
+                // An inverted axis starts at the top.
+                nameLocation: kpi.inverse ? ('start' as const) : ('end' as const),
+                nameGap: font,
+                nameTextStyle: { color: kpi.color, fontSize: font, fontWeight: 700, align: side },
+                axisLabel: { color: faint, fontSize: font, formatter: kpi.axis },
+                splitLine: { show: i === 0, lineStyle: { color: gridLine, width: 1 } },
+              };
+            })
           : { type: 'value', show: false },
-        series: drawn.map(({ kpi, values }, i) => ({
-          name: kpi.key,
-          type: 'line' as const,
-          yAxisIndex: i,
-          data: values,
-          symbol: 'none',
-          lineStyle: { color: kpi.color, width: 1.5 * scale },
-          itemStyle: { color: kpi.color },
-        })),
+        series: drawn.flatMap(({ kpi, values }, i) => {
+          const line = (data: (number | null)[], dotted: boolean) => ({
+            name: kpi.key,
+            type: 'line' as const,
+            yAxisIndex: i,
+            data,
+            symbol: 'none',
+            lineStyle: { color: kpi.color, width: 1.5 * scale, type: dotted ? ('dotted' as const) : ('solid' as const) },
+            itemStyle: { color: kpi.color },
+          });
+          if (lastFinal >= last) return [line(values, false)];
+          return [
+            line(values.map((value, j) => (j <= lastFinal ? value : null)), false),
+            line(values.map((value, j) => (j >= lastFinal ? value : null)), true),
+          ];
+        }),
       };
     };
     return { lines, scrubLabel, build };
-  }, [rows, kpis]);
+  }, [rows, final.length, kpis]);
   const ref = useECharts(build, { scrub: { count: rows.length, label: scrubLabel } });
 
   if (rows.length < 2 || rows.every((row) => row.impressions === 0)) return null;
@@ -200,12 +252,16 @@ function SearchTrend({
         ref={ref}
         className="aspect-[3/1] max-h-[240px] min-h-[120px] w-full"
         role="img"
-        aria-label={`${granularity === 'hour' ? 'Hourly' : 'Daily'} ${lines.map(({ kpi }) => kpi.label).join(', ')} for the latest ${rows.length} reported ${granularity === 'hour' ? 'hours' : 'days'}.`}
+        aria-label={`${granularity === 'hour' ? 'Hourly' : 'Daily'} ${lines.map(({ kpi }) => kpi.label).join(', ')} from ${shortDate(rows[0].start)} to ${shortDate(rows[rows.length - 1].start)}.`}
       />
-      <div className="mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
-        <span>{shortDate(rows[0]?.start)}</span>
-        <span>{shortDate(rows[rows.length - 1]?.start)}</span>
-      </div>
+      {fresh.length > 0 && (
+        <p className="mt-1 flex items-center gap-1.5 text-[0.65rem] font-semibold text-muted-foreground">
+          <span aria-hidden className="w-4 border-t-2 border-dotted border-muted-foreground" />
+          Not final yet: {fresh.length === 1
+            ? shortDate(fresh[0].start)
+            : rangeLabel({ start: fresh[0].start, end: fresh[fresh.length - 1].start })}
+        </p>
+      )}
     </div>
   );
 }
@@ -390,7 +446,7 @@ export function SearchPerformancePanel({
                 />
               ))}
             </div>
-            <SearchTrend series={selected.series} granularity={view.granularity} kpis={kpis} />
+            <SearchTrend series={selected.series} fresh={selected.fresh} granularity={view.granularity} kpis={kpis} />
             <QueryRows rows={selected.topQueries} />
           </>
         )}
