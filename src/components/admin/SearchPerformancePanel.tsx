@@ -204,7 +204,10 @@ function SearchTrend({
         yAxis: drawn.length
           ? drawn.map(({ kpi }, i) => {
               const bounds = kpi.inverse ? { inverse: true, min: 1 } : { min: 0 };
-              if (!labeled) return { type: 'value' as const, ...bounds, max: 'dataMax', show: false };
+              // containLabel still reserves room for a hidden axis's labels, so hide them too.
+              if (!labeled) {
+                return { type: 'value' as const, ...bounds, max: 'dataMax', show: false, axisLabel: { show: false } };
+              }
               const side = i === 0 ? 'left' : 'right';
               return {
                 type: 'value' as const,
