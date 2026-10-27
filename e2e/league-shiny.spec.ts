@@ -1,8 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
+import { SHINY_STAR } from '../src/components/shiny/shinyMarks';
 
 const SHINY = /\/sprites\/pokemon\/shiny\/\d+\.png$/;
-const GOLD_STAR = [245, 179, 1];
+const hexRgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+/** The shiny star's fill runs between these two colors. */
+const STAR_FILL = SHINY_STAR.fill.stops.map(([, color]) => hexRgb(color));
 
 const card = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('league-builder')!).state.cards[0]);
 
@@ -69,20 +72,25 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await page.locator('[data-league-export]').last().click();
   const preview = page.locator('[data-export-preview] img');
   await expect(page.locator('[data-league-export-confirm]')).toBeEnabled({ timeout: 45_000 });
-  const exported = await preview.first().evaluate(async (img: HTMLImageElement, gold) => {
+  const exported = await preview.first().evaluate(async (img: HTMLImageElement, [from, to]) => {
     await img.decode();
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(img, 0, 0);
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Pixels on the star's fill gradient, within rounding.
     let stars = 0;
-    for (let i = 0; i < data.length; i += 4) if (data[i] === gold[0] && data[i + 1] === gold[1] && data[i + 2] === gold[2]) stars++;
-    return { width: canvas.width, height: canvas.height, goldPixels: stars };
-  }, GOLD_STAR);
+    for (let i = 0; i < data.length; i += 4) {
+      const t = (from[1] - data[i + 1]) / (from[1] - to[1]);
+      if (t < 0 || t > 1) continue;
+      if (Math.abs(data[i] - (from[0] + (to[0] - from[0]) * t)) <= 4 && Math.abs(data[i + 2] - (from[2] + (to[2] - from[2]) * t)) <= 6) stars++;
+    }
+    return { width: canvas.width, height: canvas.height, starPixels: stars };
+  }, STAR_FILL);
   await page.keyboard.press('Escape');
   await testInfo.attach('card-export.json', { body: JSON.stringify(exported, null, 2), contentType: 'application/json' });
-  expect(exported.goldPixels).toBeGreaterThan(400);
+  expect(exported.starPixels).toBeGreaterThan(400);
 });
 
 test('tapping a held line with Shiny off turns it back to normal', async ({ page }, testInfo) => {
@@ -121,9 +129,9 @@ test('the Shiny switch sits after the count and a divider, at the end of the sea
   await page.click('[data-testid="card-cell-1-1"]');
   const toggle = page.getByTestId('browser-shiny-toggle');
   await expect(toggle).toHaveText('Shiny');
-  await expect(toggle.locator('path[d="M3 3l18 18"]')).toHaveCount(1);
+  await expect(toggle.locator('path[d="m2 2 20 20"]')).toHaveCount(1);
   await toggle.click();
-  await expect(toggle.locator('path[d="M3 3l18 18"]')).toHaveCount(0);
+  await expect(toggle.locator('path[d="m2 2 20 20"]')).toHaveCount(0);
   await search(page, 'furfrou');
   await expect(page.getByTestId('no-shiny-mark').first()).toBeVisible();
   const row = await toggle.evaluate((button) => {

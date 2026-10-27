@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useTightFit } from '@/hooks/useTightFit';
 
 /** Room to type past the placeholder, in the search field's font size. */
 const TYPING_ROOM_EM = 2;
@@ -29,12 +30,8 @@ export function SearchRow({ layout, children }: {
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const [fit, setFit] = useState<{ key: string; tight: boolean } | null>(null);
-  // A web font that arrives after the first measure changes every text width.
-  const [fontLoads, setFontLoads] = useState(0);
   const measures = layout !== null;
-  const key = measures && width > 0 ? `${layout}|${width}|${fontLoads}` : null;
-  const measured = key !== null && fit?.key === key;
+  const tight = useTightFit(measures && width > 0 ? `${layout}|${width}` : null, ref, (row) => row.clientWidth < fullWidth(row));
 
   useLayoutEffect(() => {
     const row = ref.current;
@@ -46,22 +43,9 @@ export function SearchRow({ layout, children }: {
     return () => observer.disconnect();
   }, [measures]);
 
-  useEffect(() => {
-    if (!measures) return;
-    const remeasure = () => setFontLoads((n) => n + 1);
-    document.fonts.addEventListener('loadingdone', remeasure);
-    return () => document.fonts.removeEventListener('loadingdone', remeasure);
-  }, [measures]);
-
-  useLayoutEffect(() => {
-    if (key === null || measured) return;
-    const row = ref.current!;
-    setFit({ key, tight: row.clientWidth < fullWidth(row) });
-  }, [key, measured]);
-
   return (
     <div ref={ref} className="flex items-center gap-2">
-      {children(measured && fit.tight)}
+      {children(tight)}
     </div>
   );
 }

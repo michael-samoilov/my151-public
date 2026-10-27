@@ -3,7 +3,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
-import { t as translate, typeLabel, useT } from '@/i18n';
+import { t as translate, typeLabel, useLocale, useT } from '@/i18n';
+import { useTightFit } from '@/hooks/useTightFit';
 import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
@@ -27,9 +28,12 @@ import { pointerMarks, pointerPool, pointerCoordinates, pointerSourceKeys } from
 import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
 import { isShinyCell, pickerShinySprite } from '../model/shiny';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
+import { PILL_CLASS, PILL_OFF, pillStyle } from '@/components/shiny/pill';
+import { cn } from '@/lib/utils';
 import { coordinateLabel } from './coordinatePresentation';
 import { generationLabel } from './badgeStyle';
 import { PickerTitle } from './PickerTitle';
+import { pickerTitleFullWidth, TITLE_BADGE_PX } from './titleGeometry';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
 import { DesktopPane } from './DesktopPane';
@@ -83,6 +87,7 @@ export function PickerSheet({
     return () => cancelAnimationFrame(frame);
   }, [autoFocus, type, gen]);
   const t = useT();
+  const locale = useLocale();
   const desktop = useIsDesktop();
   const viewportPx = useLayoutViewportCssPx();
   const spritePx = pickerSpriteCssPx(viewportPx);
@@ -200,9 +205,17 @@ export function PickerSheet({
     </div>
   );
 
+  const titleGap = desktop ? 6 : 2;
+  const titleRoom = viewportPx - 16 - (packing ? 20 : 0);
+  // On a narrow phone, the pills drop their labels before the title badges shrink below the pills' height.
+  const headerTight = useTightFit(
+    desktop || mons.length === 0 ? null : `${titleRoom}|${locale}|${type}|${gen}`,
+    headerButtonsRef,
+    (buttons) => pickerTitleFullWidth(type, gen, titleGap) + buttons.getBoundingClientRect().width > titleRoom,
+  );
   const title = <PickerTitle type={type} gen={gen}
-    maxWidth={desktop ? undefined : Math.max(1, viewportPx - (mons.length > 0 ? headerButtonsWidth : 0) - 16 - (packing ? 20 : 0))}
-    gapPx={desktop ? 6 : 2} />;
+    maxWidth={desktop ? undefined : Math.max(1, titleRoom - (mons.length > 0 ? headerButtonsWidth : 0))}
+    gapPx={titleGap} />;
   const iconToggle = (
     <button
       type="button"
@@ -210,15 +223,17 @@ export function PickerSheet({
       aria-pressed={showIcons}
       title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
-      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${desktop ? 'gap-1.5 px-2.5' : 'gap-1 px-1'} whitespace-nowrap ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      className={cn(PILL_CLASS, headerTight && 'justify-center', showIcons ? 'border-[#a3a3a3] bg-secondary text-secondary-foreground' : PILL_OFF)}
+      style={pillStyle({ badgePx: TITLE_BADGE_PX, iconOnly: headerTight })}
     >
-      {showIcons ? <Eye size={16} aria-hidden /> : <EyeOff size={16} aria-hidden />}
-      <span>{t('favorites.icons')}</span>
+      {/* Turned 180°: the open eye is unchanged, and the crossed-out eye's gap moves below the slash, as in the Shiny glyph. */}
+      {showIcons ? <Eye size={16} className="shrink-0 rotate-180" aria-hidden /> : <EyeOff size={16} className="shrink-0 rotate-180" aria-hidden />}
+      <span className={headerTight ? 'sr-only' : undefined}>{t('favorites.icons')}</span>
     </button>
   );
   const headerButtons = mons.length === 0 ? null : (
     <div ref={headerButtonsRef} className={`flex shrink-0 items-center ${desktop ? 'gap-2' : 'gap-1.5'}`}>
-      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} size={desktop ? 'full' : 'compact'} testId="favorites-shiny-toggle" /> : null}
+      {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} badgePx={TITLE_BADGE_PX} iconOnly={headerTight} testId="favorites-shiny-toggle" /> : null}
       {iconToggle}
     </div>
   );

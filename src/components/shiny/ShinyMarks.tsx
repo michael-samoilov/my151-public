@@ -1,15 +1,38 @@
-import type { CSSProperties } from 'react';
-import { Sparkles } from 'lucide-react';
+import { useId, type CSSProperties } from 'react';
 import { useT } from '@/i18n';
-import { NO_SHINY, SHINY_STAR } from './shinyMarks';
+import { HOLO_STOPS, NO_SHINY, SHINY_GLYPH, SHINY_STAR } from './shinyMarks';
 
 export function ShinyStar({ className, style }: { className?: string; style?: CSSProperties }) {
   const t = useT();
+  const fill = useId();
+  const { from: [x1, y1], to: [x2, y2], stops } = SHINY_STAR.fill;
   return (
     <svg viewBox="0 0 24 24" role="img" aria-label={t('shiny.label')} data-testid="shiny-star"
       className={className} style={{ overflow: 'visible', ...style }}>
-      <path d={SHINY_STAR.path} fill={SHINY_STAR.fill} stroke={SHINY_STAR.rim} strokeWidth={SHINY_STAR.rimWidth}
+      <defs>
+        <linearGradient id={fill} gradientUnits="userSpaceOnUse" x1={x1} y1={y1} x2={x2} y2={y2}>
+          {stops.map(([at, color]) => <stop key={at} offset={at} stopColor={color} />)}
+        </linearGradient>
+      </defs>
+      <path d={SHINY_STAR.path} fill={`url(#${fill})`} stroke={SHINY_STAR.rim} strokeWidth={SHINY_STAR.rimWidth}
         strokeLinejoin="round" paintOrder="stroke" />
+    </svg>
+  );
+}
+
+/** The Shiny glyph when on. Each star takes the whole holo stroke from its own top-left tips to its bottom-right tips. */
+export function ShinyGlyph({ className, style }: { className?: string; style?: CSSProperties }) {
+  const stroke = useId();
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={className} style={style}>
+      <defs>
+        <linearGradient id={stroke} x1={0.25} y1={0.25} x2={0.75} y2={0.75}>
+          {HOLO_STOPS.map(([at, color]) => <stop key={at} offset={at} stopColor={color} />)}
+        </linearGradient>
+      </defs>
+      <path d={SHINY_GLYPH.big} stroke={`url(#${stroke})`} />
+      <path d={SHINY_GLYPH.small} stroke={`url(#${stroke})`} />
     </svg>
   );
 }
@@ -23,15 +46,19 @@ export function NoShinyMark({ size, left, top }: { size: string; left: string; t
   return (
     <span role="img" aria-label={t('shiny.none')} data-testid="no-shiny-mark"
       className="pointer-events-none absolute z-[16] flex items-center justify-center rounded-full" style={{ color: NO_SHINY.ink, ...place }}>
-      <NoShinyGlyph style={{ width: '62%', height: '62%' }} />
+      <NoShinyGlyph strokeWidth={2.4} style={{ width: '62%', height: '62%' }} />
     </span>
   );
 }
 
-export function NoShinyGlyph({ size, style }: { size?: number; style?: CSSProperties }) {
+/** The Shiny glyph when off: gray, with Lucide's slash in place of the big star's lower-left edge. */
+export function NoShinyGlyph({ className, style, strokeWidth = 2 }: { className?: string; style?: CSSProperties; strokeWidth?: number }) {
   return (
-    <Sparkles size={size} strokeWidth={2.2} aria-hidden style={style}>
-      <path d="M3 3l18 18" strokeWidth={2.6} />
-    </Sparkles>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden className={className} style={style}>
+      <path d={SHINY_GLYPH.bigOpen} />
+      <path d={SHINY_GLYPH.small} />
+      <path d={SHINY_GLYPH.slash} />
+    </svg>
   );
 }

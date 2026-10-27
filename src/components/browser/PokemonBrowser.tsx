@@ -889,8 +889,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             {tn('browser.results', announcedCount)}
           </span>
           {setShinyView && (
-            <span className={cn('shrink-0 self-stretch flex items-center', !countHidden && 'pl-2 border-l border-border')}>
-              <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} size={tight ? 'icon' : isDesktop ? 'full' : 'compact'} testId="browser-shiny-toggle" />
+            // The divider is as tall as the filter rows' dividers below (a filter pill plus py-1), centered in this taller row.
+            <span className={cn('shrink-0 self-center flex items-center', !countHidden && 'h-[calc(1.75rem+2px)] pl-2 border-l border-border')}>
+              <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} iconOnly={tight} testId="browser-shiny-toggle" />
             </span>
           )}
           </>)}
