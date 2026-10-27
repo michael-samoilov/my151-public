@@ -1,9 +1,13 @@
 import type { CSSProperties } from 'react';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 
-/** A toggle pill, shared by the Shiny switch and the Favorite Picker's Icons switch. Off, it looks like an unselected filter pill. */
-export const PILL_CLASS = 'inline-flex shrink-0 cursor-pointer items-center gap-1 border text-xs font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
-export const PILL_OFF = 'border-border bg-background text-muted-foreground hover:text-foreground';
+/**
+ * A toggle pill, shared by the Shiny switch and the Favorite Picker's Icons switch. Off, it looks like an
+ * unselected filter pill. Its colors switch at once and hover darkens only the border: the on ink is
+ * near-black, so a fade or a dark hover ink would show a pill just turned off as still on.
+ */
+export const PILL_CLASS = 'inline-flex shrink-0 cursor-pointer items-center gap-1 border text-xs font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+export const PILL_OFF = 'border-border bg-background text-muted-foreground hover:border-foreground/30';
 
 /**
  * Size and roundness. Given `badgePx`, the pill is as tall as the Favorite Picker's type and gen
