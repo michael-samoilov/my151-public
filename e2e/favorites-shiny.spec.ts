@@ -73,6 +73,8 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(fire).toHaveAttribute('aria-label', /Charizard · Shiny$/);
 
   await page.getByTestId('favorites-cell-normal-6').click();
+  await expect(toggle, 'an empty cell opens with Shiny off').toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
   const furfrou = page.getByTestId('favorites-pick-11096');
   await expect(furfrou.getByTestId('no-shiny-mark')).toBeVisible();
   await expect(sprite(furfrou)).not.toHaveAttribute('src', SHINY);

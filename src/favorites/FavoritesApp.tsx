@@ -18,6 +18,7 @@ import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/
 import { getPickerMon } from './model/catalog';
 import { openCell, prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
+import { isShinyCell } from './model/shiny';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
@@ -35,7 +36,6 @@ import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
-const SHINY_VIEW_STORAGE_KEY = 'personal-151-favorites-shiny-view-v1';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
@@ -49,11 +49,6 @@ function completionShown() {
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
   catch { return true; }
-}
-
-function savedShinyView(): boolean {
-  try { return window.localStorage.getItem(SHINY_VIEW_STORAGE_KEY) === '1'; }
-  catch { return false; }
 }
 
 function GlobalHeader() {
@@ -104,7 +99,7 @@ function FavoritesContent({ sel, setSel }: {
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
-  const [shinyView, setShinyView] = useState(savedShinyView);
+  const [shinyView, setShinyView] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
@@ -126,11 +121,6 @@ function FavoritesContent({ sel, setSel }: {
     try { window.localStorage.setItem(ICONS_STORAGE_KEY, showIcons ? '1' : '0'); }
     catch { /* Storage can be unavailable in private browsing. */ }
   }, [showIcons]);
-
-  useEffect(() => {
-    try { window.localStorage.setItem(SHINY_VIEW_STORAGE_KEY, shinyView ? '1' : '0'); }
-    catch { /* Storage can be unavailable in private browsing. */ }
-  }, [shinyView]);
 
   useEffect(() => {
     let alive = true;
@@ -161,6 +151,7 @@ function FavoritesContent({ sel, setSel }: {
     if (kind === 'disabled' || kind === 'null') return;
     openCell(type, gen);
     setCurrentView('picker');
+    setShinyView(kind === 'pick' && isShinyCell(fills, shiny, cellKey(type, gen)));
     setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
 

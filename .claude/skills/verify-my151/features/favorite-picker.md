@@ -67,10 +67,11 @@ gimmick, legendary, and favorite picks.
 - Repeat picks are always allowed. There is no No Repeats setting or settings
   gear. The old persisted setting is ignored without deleting saved picks.
   Pointer pools and unsupported-pointer pruning retain their rules.
-- The Shiny switch (`[data-testid="favorites-shiny-toggle"]`) is remembered
-  under `personal-151-favorites-shiny-view-v1`. With it on, candidates show
-  shiny sprites, or a faded sprite under `[data-testid="no-shiny-mark"]`, and a
-  tap places the look shown. Shiny picks live in the store's `shiny` map; the
+- The Shiny switch (`[data-testid="favorites-shiny-toggle"]`) starts off each
+  time a sheet opens, and on when the cell holds a shiny pick. A pick sheet
+  loads its shiny sprites when the page is idle, so the switch repaints at
+  once. With it on, candidates show shiny sprites, or a faded sprite under
+  `[data-testid="no-shiny-mark"]`, and a tap places the look shown. Shiny picks live in the store's `shiny` map; the
   chart, pointer cells, and both exports draw them with a gold star
   (`[data-testid="shiny-star"]`).
 - In pick sheets, the Shiny switch and the Icons toggle share one row with the
