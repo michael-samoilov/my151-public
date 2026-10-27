@@ -8,6 +8,8 @@ import { useTightFit } from '@/hooks/useTightFit';
 import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
+import { preloadImages } from '@/lib/imagePreload';
+import { whenIdle } from '@/lib/whenIdle';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { cellKey, isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
@@ -121,6 +123,13 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
+  useEffect(() => {
+    if (kind !== 'pick') return;
+    const shinies = mons.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null);
+    let live = true;
+    whenIdle(() => { if (live) preloadImages(shinies); });
+    return () => { live = false; };
+  }, [kind, mons]);
   const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 

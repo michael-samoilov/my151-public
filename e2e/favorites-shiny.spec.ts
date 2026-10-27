@@ -60,7 +60,8 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(toggle).toHaveText('Shiny');
   await expect(sprite(page.getByTestId('favorites-pick-6'))).not.toHaveAttribute('src', SHINY);
-  expect(shinyRequests).toEqual([]);
+  await expect.poll(() => shinyRequests.map((url) => new URL(url).pathname), 'the sheet loads its shiny sprites before the toggle')
+    .toContain('/sprites/pokemon/shiny/6.png');
 
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');

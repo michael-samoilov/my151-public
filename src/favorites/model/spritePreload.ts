@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { MAX_LOADING, preloadImages } from '@/lib/imagePreload';
 import { whenIdle } from '@/lib/whenIdle';
 import { allPickerMons } from './catalog';
 import { cellKey, type GenAxisId, type TypeAxisId } from './cells';
@@ -6,39 +7,6 @@ import { eligibleFor } from './eligibility';
 import { bulkGroups, cellPackName, cellSprites, FIRST_CELL, type PackManifest } from './spritePacks';
 
 declare const __PICKER_SPRITE_PACKS__: PackManifest | null;
-
-const decoded = new Map<string, HTMLImageElement>();
-const loading = new Set<string>();
-let queue: string[] = [];
-const MAX_LOADING = 8;
-
-function pump() {
-  while (loading.size < MAX_LOADING && queue.length > 0) {
-    const url = queue.shift()!;
-    if (decoded.has(url) || loading.has(url)) continue;
-    loading.add(url);
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = url;
-    img.decode().then(() => decoded.set(url, img)).catch(() => {}).finally(() => {
-      loading.delete(url);
-      pump();
-    });
-  }
-}
-
-function enqueue(urls: string[], first: boolean) {
-  if (typeof Image === 'undefined') return;
-  const fresh = [...new Set(urls)].filter((url) => !decoded.has(url) && !loading.has(url));
-  if (first) {
-    const moved = new Set(fresh);
-    queue = [...fresh, ...queue.filter((url) => !moved.has(url))];
-  } else {
-    const queued = new Set(queue);
-    queue.push(...fresh.filter((url) => !queued.has(url)));
-  }
-  pump();
-}
 
 const spritesOf = (type: TypeAxisId, gen: GenAxisId) => eligibleFor(type, gen).map((mon) => mon.sprite);
 
@@ -186,7 +154,7 @@ function decodeWhenIdle(sprites: string[]) {
   const step = () => {
     const batch = idleDecodes.slice(0, MAX_LOADING);
     idleDecodes = idleDecodes.slice(MAX_LOADING);
-    enqueue(batch.filter((sprite) => !asFiles.has(sprite)).map((sprite) => objectUrl(sprite) ?? sprite), false);
+    preloadImages(batch.filter((sprite) => !asFiles.has(sprite)).map((sprite) => objectUrl(sprite) ?? sprite));
     if (idleDecodes.length > 0) whenIdle(step);
     else idleScheduled = false;
   };
@@ -221,7 +189,7 @@ function pumpBulk() {
       if (error instanceof DOMException && error.name === 'AbortError') queueBulk(pack);
       else {
         pack.state = 'failed';
-        enqueue(pack.sprites.filter((sprite) => !ready(sprite)), false);
+        preloadImages(pack.sprites.filter((sprite) => !ready(sprite)));
       }
     }).finally(() => {
       bulkLoading--;
@@ -260,12 +228,12 @@ export function prefetchCell(type: TypeAxisId, gen: GenAxisId): void {
   const sprites = spritesOf(type, gen);
   const set = packs();
   if (!set) {
-    enqueue(sprites, true);
+    preloadImages(sprites, true);
     return;
   }
   const missing = sprites.filter((sprite) => set.bulkOf.has(sprite) && !ready(sprite) && !asFiles.has(sprite));
   const here = sprites.filter((sprite) => !missing.includes(sprite));
-  enqueue(here.map((sprite) => (asFiles.has(sprite) ? sprite : objectUrl(sprite) ?? sprite)), true);
+  preloadImages(here.map((sprite) => (asFiles.has(sprite) ? sprite : objectUrl(sprite) ?? sprite)), true);
   const key = cellKey(type, gen);
   if (missing.length === 0 || cellsFetching.has(key)) return;
   cellsFetching.add(key);
@@ -275,7 +243,7 @@ export function prefetchCell(type: TypeAxisId, gen: GenAxisId): void {
     cellsFetching.delete(key);
     cellsLoading--;
     hold(missing, -1);
-    enqueue(missing.map((sprite) => objectUrl(sprite) ?? sprite), true);
+    preloadImages(missing.map((sprite) => objectUrl(sprite) ?? sprite), true);
     pumpBulk();
   });
 }
@@ -289,7 +257,7 @@ export function openCell(type: TypeAxisId, gen: GenAxisId): void {
 export function prefetchCellSoon(type: TypeAxisId, gen: GenAxisId): void {
   const set = packs();
   if (!set) {
-    enqueue(spritesOf(type, gen), false);
+    preloadImages(spritesOf(type, gen));
     return;
   }
   for (const sprite of spritesOf(type, gen)) {
@@ -302,7 +270,7 @@ export function prefetchCellSoon(type: TypeAxisId, gen: GenAxisId): void {
 export function prefetchEverySprite(): void {
   const set = packs();
   if (!set) {
-    enqueue(allPickerMons().map((mon) => mon.sprite), false);
+    preloadImages(allPickerMons().map((mon) => mon.sprite));
     return;
   }
   for (const pack of set.bulk) if (pack.state === 'idle') queueBulk(pack);
