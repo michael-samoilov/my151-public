@@ -70,16 +70,16 @@ const RING = 2.4;
 
 /**
  * The gym card's shiny button: the Shiny glyph in a disc the size of the card's reset and remove
- * discs. On, yellow stars in a gold ring; off, gray stars in a thin gray ring; with no shiny art, the
- * crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so the two
- * rasterise together under the card's zoom.
+ * discs. On, yellow stars in a ring of the same yellow; off, gray stars in a thin gray ring; with
+ * no shiny art, the crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so
+ * the two rasterise together under the card's zoom.
  */
 export function ShinyDisc({ mark }: { mark: ShinyMark }) {
   return (
     <svg viewBox="-7 -7 38 38" className="block aspect-square w-full" aria-hidden="true">
       {mark === 'on' ? (
         <>
-          <circle cx={12} cy={12} r={19 - (1.5 * RING) / 2} fill="#ffffff" strokeWidth={1.5 * RING} stroke={SHINY_ON.ring} />
+          <circle cx={12} cy={12} r={19 - (1.5 * RING) / 2} fill="#ffffff" strokeWidth={1.5 * RING} stroke={SHINY_ON.star} />
           <OnStars />
         </>
       ) : (
