@@ -93,7 +93,7 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(page.getByTestId('favorites-cell-favorite-1').getByTestId('shiny-star')).toBeVisible();
 
   await page.getByTestId('favorites-cell-fire-1').click();
-  await page.getByTestId('favorites-shiny-toggle').click();
+  await expect(page.getByTestId('favorites-shiny-toggle'), 'a cell holding a shiny pick opens with Shiny off').toHaveAttribute('aria-pressed', 'false');
   const converted = page.getByTestId('favorites-pick-6');
   await expect(converted.getByTestId('favorites-selection-ring')).toBeVisible();
   await expect(converted.getByTestId('favorites-clear')).toHaveCount(0);
@@ -109,7 +109,7 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await page.reload();
   await expect(fire.getByTestId('shiny-star')).toBeVisible();
   await page.getByTestId('favorites-cell-fire-1').click();
-  await expect(page.getByTestId('favorites-shiny-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('favorites-shiny-toggle'), 'every open starts with Shiny off').toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('Escape');
   await testInfo.attach('chart.png', { body: await page.screenshot(), contentType: 'image/png' });
 

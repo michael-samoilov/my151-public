@@ -18,7 +18,6 @@ import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/
 import { getPickerMon } from './model/catalog';
 import { openCell, prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
-import { isShinyCell } from './model/shiny';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
@@ -35,7 +34,8 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
-const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
+// v2: Icons now starts off. v1 held `1` for nearly everyone, written on the first visit, not chosen.
+const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v2';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
@@ -47,8 +47,8 @@ function completionShown() {
 }
 
 function savedShowIcons(): boolean {
-  try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
-  catch { return true; }
+  try { return window.localStorage.getItem(ICONS_STORAGE_KEY) === '1'; }
+  catch { return false; }
 }
 
 function GlobalHeader() {
@@ -151,7 +151,7 @@ function FavoritesContent({ sel, setSel }: {
     if (kind === 'disabled' || kind === 'null') return;
     openCell(type, gen);
     setCurrentView('picker');
-    setShinyView(kind === 'pick' && isShinyCell(fills, shiny, cellKey(type, gen)));
+    setShinyView(false);
     setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
 
