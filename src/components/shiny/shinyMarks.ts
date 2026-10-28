@@ -1,8 +1,8 @@
 /**
  * The Shiny glyph, in Lucide's 24-unit box: a big four-point star at the top right and a small one at
- * the bottom left, both with a narrow waist. When on, the stars are white with a dark gold edge on a
- * solid yellow ground. When off, they are a gray outline, and Lucide's slash (`m2 2 20 20`, as in
- * EyeOff) takes the place of the big star's lower-left edge.
+ * the bottom left, both with a narrow waist. When on, the stars are filled yellow with a dark gold
+ * edge. When off, they are a gray outline, and Lucide's slash (`m2 2 20 20`, as in EyeOff) takes the
+ * place of the big star's lower-left edge.
  */
 export const SHINY_GLYPH = {
   big: 'M15.3 2.1Q15.96 8.04 21.9 8.7Q15.96 9.36 15.3 15.3Q14.64 9.36 8.7 8.7Q14.64 8.04 15.3 2.1Z',
@@ -15,10 +15,11 @@ export const SHINY_GLYPH = {
 export type ShinyMark = 'on' | 'off' | 'none';
 
 /**
- * The Shiny on state: a solid yellow ground (the pill's fill, the card disc) under white stars with a
- * dark gold edge. A cyan, yellow, and magenta stroke was tried first and was hard to read at 16px.
+ * The Shiny on state: yellow-filled stars with a dark gold edge, inside a gold ring (the pill's border,
+ * the card disc's ring) over a pale yellow pill. A cyan, yellow, and magenta stroke was tried first
+ * and was hard to read at 16px.
  */
-export const SHINY_ON = { fill: '#FFC83A', border: '#E0A400', star: '#ffffff', starEdge: '#A87700' } as const;
+export const SHINY_ON = { star: '#FFC83A', starEdge: '#C98F00', ring: '#F5B301', pillFill: '#FFF6D6' } as const;
 
 /** The mark of a shiny pick: a four-point star with a narrow waist, yellow to orange, with a white rim, in a 24-unit box. */
 export const SHINY_STAR = {

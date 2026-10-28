@@ -23,7 +23,7 @@ export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }:
       className={cn(PILL_CLASS, iconOnly && 'justify-center', on ? 'text-secondary-foreground' : PILL_OFF)}
       style={{
         ...pillStyle({ badgePx, thick: on, iconOnly }),
-        ...(on ? { border: `1.5px solid ${SHINY_ON.border}`, background: SHINY_ON.fill } : null),
+        ...(on ? { border: `1.5px solid ${SHINY_ON.ring}`, background: SHINY_ON.pillFill } : null),
       }}
     >
       {on ? <ShinyGlyph {...icon} /> : <NoShinyGlyph {...icon} />}
