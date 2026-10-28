@@ -97,7 +97,7 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   }, STAR_FILL);
   await page.keyboard.press('Escape');
   await testInfo.attach('card-export.json', { body: JSON.stringify(exported, null, 2), contentType: 'application/json' });
-  expect(exported.starPixels).toBeGreaterThan(400);
+  expect(exported.starPixels, 'the export draws no star').toBeLessThan(40);
 });
 
 test('tapping a held line with Shiny off turns it back to normal', async ({ page }, testInfo) => {

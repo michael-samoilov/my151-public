@@ -3,7 +3,6 @@ import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { t } from '@/i18n';
 import { drawSprite, roundRect } from '@/league/export/paint';
-import { drawShinyStar } from '@/components/shiny/shinyMarks';
 import { AXIS_FILL, GEN_FILL, type BadgeStops } from '../components/badgeStyle';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { GEN_NUMBERS, TYPES18, cellKey } from '../model/cells';
@@ -69,7 +68,6 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const cy = spriteTop + size / 2;
     if (entry.sprite) {
       drawSprite(ctx, images.get(entry.sprite)!, cx, cy, size);
-      if (entry.shiny) drawShinyStar(ctx, left + width - size * 0.44, top + size * 0.07, size * 0.375);
     } else {
       const ultimate = entry.type === 'favorite' && entry.generation === 'favorite';
       drawBall(ctx, ultimate ? 'master' : 'ultra', cx, cy, ultimate ? 96 : 48);

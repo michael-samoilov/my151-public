@@ -69,7 +69,7 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await page.getByTestId('favorites-pick-6').click();
   const fire = page.getByTestId('favorites-cell-fire-1');
   await expect(fire.locator('img[data-grid-sprite-size]')).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
-  await expect(fire.getByTestId('shiny-star')).toBeVisible();
+  await expect(fire.getByTestId('shiny-star'), 'the grid shows a shiny pick by its sprite alone').toHaveCount(0);
   await expect(fire).toHaveAttribute('aria-label', /Charizard · Shiny$/);
 
   await page.getByTestId('favorites-cell-normal-6').click();
@@ -90,7 +90,7 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(page.getByTestId('favorites-shiny-toggle')).toHaveCount(0);
   await expect(sprite(page.getByTestId('favorites-pick-6'))).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
   await page.getByTestId('favorites-pick-6').click();
-  await expect(page.getByTestId('favorites-cell-favorite-1').getByTestId('shiny-star')).toBeVisible();
+  await expect(page.getByTestId('favorites-cell-favorite-1').locator('img[data-grid-sprite-size]')).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
 
   await page.getByTestId('favorites-cell-fire-1').click();
   await expect(page.getByTestId('favorites-shiny-toggle'), 'a cell holding a shiny pick opens with Shiny off').toHaveAttribute('aria-pressed', 'false');
@@ -99,15 +99,15 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await expect(converted.getByTestId('favorites-clear')).toHaveCount(0);
   await expect(sprite(converted)).not.toHaveAttribute('src', SHINY);
   await converted.click();
-  await expect(fire.getByTestId('shiny-star')).toHaveCount(0);
-  await expect(page.getByTestId('favorites-cell-favorite-1').getByTestId('shiny-star')).toHaveCount(0);
+  await expect(fire.locator('img[data-grid-sprite-size]')).not.toHaveAttribute('src', SHINY);
+  await expect(page.getByTestId('favorites-cell-favorite-1').locator('img[data-grid-sprite-size]')).not.toHaveAttribute('src', SHINY);
 
   await page.getByTestId('favorites-cell-fire-1').click();
   await page.getByTestId('favorites-shiny-toggle').click();
   await page.getByTestId('favorites-pick-6').click();
-  await expect(fire.getByTestId('shiny-star')).toBeVisible();
+  await expect(fire.locator('img[data-grid-sprite-size]')).toHaveAttribute('src', SHINY);
   await page.reload();
-  await expect(fire.getByTestId('shiny-star')).toBeVisible();
+  await expect(fire.locator('img[data-grid-sprite-size]')).toHaveAttribute('src', SHINY);
   await page.getByTestId('favorites-cell-fire-1').click();
   await expect(page.getByTestId('favorites-shiny-toggle'), 'every open starts with Shiny off').toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('Escape');
@@ -132,9 +132,9 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
     body: JSON.stringify({ full, shinyBody, simplified }, null, 2),
     contentType: 'application/json',
   });
-  expect(full.star).toBeGreaterThan(90);
+  expect(full.star, 'the full export draws no star').toBeLessThan(10);
   expect(full.body).toEqual(shinyBody);
-  expect(simplified.star).toBeGreaterThan(90);
+  expect(simplified.star, 'the simplified export draws no star').toBeLessThan(10);
 });
 
 test('the sheet header keeps the title badges at full height and drops the pill labels only when tight @viewport', async ({ page }, testInfo) => {

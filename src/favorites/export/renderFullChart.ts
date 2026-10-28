@@ -8,7 +8,6 @@ import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 import { FOOT } from '@/league/export/layout';
 import { drawPokeballBg, drawSprite, font, roundRect } from '@/league/export/paint';
-import { drawShinyStar } from '@/components/shiny/shinyMarks';
 import { AXIS_FILL, type BadgeStops } from '../components/badgeStyle';
 import favoriteIcon from '../icons/favorite.svg?url';
 import gimmickIcon from '../icons/gimmick.svg?url';
@@ -105,7 +104,6 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
       drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], TYPE_COLORS[entry.mon.types[1] ?? entry.mon.types[0]],
         EXPORT_SPRITE_PX * 0.84, x + cell / 2, contentY);
       drawSprite(ctx, images.get(entry.sprite)!, x + cell / 2, contentY, EXPORT_SPRITE_PX);
-      if (entry.shiny) drawShinyStar(ctx, x + cell * 0.646, y + cell * 0.054, cell * 0.3);
     } else if (entry.kind === 'pick' || entry.kind === 'pointer') {
       const kind = entry.kind === 'pick' ? 'poke' : entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra';
       drawBall(ctx, kind, x + cell / 2, contentY);

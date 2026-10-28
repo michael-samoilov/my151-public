@@ -24,7 +24,7 @@ import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape'
 import { localeUppercase, pokemonLabel, t } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
-import { deriveRow, showsShinyStar, signatureMember, type CardCell } from '../model/engine';
+import { deriveRow, signatureMember, type CardCell } from '../model/engine';
 import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
@@ -64,7 +64,6 @@ import {
   wrapTracked,
 } from './paint';
 import { leagueSpriteUrl } from '../leagueSprite';
-import { drawShinyStar } from '@/components/shiny/shinyMarks';
 import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 const FG = '#0a0a0a';
@@ -103,11 +102,6 @@ export function exportRow(card: GymCard, row: number): ExportCell[] {
   const cells = deriveRow(card.lines, row, row === L.BOSS_ROW ? legendsOf(card) : []);
   const powerups = powerupsAt(card, row);
   return cells.map((c) => ({ ...c, form: formAt(powerups, row, c.seat, c.pokemonId) }));
-}
-
-/** The star at the top-left of an exported sprite of `size` px centred at (cx, cy). */
-function drawSpriteStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, star: number): void {
-  drawShinyStar(ctx, cx - size / 2, cy - size / 2, star);
 }
 
 function ballColours(pokemonId: number): [string, string] {
@@ -270,8 +264,6 @@ function drawShowcaseArt(
   if (layer !== 'ball') {
     const img = images.get(leagueSpriteUrl(pokemonId, null, shiny) ?? '');
     if (img) drawSprite(ctx, img, cx, cy, sprite);
-    // The card draws it 16 px wide on the ace and the partner alike.
-    if (img && shiny) drawSpriteStar(ctx, cx, cy, sprite, 16 * L.K);
   }
 }
 
@@ -956,8 +948,6 @@ function drawGymCard(
       }
       ctx.restore();
       if (img) drawSprite(ctx, img, cx, cy, 96);
-      // Where the card draws it: on the cell's top-left edge, 13 card pixels wide.
-      if (img && showsShinyStar(cell, row)) drawShinyStar(ctx, cx - w / 2 + 1.8 * L.K, cy - h / 2 - 3.6 * L.K, 13 * L.K);
     });
   }
 
@@ -988,7 +978,6 @@ function drawHomeTeamSprites(
     const img = url ? images.get(url) : undefined;
     if (img) drawSprite(ctx, img, cx, cy, 96);
     else drawEmptyBall(ctx, 18 * L.K2, cx, cy);
-    if (img && c.shiny) drawSpriteStar(ctx, cx, cy, 96, 10 * L.K2);
   });
 }
 

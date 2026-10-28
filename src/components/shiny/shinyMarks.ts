@@ -29,23 +29,6 @@ export const SHINY_STAR = {
   rimWidth: 2.6,
 } as const;
 
-/** Paints the star in the `size` px square whose top-left corner is (x, y). */
-export function drawShinyStar(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
-  const star = new Path2D(SHINY_STAR.path);
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(size / 24, size / 24);
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = SHINY_STAR.rimWidth;
-  ctx.strokeStyle = SHINY_STAR.rim;
-  ctx.stroke(star);
-  const fill = ctx.createLinearGradient(...SHINY_STAR.fill.from, ...SHINY_STAR.fill.to);
-  for (const [at, color] of SHINY_STAR.fill.stops) fill.addColorStop(at, color);
-  ctx.fillStyle = fill;
-  ctx.fill(star);
-  ctx.restore();
-}
-
 /**
  * How a Pokémon with no shiny looks while the Shiny switch is on: its normal
  * sprite, faded to gray, under a crossed-out sparkle. Michael may still pick

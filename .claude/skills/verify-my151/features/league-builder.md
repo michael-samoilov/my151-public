@@ -43,10 +43,9 @@ and a legendary on the boss row.
   it toggles that flag. The reset sits at the top centre and the remove at the
   top-right. A line or Pokémon with no shiny art shows the crossed-out sparkle
   (`role="img"`, "No shiny") in its place. Below 390px a cell's three discs
-  shrink to fit it. The card's export puts a gold star
-  (`[data-testid="shiny-star"]`) on a shiny line's first cell, the ace, the
-  partner, and a legend. The home rows and their export star each shiny cell,
-  since a row shows each line once.
+  shrink to fit it. Neither export draws a star: a shiny Pokémon shows by its
+  shiny sprite alone. The home rows in the app put a gold star
+  (`[data-testid="shiny-star"]`) on each shiny cell.
 - Desktop (1024px and wider) opens on the league pane alone. Opening a gym
   splits the width in halves with the card, and the picker makes thirds.
   Content widths follow the pane. One compact page footer sits below the fold.

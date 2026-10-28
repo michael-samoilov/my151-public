@@ -23,7 +23,6 @@ import { prefetchCell, usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { isShinyCell, pickerShinySprite } from '../model/shiny';
-import { ShinyStar } from '@/components/shiny/ShinyMarks';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 import { AxisBadge, GenerationBadge } from './WordBadge';
@@ -957,12 +956,6 @@ function Filled({ mon, shiny, desktop }: { mon: PickerMon; shiny: boolean; deskt
         data-grid-sprite-size={desktop ? DESKTOP_CELL_PX : size}
         draggable={false}
       />
-      {shiny ? (
-        <ShinyStar
-          className="pointer-events-none absolute z-[11]"
-          style={{ width: 'calc(var(--cell) * 0.3)', height: 'calc(var(--cell) * 0.3)', top: 'calc(var(--cell) * 0.054)', right: 'calc(var(--cell) * 0.054)' }}
-        />
-      ) : null}
     </>
   );
 }
