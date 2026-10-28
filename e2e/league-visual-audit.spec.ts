@@ -132,12 +132,11 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
         // Within a seventh of the radius. A glyph with a head on one side
         // is allowed its fixed bias, and at scale 1 a seven-pixel disc's
         // extent is read to one antialiased pixel, which is a seventh of
-        // it; a mark two pixels off is not. That pixel is the floor: below
-        // 390px a cell's discs shrink, and the reading error does not.
-        // Soft, so every disc's number is reported.
+        // it; a mark two pixels off is not. Soft, so every disc's number
+        // is reported.
         const off = Math.hypot(m.offset!.box.dx, m.offset!.box.dy);
         expect.soft(off, `${label}: mark ${off.toFixed(2)}px from the disc's centre, radius ${m.disc.r}px`)
-          .toBeLessThanOrEqual(Math.max(m.disc.r, 7) * 0.15);
+          .toBeLessThanOrEqual(m.disc.r * 0.15);
       }
     });
 

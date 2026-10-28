@@ -1,5 +1,6 @@
 import { getPokemonById } from '@/league/data/catalog';
 import { shinySpriteUrl } from '@/lib/spriteUrl';
+import type { ShinyMark } from '@/components/shiny/shinyMarks';
 import {
   BOSS_ROW,
   CHAMPION_ROW,
@@ -30,9 +31,7 @@ export function showsShinyStar(cell: CardCell, row: number): boolean {
   return cell.shiny && (cell.isLegend || row === joinRow(cell.seat));
 }
 
-/** How a shiny button reads. A saved flag on Pokémon with no shiny art reads as none. */
-export type ShinyMark = 'on' | 'off' | 'none';
-
+/** A saved flag on Pokémon with no shiny art reads as none. */
 export function shinyMark(ids: readonly number[], shiny: boolean): ShinyMark {
   const art = ids.some((id) => {
     const sprite = getPokemonById(id)?.sprite;

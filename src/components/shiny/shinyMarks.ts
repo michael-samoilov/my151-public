@@ -11,6 +11,9 @@ export const SHINY_GLYPH = {
   slash: 'm2 2 20 20',
 } as const;
 
+/** How a shiny button reads. With no shiny art it is the crossed-out mark, not a control. */
+export type ShinyMark = 'on' | 'off' | 'none';
+
 /** Cyan, yellow, magenta, with yellow held through the middle fifth. Offsets run from 0 to 1. */
 export const HOLO_STOPS = [[0, '#1FC8F2'], [0.4, '#FFC83A'], [0.6, '#FFC83A'], [1, '#E557D6']] as const;
 

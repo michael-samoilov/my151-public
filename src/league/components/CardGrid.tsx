@@ -35,7 +35,6 @@ import {
   shinyMark,
   signatureMember,
   stageAt,
-  type ShinyMark,
 } from '../model/engine';
 import { getMoveById } from '../moves';
 import { keepLastWord } from '../keepLastWord';
@@ -68,6 +67,7 @@ import { CQ_ZOOM_VAR } from '../useFitScale';
 import { shinySpriteUrl } from '@/lib/spriteUrl';
 import { leagueSpriteUrl } from '../leagueSprite';
 import { ShinyDisc } from '@/components/shiny/ShinyMarks';
+import type { ShinyMark } from '@/components/shiny/shinyMarks';
 
 const ROW_H = 3.375;
 const BAND_H = 1.25;
@@ -336,6 +336,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
   };
 
   const ringed = isOver && ringWhenOver && datum.row === BOSS_ROW && datum.filled;
+  const markSize = shinyButton && onReset && onRemove ? THREE_MARKS : undefined;
 
   return (
     <div
@@ -442,7 +443,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
         </>
       )}
       {shinyButton && pokemon && (
-        <ShinyButton {...shinyButton} name={pokemonLabel(pokemon.id, pokemon.name).name} place={markBox('left', 0.175, CELL_MARK)} />
+        <ShinyButton {...shinyButton} name={pokemonLabel(pokemon.id, pokemon.name).name} place={markBox('left', 0.175, markSize)} />
       )}
       {onReset && pokemon && (
         <button
@@ -463,7 +464,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
           // the clip shaved a device pixel off one side of the disc, and the
           // disc read as off-centre by half of it.
           className="absolute z-[15] cursor-pointer"
-          style={markBox('center', 0.175, CELL_MARK)}
+          style={markBox('center', 0.175, markSize)}
         >
           {/* One svg for the disc and the arrow, the way `RedXIcon` draws
               its disc and its cross. They used to be two layers -- a
@@ -505,7 +506,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
             onRemove();
           }}
           className="absolute z-[15] cursor-pointer"
-          style={markBox('right', 0.175, CELL_MARK)}
+          style={markBox('right', 0.175, markSize)}
         >
           <RedXIcon className="block aspect-square w-full" />
         </button>
@@ -542,11 +543,11 @@ const MARK_PAD_REM = 0.1875;
 const MARK_EDGE_REM = 0.0625;
 
 /**
- * A cell's top edge holds up to three discs, and a phone narrower than 390px has no room for three
- * 1rem discs: at 320px a cell is 2.5rem wide. There the discs shrink to fit the cell, with
- * `MARK_EDGE_REM` of ground beside and between them.
+ * A cell with a reset shows three discs on its top edge, and a phone narrower than 390px has no room
+ * for three 1rem discs: at 320px a cell is 2.5rem wide. There that cell's discs shrink to fit, side by
+ * side with `MARK_EDGE_REM` of ground at each end. Two discs fit at every width, so they keep 1rem.
  */
-const CELL_MARK = `min(${MARK_REM}rem, (100% - ${4 * MARK_EDGE_REM}rem) / 3)`;
+const THREE_MARKS = `min(${MARK_REM}rem, (100% - ${2 * MARK_EDGE_REM}rem) / 3)`;
 
 /** No height: the disc's square svg sets it, so a disc that shrinks keeps its top edge. */
 function markBox(side: 'left' | 'center' | 'right', inset: number, size = `${MARK_REM}rem`): React.CSSProperties {

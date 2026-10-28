@@ -1,7 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 import { useT } from '@/i18n';
-import type { ShinyMark } from '@/league/model/engine';
-import { HOLO_STOPS, NO_SHINY, SHINY_GLYPH, SHINY_STAR } from './shinyMarks';
+import { HOLO_STOPS, NO_SHINY, SHINY_GLYPH, SHINY_STAR, type ShinyMark } from './shinyMarks';
 
 export function ShinyStar({ className, style }: { className?: string; style?: CSSProperties }) {
   const t = useT();
