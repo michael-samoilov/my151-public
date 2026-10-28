@@ -20,10 +20,10 @@ export function ShinyStar({ className, style }: { className?: string; style?: CS
   );
 }
 
-/** The Shiny stars when on: filled yellow with a dark gold edge. */
+/** The Shiny stars when on: solid yellow. The edge keeps the stars as heavy as the gray outline ones. */
 function OnStars() {
   return (
-    <g fill={SHINY_ON.star} stroke={SHINY_ON.starEdge} strokeWidth={1.6} strokeLinejoin="round">
+    <g fill={SHINY_ON.star} stroke={SHINY_ON.star} strokeWidth={1.6} strokeLinejoin="round">
       <path d={SHINY_GLYPH.big} />
       <path d={SHINY_GLYPH.small} />
     </g>
