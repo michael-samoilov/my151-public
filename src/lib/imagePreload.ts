@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { whenIdle } from './whenIdle';
+
 const decoded = new Map<string, HTMLImageElement>();
 const loading = new Set<string>();
 let queue: string[] = [];
@@ -34,4 +37,20 @@ export function preloadImages(urls: readonly string[], first = false): void {
     queue.push(...fresh.filter((url) => !queued.has(url)));
   }
   pump();
+}
+
+/**
+ * At most this long before `usePreloadImages` starts. A phone that has just opened a picker sheet
+ * gives no idle time for about 3 s, longer than a person takes to press Shiny.
+ */
+const PRELOAD_WAIT_MS = 300;
+
+/** Preloads `urls` once the page is idle or `PRELOAD_WAIT_MS` has passed, behind any images already queued. */
+export function usePreloadImages(urls: readonly string[]): void {
+  useEffect(() => {
+    if (urls.length === 0) return;
+    let live = true;
+    whenIdle(() => { if (live) preloadImages(urls); }, PRELOAD_WAIT_MS);
+    return () => { live = false; };
+  }, [urls]);
 }

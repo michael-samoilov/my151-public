@@ -8,8 +8,7 @@ import { useTightFit } from '@/hooks/useTightFit';
 import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
-import { preloadImages } from '@/lib/imagePreload';
-import { whenIdle } from '@/lib/whenIdle';
+import { usePreloadImages } from '@/lib/imagePreload';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { cellKey, isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
@@ -123,13 +122,11 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
-  useEffect(() => {
-    if (kind !== 'pick') return;
-    const shinies = mons.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null);
-    let live = true;
-    whenIdle(() => { if (live) preloadImages(shinies); });
-    return () => { live = false; };
-  }, [kind, mons]);
+  const shinySprites = useMemo(
+    () => (kind === 'pick' ? mons.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null) : []),
+    [kind, mons],
+  );
+  usePreloadImages(shinySprites);
   const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 

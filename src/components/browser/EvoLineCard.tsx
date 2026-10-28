@@ -1,7 +1,7 @@
 import { PokemonNameTooltip } from '@/components/shared/PokemonNameTooltip';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import type { PokemonLabel } from '@/i18n/names';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
 import { homeGen, packRows } from './packRows';
@@ -11,9 +11,8 @@ import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import { ShapeIcon } from '@/components/shared/ShapeIcon';
-import { preloadImages } from '@/lib/imagePreload';
+import { usePreloadImages } from '@/lib/imagePreload';
 import { shinySpriteUrl } from '@/lib/spriteUrl';
-import { whenIdle } from '@/lib/whenIdle';
 import { NoShinyMark } from '@/components/shiny/ShinyMarks';
 import { NO_SHINY } from '@/components/shiny/shinyMarks';
 import {
@@ -136,15 +135,15 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
 
   const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows, windowed, `${cols}:${spritePx}`);
 
-  useEffect(() => {
-    if (!preloadShinies) return;
-    const shinies = rows.slice(start, end)
-      .flatMap((row) => row.groups.flatMap((group) => group.members.map((member) => shinySpriteUrl(member.sprite))))
-      .filter((url): url is string => url !== null);
-    let live = true;
-    whenIdle(() => { if (live) preloadImages(shinies); });
-    return () => { live = false; };
-  }, [preloadShinies, rows, start, end]);
+  const shinySprites = useMemo(
+    () => (preloadShinies
+      ? rows.slice(start, end)
+        .flatMap((row) => row.groups.flatMap((group) => group.members.map((member) => shinySpriteUrl(member.sprite))))
+        .filter((url): url is string => url !== null)
+      : []),
+    [preloadShinies, rows, start, end],
+  );
+  usePreloadImages(shinySprites);
 
   const cells = useMemo(() => {
     const result: React.ReactNode[] = [];
