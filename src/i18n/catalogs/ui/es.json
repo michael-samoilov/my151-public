@@ -605,6 +605,7 @@
   "league.cell.remove": "Quitar la línea evolutiva de {name}",
   "league.cell.removeLegend": "Quitar el legendario del jefe final",
   "league.cell.reset": "Restablecer las filas de evolución de {name}",
+  "league.cell.shiny": "Forma variocolor de {name}",
   "league.close": "Cerrar",
   "league.export.card": "Exportar la tarjeta de Entrenador",
   "league.export.cardCredit": "Tarjeta de Entrenador Pro de /vp/",

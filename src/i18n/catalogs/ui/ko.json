@@ -592,6 +592,7 @@
   "league.cell.remove": "{name}의 진화 라인 제거",
   "league.cell.removeLegend": "최종 보스의 전설 포켓몬 제거",
   "league.cell.reset": "{name}의 진화 줄 되돌리기",
+  "league.cell.shiny": "{name}의 색이 다른 모습",
   "league.close": "닫기",
   "league.export.card": "트레이너 카드 내보내기",
   "league.export.cardCredit": "/vp/의 프로 트레이너 카드",

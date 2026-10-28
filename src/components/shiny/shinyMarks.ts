@@ -58,5 +58,5 @@ export const NO_SHINY = {
   placement: 'badge' as 'badge' | 'center',
   ink: '#64748b',
   disc: '#ffffff',
-  ring: '0 0 0 1px rgba(15,23,42,0.22)',
+  ring: 'rgba(15,23,42,0.22)',
 } as const;

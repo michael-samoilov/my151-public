@@ -592,6 +592,7 @@
   "league.cell.remove": "{name}の進化ラインを外す",
   "league.cell.removeLegend": "裏ボスの伝説のポケモンを外す",
   "league.cell.reset": "{name}の進化の段を元に戻す",
+  "league.cell.shiny": "{name}の色違い",
   "league.close": "閉じる",
   "league.export.card": "トレーナーカードを書き出す",
   "league.export.cardCredit": "/vp/のプロトレーナーカード",

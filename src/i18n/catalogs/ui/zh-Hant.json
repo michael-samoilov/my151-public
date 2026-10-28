@@ -592,6 +592,7 @@
   "league.cell.remove": "移除{name}的進化鏈",
   "league.cell.removeLegend": "移除隱藏頭目的傳說寶可夢",
   "league.cell.reset": "還原{name}的進化列",
+  "league.cell.shiny": "{name}的異色",
   "league.close": "關閉",
   "league.export.card": "匯出訓練家卡",
   "league.export.cardCredit": "/vp/的專業訓練家卡",

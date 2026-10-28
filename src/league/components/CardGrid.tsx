@@ -32,9 +32,10 @@ import {
   effectiveBoundaries,
   deriveRows,
   moveSeat as reorderLines,
-  showsShinyStar,
+  shinyMark,
   signatureMember,
   stageAt,
+  type ShinyMark,
 } from '../model/engine';
 import { getMoveById } from '../moves';
 import { keepLastWord } from '../keepLastWord';
@@ -66,7 +67,7 @@ import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 import { CQ_ZOOM_VAR } from '../useFitScale';
 import { shinySpriteUrl } from '@/lib/spriteUrl';
 import { leagueSpriteUrl } from '../leagueSprite';
-import { ShinyStar } from '@/components/shiny/ShinyMarks';
+import { ShinyDisc } from '@/components/shiny/ShinyMarks';
 
 const ROW_H = 3.375;
 const BAND_H = 1.25;
@@ -291,14 +292,14 @@ function stageTint(pokemonId: number): string {
   return `${colour}2e`;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
   cardIndex: number;
   datum: CellDatum;
   columnHovered?: boolean;
   pokemonId: number | null;
   form: PowerupForm | null;
   shiny: boolean;
-  star: boolean;
+  shinyButton?: ShinyButtonProps;
   powerupKind: PowerupKind | null;
   onPowerup?: (kind: PowerupKind) => void;
   held: boolean;
@@ -417,13 +418,6 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
         ) : (
           <EmptySlotBall />
         )}
-        {star && pokemon ? (
-          <ShinyStar
-            className="pointer-events-none absolute z-[14]"
-            // Beside the reset disc when the line shows one, since both take the top-left corner.
-            style={{ left: onReset ? '1.1125rem' : '0.1125rem', top: '-0.225rem', width: '0.8125rem', height: '0.8125rem' }}
-          />
-        ) : null}
       </button>
       {onPowerup && pokemon && (
         <>
@@ -447,6 +441,9 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
           )}
         </>
       )}
+      {shinyButton && pokemon && (
+        <ShinyButton {...shinyButton} name={pokemonLabel(pokemon.id, pokemon.name).name} place={markBox('left', 0.175, CELL_MARK)} />
+      )}
       {onReset && pokemon && (
         <button
           type="button"
@@ -455,7 +452,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
             e.stopPropagation();
             onReset();
           }}
-          // The opposite corner from the remove X, so the destructive control
+          // The top centre, away from the remove X, so the destructive control
           // and the undo one never sit under the same thumb.
           //
           // No paint containment, unlike the cross and the powerup discs.
@@ -466,7 +463,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
           // the clip shaved a device pixel off one side of the disc, and the
           // disc read as off-centre by half of it.
           className="absolute z-[15] cursor-pointer"
-          style={markBox('left', 0.175)}
+          style={markBox('center', 0.175, CELL_MARK)}
         >
           {/* One svg for the disc and the arrow, the way `RedXIcon` draws
               its disc and its cross. They used to be two layers -- a
@@ -490,7 +487,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
               in viewBox units, so it scales with the inset. The two paths
               are lucide's `rotate-ccw` (ISC), copied so they can share the
               disc's svg. */}
-          <svg viewBox="-7.5 -7.5 38 38" className="block h-full w-full" aria-hidden="true">
+          <svg viewBox="-7.5 -7.5 38 38" className="block aspect-square w-full" aria-hidden="true">
             <circle cx="11.5" cy="11.5" r="19" fill="#2563eb" />
             <g fill="none" stroke="#ffffff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -508,9 +505,9 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, star, powerupKi
             onRemove();
           }}
           className="absolute z-[15] cursor-pointer"
-          style={markBox('right', 0.175)}
+          style={markBox('right', 0.175, CELL_MARK)}
         >
-          <RedXIcon className="h-full w-full" />
+          <RedXIcon className="block aspect-square w-full" />
         </button>
       )}
     </div>
@@ -531,7 +528,6 @@ const DISC_REM = 1;
 
 const MARK_REM = DISC_REM;
 const MARK_PAD_REM = 0.1875;
-const MARK_BOX_REM = MARK_REM + 2 * MARK_PAD_REM;
 /**
  * How far the paint keeps off the corner it sits in.
  *
@@ -545,21 +541,63 @@ const MARK_BOX_REM = MARK_REM + 2 * MARK_PAD_REM;
  */
 const MARK_EDGE_REM = 0.0625;
 
-function markBox(side: 'left' | 'right', inset: number): React.CSSProperties {
+/**
+ * A cell's top edge holds up to three discs, and a phone narrower than 390px has no room for three
+ * 1rem discs: at 320px a cell is 2.5rem wide. There the discs shrink to fit the cell, with
+ * `MARK_EDGE_REM` of ground beside and between them.
+ */
+const CELL_MARK = `min(${MARK_REM}rem, (100% - ${4 * MARK_EDGE_REM}rem) / 3)`;
+
+/** No height: the disc's square svg sets it, so a disc that shrinks keeps its top edge. */
+function markBox(side: 'left' | 'center' | 'right', inset: number, size = `${MARK_REM}rem`): React.CSSProperties {
   const pad = `${MARK_PAD_REM}rem`;
   const edge = `${MARK_EDGE_REM}rem`;
-  const inner = side === 'right' ? 'paddingLeft' : 'paddingRight';
-  const outer = side === 'right' ? 'paddingRight' : 'paddingLeft';
-  return {
-    [side]: 0,
+  const box: React.CSSProperties = {
     top: `${inset - MARK_PAD_REM}rem`,
-    width: `${MARK_REM + MARK_PAD_REM + MARK_EDGE_REM}rem`,
-    height: `${MARK_BOX_REM + MARK_EDGE_REM}rem`,
     paddingTop: `${MARK_PAD_REM + MARK_EDGE_REM}rem`,
     paddingBottom: pad,
-    [inner]: pad,
-    [outer]: edge,
   };
+  if (side === 'center') {
+    return { ...box, left: `calc(50% - ${size} / 2 - ${pad})`, width: `calc(${size} + 2 * ${pad})`, paddingLeft: pad, paddingRight: pad };
+  }
+  const inner = side === 'right' ? 'paddingLeft' : 'paddingRight';
+  const outer = side === 'right' ? 'paddingRight' : 'paddingLeft';
+  return { ...box, [side]: 0, width: `calc(${size} + ${pad} + ${edge})`, [inner]: pad, [outer]: edge };
+}
+
+interface ShinyButtonProps {
+  mark: ShinyMark;
+  onToggle: () => void;
+}
+
+/** The top-left control of a line, legend, ace, or partner. With no shiny art it is the crossed-out mark, not a control. */
+function ShinyButton({ mark, onToggle, name, place }: ShinyButtonProps & { name: string; place: React.CSSProperties }) {
+  const t = useT();
+  if (mark === 'none') {
+    return (
+      <span role="img" aria-label={t('shiny.none')} data-shiny-mark={mark} className="pointer-events-none absolute z-[15]" style={place}>
+        <ShinyDisc mark={mark} />
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-label={t('league.cell.shiny', { name })}
+      aria-pressed={mark === 'on'}
+      data-shiny-mark={mark}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onToggle();
+      }}
+      className="absolute z-[15] cursor-pointer"
+      style={place}
+    >
+      <ShinyDisc mark={mark} />
+    </button>
+  );
 }
 
 const HIT_UP_REM = 0.5;
@@ -644,7 +682,7 @@ function PowerupButton({ kind, symbol, active, onPress, side }: {
 }
 
 function SlotHalf({
-  testId, half, heading, fit, place, pokemon, shiny, onPick, onRemove,
+  testId, half, heading, fit, place, pokemon, shiny, shinyButton, onPick, onRemove,
 }: {
   testId: string;
   half: 'ace' | 'partner';
@@ -653,6 +691,7 @@ function SlotHalf({
   place: { left: number; top: number } | { right: number; top: number };
   pokemon: ReturnType<typeof getPokemonById>;
   shiny: boolean;
+  shinyButton: ShinyButtonProps;
   onPick: () => void;
   onRemove: () => void;
 }) {
@@ -732,9 +771,7 @@ function SlotHalf({
             className="relative z-[1] h-full w-full max-w-none"
             style={{ imageRendering: SPRITE_RENDERING }}
           />
-          {shiny ? (
-            <ShinyStar className="pointer-events-none absolute z-[14]" style={{ left: '0.0625rem', top: '0.0625rem', width: '1rem', height: '1rem' }} />
-          ) : null}
+          {nameLabel ? <ShinyButton {...shinyButton} name={nameLabel.name} place={markBox('left', 0)} /> : null}
           <SlotRemove label={heading.remove} onRemove={onRemove} />
         </>
       ) : (
@@ -838,7 +875,7 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
       className="absolute z-[15] cursor-pointer"
       style={markBox('right', 0)}
     >
-      <RedXIcon className="h-full w-full" />
+      <RedXIcon className="block aspect-square w-full" />
     </button>
   );
 }
@@ -1037,6 +1074,7 @@ function useSlotBox(ref: React.RefObject<HTMLDivElement | null>) {
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
+  const setLineShiny = useLeagueStore((s) => s.setLineShiny);
   const namesVersion = useNamesVersion();
   const t = useT();
   const aceHead: Heading = {
@@ -1120,6 +1158,12 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         place={{ left: squares.ace.cx, top: squares.ace.cy - squares.ace.size / 2 }}
         pokemon={ace}
         shiny={line?.shiny === true}
+        shinyButton={{
+          mark: shinyMark(line?.branch ?? [], line?.shiny === true),
+          onToggle: () => {
+            if (card.signatureSeat !== null) setLineShiny(cardIndex, card.signatureSeat, line?.shiny !== true);
+          },
+        }}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
       />
@@ -1131,6 +1175,10 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         place={partnerPlace}
         pokemon={partner}
         shiny={card.partnerShiny === true}
+        shinyButton={{
+          mark: shinyMark(partner ? [partner.id] : [], card.partnerShiny === true),
+          onToggle: () => setPartner(cardIndex, card.partnerId ?? null, card.partnerShiny !== true),
+        }}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />
@@ -1610,6 +1658,8 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
   const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
+  const setLegendShiny = useLeagueStore((s) => s.setLegendShiny);
+  const setLineShiny = useLeagueStore((s) => s.setLineShiny);
   const moveLegend = useLeagueStore((s) => s.moveLegend);
   const removeLineAt = useLeagueStore((s) => s.removeLineAt);
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
@@ -1988,7 +2038,15 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
                       pokemonId={cell.pokemonId}
                       form={form}
                       shiny={cell.shiny}
-                      star={showsShinyStar(cell, row)}
+                      shinyButton={
+                        inHand || cell.pokemonId === null
+                          ? undefined
+                          : cell.isLegend
+                            ? { mark: shinyMark([cell.pokemonId], cell.shiny), onToggle: () => setLegendShiny(cardIndex, cell.seat, !cell.shiny) }
+                            : topId !== null && line
+                              ? { mark: shinyMark(line.branch, cell.shiny), onToggle: () => setLineShiny(cardIndex, cell.seat, !cell.shiny) }
+                              : undefined
+                      }
                       powerupKind={form ? previewPowerups(row).find((p) => p.seat === cell.seat)?.kind ?? null : null}
                       onPowerup={
                         !inHand && isPowerupRow(row) && cell.pokemonId !== null

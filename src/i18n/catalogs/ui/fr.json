@@ -605,6 +605,7 @@
   "league.cell.remove": "Retirer la lignée de {name}",
   "league.cell.removeLegend": "Retirer le légendaire du boss final",
   "league.cell.reset": "Réinitialiser les rangées d’évolution de {name}",
+  "league.cell.shiny": "Forme chromatique de {name}",
   "league.close": "Fermer",
   "league.export.card": "Exporter la carte Dresseur",
   "league.export.cardCredit": "Carte Dresseur Pro de /vp/",

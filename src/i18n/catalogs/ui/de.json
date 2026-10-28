@@ -605,6 +605,7 @@
   "league.cell.remove": "Entwicklungslinie von {name} entfernen",
   "league.cell.removeLegend": "Legendäres des Endgegners entfernen",
   "league.cell.reset": "Entwicklungsreihen von {name} zurücksetzen",
+  "league.cell.shiny": "Schillernde Form von {name}",
   "league.close": "Schließen",
   "league.export.card": "Trainerkarte exportieren",
   "league.export.cardCredit": "Profi-Trainerkarte von /vp/",

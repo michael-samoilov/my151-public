@@ -78,6 +78,7 @@ interface LeagueState {
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
   setLegend: (card: number, legend: LegendPick | null, seat?: number) => void;
+  setLegendShiny: (card: number, seat: number, shiny: boolean) => void;
   moveLegend: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
   markNudgeCelebrated: (id: LeagueNudgeId) => void;
@@ -423,6 +424,19 @@ export const useLeagueStore = create<LeagueState>()(
             const { powerups } = withPowerups(c, (p, row) => (row === BOSS_ROW && p.seat === target ? null : p));
             return { ...c, legends: legend ? [...rest, legend] : rest, legend: null, powerups, powerup: null };
           }),
+        })),
+
+      setLegendShiny: (card, seat, shiny) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => ({
+            ...c,
+            legends: legendsOf(c).map((legend) => {
+              if (legend.seat !== seat) return legend;
+              const { shiny: _, ...rest } = legend;
+              return shiny ? { ...rest, shiny: true } : rest;
+            }),
+            legend: null,
+          })),
         })),
 
       moveLegend: (card, fromSeat, toSeat) =>

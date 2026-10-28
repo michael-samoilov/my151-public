@@ -592,6 +592,7 @@
   "league.cell.remove": "移除{name}的进化链",
   "league.cell.removeLegend": "移除隐藏头目的传说宝可梦",
   "league.cell.reset": "还原{name}的进化行",
+  "league.cell.shiny": "{name}的异色",
   "league.close": "关闭",
   "league.export.card": "导出训练家卡",
   "league.export.cardCredit": "/vp/的专业训练家卡",

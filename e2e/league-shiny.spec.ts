@@ -8,6 +8,9 @@ const hexRgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at 
 const STAR_FILL = SHINY_STAR.fill.stops.map(([, color]) => hexRgb(color));
 
 const card = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('league-builder')!).state.cards[0]);
+/** The shiny buttons on the card, which sit beside a cell, not inside it. */
+const cellShiny = (page: Page, cell: string) => page.locator(`[data-seat]:has(> [data-testid="${cell}"]) button[data-shiny-mark]`);
+const pressedOnCard = (page: Page) => page.locator('[data-lg-card-root] button[data-shiny-mark][aria-pressed="true"]');
 
 async function search(page: Page, query: string) {
   await page.getByPlaceholder(/search/i).last().fill(query);
@@ -45,8 +48,8 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await lapras.click();
   expect((await card(page)).lines).toMatchObject([{ branch: [131], shiny: true }]);
   await expect(page.locator('[data-testid="card-cell-1-1"] img')).toHaveAttribute('src', /\/shiny\/131\.png$/);
-  await expect(page.locator('[data-testid^="card-cell-"] [data-testid="shiny-star"]')).toHaveCount(1);
-  await expect(page.locator('[data-testid="card-cell-1-1"] [data-testid="shiny-star"]')).toBeVisible();
+  await expect(pressedOnCard(page)).toHaveCount(1);
+  await expect(cellShiny(page, 'card-cell-1-1')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-testid="league-slot-0"] img[src*="/shiny/131.png"]')).toBeVisible();
 
   await page.click('[data-testid="slot-partner"]');
@@ -56,13 +59,13 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await page.locator('[data-testid="verify-evo-card"] img[alt="Psyduck"]').click();
   expect(await card(page)).toMatchObject({ partnerId: 54, partnerShiny: true });
   await expect(page.locator('[data-testid="slot-partner"] img')).toHaveAttribute('src', /\/shiny\/54\.png$/);
-  await expect(page.getByTestId('slot-partner').getByTestId('shiny-star')).toBeVisible();
+  await expect(page.getByTestId('slot-partner').getByRole('button', { name: 'Shiny Psyduck' })).toHaveAttribute('aria-pressed', 'true');
 
   await page.click('[data-testid="slot-ace"]');
   await search(page, 'lapras');
   await page.locator('[data-testid="verify-evo-card"] img[alt="Lapras"]').click();
   await expect(page.locator('[data-testid="slot-ace"] img')).toHaveAttribute('src', /\/shiny\/131\.png$/);
-  await expect(page.getByTestId('slot-ace').getByTestId('shiny-star')).toBeVisible();
+  await expect(page.getByTestId('slot-ace').getByRole('button', { name: 'Shiny Lapras' })).toHaveAttribute('aria-pressed', 'true');
 
   await page.click('[data-testid="card-cell-11-1"]');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -70,7 +73,7 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await search(page, 'kyogre');
   await page.locator('[data-testid="verify-evo-card"] img[alt="Kyogre"]').click();
   expect((await card(page)).legends).toMatchObject([{ pokemonId: 382, seat: 1, shiny: true }]);
-  await expect(page.locator('[data-testid="card-cell-11-1"] [data-testid="shiny-star"]')).toBeVisible();
+  await expect(cellShiny(page, 'card-cell-11-1')).toHaveAttribute('aria-pressed', 'true');
   await testInfo.attach('shiny-card.png', { body: await page.screenshot(), contentType: 'image/png' });
 
   await page.locator('[data-league-export]').last().click();
@@ -117,7 +120,8 @@ test('tapping a held line with Shiny off turns it back to normal', async ({ page
   expect(line.branch).toEqual([131]);
   expect(line.shiny).toBeUndefined();
   await expect(page.locator('[data-testid="card-cell-1-1"] img')).not.toHaveAttribute('src', SHINY);
-  await expect(page.locator('[data-testid^="card-cell-"] [data-testid="shiny-star"]')).toHaveCount(0);
+  await expect(cellShiny(page, 'card-cell-1-1')).toHaveAttribute('aria-pressed', 'false');
+  await expect(pressedOnCard(page)).toHaveCount(0);
 });
 
 test('the Pokédex builder browser has no Shiny switch and loads no shiny sprites', async ({ page }, testInfo) => {

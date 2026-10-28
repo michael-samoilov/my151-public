@@ -461,6 +461,7 @@ export const enUi = {
   'league.cell.remove': "Remove {name}'s line",
   'league.cell.removeLegend': 'Remove the endgame boss legendary',
   'league.cell.reset': "Reset {name}'s evolution rows",
+  'league.cell.shiny': 'Shiny {name}',
   'league.close': 'Close',
   'league.export.card': 'Export trainer card',
   'league.export.cardCredit': "/vp/'s Pro Trainer Card",

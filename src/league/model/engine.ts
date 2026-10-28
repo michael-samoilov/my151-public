@@ -1,4 +1,5 @@
 import { getPokemonById } from '@/league/data/catalog';
+import { shinySpriteUrl } from '@/lib/spriteUrl';
 import {
   BOSS_ROW,
   CHAMPION_ROW,
@@ -27,6 +28,18 @@ export interface CardCell {
 /** On a whole card, the star marks a shiny line once, on its first cell, and every shiny legend. */
 export function showsShinyStar(cell: CardCell, row: number): boolean {
   return cell.shiny && (cell.isLegend || row === joinRow(cell.seat));
+}
+
+/** How a shiny button reads. A saved flag on Pokémon with no shiny art reads as none. */
+export type ShinyMark = 'on' | 'off' | 'none';
+
+export function shinyMark(ids: readonly number[], shiny: boolean): ShinyMark {
+  const art = ids.some((id) => {
+    const sprite = getPokemonById(id)?.sprite;
+    return sprite !== undefined && shinySpriteUrl(sprite) !== null;
+  });
+  if (!art) return 'none';
+  return shiny ? 'on' : 'off';
 }
 
 export function levelBoundaries(branch: number[]): number[] {
