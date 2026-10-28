@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
+import { usePreloadImages } from '@/lib/imagePreload';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import {
   defaultBoundaries,
@@ -41,7 +42,7 @@ import { keepLastWord } from '../keepLastWord';
 import { moveName, useMoveNames } from '../moveNames';
 import { cardShades } from '../theme';
 import { CategoryChip } from './CategoryChip';
-import { legendAt, legendsOf, powerupsAt, seatAfterMove, useLeagueStore } from '../store/useLeagueStore';
+import { legendAt, legendsOf, powerupsAt, seatAfterMove, useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
@@ -1656,6 +1657,24 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
  */
 export type CardHints = 'loose' | 'tight' | 'off';
 
+/**
+ * Every sprite a card can put in a cell, as one sorted key: each line member, legend, and the
+ * partner, with their powerup forms, in the look they have now or, with `flip`, the other one.
+ */
+function cardSprites(card: GymCard, flip: boolean): string {
+  const members = [
+    ...card.lines.flatMap((line) => line.branch.map((id) => ({ id, shiny: line.shiny === true }))),
+    ...legendsOf(card).map((l) => ({ id: l.pokemonId, shiny: l.shiny === true })),
+    ...(card.partnerId != null ? [{ id: card.partnerId, shiny: card.partnerShiny === true }] : []),
+  ];
+  return [...new Set(members.flatMap(({ id, shiny }) => {
+    const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
+    return [null, ...forms].map((form) => leagueSpriteUrl(id, form, shiny !== flip));
+  }))]
+    .sort()
+    .join('|');
+}
+
 export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: number; view: CardView; hints?: CardHints }) {
   const moveSeat = useLeagueStore((s) => s.moveSeat);
   const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
@@ -1685,21 +1704,17 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
   // in stages no row showed before. Powerup forms come too, because the
   // powerup rides its seat and a reorder hands it to another line. The
   // legendaries come with theirs, because a press swaps their sprite too.
-  const warmable = [...new Set([
-    ...card.lines.flatMap((line) => line.branch.map((id) => ({ id, shiny: line.shiny === true }))),
-    ...legendsOf(card).map((l) => ({ id: l.pokemonId, shiny: l.shiny === true })),
-  ]
-    .flatMap(({ id, shiny }) => {
-      const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
-      return [null, ...forms].map((form) => leagueSpriteUrl(id, form, shiny));
-    }))]
-    .sort()
-    .join('|');
+  const warmable = cardSprites(card, false);
   const warmedSprites = useRef<HTMLImageElement[]>([]);
   useEffect(() => {
     warmedSprites.current = warmImages(warmable.split('|').filter(Boolean));
     return () => { warmedSprites.current = []; };
   }, [warmable]);
+  // The other look of each, so the first press on a shiny disc swaps in art the browser already
+  // has. Without it, that press waited a round trip: 164 to 182 ms at 150 ms of latency, against
+  // 7 to 18 ms once the art was in. It queues behind the sprites on screen.
+  const otherLook = cardSprites(card, true);
+  usePreloadImages(useMemo(() => otherLook.split('|').filter(Boolean), [otherLook]));
 
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
