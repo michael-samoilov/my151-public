@@ -559,7 +559,9 @@ function markBox(side: 'left' | 'center' | 'right', inset: number, size = `${MAR
     paddingBottom: pad,
   };
   if (side === 'center') {
-    return { ...box, left: `calc(50% - ${size} / 2 - ${pad})`, width: `calc(${size} + 2 * ${pad})`, paddingLeft: pad, paddingRight: pad };
+    // Centred by auto margins. Under the card's zoom, WebKit placed `left: calc(50% - …rem)` off
+    // centre: 0.6px right in a 600px frame, measured, while the corner discs stayed put.
+    return { ...box, left: 0, right: 0, marginInline: 'auto', width: `calc(${size} + 2 * ${pad})`, paddingLeft: pad, paddingRight: pad };
   }
   const inner = side === 'right' ? 'paddingLeft' : 'paddingRight';
   const outer = side === 'right' ? 'paddingRight' : 'paddingLeft';

@@ -1454,6 +1454,39 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   return checks;
 }
 
+// Card 0 holds two lines with moved evolution rows, so their top cells show shiny, reset, and remove.
+const THREE_DISC_LEAGUE =
+  "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);c[0]={...e(),type:'rock',badgeName:'Discs',lines:[{branch:[74,75,76],boundaries:[1,4,8],shiny:true},{branch:[1,2,3],boundaries:[1,4,8]},{branch:[95],boundaries:[1]}]};return c;})()},version:1})";
+
+/**
+ * The shiny, reset, and remove discs on a line's top cell are evenly spaced. Under the card's zoom,
+ * WebKit once placed the middle disc 1.6px off centre while Blink and Gecko centred it, so only a
+ * run on every engine catches this.
+ */
+export async function runLeagueCardDiscsSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const url = ctx.base + LEAGUE_PATH;
+  if (!(await seedLeagueHome(s, url, THREE_DISC_LEAGUE))) {
+    return [{ name: 'league-discs:even', status: 'skip', detail: 'league home never hydrated after seed' }];
+  }
+  if (!(await openLeagueCard(s, 0))) return [{ name: 'league-discs:even', status: 'skip', detail: 'card never opened' }];
+  await sleep(s.engine === 'webkit' ? 1000 : 400);
+  const r = await s.evalJson<{ cells: number; worst: number; detail: string }>(
+    `const rows=[...document.querySelectorAll('[data-seat]')].flatMap((cell)=>{
+       const d=[...cell.querySelectorAll(':scope > button[aria-label], :scope > span[data-shiny-mark]')]
+         .filter((el)=>/^(Shiny|Reset|Remove)|No shiny/.test(el.getAttribute('aria-label')||''))
+         .map((el)=>el.querySelector('svg').getBoundingClientRect()).sort((a,b)=>a.left-b.left);
+       if(d.length!==3) return [];
+       const box=cell.getBoundingClientRect();
+       const gaps=[d[1].left-d[0].right,d[2].left-d[1].right];
+       const off=(d[1].left+d[1].right)/2-(box.left+box.right)/2;
+       return [{worst:Math.max(Math.abs(gaps[0]-gaps[1]),2*Math.abs(off)),text:'gaps '+gaps.map((g)=>g.toFixed(2)).join('/')+' middle '+off.toFixed(2)}];
+     });
+     return {cells:rows.length,worst:Math.max(0,...rows.map((r)=>r.worst)),detail:rows.map((r)=>r.text).join('; ')};`,
+  );
+  await s.screenshot(ctx.shot('league-card-discs'));
+  return [ok('league-discs:even', r.cells >= 2 && r.worst <= 0.5, `${r.cells} three-disc cells, worst ${r.worst.toFixed(2)}px: ${r.detail}`)];
+}
+
 const E4_ONLY_LEAGUE =
   "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);const m=(t,b)=>({...e(),type:t,badgeName:b,lines:[{branch:[25],boundaries:[1]}]});c[8]=m('electric','E4-1');c[9]=m('fire','E4-2');c[10]=m('grass','E4-3');c[11]=m('psychic','E4-4');return c;})()},version:1})";
 
