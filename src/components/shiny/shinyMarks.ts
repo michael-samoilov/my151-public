@@ -15,11 +15,11 @@ export const SHINY_GLYPH = {
 export type ShinyMark = 'on' | 'off' | 'none';
 
 /**
- * The Shiny on state: solid yellow stars, edge and fill one colour. The card disc's ring takes the same
- * yellow; the pill has a gold border over a pale yellow fill. A cyan, yellow, and magenta stroke was
- * tried first and was hard to read at 16px.
+ * The Shiny on state: one gold for the stars' edge and fill, the card disc's ring, and the pill's
+ * border, over a pale yellow pill. A cyan, yellow, and magenta stroke was tried first and was hard
+ * to read at 16px.
  */
-export const SHINY_ON = { star: '#FFC83A', pillBorder: '#F5B301', pillFill: '#FFF6D6' } as const;
+export const SHINY_ON = { color: '#F5B301', pillFill: '#FFF6D6' } as const;
 
 /** The mark of a shiny pick: a four-point star with a narrow waist, yellow to orange, with a white rim, in a 24-unit box. */
 export const SHINY_STAR = {
