@@ -7,7 +7,7 @@ import { CATEGORIES } from '@/data/categories';
 import { t } from '@/i18n';
 import { placedIds, type LegendPick } from '../model/engine';
 import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
-import { useLeagueStore } from './useLeagueStore';
+import { legendAt, useLeagueStore, type GymCard } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
 const LEGEND_ELIGIBLE: Set<number> = (() => {
@@ -46,6 +46,19 @@ const onlyWhenOn: ShinyRule = (on) => (on ? true : 'keep');
 const SHINY_FLAG: Record<'pick' | 'held', Record<BrowserPurpose, ShinyRule>> = {
   pick: { lines: followSwitch, replace: followSwitch, signature: followSwitch, partner: followSwitch, legend: followSwitch },
   held: { lines: followSwitch, replace: followSwitch, signature: onlyWhenOn, partner: followSwitch, legend: followSwitch },
+};
+
+/**
+ * Whether the Shiny switch starts on, by why the browser opens: on only over a
+ * pick that is shiny, because a tap on a held pick with the switch off turns it
+ * back to normal.
+ */
+const SHINY_AT_OPEN: Record<BrowserPurpose, (card: GymCard, seat: number) => boolean> = {
+  lines: () => false,
+  replace: (card, seat) => card.lines[seat - 1]?.shiny === true,
+  signature: () => false,
+  partner: (card) => card.partnerShiny === true,
+  legend: (card, seat) => legendAt(card, seat)?.shiny === true,
 };
 
 const legendPick = (pokemonId: number, seat: number, shiny: boolean): LegendPick => (shiny ? { pokemonId, seat, shiny: true } : { pokemonId, seat });
@@ -101,8 +114,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     openFor: (card) => {
       useFavoriteBrowserStore.getState().refreshFavorites();
       const purpose = ui().browserPurpose;
-      const type = league().cards[card]?.type ?? null;
-      const lines = league().cards[card]?.lines ?? [];
+      const gym = league().cards[card];
+      const type = gym?.type ?? null;
+      const lines = gym?.lines ?? [];
       const placed = new Set(placedIds(lines));
       const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
       const scopeLocked = purpose === 'signature' && cardFull;
@@ -141,6 +155,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
         scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
         standaloneTiles: purpose === 'signature' || purpose === 'legend' || purpose === 'partner',
+        shinyView: gym ? SHINY_AT_OPEN[purpose](gym, ui().targetSeat) : false,
       });
     },
 

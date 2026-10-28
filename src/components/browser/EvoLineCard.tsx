@@ -1,7 +1,7 @@
 import { PokemonNameTooltip } from '@/components/shared/PokemonNameTooltip';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import type { PokemonLabel } from '@/i18n/names';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
 import { homeGen, packRows } from './packRows';
@@ -11,7 +11,9 @@ import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import { ShapeIcon } from '@/components/shared/ShapeIcon';
+import { preloadImages } from '@/lib/imagePreload';
 import { shinySpriteUrl } from '@/lib/spriteUrl';
+import { whenIdle } from '@/lib/whenIdle';
 import { NoShinyMark } from '@/components/shiny/ShinyMarks';
 import { NO_SHINY } from '@/components/shiny/shinyMarks';
 import {
@@ -107,6 +109,8 @@ interface EvoLineGridProps {
   spriteOverrides?: Record<number, string>;
   /** Show every tile shiny, or faded under the no-shiny mark when it has no shiny. */
   shinyView?: boolean;
+  /** Load the shiny sprites of the rows on screen, so a press of the Shiny switch repaints at once. */
+  preloadShinies?: boolean;
   cols?: number;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
@@ -123,7 +127,7 @@ const GRID_CLASSES: Record<number, string> = {
   6: 'grid grid-cols-6 gap-x-0 gap-y-1',
 };
 
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, shinyView = false, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, shinyView = false, preloadShinies = false, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
   const spritePx = useTileSpritePx();
   const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -131,6 +135,16 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
   const rows = useMemo(() => packRows(groups, cols), [groups, cols]);
 
   const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows, windowed, `${cols}:${spritePx}`);
+
+  useEffect(() => {
+    if (!preloadShinies) return;
+    const shinies = rows.slice(start, end)
+      .flatMap((row) => row.groups.flatMap((group) => group.members.map((member) => shinySpriteUrl(member.sprite))))
+      .filter((url): url is string => url !== null);
+    let live = true;
+    whenIdle(() => { if (live) preloadImages(shinies); });
+    return () => { live = false; };
+  }, [preloadShinies, rows, start, end]);
 
   const cells = useMemo(() => {
     const result: React.ReactNode[] = [];

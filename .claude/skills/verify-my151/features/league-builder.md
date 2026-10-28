@@ -32,7 +32,10 @@ and a legendary on the boss row.
   button's `aria-label` is "Dynamax".
 - The league's Pokédex browser ends its search row with a divider and the
   Shiny switch (`[data-testid="browser-shiny-toggle"]`); the Pokédex builder's
-  browser has none. With it on, tiles show shiny sprites, or a faded sprite
+  browser has none. It starts off each time the browser opens, and on when
+  the browser opens over a shiny line, partner, or legend. While it is off,
+  the browser loads the shiny sprites of the rows it draws when the page is
+  idle. With it on, tiles show shiny sprites, or a faded sprite
   under `[data-testid="no-shiny-mark"]`. A pick takes the switch's look as
   `shiny: true` on its line, legend, or `partnerShiny`. The card and its export
   put a gold star (`[data-testid="shiny-star"]`) on a shiny line's first cell,

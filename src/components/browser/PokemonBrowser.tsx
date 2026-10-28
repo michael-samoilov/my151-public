@@ -1214,6 +1214,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
                       shinyView={shinyView}
+                      preloadShinies={!!setShinyView && !shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1228,6 +1229,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
                       shinyView={shinyView}
+                      preloadShinies={!!setShinyView && !shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1257,6 +1259,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                     shinyIds={model.shinyIds}
                     spriteOverrides={model.spriteOverrides}
                     shinyView={shinyView}
+                    preloadShinies={!!setShinyView && !shinyView}
                     showGenBadges={showGenBadges}
                     windowed
                   />

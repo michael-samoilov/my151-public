@@ -50,6 +50,8 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await expect(page.locator('[data-testid="league-slot-0"] img[src*="/shiny/131.png"]')).toBeVisible();
 
   await page.click('[data-testid="slot-partner"]');
+  await expect(toggle, 'an empty partner slot opens with Shiny off').toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
   await search(page, 'psyduck');
   await page.locator('[data-testid="verify-evo-card"] img[alt="Psyduck"]').click();
   expect(await card(page)).toMatchObject({ partnerId: 54, partnerShiny: true });
@@ -63,6 +65,8 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await expect(page.getByTestId('slot-ace').getByTestId('shiny-star')).toBeVisible();
 
   await page.click('[data-testid="card-cell-11-1"]');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
   await search(page, 'kyogre');
   await page.locator('[data-testid="verify-evo-card"] img[alt="Kyogre"]').click();
   expect((await card(page)).legends).toMatchObject([{ pokemonId: 382, seat: 1, shiny: true }]);
@@ -104,7 +108,7 @@ test('tapping a held line with Shiny off turns it back to normal', async ({ page
 
   await page.click('[data-testid="card-cell-1-1"]');
   const toggle = page.getByTestId('browser-shiny-toggle');
-  await expect(toggle, 'the switch keeps its state across opens').toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle, 'a shiny line opens its replace browser with Shiny on').toHaveAttribute('aria-pressed', 'true');
   await toggle.click();
   await search(page, 'lapras');
   await page.locator('[data-testid="verify-evo-card"] img[alt="Lapras"]').click();
@@ -116,12 +120,18 @@ test('tapping a held line with Shiny off turns it back to normal', async ({ page
   await expect(page.locator('[data-testid^="card-cell-"] [data-testid="shiny-star"]')).toHaveCount(0);
 });
 
-test('the Pokédex builder browser has no Shiny switch', async ({ page }, testInfo) => {
+test('the Pokédex builder browser has no Shiny switch and loads no shiny sprites', async ({ page }, testInfo) => {
+  const shinyRequests: string[] = [];
+  page.on('request', (request) => { if (request.url().includes('/sprites/pokemon/shiny/')) shinyRequests.push(request.url()); });
   await page.goto('/pokedex-builder?lang=en');
   await page.locator('[data-add-slot]').first().click();
   await expect(page.locator('[data-result-count]').first()).toBeVisible();
+  await expect(page.locator('[data-testid="verify-evo-card"] img').first()).toBeVisible();
+  await page.evaluate(() => new Promise<void>((done) => requestIdleCallback(() => done(), { timeout: 4000 })));
+  await page.waitForTimeout(1000);
   await testInfo.attach('pokedex-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
   await expect(page.getByTestId('browser-shiny-toggle')).toHaveCount(0);
+  expect(shinyRequests).toEqual([]);
 });
 
 test('the Shiny switch sits after the count and a divider, at the end of the search row @viewport', async ({ page }, testInfo) => {
