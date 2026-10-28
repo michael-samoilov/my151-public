@@ -2,7 +2,7 @@ import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { PILL_CLASS, PILL_OFF, pillIcon, pillStyle } from './pill';
 import { NoShinyGlyph, ShinyGlyph } from './ShinyMarks';
-import { SHINY_PILL_ON } from './shinyMarks';
+import { SHINY_ON } from './shinyMarks';
 
 export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }: {
   on: boolean;
@@ -23,7 +23,7 @@ export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }:
       className={cn(PILL_CLASS, iconOnly && 'justify-center', on ? 'text-secondary-foreground' : PILL_OFF)}
       style={{
         ...pillStyle({ badgePx, thick: on, iconOnly }),
-        ...(on ? { border: '1.5px solid transparent', background: `${SHINY_PILL_ON.fill} padding-box, ${SHINY_PILL_ON.border} border-box` } : null),
+        ...(on ? { border: `1.5px solid ${SHINY_ON.border}`, background: SHINY_ON.fill } : null),
       }}
     >
       {on ? <ShinyGlyph {...icon} /> : <NoShinyGlyph {...icon} />}

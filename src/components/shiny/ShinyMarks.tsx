@@ -1,6 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 import { useT } from '@/i18n';
-import { HOLO_STOPS, NO_SHINY, SHINY_GLYPH, SHINY_STAR, type ShinyMark } from './shinyMarks';
+import { NO_SHINY, SHINY_GLYPH, SHINY_ON, SHINY_STAR, type ShinyMark } from './shinyMarks';
 
 export function ShinyStar({ className, style }: { className?: string; style?: CSSProperties }) {
   const t = useT();
@@ -20,19 +20,21 @@ export function ShinyStar({ className, style }: { className?: string; style?: CS
   );
 }
 
-/** The Shiny glyph when on. Each star takes the whole holo stroke from its own top-left tips to its bottom-right tips. */
-export function ShinyGlyph({ className, style }: { className?: string; style?: CSSProperties }) {
-  const stroke = useId();
+/** The Shiny stars when on: white with a dark gold edge, for a yellow ground. */
+function OnStars() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
-      className={className} style={style}>
-      <defs>
-        <linearGradient id={stroke} x1={0.25} y1={0.25} x2={0.75} y2={0.75}>
-          {HOLO_STOPS.map(([at, color]) => <stop key={at} offset={at} stopColor={color} />)}
-        </linearGradient>
-      </defs>
-      <path d={SHINY_GLYPH.big} stroke={`url(#${stroke})`} />
-      <path d={SHINY_GLYPH.small} stroke={`url(#${stroke})`} />
+    <g fill={SHINY_ON.star} stroke={SHINY_ON.starEdge} strokeWidth={1.6} strokeLinejoin="round">
+      <path d={SHINY_GLYPH.big} />
+      <path d={SHINY_GLYPH.small} />
+    </g>
+  );
+}
+
+/** The Shiny glyph when on, for a pill whose fill is `SHINY_ON.fill`. */
+export function ShinyGlyph({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className} style={style}>
+      <OnStars />
     </svg>
   );
 }
@@ -68,37 +70,35 @@ const RING = 2.4;
 
 /**
  * The gym card's shiny button: the Shiny glyph in a disc the size of the card's reset and remove
- * discs. On, the ring and the stars take the holo stroke; off, both are gray; with no shiny art, the
- * crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so the two
+ * discs. On, a solid yellow disc like those two; off, a white disc with gray stars; with no shiny art,
+ * the crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so the two
  * rasterise together under the card's zoom.
  */
 export function ShinyDisc({ mark }: { mark: ShinyMark }) {
-  const holo = useId();
-  const ring = useId();
-  const ringWidth = mark === 'on' ? 1.5 * RING : RING;
-  const stops = HOLO_STOPS.map(([at, color]) => <stop key={at} offset={at} stopColor={color} />);
   return (
     <svg viewBox="-7 -7 38 38" className="block aspect-square w-full" aria-hidden="true">
       {mark === 'on' ? (
-        <defs>
-          <linearGradient id={holo} x1={0.25} y1={0.25} x2={0.75} y2={0.75}>{stops}</linearGradient>
-          <linearGradient id={ring} gradientUnits="userSpaceOnUse" x1={-7} y1={-7} x2={31} y2={31}>{stops}</linearGradient>
-        </defs>
+        <>
+          <circle cx={12} cy={12} r={19} fill={SHINY_ON.fill} />
+          <OnStars />
+        </>
+      ) : (
+        <circle cx={12} cy={12} r={19 - RING / 2} fill="#ffffff" strokeWidth={RING}
+          stroke={mark === 'off' ? 'rgba(0,0,0,0.15)' : NO_SHINY.ring} />
+      )}
+      {mark === 'off' ? (
+        <g fill="none" stroke="#6e6e6e" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d={SHINY_GLYPH.big} />
+          <path d={SHINY_GLYPH.small} />
+        </g>
       ) : null}
-      <circle cx={12} cy={12} r={19 - ringWidth / 2} fill="#ffffff" strokeWidth={ringWidth}
-        stroke={mark === 'on' ? `url(#${ring})` : mark === 'off' ? 'rgba(0,0,0,0.15)' : NO_SHINY.ring} />
       {mark === 'none' ? (
         <g fill="none" stroke={NO_SHINY.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
           <path d={SHINY_GLYPH.bigOpen} />
           <path d={SHINY_GLYPH.small} />
           <path d={SHINY_GLYPH.slash} />
         </g>
-      ) : (
-        <g fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-          <path d={SHINY_GLYPH.big} stroke={mark === 'on' ? `url(#${holo})` : '#6e6e6e'} />
-          <path d={SHINY_GLYPH.small} stroke={mark === 'on' ? `url(#${holo})` : '#6e6e6e'} />
-        </g>
-      )}
+      ) : null}
     </svg>
   );
 }

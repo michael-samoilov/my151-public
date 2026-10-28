@@ -1,8 +1,8 @@
 /**
  * The Shiny glyph, in Lucide's 24-unit box: a big four-point star at the top right and a small one at
- * the bottom left, both with a narrow waist. When on, each star's stroke runs cyan, yellow, magenta
- * from its top-left tips to its bottom-right tips. When off, the stroke is gray and Lucide's slash
- * (`m2 2 20 20`, as in EyeOff) takes the place of the big star's lower-left edge.
+ * the bottom left, both with a narrow waist. When on, the stars are white with a dark gold edge on a
+ * solid yellow ground. When off, they are a gray outline, and Lucide's slash (`m2 2 20 20`, as in
+ * EyeOff) takes the place of the big star's lower-left edge.
  */
 export const SHINY_GLYPH = {
   big: 'M15.3 2.1Q15.96 8.04 21.9 8.7Q15.96 9.36 15.3 15.3Q14.64 9.36 8.7 8.7Q14.64 8.04 15.3 2.1Z',
@@ -14,16 +14,11 @@ export const SHINY_GLYPH = {
 /** How a shiny button reads. With no shiny art it is the crossed-out mark, not a control. */
 export type ShinyMark = 'on' | 'off' | 'none';
 
-/** Cyan, yellow, magenta, with yellow held through the middle fifth. Offsets run from 0 to 1. */
-export const HOLO_STOPS = [[0, '#1FC8F2'], [0.4, '#FFC83A'], [0.6, '#FFC83A'], [1, '#E557D6']] as const;
-
-const cssStops = (stops: readonly (readonly [number, string])[]) => stops.map(([at, color]) => `${color} ${at * 100}%`).join(',');
-
-/** The Shiny pill when on: the holo stroke as its border, over a holo fill close to white. */
-export const SHINY_PILL_ON = {
-  border: `linear-gradient(to bottom right,${cssStops(HOLO_STOPS)})`,
-  fill: `linear-gradient(to bottom right,${cssStops([[0, '#f0fbfe'], [0.45, '#fffaea'], [0.55, '#fffaea'], [1, '#fdf3fb']])})`,
-} as const;
+/**
+ * The Shiny on state: a solid yellow ground (the pill's fill, the card disc) under white stars with a
+ * dark gold edge. A cyan, yellow, and magenta stroke was tried first and was hard to read at 16px.
+ */
+export const SHINY_ON = { fill: '#FFC83A', border: '#E0A400', star: '#ffffff', starEdge: '#A87700' } as const;
 
 /** The mark of a shiny pick: a four-point star with a narrow waist, yellow to orange, with a white rim, in a 24-unit box. */
 export const SHINY_STAR = {
