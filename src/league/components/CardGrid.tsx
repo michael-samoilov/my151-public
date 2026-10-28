@@ -463,7 +463,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
           // to the very edge of that box -- so at some sub-pixel positions
           // the clip shaved a device pixel off one side of the disc, and the
           // disc read as off-centre by half of it.
-          className="absolute z-[15] cursor-pointer"
+          className="absolute z-[15] cursor-pointer touch-manipulation"
           style={markBox('center', 0.175, markSize)}
         >
           {/* One svg for the disc and the arrow, the way `RedXIcon` draws
@@ -505,7 +505,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute z-[15] cursor-pointer"
+          className="absolute z-[15] cursor-pointer touch-manipulation"
           style={markBox('right', 0.175, markSize)}
         >
           <RedXIcon className="block aspect-square w-full" />
@@ -595,7 +595,7 @@ function ShinyButton({ mark, onToggle, name, place }: ShinyButtonProps & { name:
         e.preventDefault();
         onToggle();
       }}
-      className="absolute z-[15] cursor-pointer"
+      className="absolute z-[15] cursor-pointer touch-manipulation"
       style={place}
     >
       <ShinyDisc mark={mark} />
@@ -632,7 +632,7 @@ function PowerupButton({ kind, symbol, active, onPress, side }: {
         onPress();
       }}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute bottom-0 z-[15] flex cursor-pointer items-end justify-center"
+      className="absolute bottom-0 z-[15] flex cursor-pointer touch-manipulation items-end justify-center"
       style={{
         [side]: HIT_INSET,
         width: HIT_WIDTH,
@@ -847,7 +847,7 @@ function SlotHalf({
       className={cn(
         'absolute z-[6] flex items-center',
         mirrored ? 'flex-row' : 'flex-col',
-        lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
+        lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer touch-manipulation',
       )}
       style={{
         ...('left' in place ? { left: `${place.left}px` } : { right: `${place.right}px` }),
@@ -875,7 +875,7 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
         e.preventDefault();
         onRemove();
       }}
-      className="absolute z-[15] cursor-pointer"
+      className="absolute z-[15] cursor-pointer touch-manipulation"
       style={markBox('right', 0)}
     >
       <RedXIcon className="block aspect-square w-full" />
@@ -1329,7 +1329,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       type="button"
       onClick={() => setMovePickerOpen(true)}
       data-testid="slot-tm"
-      className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
+      className="absolute z-[5] flex cursor-pointer touch-manipulation items-center rounded-lg"
       style={{
         ...pos,
         ...markStyle,
