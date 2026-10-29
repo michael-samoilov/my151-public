@@ -1,4 +1,4 @@
-import { HOVER_LAYER } from '@/components/ui/hoverLayer';
+import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { cn } from '@/lib/utils';
 
 interface FilterChipItem {
@@ -33,7 +33,7 @@ export function FilterChipList({
                 ? `${HOVER_LAYER} text-white border-transparent`
                 : 'bg-secondary text-secondary-foreground border-border hover:border-foreground/40'
             )}
-            style={isActive ? { backgroundColor: item.color } : undefined}
+            style={isActive ? { backgroundColor: item.color, ...fillVar(item.color) } : undefined}
           >
             {label(item)}
           </button>

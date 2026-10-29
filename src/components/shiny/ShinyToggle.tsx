@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { HOVER_LAYER } from '@/components/ui/hoverLayer';
+import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { badgePillRadius, PILL_CLASS, PILL_OFF, pillIcon, pillStyle } from './pill';
@@ -41,7 +41,7 @@ export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }:
       aria-pressed={on}
       onClick={onToggle}
       className={cn(PILL_CLASS, 'relative', iconOnly && 'justify-center', on ? `${HOVER_LAYER} border-transparent text-secondary-foreground` : PILL_OFF)}
-      style={{ ...pillStyle({ badgePx, iconOnly }), ...(on ? { background: SHINY_ON.pillFill } : null) }}
+      style={{ ...pillStyle({ badgePx, iconOnly }), ...(on ? { background: SHINY_ON.pillFill, ...fillVar(SHINY_ON.pillFill) } : null) }}
     >
       {on ? <Ring stroke={SHINY_ON.color} badgePx={badgePx} /> : null}
       {on ? <ShinyGlyph {...icon} /> : <NoShinyGlyph {...icon} />}

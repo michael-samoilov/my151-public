@@ -23,7 +23,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
-import { HOVER_LAYER } from '@/components/ui/hoverLayer';
+import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { SearchRow } from './SearchRow';
 
@@ -1425,8 +1425,9 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
       data-filter-chip={sheet}
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
+        // A translucent fill has no colour of its own to deepen, so the hover deepens an 8% tint.
         active
-          ? `${HOVER_LAYER} border-primary text-primary bg-primary/5`
+          ? `${HOVER_LAYER} border-primary text-primary bg-primary/5 [--fill:color-mix(in_srgb,var(--color-primary)_8%,var(--color-background))]`
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
       )}
     >
@@ -1481,6 +1482,7 @@ function LockedFilterChip({
           HOVER_LAYER,
           className,
         )}
+        style={fillVar('var(--color-foreground)')}
       >
         {label}
         <Lock size={10} aria-hidden />
@@ -1512,7 +1514,7 @@ function FilterChip({
         HOVER_LAYER,
         className
       )}
-      style={style}
+      style={{ ...fillVar(style?.backgroundColor ?? 'var(--color-foreground)'), ...style }}
     >
       <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer" aria-label={t('browser.chip.remove')}>
