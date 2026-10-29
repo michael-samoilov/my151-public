@@ -1,7 +1,6 @@
 {
   "ack.alsoCredited": "亦经由以下项目署名",
-  "ack.artistCount_other": "{count} 位画师",
-  "ack.artists": "画师",
+  "ack.artists": "署名画师",
   "ack.back": "返回",
   "ack.bundleSprites_other": "应用中有 {count} 张同人精灵图经由该项目署名。",
   "ack.by": "作者：{name}",

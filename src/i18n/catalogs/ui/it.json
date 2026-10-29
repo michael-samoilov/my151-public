@@ -1,8 +1,6 @@
 {
   "ack.alsoCredited": "Accreditato anche tramite",
-  "ack.artistCount_one": "{count} artista",
-  "ack.artistCount_other": "{count} artisti",
-  "ack.artists": "Artisti",
+  "ack.artists": "Artisti accreditati",
   "ack.back": "Indietro",
   "ack.bundleSprites_one": "{count} sprite dei fan nell’app è accreditato tramite questo progetto.",
   "ack.bundleSprites_other": "{count} sprite dei fan nell’app sono accreditati tramite questo progetto.",

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObjec
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { useLocale, useT, useTn, type NoArgKey } from '@/i18n';
+import { formatNumber, useLocale, useT, useTn, type NoArgKey } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import {
@@ -149,7 +149,10 @@ function useRowNote() {
       return `${tn('ack.packageCount', packageCount(index.index))} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
     }
     const bundle = entry.kind === 'project' ? bundleCredit(entry.id) : undefined;
-    if (bundle) return [tn('ack.artistCount', bundle.artists.length), entry.license].filter(Boolean).join(' · ');
+    if (bundle) {
+      const sprites = projectSprites(entry.id, bundle.sprites);
+      return [tn('ack.sprites', sprites, { count: formatNumber(sprites) }), entry.license].filter(Boolean).join(' · ');
+    }
     return entry.license ?? t('ack.credit');
   };
 }
@@ -336,6 +339,13 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
       ))}
     </div>
   );
+}
+
+/** Sprites in the app that come from or through a sprite project. PokéAPI also delivers official and Smogon sprites. */
+function projectSprites(id: string, credited: number): number {
+  if (id !== 'pokeapi-sprites') return credited;
+  const delivery = pokeapiDelivery();
+  return delivery.official + delivery.smogon + delivery.own;
 }
 
 /** A sprite project's "Used for" text, with its counts from the credit data. */
