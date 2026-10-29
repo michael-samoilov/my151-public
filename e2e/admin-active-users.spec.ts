@@ -25,9 +25,11 @@ function daysInLabel(label: string | null): number {
   return m ? Number(m[1]) : NaN;
 }
 
-function gutter(label: string | null): { hours24: string | undefined; days7: string | undefined } {
+const TODAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getUTCDay()];
+
+function gutter(label: string | null): { today: string | undefined; days7: string | undefined } {
   return {
-    hours24: label?.match(/Last 24 hours (\d+)/)?.[1],
+    today: label?.match(new RegExp(`${TODAY} so far (\\d+)`))?.[1],
     days7: label?.match(/last 7 days (\d+)/)?.[1],
   };
 }
@@ -87,11 +89,16 @@ test.describe('admin active users range', () => {
     const hours = Number(label?.match(/over (\d+) hours/)?.[1]);
     expect(hours).toBeGreaterThanOrEqual(23);
     expect(hours).toBeLessThanOrEqual(24);
-    // The 24-hour total is not an hourly value, so the legend states it instead of the line's end.
-    await expect(panel.getByText(`${gutter(label).hours24} in the last 24h`, { exact: true })).toBeVisible();
+    // The newest point counts the past 60 minutes, and its label says so.
+    const pastHour = label?.match(/Past hour (\d+)\./)?.[1];
+    expect(pastHour).toBeDefined();
     const paints = () => page.evaluate(() => (window as unknown as { hourlyPaints: string[] }).hourlyPaints);
-    await expect.poll(async () => (await paints()).length).toBeGreaterThan(0);
+    await expect.poll(paints).toContain('1h');
     expect(await paints()).not.toContain('24h');
+    const box = await chart.boundingBox();
+    await page.mouse.move(box!.x + box!.width - 1, box!.y + box!.height / 2);
+    await expect(chart.locator('[data-scrub-readout]')).toContainText(`Past hour`);
+    await expect(chart.locator('[data-scrub-readout]')).toContainText(`${pastHour} hourly`);
   });
 
   test('monthly legend toggles and implied growth follows the selected recorded range @viewport', async ({ page }, testInfo) => {
@@ -159,7 +166,7 @@ test.describe('admin active users range', () => {
     const panel = activeUsers(page);
     const growth = await panel.getByLabel('Implied growth over selected range').textContent();
     const expected = {
-      daily: ['24h'],
+      daily: [TODAY],
       weekly: ['7d', `${growth!.match(/WoW ([^ ]+)/)![1]} WoW`],
       monthly: ['30d', `${growth!.match(/MoM ([^ ]+)/)![1]} MoM`],
     };
@@ -197,7 +204,8 @@ test.describe('admin active users range', () => {
     expect(label).not.toMatch(/over \d+ hours/);
     expect(label).not.toMatch(/weekly/i);
     expect(label).not.toMatch(/month|year/i);
-    const weekdays = [...(label?.matchAll(/\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\b/g) ?? [])].map((m) => m[1]);
+    const axisList = label?.slice(label.lastIndexOf('. ') + 2);
+    const weekdays = [...(axisList?.matchAll(/\b(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\b/g) ?? [])].map((m) => m[1]);
     expect(weekdays).toHaveLength(7);
     expect(new Set(weekdays).size).toBe(7);
     await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
@@ -205,17 +213,20 @@ test.describe('admin active users range', () => {
     await expect(panel.getByRole('img')).toHaveCount(1);
   });
 
-  test('7d ends its line on the last-24-hours count that its label shows', async ({ page }) => {
+  test('7d ends its line on today\'s calendar-day count and labels it with the day name', async ({ page }) => {
     const payload = activityPayload();
+    // A last-24-hours count unlike any day's, so a label that used it would show.
     payload.lastPointLabels = { ...payload.lastPointLabels!, label24h: 97 };
     await page.route('**/api/submissions?**', route => route.fulfill({ json: payload }));
     await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
     await openAdmin(page, '/?admin');
     await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
     const chart = activeUsers(page).getByRole('img', { name: /Daily active users/ });
-    await expect(chart).toHaveAttribute('aria-label', /Last 24 hours 97\./);
+    const today = gutter(await chart.getAttribute('aria-label')).today;
+    expect(today).toBeDefined();
+    expect(today).not.toBe('97');
     const box = await chart.boundingBox();
     await page.mouse.move(box!.x + box!.width - 1, box!.y + box!.height / 2);
-    await expect(chart.locator('[data-scrub-readout]')).toContainText('97 daily');
+    await expect(chart.locator('[data-scrub-readout]')).toContainText(`${TODAY} · ${today} daily`);
   });
 });

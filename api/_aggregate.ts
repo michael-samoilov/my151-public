@@ -382,15 +382,19 @@ export function dailyActive(records: SessionRecord[], now?: number, coverage?: A
 export type HourlyActivityPoint = {
   hour: number;
   unique: number;
+  /** Unique browsers in the 60 minutes before `now`; set only on the current hour's row. */
+  pastHour?: number;
 };
 
 export function hourlyActive(records: SessionRecord[], now: number): HourlyActivityPoint[] {
   if (records.length === 0) return [];
   const sets: Record<number, Set<string>> = {};
+  const pastHour = new Set<string>();
   for (const r of records) {
     for (const ts of activeTimestamps(r)) {
       const hour = hourStart(ts);
       (sets[hour] ??= new Set()).add(r.cid);
+      if (ts > now - HOUR_MS && ts <= now) pastHour.add(r.cid);
     }
   }
   const lastHour = hourStart(now);
@@ -399,6 +403,7 @@ export function hourlyActive(records: SessionRecord[], now: number): HourlyActiv
   for (let h = start; h <= lastHour; h += HOUR_MS) {
     out.push({ hour: h, unique: sets[h]?.size ?? 0 });
   }
+  out[out.length - 1].pastHour = pastHour.size;
   return out;
 }
 

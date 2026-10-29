@@ -65,13 +65,13 @@ function activitySeries(): { day: number; dau: number; rolling7: number }[] {
 
 const ACTIVITY = activitySeries();
 
-function hourlySeries(): { hour: number; unique: number }[] {
+function hourlySeries(): { hour: number; unique: number; pastHour?: number }[] {
   const hour = DAY / 24;
   const now = Date.now();
   const last = Math.floor(now / hour) * hour;
   const today = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate());
   const first = today - 6 * DAY;
-  const out: { hour: number; unique: number }[] = [];
+  const out: { hour: number; unique: number; pastHour?: number }[] = [];
   for (let h = first; h <= last; h += hour) {
     const utcH = new Date(h).getUTCHours();
     const weekday = new Date(h).getUTCDay();
@@ -80,6 +80,8 @@ function hourlySeries(): { hour: number; unique: number }[] {
     const weekend = weekday === 0 || weekday === 6 ? 0.65 : 1;
     out.push({ hour: h, unique: Math.max(0, Math.round((evening + lunch) * 14 * weekend + (utcH % 5 === 0 ? 2 : 0))) });
   }
+  // The past 60 minutes reach back into the previous hour, so they count at least as many as either hour.
+  out[out.length - 1].pastHour = Math.max(out[out.length - 1].unique, out[out.length - 2].unique) + 1;
   return out;
 }
 
