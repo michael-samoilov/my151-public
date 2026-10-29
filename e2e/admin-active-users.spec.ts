@@ -66,6 +66,16 @@ test.describe('admin active users range', () => {
   });
 
   test('24h plots hourly unique users and hides the weekly series', async ({ page }) => {
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      const state = window as unknown as { hourlyPaints: string[] };
+      state.hourlyPaints = [];
+      CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
+        if (this.canvas.closest('[role="img"]')?.getAttribute('aria-label')?.startsWith('Hourly active users')) state.hourlyPaints.push(text);
+        return maxWidth === undefined ? original.call(this, text, x, y) : original.call(this, text, x, y, maxWidth);
+      };
+    });
+    await openAdmin(page, '/?admin&demo');
     const panel = activeUsers(page);
     await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '24h' }).click();
     const chart = panel.getByRole('img', { name: /Hourly active users/ });
@@ -77,6 +87,11 @@ test.describe('admin active users range', () => {
     const hours = Number(label?.match(/over (\d+) hours/)?.[1]);
     expect(hours).toBeGreaterThanOrEqual(23);
     expect(hours).toBeLessThanOrEqual(24);
+    // The 24-hour total is not an hourly value, so the legend states it instead of the line's end.
+    await expect(panel.getByText(`${gutter(label).hours24} in the last 24h`, { exact: true })).toBeVisible();
+    const paints = () => page.evaluate(() => (window as unknown as { hourlyPaints: string[] }).hourlyPaints);
+    await expect.poll(async () => (await paints()).length).toBeGreaterThan(0);
+    expect(await paints()).not.toContain('24h');
   });
 
   test('monthly legend toggles and implied growth follows the selected recorded range @viewport', async ({ page }, testInfo) => {
@@ -188,5 +203,19 @@ test.describe('admin active users range', () => {
     await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
     await expect(panel.getByText('hourly', { exact: true })).toHaveCount(0);
     await expect(panel.getByRole('img')).toHaveCount(1);
+  });
+
+  test('7d ends its line on the last-24-hours count that its label shows', async ({ page }) => {
+    const payload = activityPayload();
+    payload.lastPointLabels = { ...payload.lastPointLabels!, label24h: 97 };
+    await page.route('**/api/submissions?**', route => route.fulfill({ json: payload }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await openAdmin(page, '/?admin');
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
+    const chart = activeUsers(page).getByRole('img', { name: /Daily active users/ });
+    await expect(chart).toHaveAttribute('aria-label', /Last 24 hours 97\./);
+    const box = await chart.boundingBox();
+    await page.mouse.move(box!.x + box!.width - 1, box!.y + box!.height / 2);
+    await expect(chart.locator('[data-scrub-readout]')).toContainText('97 daily');
   });
 });
