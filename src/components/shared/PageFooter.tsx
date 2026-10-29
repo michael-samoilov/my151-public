@@ -3,9 +3,9 @@ import { useT } from '@/i18n';
 import { Faq, type FaqPage } from '@/components/shared/Faq';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { loadChunk } from '@/lib/staleDeploy';
 
-const AcknowledgementsPanel = lazy(() => reloadIfStale(import('./AcknowledgementsPanel'))
+const AcknowledgementsPanel = lazy(() => loadChunk(() => import('./AcknowledgementsPanel'))
   .then((module) => ({ default: module.AcknowledgementsPanel })));
 const BUILD_VERSION = BUILD_TIMESTAMP.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();

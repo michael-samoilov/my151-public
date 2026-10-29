@@ -6,16 +6,16 @@ import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { loadChunk } from '@/lib/staleDeploy';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 
-const importAnalyticsDashboard = () => reloadIfStale(import('@/components/analytics/AnalyticsDashboard'));
-const importViewPage = () => reloadIfStale(import('@/components/view/ViewPage'));
+const importAnalyticsDashboard = () => loadChunk(() => import('@/components/analytics/AnalyticsDashboard'));
+const importViewPage = () => loadChunk(() => import('@/components/view/ViewPage'));
 
 const AnalyticsDashboard = lazy(() =>
   importAnalyticsDashboard().then((m) => ({ default: m.AnalyticsDashboard })),
 );
-const importDrillDown = () => reloadIfStale(import('@/components/analytics/DrillDownSheet'));
+const importDrillDown = () => loadChunk(() => import('@/components/analytics/DrillDownSheet'));
 const DrillDownSheet = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownSheet })));
 const DrillDownPanel = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownPanel })));
 const ViewPage = lazy(() =>

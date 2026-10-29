@@ -23,7 +23,7 @@ const DEFAULT_SUFFIX: Record<string, string> = {
 
 const STATE_CODES: Record<string, string> = { tera: 'T', overdrive: 'O' };
 const REGIONS = ['alola', 'galar', 'hisui', 'paldea'];
-const INDICATED_BASE_FORMS = new Set([585, 586, 745, 892, 1017]);
+const INDICATED_BASE_FORMS = new Set([422, 423, 585, 586, 681, 745, 892, 1017]);
 
 interface FormIdentity { key: string; species: number; region?: string; suffix: string; }
 
