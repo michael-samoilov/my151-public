@@ -56,9 +56,8 @@ export function useDragSensors() {
  * `touch-action: pinch-zoom` so there is no pan for the browser to start.
  *
  * A pinch still reaches the browser. `pinch-zoom` leaves the two-finger
- * gesture to it, and a browser that takes a touch over fires `touchcancel`,
- * which is the event this sensor stands down on. So the one gesture that
- * takes the finger back is the one that should.
+ * gesture to it, and the sensor stands down the moment a second finger lands.
+ * So the one gesture that takes the finger back is the one that should.
  */
 export function useGridDragSensors() {
   const mouse = useSensor(MouseSensor, {
