@@ -1,8 +1,6 @@
 {
   "ack.alsoCredited": "Également crédité via",
-  "ack.artistCount_one": "{count} artiste",
-  "ack.artistCount_other": "{count} artistes",
-  "ack.artists": "Artistes",
+  "ack.artists": "Artistes crédités",
   "ack.back": "Retour",
   "ack.bundleSprites_one": "{count} sprite de fan de l’app est crédité via ce projet.",
   "ack.bundleSprites_other": "{count} sprites de fans de l’app sont crédités via ce projet.",

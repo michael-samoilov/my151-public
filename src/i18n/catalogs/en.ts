@@ -2,9 +2,7 @@ import { enData } from './en.data';
 
 export const enUi = {
   'ack.alsoCredited': 'Also credited through',
-  'ack.artistCount_one': '{count} artist',
-  'ack.artistCount_other': '{count} artists',
-  'ack.artists': 'Artists',
+  'ack.artists': 'Credited artists',
   'ack.back': 'Back',
   'ack.bundleSprites_one': '{count} fan-made sprite in the app is credited through this project.',
   'ack.bundleSprites_other': '{count} fan-made sprites in the app are credited through this project.',

@@ -1,8 +1,6 @@
 {
   "ack.alsoCredited": "Auch gewürdigt über",
-  "ack.artistCount_one": "{count} Künstler",
-  "ack.artistCount_other": "{count} Künstler",
-  "ack.artists": "Künstler",
+  "ack.artists": "Genannte Künstler",
   "ack.back": "Zurück",
   "ack.bundleSprites_one": "{count} Fan-Sprite der App wird über dieses Projekt gewürdigt.",
   "ack.bundleSprites_other": "{count} Fan-Sprites der App werden über dieses Projekt gewürdigt.",

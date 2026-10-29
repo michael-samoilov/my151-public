@@ -1,7 +1,6 @@
 {
   "ack.alsoCredited": "함께 크레딧된 곳",
-  "ack.artistCount_other": "아티스트 {count}명",
-  "ack.artists": "아티스트",
+  "ack.artists": "크레딧된 아티스트",
   "ack.back": "뒤로",
   "ack.bundleSprites_other": "앱의 팬메이드 스프라이트 {count}개를 이 프로젝트를 통해 크레딧합니다.",
   "ack.by": "제작: {name}",

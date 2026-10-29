@@ -1,8 +1,6 @@
 {
   "ack.alsoCredited": "También acreditado a través de",
-  "ack.artistCount_one": "{count} artista",
-  "ack.artistCount_other": "{count} artistas",
-  "ack.artists": "Artistas",
+  "ack.artists": "Artistas acreditados",
   "ack.back": "Volver",
   "ack.bundleSprites_one": "{count} sprite hecho por fans de la app se acredita a través de este proyecto.",
   "ack.bundleSprites_other": "{count} sprites hechos por fans de la app se acreditan a través de este proyecto.",

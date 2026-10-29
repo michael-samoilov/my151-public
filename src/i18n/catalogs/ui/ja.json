@@ -1,7 +1,6 @@
 {
   "ack.alsoCredited": "ほかのクレジット先",
-  "ack.artistCount_other": "アーティスト{count}人",
-  "ack.artists": "アーティスト",
+  "ack.artists": "クレジットしたアーティスト",
   "ack.back": "戻る",
   "ack.bundleSprites_other": "アプリのファンメイドのドット絵{count}点は、このプロジェクトを通じてクレジットしています。",
   "ack.by": "作者：{name}",

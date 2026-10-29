@@ -1,7 +1,6 @@
 {
   "ack.alsoCredited": "亦經由以下專案署名",
-  "ack.artistCount_other": "{count} 位繪師",
-  "ack.artists": "繪師",
+  "ack.artists": "署名繪師",
   "ack.back": "返回",
   "ack.bundleSprites_other": "應用程式中有 {count} 張同人精靈圖經由該專案署名。",
   "ack.by": "作者：{name}",
