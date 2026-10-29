@@ -40,11 +40,12 @@ function lineSprites(ids: Iterable<number>, limit: number): string[] {
 
 const generationOf = (id: number) => getPokemonById(id)?.generation ?? Infinity;
 
-/** A section's Pokémon in picker order: generation first, then the archetype's curated order. */
+/** A section's Pokémon in picker order: its own subgroups if it has them, else generation first, then the archetype's curated order. */
 function sectionIds(filterType: 'archetype' | 'category' | null, filterId: string | null): number[] {
   if (filterType === 'archetype') {
-    const curated = ARCHETYPES.find((a) => a.id === filterId)?.pokemonIds ?? [];
-    return [...curated].sort((a, b) => generationOf(a) - generationOf(b));
+    const archetype = ARCHETYPES.find((a) => a.id === filterId);
+    if (archetype?.subgroups) return archetype.subgroups.flatMap((sub) => sub.pokemonIds);
+    return [...(archetype?.pokemonIds ?? [])].sort((a, b) => generationOf(a) - generationOf(b));
   }
   const category = filterType === 'category' ? CATEGORIES.find((c) => c.id === filterId) : undefined;
   const pool = category ? getAllPokemon().filter(category.filter) : getAllPokemon();
