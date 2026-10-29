@@ -78,6 +78,8 @@ export interface SearchProviderRangeView {
   current: SearchWindowMetric | null;
   comparison: SearchRangeComparison | null;
   series: SearchSeriesPoint[];
+  /** Days after `series` that can still change. The totals leave them out. */
+  fresh: SearchSeriesPoint[];
   topQueries: SearchDimensionRow[];
 }
 
@@ -205,7 +207,7 @@ function providerRangeView(
     fetchedAt: source.fetchedAt,
     dataThrough: source.dataThrough,
   };
-  if (!detail) return { ...base, current: null, comparison: null, series: [], topQueries: [] };
+  if (!detail) return { ...base, current: null, comparison: null, series: [], fresh: [], topQueries: [] };
   const reported = new Map(source.series.map((point) => [point.start, point]));
   const series = bucketStarts(detail.window, granularity).map(
     (start) => reported.get(start) ?? { start, ...EMPTY_SEARCH_METRIC },
@@ -224,6 +226,7 @@ function providerRangeView(
       ? { previous: { window: previousWindow, metric: previousMetric }, delta: deltaOf(metric, previousMetric) }
       : null,
     series,
+    fresh: source.fresh ?? [],
     topQueries: topQueries(detail.queries),
   };
 }

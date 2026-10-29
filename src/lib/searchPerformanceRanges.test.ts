@@ -9,6 +9,8 @@ const DAY_MS = 86_400_000;
 const GOOGLE_FIRST_DAY = '2026-03-01';
 const BING_FIRST_DAY = '2026-05-01';
 const LAST_REPORTED_DAY = '2026-09-26';
+/** Search Console has finalized days through this one; later days come back only as fresh data. */
+const LAST_FINAL_DAY = '2026-09-25';
 const LAST_REPORTED_HOUR = Date.parse('2026-09-27T15:00:00Z');
 const HOME = 'https://my151.app/';
 
@@ -44,7 +46,11 @@ function googleRows(body: GoogleBody) {
     return hours.map((ms) => ({ keys: [pacificHourKey(ms), ...rest.map((d) => KEY_OF[d])], clicks: 1, impressions: 2, position: 4 }));
   }
   const days = daysBetween(body.startDate, body.endDate).filter((day) => day >= GOOGLE_FIRST_DAY && day <= LAST_REPORTED_DAY);
-  if (first === 'date') return days.map((day) => ({ keys: [day], clicks: 1, impressions: 10, ctr: 0.1, position: 5 }));
+  if (first === 'date') {
+    return days
+      .filter((day) => body.dataState === 'all' || day <= LAST_FINAL_DAY)
+      .map((day) => ({ keys: [day], clicks: 1, impressions: 10, ctr: 0.1, position: 5 }));
+  }
   if (days.length === 0) return [];
   return [{ keys: body.dimensions.map((d) => KEY_OF[d]), clicks: days.length, impressions: 10 * days.length, ctr: 0.1, position: 5 }];
 }
@@ -107,12 +113,12 @@ const EXPECTED: Record<SearchRangeKey, Expected> = {
     buckets: 24,
     bingPrevious: false,
   },
-  '7d': { window: ['2026-09-18', '2026-09-24'], previous: ['2026-09-11', '2026-09-17'], googleClicks: 7, buckets: 7, bingPrevious: true },
-  '28d': { window: ['2026-08-28', '2026-09-24'], previous: ['2026-07-31', '2026-08-27'], googleClicks: 28, buckets: 28, bingPrevious: true },
-  '90d': { window: ['2026-06-27', '2026-09-24'], previous: ['2026-03-29', '2026-06-26'], googleClicks: 90, buckets: 90, bingPrevious: false },
-  '180d': { window: ['2026-03-29', '2026-09-24'], previous: null, googleClicks: 180, buckets: 180, bingPrevious: false },
-  '365d': { window: ['2025-09-25', '2026-09-24'], previous: null, googleClicks: 208, buckets: 365, bingPrevious: false },
-  all: { window: ['2026-03-01', '2026-09-24'], previous: null, googleClicks: 208, buckets: 208, bingPrevious: false },
+  '7d': { window: ['2026-09-19', '2026-09-25'], previous: ['2026-09-12', '2026-09-18'], googleClicks: 7, buckets: 7, bingPrevious: true },
+  '28d': { window: ['2026-08-29', '2026-09-25'], previous: ['2026-08-01', '2026-08-28'], googleClicks: 28, buckets: 28, bingPrevious: true },
+  '90d': { window: ['2026-06-28', '2026-09-25'], previous: ['2026-03-30', '2026-06-27'], googleClicks: 90, buckets: 90, bingPrevious: false },
+  '180d': { window: ['2026-03-30', '2026-09-25'], previous: null, googleClicks: 180, buckets: 180, bingPrevious: false },
+  '365d': { window: ['2025-09-26', '2026-09-25'], previous: null, googleClicks: 209, buckets: 365, bingPrevious: false },
+  all: { window: ['2026-03-01', '2026-09-25'], previous: null, googleClicks: 209, buckets: 209, bingPrevious: false },
 };
 
 describe('search performance by range', () => {
@@ -142,20 +148,30 @@ describe('search performance by range', () => {
     vi.unstubAllGlobals();
   });
 
-  it('spends 24 Google calls on a daily refresh and 5 on an hourly one, token included', () => {
+  it('spends 25 Google calls on a daily refresh and 5 on an hourly one, token included', () => {
     expect(view.byRange['28d'].providers.google.status).toBe('ready');
-    expect(dailyCalls).toBe(24);
+    expect(dailyCalls).toBe(25);
     expect(hourlyCalls).toBe(5);
   });
 
-  it('asks Google for hours of the last four Pacific days, and days of the last 16 months', () => {
+  it('asks Google for hours of the last four Pacific days, and days of the last 16 months through yesterday', () => {
     const hourly = providers.googleBodies.filter((body) => body.dimensions[0] === 'hour');
     expect(hourly.map((body) => body.dimensions.join('+'))).toEqual(['hour', 'hour+page', 'hour+query', 'hour+page+query']);
     for (const body of hourly) expect(body).toMatchObject({ startDate: '2026-09-24', endDate: '2026-09-27', dataState: 'hourly_all' });
-    expect(providers.googleBodies.find((body) => body.dimensions[0] === 'date')).toMatchObject({
-      startDate: '2025-05-27',
-      endDate: '2026-09-24',
-    });
+    expect(providers.googleBodies.filter((body) => body.dimensions[0] === 'date')).toEqual([
+      { startDate: '2025-05-27', endDate: '2026-09-26', dimensions: ['date'], rowLimit: 1_000 },
+      { startDate: '2026-09-20', endDate: '2026-09-26', dimensions: ['date'], dataState: 'all', rowLimit: 1_000 },
+    ]);
+  });
+
+  it('day ranges end on the last final day and carry the newer days as fresh', () => {
+    for (const range of SEARCH_RANGES.filter((key) => key !== '24h')) {
+      const { google, bing } = view.byRange[range].providers;
+      expect(google.dataThrough).toBe(LAST_FINAL_DAY);
+      expect(google.fresh.map((point) => point.start)).toEqual([LAST_REPORTED_DAY]);
+      expect(bing.fresh).toEqual([]);
+    }
+    expect(view.byRange['24h'].providers.google.fresh).toEqual([]);
   });
 
   it.each(SEARCH_RANGES)('%s: window, comparison, and pages match the range', (range) => {
@@ -194,7 +210,7 @@ describe('search performance by range', () => {
 
   it('24h: Bing reports no hours, so its view is empty', () => {
     const { bing } = view.byRange['24h'].providers;
-    expect(bing).toMatchObject({ status: 'ready', current: null, comparison: null, series: [], topQueries: [] });
+    expect(bing).toMatchObject({ status: 'ready', current: null, comparison: null, series: [], fresh: [], topQueries: [] });
     expect(view.byRange['24h'].pages.every((page) => page.engines.bing.current === null)).toBe(true);
   });
 

@@ -1,6 +1,6 @@
 import { createVerify, generateKeyPairSync } from 'node:crypto';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   bingBucketRows,
   buildDailySearchSnapshot,
@@ -99,5 +99,59 @@ describe('search performance normalization', () => {
         else process.env[name] = value;
       }
     }
+  });
+});
+
+describe('Google daily window', () => {
+  const names = [
+    'GOOGLE_SEARCH_SERVICE_ACCOUNT_JSON',
+    'GOOGLE_SEARCH_CLIENT_ID',
+    'GOOGLE_SEARCH_CLIENT_SECRET',
+    'GOOGLE_SEARCH_REFRESH_TOKEN',
+    'BING_WEBMASTER_API_KEY',
+  ] as const;
+  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    for (const name of names) {
+      const value = previous[name];
+      if (value == null) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+
+  it('ends on Search Console\'s last final day and keeps the newer days as fresh', async () => {
+    for (const name of names) delete process.env[name];
+    process.env.GOOGLE_SEARCH_CLIENT_ID = 'id';
+    process.env.GOOGLE_SEARCH_CLIENT_SECRET = 'secret';
+    process.env.GOOGLE_SEARCH_REFRESH_TOKEN = 'refresh';
+    vi.useFakeTimers({ now: Date.parse('2026-10-26T19:00:00Z'), toFake: ['Date'] });
+    const day = (date: string, clicks: number) => ({ keys: [date], clicks, impressions: clicks * 10, ctr: 0.1, position: 5 });
+    const dateQueries: { endDate: string; dataState?: string }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.startsWith('https://oauth2.googleapis.com/')) return Response.json({ access_token: 'token' });
+      const body = JSON.parse(String(init?.body)) as { endDate: string; dimensions: string[]; dataState?: string };
+      if (body.dimensions.join() !== 'date') return Response.json({ rows: [] });
+      dateQueries.push({ endDate: body.endDate, dataState: body.dataState });
+      return Response.json({
+        rows: body.dataState === 'all'
+          ? [day('2026-10-23', 9), day('2026-10-24', 11), day('2026-10-25', 4)]
+          : [day('2026-10-22', 7), day('2026-10-23', 8), day('2026-10-24', 10)],
+      });
+    }));
+
+    const google = (await buildDailySearchSnapshot()).providers.google;
+
+    expect(dateQueries).toEqual([{ endDate: '2026-10-25' }, { endDate: '2026-10-25', dataState: 'all' }]);
+    expect(google.dataThrough).toBe('2026-10-24');
+    expect(google.series.map((point) => [point.start, point.clicks])).toEqual([
+      ['2026-10-22', 7],
+      ['2026-10-23', 8],
+      ['2026-10-24', 10],
+    ]);
+    expect(google.fresh?.map((point) => [point.start, point.clicks])).toEqual([['2026-10-25', 4]]);
+    expect(google.ranges['7d']?.window).toEqual({ start: '2026-10-18', end: '2026-10-24' });
   });
 });
