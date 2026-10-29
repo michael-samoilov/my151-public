@@ -73,7 +73,7 @@ test('a chunk missing without a deploy shows the error screen, reports it, and d
   let navigations = 0;
   page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
   await page.getByTestId('favorites-export-open').click();
-  await expect(crashScreen(page)).toBeVisible();
+  await expect(crashScreen(page)).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('[data-art="psyduck"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reload', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send report' })).toHaveCount(0);

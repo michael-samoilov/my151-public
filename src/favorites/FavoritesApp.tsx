@@ -11,7 +11,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { whenIdle } from '@/lib/whenIdle';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { loadChunk } from '@/lib/staleDeploy';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useDocumentLocale, useT } from '@/i18n';
 import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/cells';
@@ -35,8 +35,8 @@ import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
-const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
-const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
+const FavoritesAnalyticsDashboard = lazy(() => loadChunk(() => import('./components/FavoritesAnalyticsDashboard')));
+const FavoritesExportOverlay = lazy(() => loadChunk(() => import('./components/FavoritesExportOverlay')));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
