@@ -1,21 +1,46 @@
+import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { chromium } from 'playwright';
 
 const spriteDir = resolve('public/sprites/pokemon');
 const output = resolve('src/favorites/model/spriteInk.json');
+const record = resolve('scripts/sprite-ink-measured.json');
 const files = (await readdir(spriteDir)).filter((name) => name.endsWith('.png'));
-const browser = await chromium.launch();
+const sprites = await Promise.all(files.map(async (name) => ({ id: name.slice(0, -4), bytes: await readFile(resolve(spriteDir, name)) })));
+const hashes = Object.fromEntries(sprites.map(({ id, bytes }) => [id, createHash('md5').update(bytes).digest('hex').slice(0, 8)]));
+
+if (process.argv.includes('--check')) {
+  const ink = JSON.parse(await readFile(output, 'utf8'));
+  const measured = existsSync(record) ? JSON.parse(await readFile(record, 'utf8')) : {};
+  const problems = [];
+  for (const [id, hash] of Object.entries(hashes)) {
+    if (!(ink[id] > 0)) problems.push(`public/sprites/pokemon/${id}.png: has no ink value.`);
+    else if (measured[id] !== hash) problems.push(`public/sprites/pokemon/${id}.png: changed after its ink value was measured (md5 ${measured[id] ?? 'not recorded'}, now ${hash}).`);
+  }
+  for (const id of Object.keys(ink)) if (!hashes[id]) problems.push(`public/sprites/pokemon/${id}.png: gone, but it still has an ink value.`);
+  if (problems.length) {
+    console.error(`sprite-ink: ${problems.length} problem(s)\n${problems.join('\n')}\nRun npm run sprites:measure, then commit src/favorites/model/spriteInk.json and scripts/sprite-ink-measured.json.`);
+    process.exit(1);
+  }
+  console.log(`sprite-ink: ${files.length} sprite files, each with an ink value measured on its current bytes.`);
+  process.exit(0);
+}
+
+const { chromium } = await import('playwright');
+// Playwright pins one browser revision. The image's unversioned symlink
+// outlives an upgrade to a revision it lacks (see playwright.config.ts).
+const imageChromium = process.env.PLAYWRIGHT_BROWSERS_PATH && resolve(process.env.PLAYWRIGHT_BROWSERS_PATH, 'chromium');
+const browser = await chromium.launch({
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (imageChromium && existsSync(imageChromium) ? imageChromium : undefined),
+});
 
 try {
   const page = await browser.newPage();
   const ink = {};
 
-  for (let start = 0; start < files.length; start += 40) {
-    const batch = await Promise.all(files.slice(start, start + 40).map(async (name) => ({
-      id: name.slice(0, -4),
-      png: (await readFile(resolve(spriteDir, name))).toString('base64'),
-    })));
+  for (let start = 0; start < sprites.length; start += 40) {
+    const batch = sprites.slice(start, start + 40).map(({ id, bytes }) => ({ id, png: bytes.toString('base64') }));
     const measured = await page.evaluate(async (sprites) => {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d', { willReadFrequently: true });
@@ -46,6 +71,7 @@ try {
   }
 
   await writeFile(output, `${JSON.stringify(ink)}\n`);
+  await writeFile(record, `${JSON.stringify(hashes, null, 1)}\n`);
   console.log(`Measured ${Object.keys(ink).length} sprites in ${output}`);
 } finally {
   await browser.close();

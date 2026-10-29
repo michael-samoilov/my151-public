@@ -249,7 +249,7 @@ export interface ApiResponse {
   picksBySectionAll: Record<string, [string, number][]>;
   byTool?: Partial<Record<ToolSlice, Aggregates>>;
   favoriteFunnel?:FavoriteUsageFunnel;
-  favorite?: {users:number;started:number;completed:number;exporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
+  favorite?: {users:number;started:number;completed:number;exporters:number;fullExporters:number;simplifiedExporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
   favoritePicks?:FavoritePicks;
   cohorts?: Record<
     'built' | 'incomplete' | 'completed',
@@ -296,6 +296,8 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   }
   return distinctCalendarDays(stamps, rec.tz);
 }
+
+const saveCount = (n: number) => `${n} ${n === 1 ? 'save' : 'saves'}`;
 
 class UnauthorizedError extends Error {}
 
@@ -1984,8 +1986,8 @@ export function AdminPage() {
                 <Kpi value={slice.retention.returning} label="Returning"/>
                 <Kpi value={data.favorite?.completed ?? 0} label="Completed"/>
                 <Kpi value={data.favorite?.exporters ?? 0} label="Exporters"/>
-                <Kpi value={data.favorite?.exportsFull ?? 0} label="Full grid exports"/>
-                <Kpi value={data.favorite?.exportsSimplified ?? 0} label="Summary exports"/>
+                <Kpi value={data.favorite?.fullExporters ?? 0} label="Full grid exporters" denom={saveCount(data.favorite?.exportsFull ?? 0)}/>
+                <Kpi value={data.favorite?.simplifiedExporters ?? 0} label="Summary exporters" denom={saveCount(data.favorite?.exportsSimplified ?? 0)}/>
               </div>
             </Panel>}
 

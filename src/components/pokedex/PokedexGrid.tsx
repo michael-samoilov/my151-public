@@ -9,6 +9,7 @@ import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsT
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { sectionColor } from '@/lib/sectionColors';
+import { warmSectionFirst } from '@/lib/spriteWarmup';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import {
   PokemonTileContent,
@@ -445,6 +446,8 @@ function GroupBox({
     <div
       ref={boxRef}
       data-section-id={group.id}
+      onPointerEnter={(e) => { if (e.pointerType !== 'touch') warmSectionFirst(group.id); }}
+      onFocus={() => warmSectionFirst(group.id)}
       onTransitionEnd={handleTransitionEnd}
       className="relative isolate rounded-lg"
       style={{
@@ -846,10 +849,7 @@ export function PokedexGrid() {
         style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined, scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           <div className="p-3 pb-0">
-            <IntroCard
-              totalPlaced={totalPlaced}
-              onChooseStarters={() => handleAddClick('starter')}
-            />
+            <IntroCard totalPlaced={totalPlaced} />
             <DndContext
               accessibility={dndAccessibility}
               sensors={sensors}

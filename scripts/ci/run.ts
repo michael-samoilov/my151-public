@@ -37,6 +37,8 @@ async function main() {
       for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
         await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
       }
+      await journal.stage('sprite-credits', 'npm', ['run', 'credits:check-sprites']);
+      await journal.stage('sprite-ink', process.execPath, ['scripts/build-favorite-sprite-ink.mjs', '--check']);
       await journal.stage('verify-harness-types', process.execPath, ['node_modules/typescript/bin/tsc', '-p', '.claude/skills/verify-my151/harness']);
       await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);
       await journal.stage('build', 'npm', ['run', 'build', '--', '--manifest', '--outDir', join(directory, 'dist'), '--emptyOutDir']);

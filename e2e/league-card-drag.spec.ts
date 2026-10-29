@@ -268,3 +268,48 @@ test.describe('a carried column keeps what it carries', () => {
     expect(column.r10).toBe(column.r8);
   });
 });
+
+test.describe('a pinch belongs to the browser', () => {
+  // Blink fires no `touchcancel` when it takes a pinch. It keeps sending the
+  // moves, uncancelable, so a sensor that waits for one follows the first
+  // finger through the whole zoom and lands it as a drag. The second finger
+  // comes either before the hold is up or after it has lifted the column.
+  for (const lag of [40, 320]) {
+    test(`a pinch on two lines zooms the page and leaves the card as it was (second finger after ${lag} ms)`, async ({ page }, testInfo) => {
+      await openCard(page);
+      const lines = () =>
+        page.evaluate(() => JSON.parse(window.localStorage.getItem('league-builder')!).state.cards[0].lines);
+      const before = await lines();
+
+      // Two neighbours mid-card. Near the screen's edge the browser clamps a
+      // synthetic pinch short of its spread, wherever it lands.
+      const a = (await page.locator('[data-testid="card-cell-8-4"]').boundingBox())!;
+      const b = (await page.locator('[data-testid="card-cell-8-3"]').boundingBox())!;
+      const y = a.y + a.height / 2;
+      const cdp = await page.context().newCDPSession(page);
+      const fingers = (spread: number) => [
+        { x: a.x + a.width / 2 - spread, y, radiusX: 10, radiusY: 10, force: 1, id: 1 },
+        { x: b.x + b.width / 2 + spread, y, radiusX: 10, radiusY: 10, force: 1, id: 2 },
+      ];
+
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: fingers(0).slice(0, 1) });
+      await page.waitForTimeout(lag);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: fingers(0) });
+      for (let i = 1; i <= 20; i += 1) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: fingers((50 * i) / 20) });
+        await page.waitForTimeout(16);
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.waitForTimeout(400);
+
+      const scale = await page.evaluate(() => window.visualViewport?.scale ?? 1);
+      const after = await lines();
+      await testInfo.attach('pinch.json', {
+        body: JSON.stringify({ lag, scale: +scale.toFixed(2), unchanged: JSON.stringify(after) === JSON.stringify(before) }, null, 2),
+        contentType: 'application/json',
+      });
+      expect(after, 'the pinch left every line where it was').toEqual(before);
+      expect(scale, 'the browser zoomed the page').toBeGreaterThan(1.3);
+    });
+  }
+});

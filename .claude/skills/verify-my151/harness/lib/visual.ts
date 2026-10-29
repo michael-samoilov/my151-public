@@ -21,9 +21,9 @@ interface Screen {
 
 const read = (file: string) => fs.readFileSync(path.join(REPO_ROOT, file), 'utf8');
 const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixture.json') };
-const FAVORITES = {
-  'favorite-picker': JSON.stringify({ state: { fills: JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills }, version: 3 }),
-};
+const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
+const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
+const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
 const BLANK_LEAGUE = {
   'league-builder': JSON.stringify({
     state: {
@@ -121,6 +121,18 @@ const openArtist = (name: string) => async (page: Page) => {
   }
 };
 
+/** Opens the Acknowledgements list, then a sprite project's page when an id is given. */
+const openProject = (id?: string) => async (page: Page) => {
+  const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+  const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+  await dialog.getByTestId('ack-group-sprite-artists').waitFor({ timeout: 30_000 });
+  if (!id) return;
+  await dialog.locator(`[data-ack-id="${id}"]`).click();
+  await dialog.getByTestId('ack-artists').scrollIntoViewIfNeeded();
+};
+
 export const SCREENS: Screen[] = [
   { id: 'hub', path: '/' },
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
@@ -215,6 +227,11 @@ export const SCREENS: Screen[] = [
   { id: 'favorites-tooltip-primal-dialga-zh', path: '/favorite-pokemon-picker?lang=zh-Hans', act: pickTooltip('dragon-4', [11124]) },
   { id: 'favorites-tooltip-shadow-lugia-zh', path: '/favorite-pokemon-picker?lang=zh-Hant', act: pickTooltip('psychic-3', [11123]) },
   { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
+  { id: 'ack-list', path: '/?lang=en', act: openProject() },
+  { id: 'ack-project-pokeapi', path: '/?lang=en', act: openProject('pokeapi-sprites') },
+  { id: 'favorites-filled-crocalor', path: '/favorite-pokemon-picker', seed: FAVORITES_CROCALOR },
+  { id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en', act: openArtist('KingOfThe-X-Roads') },
+  { id: 'ack-project-smogon', path: '/?lang=en', act: openProject('smogon-sprite-project') },
   {
     id: 'ack-smogon-artists', path: '/?lang=en',
     act: async (page) => {
