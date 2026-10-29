@@ -5,6 +5,10 @@ test.describe('Picker admin @viewport',()=>{
     await openAdmin(page, '/?admin&demo');
     await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
     await expect(page.getByRole('heading',{name:/^Picker activity/})).toBeVisible();
+    // Export figures count browsers, like Exporters; the line beneath counts saves, repeats included.
+    const activity=page.locator('section',{has:page.getByRole('heading',{name:/^Picker activity/})});
+    await expect(activity).toContainText(/3\s*Full grid exporters\s*4 saves/);
+    await expect(activity).toContainText(/2\s*Summary exporters\s*2 saves/);
     const funnel=page.getByRole('img',{name:/Favorite Pokémon usage funnel/});
     await expect(funnel).toBeVisible();
     await expect(funnel).toHaveAttribute('aria-label',/placed a Pokémon.*completed/);

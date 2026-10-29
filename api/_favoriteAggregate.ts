@@ -42,6 +42,8 @@ export function favoriteSummary(records: FavoriteRecord[]) {
     started:records.filter(r=>r.maxFilled>0).length,
     completed:records.filter(r=>r.maxFilled===FAVORITE_TOTAL_CELLS).length,
     exporters:records.filter(r=>r.exportsFull+r.exportsSimplified>0).length,
+    fullExporters:records.filter(r=>r.exportsFull>0).length,
+    simplifiedExporters:records.filter(r=>r.exportsSimplified>0).length,
     exportsFull:records.reduce((n,r)=>n+r.exportsFull,0),
     exportsSimplified:records.reduce((n,r)=>n+r.exportsSimplified,0),
     depth:buildDepthCurve(records.filter(r=>r.maxFilled>0).map(r=>r.maxFilled)),
