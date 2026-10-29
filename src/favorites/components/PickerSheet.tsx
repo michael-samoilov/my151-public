@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
@@ -229,7 +230,7 @@ export function PickerSheet({
       aria-pressed={showIcons}
       title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
-      className={cn(PILL_CLASS, headerTight && 'justify-center', showIcons ? 'border-[#a3a3a3] bg-secondary text-secondary-foreground' : PILL_OFF)}
+      className={cn(PILL_CLASS, headerTight && 'justify-center', showIcons ? `${HOVER_LAYER} border-[#a3a3a3] bg-secondary text-secondary-foreground` : PILL_OFF)}
       style={pillStyle({ badgePx: TITLE_BADGE_PX, iconOnly: headerTight })}
     >
       {/* Turned 180°: the open eye is unchanged, and the crossed-out eye's gap moves below the slash, as in the Shiny glyph. */}

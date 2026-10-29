@@ -23,6 +23,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
+import { HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { SearchRow } from './SearchRow';
 
@@ -1425,7 +1426,7 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
         active
-          ? 'border-primary text-primary bg-primary/5'
+          ? `${HOVER_LAYER} border-primary text-primary bg-primary/5`
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
       )}
     >
@@ -1477,6 +1478,7 @@ function LockedFilterChip({
         onClick={() => setShowing(true)}
         className={cn(
           'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer',
+          HOVER_LAYER,
           className,
         )}
       >
@@ -1507,6 +1509,7 @@ function FilterChip({
     <span
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium',
+        HOVER_LAYER,
         className
       )}
       style={style}
