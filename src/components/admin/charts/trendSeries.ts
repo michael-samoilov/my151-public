@@ -155,7 +155,12 @@ interface MonthLabelTick {
   year: number | null;
 }
 
-export function monthLabelTicks(days: number[]): MonthLabelTick[] {
+/**
+ * Month names left-aligned on each month's first day. `fits` gets a name and the days until the
+ * next name; a name that would run into the next one is left out, which in practice is a short
+ * first month. The first name shown carries the year, as does every January.
+ */
+export function monthLabelTicks(days: number[], fits: (abbr: string, span: number) => boolean = () => true): MonthLabelTick[] {
   if (days.length === 0) return [];
   const groups: { start: number; month: number; year: number }[] = [];
   for (let i = 0; i < days.length; i++) {
@@ -166,13 +171,12 @@ export function monthLabelTicks(days: number[]): MonthLabelTick[] {
     if (last && last.month === month && last.year === year) continue;
     groups.push({ start: i, month, year });
   }
-  return groups.map((g, gi) => {
-    const abbr = new Date(days[g.start]).toLocaleDateString('en-US', {
-      month: 'short',
-      timeZone: 'UTC',
-    });
-    const withYear = gi === 0 || g.month === 0;
-    return { idx: g.start, abbr, year: withYear ? g.year : null };
+  const abbrOf = (g: (typeof groups)[number]) =>
+    new Date(days[g.start]).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  const shown = groups.filter((g, gi) => gi === groups.length - 1 || fits(abbrOf(g), groups[gi + 1].start - g.start));
+  return shown.map((g, i) => {
+    const withYear = i === 0 || g.month === 0;
+    return { idx: g.start, abbr: abbrOf(g), year: withYear ? g.year : null };
   });
 }
 
