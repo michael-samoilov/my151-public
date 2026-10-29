@@ -23601,7 +23601,7 @@
  },
  {
   "file": "public/sprites/pokemon/910.png",
-  "sha256": "7ebafacff3ef2ad53d135f0462d300611717b8206938497201130be9c6c734ff",
+  "sha256": "6cbab8d9c978ab893a4d0dc9f05fd7058ad284c7bcf25843757bf401d2de9606",
   "pokemon": [
    "crocalor"
   ],
@@ -23622,9 +23622,15 @@
     "sha256": "7ebafacff3ef2ad53d135f0462d300611717b8206938497201130be9c6c734ff",
     "sheet": "https://docs.google.com/spreadsheets/d/1MCjDktTOOFjLKM5C-RW6SfBQGkjlxDSCZAZDma_ItuA",
     "sheetRow": "gen9 sheet, section 'Gen 9 Pokemon', row '910 Crocalor', Spriter 'KingOfThe-X-Roads'"
+   },
+   {
+    "url": "https://github.com/michael-samoilov/my151-public/blob/main/public/sprites/pokemon/910.png",
+    "localCopy": "public/sprites/pokemon/910.png",
+    "sha256": "6cbab8d9c978ab893a4d0dc9f05fd7058ad284c7bcf25843757bf401d2de9606",
+    "title": "910.png at commit a5936786, 'Give Crocalor's sprite its 96th row'"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), with the transparent margins trimmed. The attachment is 96x95. Commit a5936786 added one transparent row at the bottom to make the canvas 96x96; rows 0-94 equal the attachment's, and no visible pixel changed.",
   "verdict": "confirmed"
  },
  {
