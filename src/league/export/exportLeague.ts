@@ -27,7 +27,7 @@ import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember } from '../model/engine';
 import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
-import { cardShades, type CardShades } from '../theme';
+import { NO_TYPE_STAR_RADIUS, cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
 import { activeMoveNames, moveName } from '../moveNames';
 import { RING_OF_SPRITE } from '../slotLayout';
@@ -211,7 +211,7 @@ function drawTypeMark(
   roundRect(ctx, x, y, size, size, radius);
   ctx.fill();
   ctx.fillStyle = '#ffffff';
-  drawFourPointStar(ctx, x + size / 2, y + size / 2, (size * 7) / 22);
+  drawFourPointStar(ctx, x + size / 2, y + size / 2, size * NO_TYPE_STAR_RADIUS);
   ctx.restore();
 }
 
