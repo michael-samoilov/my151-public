@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { slotLabel } from '../slotLabel';
 import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
+import { NO_TYPE_STAR_RADIUS } from '../theme';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { SPRITE_REM } from '../slotLayout';
@@ -82,14 +83,14 @@ function UnsetTypeMark() {
 function NoTypeMark() {
   return (
     <span
-      className="grid place-items-center"
+      className="block"
       style={{
         width: TYPE_MARK, height: TYPE_MARK,
         borderRadius: TYPE_MARK_RADIUS, background: '#9CA3AF',
       }}
     >
-      <svg viewBox="0 0 32 32" className="h-[0.9375rem] w-[0.9375rem]" aria-hidden>
-        <path d={starPath(16, 16, 9)} fill="#ffffff" />
+      <svg viewBox="0 0 22 22" className="block h-full w-full" aria-hidden>
+        <path d={starPath(11, 11, 22 * NO_TYPE_STAR_RADIUS)} fill="#ffffff" />
       </svg>
     </span>
   );
