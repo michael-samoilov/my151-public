@@ -76,7 +76,6 @@
   "header.toolNameCore": "Pokédex perso",
   "header.toolNameQualifier": "Créateur de",
   "intro.body": "Composez votre Pokédex régional, analysez des statistiques détaillées, puis exportez-le en image pour en garder une copie et le partager.",
-  "intro.cta": "Choisissez vos starters",
   "intro.dismiss": "Fermer l’introduction",
   "intro.headline": "Créez vos propres {count}",
   "intro.shot.complete": "Une image de Pokédex générée : un dex complet de 151 à côté de ses graphiques de types, de générations et de statistiques de base.",

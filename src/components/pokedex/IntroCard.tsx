@@ -2,9 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { expandTemplate } from '@/lib/richTemplate';
 import { raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
-import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { TYPE_ICONS } from '@/data/type-icons';
 import type { TypeName } from '@/types/pokemon';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
@@ -32,22 +30,15 @@ type FaceVariant = 'dots' | 'shots';
 const DEFAULT_FACE: FaceVariant = 'shots';
 const FACES = new Set<string>(['dots', 'shots']);
 
-type BtnVariant = 'type-marks' | 'solid' | 'outline' | 'gradient-border' | 'fade';
-const DEFAULT_BTN: BtnVariant = 'type-marks';
-const BTNS = new Set<string>(['type-marks', 'solid', 'outline', 'gradient-border', 'fade']);
-
-const { FORCE_INTRO, FACE, BTN } = (() => {
+const { FORCE_INTRO, FACE } = (() => {
   try {
-    const q = new URLSearchParams(window.location.search);
-    const intro = q.get('intro');
-    const btn = q.get('btn');
+    const intro = new URLSearchParams(window.location.search).get('intro');
     return {
-      FORCE_INTRO: intro !== null || btn !== null,
+      FORCE_INTRO: intro !== null,
       FACE: (intro && FACES.has(intro) ? intro : DEFAULT_FACE) as FaceVariant,
-      BTN: (btn && BTNS.has(btn) ? btn : DEFAULT_BTN) as BtnVariant,
     };
   } catch {
-    return { FORCE_INTRO: false, FACE: DEFAULT_FACE, BTN: DEFAULT_BTN };
+    return { FORCE_INTRO: false, FACE: DEFAULT_FACE };
   }
 })();
 
@@ -321,124 +312,9 @@ function ShowcaseStaircase() {
   );
 }
 
-const STARTER_DOTS = ['#7ac74c', '#ee8130', '#6390f0'];
-
-function StarterDots() {
-  return (
-    <span className="flex items-center gap-1" aria-hidden="true">
-      {STARTER_DOTS.map((c) => (
-        <span key={c} className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
-      ))}
-    </span>
-  );
-}
-
-const STARTER_MARKS = [
-  { type: 'grass', scale: 0.876 },
-  { type: 'fire', scale: 1.097 },
-  { type: 'water', scale: 1.027 },
-] as const;
-
-function StarterMarks() {
-  return (
-    <span className="flex items-center justify-center gap-[0.45em]" aria-hidden="true">
-      {STARTER_MARKS.map(({ type, scale }) => {
-        const mask = `url(${TYPE_ICONS[type].glyph}) center / contain no-repeat`;
-        return (
-          <span key={type} className="flex size-[1.7em] items-center justify-center">
-            <span
-              className="block"
-              style={{ width: `${1.25 * scale}em`, height: `${1.25 * scale}em`, backgroundColor: TYPE_COLORS[type], mask, WebkitMask: mask }}
-            />
-          </span>
-        );
-      })}
-    </span>
-  );
-}
-
-function StarterButton({ onClick }: { onClick: () => void }) {
-  const label = t('intro.cta');
-
-  if (BTN === 'type-marks') {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-3.5 inline-flex flex-col items-center justify-center gap-1.5 rounded-md border-2 border-primary bg-card px-5 py-2.5 text-sm font-medium text-foreground transition-transform duration-150 ease-out hover:bg-primary/5 active:scale-[0.96] cursor-pointer"
-      >
-        <StarterMarks />
-        {label}
-      </button>
-    );
-  }
-
-  if (BTN === 'outline') {
-    return (
-      <Button
-        onClick={onClick}
-        variant="outline"
-        className="mt-3.5 gap-2 border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary"
-      >
-        <StarterDots />
-        {label}
-      </Button>
-    );
-  }
-
-  if (BTN === 'gradient-border') {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-3.5 inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium text-foreground transition-transform duration-150 ease-out active:scale-[0.96] cursor-pointer"
-        style={{
-          border: '2px solid transparent',
-          background:
-            'linear-gradient(var(--color-card), var(--color-card)) padding-box, ' +
-            'linear-gradient(90deg, #7ac74c, #ee8130, #6390f0) border-box',
-        }}
-      >
-        <StarterDots />
-        {label}
-      </button>
-    );
-  }
-
-  if (BTN === 'fade') {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="mt-3.5 inline-flex h-10 items-center justify-center gap-2 rounded-md pl-3 pr-4 text-sm font-medium text-white shadow-sm transition-transform duration-150 ease-out active:scale-[0.96] cursor-pointer"
-        style={{
-          background:
-            'linear-gradient(90deg, #ffffff 0%, #ffffff 14%, var(--color-primary) 34%, var(--color-primary) 100%)',
-        }}
-      >
-        <StarterDots />
-        <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">{label}</span>
-      </button>
-    );
-  }
-
-  return (
-    <Button onClick={onClick} className="mt-3.5 gap-2">
-      <StarterDots />
-      {label}
-    </Button>
-  );
-}
-
 const COLLAPSE_MS = 450;
 
-export function IntroCard({
-  totalPlaced,
-  onChooseStarters,
-}: {
-  totalPlaced: number;
-  onChooseStarters: () => void;
-}) {
+export function IntroCard({ totalPlaced }: { totalPlaced: number }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<'shown' | 'collapsing' | 'gone'>(() => {
     if (FORCE_INTRO) return 'shown';
@@ -458,11 +334,6 @@ export function IntroCard({
     sendEventBeacon('intro-dismiss', { once: true });
     collapse();
   }, [collapse]);
-
-  const chooseStarters = useCallback(() => {
-    sendEventBeacon('intro-cta', { once: true });
-    onChooseStarters();
-  }, [onChooseStarters]);
 
   useEffect(() => {
     if (phase === 'shown') sendEventBeacon('intro-shown', { once: true });
@@ -535,7 +406,6 @@ export function IntroCard({
             <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-balance">
               {t('intro.body')}
             </p>
-            <StarterButton onClick={chooseStarters} />
           </div>
         </div>
       </div>

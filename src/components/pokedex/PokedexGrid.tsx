@@ -849,10 +849,7 @@ export function PokedexGrid() {
         style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined, scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           <div className="p-3 pb-0">
-            <IntroCard
-              totalPlaced={totalPlaced}
-              onChooseStarters={() => handleAddClick('starter')}
-            />
+            <IntroCard totalPlaced={totalPlaced} />
             <DndContext
               accessibility={dndAccessibility}
               sensors={sensors}
