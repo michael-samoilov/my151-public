@@ -95,7 +95,7 @@ test.describe('Newest browsers cards @viewport', () => {
       await expect(three).toBeVisible();
       await expect(panel.getByRole('button', {name: 'Active', exact: true})).toHaveAttribute('aria-pressed', 'true');
       await expect(three.locator('[data-metric="session"]')).toHaveText([
-        '2 sessions · 3m', '1 session · 2m', '1 session · 0m', '2 sessions · 4m',
+        '2 sessions · 3m', '1 session · 2m', '1 session · 0s', '2 sessions · 4m',
       ]);
       if (tab !== 'League') {
         await expect(card(page, 'e2e-two').locator('[data-tool="total"]')).toHaveText('— · not recorded');

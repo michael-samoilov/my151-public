@@ -198,7 +198,7 @@ export function previewLanguage(
 }
 
 export function fmtChipDuration(ms: number): string {
-  if (ms < 45_000) return '0m';
+  if (ms < 45_000) return `${Math.round(ms / 1000)}s`;
   const m = Math.round(ms / 60_000);
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);

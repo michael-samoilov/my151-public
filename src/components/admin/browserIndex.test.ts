@@ -103,7 +103,7 @@ describe('Newest browsers index', () => {
     for (const list of ['dex', 'league', 'picker'] as const) {
       const row = browsers[list][0];
       expect(row.dex && row.league && row.picker, list).toBeTruthy();
-      expect(JSON.stringify(row).length, list).toBeLessThan(600);
+      expect(JSON.stringify(row).length, list).toBeLessThan(800);
     }
     expect(JSON.stringify(heavyDex).length).toBeGreaterThan(20_000);
   });
@@ -232,5 +232,35 @@ describe('The Picker saves a visitor only after the first Pokémon', () => {
     expect(d.byTool.favorites.activity.find((p) => p.day === Date.UTC(2026, 9, 9))?.dau ?? 0).toBe(0);
     expect(d.bounces.favorites).toBe(1);
     expect(d.browsers.picker.find((r) => r.cid === 'p-viewer')?.bounced).toBe(true);
+  });
+});
+
+describe('Browser card time', () => {
+  const oct = (date: number, hour = 12) => Date.UTC(2026, 9, date, hour);
+  const filled = parseFavoriteSnapshot({ v: 1, fills: { 'fire|1': 6 } })!;
+  const visit = (rec: FavoriteRecord | null, cid: string, i: number, now: number, inputMs?: number) =>
+    mergeFavoriteRecord(rec, {
+      cid, id: `${cid}-${i}`, now, receivedAt: now, kind: 'progress', snapshot: filled, events: [], country: 'US',
+      ...(inputMs ? { attention: { v: 1 as const, segments: [{ id: `${cid}-segment-${i}`, start: now - inputMs, end: now }] } } : {}),
+    });
+
+  it('marks input time partial when the tool was used before input timing and before its recording began', () => {
+    const early = visit(visit(null, 'p-early', 0, oct(8)), 'p-early', 1, oct(17), 7_000);
+    const late = visit(visit(null, 'p-late', 0, oct(20)), 'p-late', 1, oct(22), 7_000);
+    const rows = buildDashboard(source({ picker: { 'p-early': early, 'p-late': late } }), { range: 'all' }, oct(25)).browsers.picker;
+    expect(rows.find((r) => r.cid === 'p-early')?.picker?.active).toEqual({ sessions: 2, totalMs: 7_000, partial: true });
+    expect(rows.find((r) => r.cid === 'p-early')?.activeTotal?.partial).toBe(true);
+    expect(rows.find((r) => r.cid === 'p-late')?.picker?.active).toEqual({ sessions: 1, totalMs: 7_000 });
+  });
+
+  it('adds the session length of sessions before input timing, marked partial', () => {
+    let rec = visit(null, 'p-old', 0, oct(8, 21));
+    rec = visit(rec, 'p-old', 1, Date.UTC(2026, 9, 9, 3, 0));
+    rec = visit(rec, 'p-old', 2, Date.UTC(2026, 9, 9, 3, 29));
+    rec = visit(rec, 'p-old', 3, oct(17, 14), 5_000);
+    rec = visit(rec, 'p-old', 4, oct(17, 16), 2_000);
+    const row = buildDashboard(source({ picker: { 'p-old': rec } }), { range: 'all' }, oct(25)).browsers.picker.find((r) => r.cid === 'p-old');
+    expect(row?.picker?.active).toEqual({ sessions: 4, totalMs: 29 * MIN + 7_000, partial: true });
+    expect(row?.activeTotal).toEqual({ sessions: 4, totalMs: 29 * MIN + 7_000, partial: true });
   });
 });

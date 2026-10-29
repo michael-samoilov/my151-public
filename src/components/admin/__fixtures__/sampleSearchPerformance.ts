@@ -34,6 +34,12 @@ function sampleSeries(provider: 'google' | 'bing'): SearchSeriesPoint[] {
   });
 }
 
+/** Two days after the Google series that Search Console has not finalized. */
+const sampleFresh: SearchSeriesPoint[] = [
+  { start: '2026-09-22', clicks: 9, impressions: 47, ctr: 9 / 47, position: 6.1 },
+  { start: '2026-09-23', clicks: 6, impressions: 33, ctr: 6 / 33, position: 6.4 },
+];
+
 function sampleHours(): SearchSeriesPoint[] {
   const end = Date.UTC(2026, 8, 23, 23);
   return Array.from({ length: 60 }, (_, index) => {
@@ -129,7 +135,7 @@ const sampleSearchPerformance: SearchPerformanceSnapshot = {
   daily: {
     generatedAt: GENERATED_AT,
     providers: {
-      google: sampleProvider('google', sampleSeries('google'), googleRows, DAY_RANGES),
+      google: { ...sampleProvider('google', sampleSeries('google'), googleRows, DAY_RANGES), fresh: sampleFresh },
       bing: sampleProvider('bing', sampleSeries('bing'), bingRows, DAY_RANGES),
     },
   },

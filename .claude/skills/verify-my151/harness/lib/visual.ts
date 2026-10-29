@@ -24,6 +24,17 @@ const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixt
 const FAVORITES = {
   'favorite-picker': JSON.stringify({ state: { fills: JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills }, version: 3 }),
 };
+const BLANK_LEAGUE = {
+  'league-builder': JSON.stringify({
+    state: {
+      name: '',
+      cards: Array.from({ length: 14 }, () => ({
+        type: null, theme: '', lines: [], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null,
+      })),
+    },
+    version: 1,
+  }),
+};
 const DEX = {
   'personal-151-pokedex-v3': JSON.stringify({
     state: {
@@ -87,6 +98,14 @@ const hoverGridCell = (cell: string) => async (page: Page) => {
 const parkPointerOnPhone = async (page: Page) => {
   if ((page.viewportSize()?.width ?? 1280) < 1024) await page.mouse.move(0, 0);
 };
+/** Opens the endgame card's Ace picker and searches it, so its tiles show form codes. */
+const searchLeagueAce = (query: string) => async (page: Page) => {
+  await page.locator('[data-testid="league-slot-12"]').click();
+  await page.locator('[data-testid="slot-ace"]').click({ position: { x: 8, y: 8 } });
+  await page.locator('[data-filter-chip="my-dex"]').first().waitFor({ timeout: 30_000 });
+  await page.locator('input[placeholder]').filter({ visible: true }).last().fill(query);
+  await page.locator('[data-testid="verify-evo-card"] img[src*="/sprites/pokemon/"]').first().waitFor({ timeout: 30_000 });
+};
 const openArtist = (name: string) => async (page: Page) => {
   const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
   await link.scrollIntoViewIfNeeded();
@@ -107,6 +126,8 @@ export const SCREENS: Screen[] = [
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
   { id: 'builder-intro', path: '/pokedex-builder' },
   { id: 'builder-tools-menu', path: '/pokedex-builder', act: openTools },
+  { id: 'builder-tools-menu-progress', path: '/pokedex-builder', seed: { ...DEX, ...LEAGUE, ...FAVORITES }, act: openTools },
+  { id: 'hub-tools-menu-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES }, act: openTools },
   { id: 'builder-feedback', path: '/pokedex-builder', act: click('[data-feedback-open]') },
   { id: 'builder-progress', path: '/pokedex-builder', seed: DEX },
   { id: 'builder-demo', path: '/pokedex-builder?demo=151' },
@@ -151,6 +172,8 @@ export const SCREENS: Screen[] = [
       await parkPointerOnPhone(page);
     },
   },
+  { id: 'league-ace-shellos', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('shellos') },
+  { id: 'league-ace-aegislash', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('aegislash') },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   { id: 'favorites-filled-hover', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: hoverGridCell('fire-1') },

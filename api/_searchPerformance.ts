@@ -27,6 +27,7 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const DAY_MS = 86_400_000;
 const SEARCH_CONSOLE_MONTHS = 16;
 const HOURLY_FETCH_DAYS = 4;
+const FRESH_FETCH_DAYS = 7;
 const BING_TOP_ROWS = 25;
 const DAY_RANGES = SEARCH_RANGES.filter((range) => SEARCH_RANGE_SPECS[range].granularity === 'day');
 
@@ -288,7 +289,7 @@ interface GoogleQueryBody {
   endDate: string;
   dimensions: GoogleDimension[];
   rowLimit: number;
-  dataState?: 'hourly_all';
+  dataState?: 'all' | 'hourly_all';
 }
 
 type GoogleQuery = (body: GoogleQueryBody) => Promise<unknown>;
@@ -319,16 +320,22 @@ async function connectGoogle(): Promise<GoogleQuery | null> {
 async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   const query = await connectGoogle();
   if (!query) return notConfigured('google');
+  const now = Date.now();
   const today = todayUtcMs();
-  // Search Console commonly settles after a short delay. Stop three days back
-  // so a normal refresh does not present partial recent days as a traffic loss.
-  const dataThrough = utcDate(today - 3 * DAY_MS);
-  const now = new Date(today);
-  const retainedFrom = utcDate(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - SEARCH_CONSOLE_MONTHS, now.getUTCDate()));
-  const series = seriesOf(googleBucketRows(
-    await query({ startDate: retainedFrom, endDate: dataThrough, dimensions: ['date'], rowLimit: 1_000 }),
+  const day = new Date(today);
+  const retainedFrom = utcDate(Date.UTC(day.getUTCFullYear(), day.getUTCMonth() - SEARCH_CONSOLE_MONTHS, day.getUTCDate()));
+  // Today is still a partial day, so the newest day asked for is yesterday in Search Console's time zone.
+  const days = async (startDate: string, dataState?: 'all') => seriesOf(googleBucketRows(
+    await query({ startDate, endDate: PACIFIC_DATE.format(now - DAY_MS), dimensions: ['date'], dataState, rowLimit: 1_000 }),
     'day',
   ));
+  const [series, recent] = await Promise.all([
+    days(retainedFrom),
+    days(PACIFIC_DATE.format(now - FRESH_FETCH_DAYS * DAY_MS), 'all'),
+  ]);
+  // Search Console returns only final days by default, so the last one is where final data ends.
+  const dataThrough = series[series.length - 1]?.start ?? utcDate(today - 3 * DAY_MS);
+  const fresh = recent.filter((point) => point.start > dataThrough);
   const inWindow = (window: SearchDateRange, dimensions: GoogleDimension[]) =>
     query({ startDate: window.start, endDate: window.end, dimensions, rowLimit: 250 });
   const ranges = await Promise.all(DAY_RANGES.map(async (range) => {
@@ -350,6 +357,7 @@ async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
     fetchedAt: new Date().toISOString(),
     dataThrough,
     series,
+    fresh,
     ranges: Object.fromEntries(ranges),
   };
 }

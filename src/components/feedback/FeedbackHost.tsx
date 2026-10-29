@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { loadChunk } from '@/lib/staleDeploy';
 import { whenIdle } from '@/lib/whenIdle';
 import { registerFeedbackOpener, type FeedbackAnchor } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackToolContext } from '@/lib/feedbackContext';
@@ -7,7 +7,7 @@ import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 type Sheet = typeof import('./FeedbackSheet').FeedbackSheet;
 let loadedSheet: Sheet | null = null;
-const loadSheet = () => reloadIfStale(import('./FeedbackSheet')).then((module) => (loadedSheet = module.FeedbackSheet));
+const loadSheet = () => loadChunk(() => import('./FeedbackSheet')).then((module) => (loadedSheet = module.FeedbackSheet));
 const LazySheet = lazy(() => loadSheet().then((FeedbackSheet) => ({ default: FeedbackSheet })));
 
 // The form's code stays off the first download and arrives once the page has

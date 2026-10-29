@@ -29,5 +29,5 @@ export function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return <RailStat width="w-[82px] md:w-[8.5rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
+  return <RailStat width="w-[82px] md:w-[8.5rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : mins ? `${m}m` : `${Math.round(ms / 1000)}s`}</span>} bottom="time spent" />;
 }

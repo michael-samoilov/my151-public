@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { loadChunk } from '@/lib/staleDeploy';
 import { whenIdle } from '@/lib/whenIdle';
 import { Pencil, PanelRightClose } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
@@ -38,7 +38,7 @@ import { confirmOnEnter } from './components/confirmOnEnter';
 import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const importExportOverlay = () => reloadIfStale(import('./components/LeagueExportOverlay'));
+const importExportOverlay = () => loadChunk(() => import('./components/LeagueExportOverlay'));
 const LeagueExportOverlay = lazy(() => importExportOverlay().then((m) => ({ default: m.LeagueExportOverlay })));
 
 function GlobalHeader() {

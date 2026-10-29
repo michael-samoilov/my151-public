@@ -33,9 +33,11 @@ describe('formatWhen', () => {
 });
 
 describe('fmtChipDuration', () => {
-  it('reports 0m under 45 seconds', () => {
-    expect(fmtChipDuration(0)).toBe('0m');
-    expect(fmtChipDuration(44_000)).toBe('0m');
+  it('reports seconds under 45 seconds, then rounds to minutes', () => {
+    expect(fmtChipDuration(0)).toBe('0s');
+    expect(fmtChipDuration(7_541)).toBe('8s');
+    expect(fmtChipDuration(44_000)).toBe('44s');
+    expect(fmtChipDuration(45_000)).toBe('1m');
   });
 
   it('fits double-digit hours and minutes', () => {

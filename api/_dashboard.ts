@@ -29,6 +29,7 @@ import {
   referrerFlow,
   sessionSeconds,
   spanUsage,
+  type Span,
   tallyCohort,
   dexUsageFunnel,
   leagueUsageFunnel,
@@ -40,7 +41,7 @@ import {
   type ToolUsage,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { dexEngagedDays, isActiveUser, leagueEngagedDays, pickerEngagedDays, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
+import { dexEngagedDays, INPUT_TIMING_SINCE, isActiveUser, leagueEngagedDays, pickerEngagedDays, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
@@ -357,23 +358,30 @@ type PickerTool = SessionRecord & Sessions & Parameters<typeof pickerEngagedDays
   sessionLog?: { ts: number; endTs: number }[];
 };
 
-function foregroundTime(recordings: readonly (AttentionRecording | undefined)[]): BrowserTime | undefined {
-  const measured = recordings.filter((a): a is AttentionRecording => !!a);
-  if (!measured.length) return undefined;
-  const segments = measured.flatMap(a => a.segments.map(s => ({
-    start: Math.max(s.start, a.coverageFrom), end: Math.min(s.end, a.asOf),
-  })).filter(s => s.end >= s.start)).sort((a, b) => a.start - b.start || a.end - b.end);
+type Timed = { attention?: AttentionRecording; firstTs: number; spans: readonly Span[] };
+
+// Input time, plus the session length of sessions before input timing: before
+// the tool's recording began and before INPUT_TIMING_SINCE. Either addition,
+// a tool with no recording, or retired segments marks the time partial.
+function foregroundTime(tools: readonly Timed[]): BrowserTime | undefined {
+  const intervals = tools.flatMap(({ attention: a, spans }) => {
+    const before = Math.min(a?.coverageFrom ?? Infinity, INPUT_TIMING_SINCE);
+    const early = spans.filter(s => s.start < before).map(s => ({ start: s.start, end: Math.min(s.end, before) }));
+    const input = a ? a.segments.map(s => ({ start: Math.max(s.start, a.coverageFrom), end: Math.min(s.end, a.asOf) })).filter(s => s.end >= s.start) : [];
+    return [...early, ...input];
+  }).sort((a, b) => a.start - b.start || a.end - b.end);
+  if (!intervals.length && !tools.some(t => t.attention)) return undefined;
   let end = -Infinity, totalMs = 0;
-  for (const s of segments) {
+  for (const s of intervals) {
     totalMs += Math.max(0, s.end - Math.max(s.start, end));
     end = Math.max(end, s.end);
   }
-  const partial = measured.length < recordings.length || measured.some(a => a.retiredThrough !== undefined);
-  return {sessions: attentionSessionCount(segments), totalMs, ...(partial ? {partial: true as const} : {})};
+  const partial = tools.some(({ attention: a, firstTs }) => !a || a.retiredThrough !== undefined || firstTs < Math.min(a.coverageFrom, INPUT_TIMING_SINCE));
+  return {sessions: attentionSessionCount(intervals), totalMs, ...(partial ? {partial: true as const} : {})};
 }
 
-function toolStat(count: number, exported: boolean, usage: ToolUsage, attention?: AttentionRecording): ToolStat {
-  const active = foregroundTime([attention]);
+function toolStat(count: number, exported: boolean, usage: ToolUsage, tool: Omit<Timed, 'spans'>): ToolStat {
+  const active = foregroundTime([{ ...tool, spans: usage.spans }]);
   return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs, ...(active ? {active} : {}) };
 }
 
@@ -386,7 +394,11 @@ function browserRow(
   const dexUsage = dex && endStampedUsage(dex);
   const leagueUsage = league && endStampedUsage(league);
   const pickerUsage = picker && spanUsage(picker);
-  const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t).map(t => t.attention));
+  const activeTotal = foregroundTime([
+    ...(dex && dexUsage ? [{ ...dex, spans: dexUsage.spans }] : []),
+    ...(league && leagueUsage ? [{ ...league, spans: leagueUsage.spans }] : []),
+    ...(picker && pickerUsage ? [{ ...picker, spans: pickerUsage.spans }] : []),
+  ]);
   const engaged = (!!dex && dexEngagedDays(dex).length > 0) || (!!league && leagueEngagedDays(league).length > 0) || (!!picker && pickerEngagedDays(picker).length > 0);
   return {
     cid: rec.cid,
@@ -403,9 +415,9 @@ function browserRow(
     locale: rec.locale,
     switched: rec.switched,
     archived,
-    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage, dex.attention),
-    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage, league.attention),
-    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage, picker.attention),
+    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage, dex),
+    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage, league),
+    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage, picker),
     total: browserTotal([dexUsage, leagueUsage, pickerUsage].filter((u): u is ToolUsage => !!u)),
     ...(activeTotal ? {activeTotal} : {}),
   };
