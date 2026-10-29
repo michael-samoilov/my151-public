@@ -263,6 +263,29 @@
       }
     },
     {
+      "file": "668",
+      "name": "Pyroar (male)",
+      "normal": "https://www.smogon.com/forums/attachments/668m-png.282237/",
+      "shiny": "https://www.smogon.com/forums/attachments/668ms-png.282238/",
+      "scale": 1,
+      "offset": [
+        1,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "Arkeis"
+      ],
+      "shinyArtists": [
+        "Arkeis"
+      ],
+      "sha256": {
+        "normal": "fa9d4ab681f63413c4c4454f5fec363ffd7acc8fb283bdf275304b055cecf6a2",
+        "shiny": "3b3b5bf77b876d9782b18c88ce429908fc4a0d780672e29f985fefcab6c70b38",
+        "placed": "624baac450692bb29c4f6d0fe05b79a87354cc691f389fed55a666d8488610b1"
+      }
+    },
+    {
       "file": "669",
       "name": "Flabébé (Red Flower)",
       "normal": "https://www.smogon.com/forums/attachments/669_1-png.276624/",
@@ -350,6 +373,29 @@
         "normal": "04e3b7f65623366bf0e27cb623c2eb567ea50998139f581ac2edb2dd5d35fd44",
         "shiny": "4329dad28a336e50725a9bf9e1d368166210bac5d83c4ca73166b9f852b54824",
         "placed": "2e5049f47a351b6d6fe70e3cd691e15088dc191a0af14b25a5c74f1467822090"
+      }
+    },
+    {
+      "file": "716",
+      "name": "Xerneas (Active Mode)",
+      "normal": "https://www.smogon.com/forums/attachments/716_1-png.273690/",
+      "shiny": "https://www.smogon.com/forums/attachments/716_1s-png.273691/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "N-Kin"
+      ],
+      "shinyArtists": [
+        "N-Kin"
+      ],
+      "sha256": {
+        "normal": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d",
+        "shiny": "9ca1e2885e24445cde132b280abe91a4d83e2ffb96bcce6c490167f4776a7ac4",
+        "placed": "144ae08c216c5156c95a2a5f22914aa914edec860a42c3566ad29c22e6c8f530"
       }
     },
     {
@@ -481,6 +527,29 @@
         "normal": "34aae4e60b6be400efb70613a3e4be389fcf487a6a87c621ec66956f99add0f2",
         "shiny": "531ea65a85b9ea0b4f565f360657954e0e7d99f6e05dfb3bccb18718c64f1b40",
         "placed": "531ea65a85b9ea0b4f565f360657954e0e7d99f6e05dfb3bccb18718c64f1b40"
+      }
+    },
+    {
+      "file": "949",
+      "name": "Toedscruel",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/TOEDSCRUEL.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/TOEDSCRUEL.png",
+      "scale": 2,
+      "offset": [
+        -5,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "Sopita_Yorita"
+      ],
+      "shinyArtists": [
+        "Sopita_Yorita"
+      ],
+      "sha256": {
+        "normal": "ef18c08cbd93a9ba574b6daca60f4538f46ddc2c4ee65647b753c1a3d5297d39",
+        "shiny": "5f31699c7cc8ce425dea780249f9d94e0db1342cb6602e7ecd82fb79a1d9251b",
+        "placed": "460c08a93037f38e3ae7e0ad32adf379fd91d3f243e689c2801317cc1fbe6a63"
       }
     },
     {
@@ -621,6 +690,29 @@
         "normal": "5d4312e39535067e04c3fc8f438833b45278d1ba44c24a87b9a99ff76019ce7d",
         "shiny": "ee4003efd671c1cb1f0f05722cfe8ecbf3216dbcd76d3806372eb154ea043457",
         "placed": "c9e2542f967a5c428ec7e1329faea30b03d2783f32e455d9a87fda119f46a4e4"
+      }
+    },
+    {
+      "file": "10025",
+      "name": "Meowstic (female)",
+      "normal": "https://www.smogon.com/forums/attachments/678f-png.273647/",
+      "shiny": "https://www.smogon.com/forums/attachments/678fs-png.282244/",
+      "scale": 1,
+      "offset": [
+        2,
+        2
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "RedRooster"
+      ],
+      "shinyArtists": [
+        "RedRooster"
+      ],
+      "sha256": {
+        "normal": "1831faf34e717dafa82598233c5ae0dfe49c444d2ad7183e87070ecfa85f00d2",
+        "shiny": "50e01b5aeee809e2b768f8bb7a5c3b84c214da1823cf27f8a2f35877eba49d2a",
+        "placed": "86d7cbaef8b1938c2b847359138662a1f0a840aa6f4da519d896ccb504b01296"
       }
     },
     {
@@ -860,6 +952,29 @@
       }
     },
     {
+      "file": "10301",
+      "name": "Mega Zygarde",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/ZYGARDE_4.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/ZYGARDE_4.png",
+      "scale": 2,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101)",
+      "artists": [
+        "Caruban"
+      ],
+      "shinyArtists": [
+        "Caruban"
+      ],
+      "sha256": {
+        "normal": "750bf1aefbfde1e760c7cfe3ce58c10b3b4becae2437bc979018a84f487010c9",
+        "shiny": "a9f1d5d702695ac3281bee525c4b28d057bc8d84522a3af1cc9d07b6c67a7399",
+        "placed": "076f9f248544d10e4225117caaf8e0f96e448fa733a1b61e149ef268cccd3262"
+      }
+    },
+    {
       "file": "10305",
       "name": "Mega Raichu Y",
       "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/RAICHU_3.png",
@@ -905,6 +1020,31 @@
         "normal": "880e563840b15e268228cdd419917eeedcb86eb44b3a206d5c9a6502962de566",
         "shiny": "01e8b8ba80f9ecd221b4644085a6cabbd570e9389492215268c552e1c34a2bb9",
         "placed": "b2cc133f80585f1e06faf1f5478ae51f9d39e8ee1f4ba84e1ea39966c7121b73"
+      }
+    },
+    {
+      "file": "11001",
+      "name": "Xerneas (Neutral Mode)",
+      "normal": "https://www.smogon.com/forums/attachments/716_2-png.274485/",
+      "shiny": "https://www.smogon.com/forums/attachments/716_2s-png.274486/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "N-Kin",
+        "leParagon"
+      ],
+      "shinyArtists": [
+        "N-Kin",
+        "leParagon"
+      ],
+      "sha256": {
+        "normal": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3",
+        "shiny": "0353b00ea57d94288dd45fae50f23652afdb6fe3a363db7f46251748c18cc958",
+        "placed": "935de515c8385172f029032c6ddbbfaaf9838f4c5b1a553423e959afe0931ebc"
       }
     },
     {

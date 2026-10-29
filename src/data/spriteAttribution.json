@@ -181,10 +181,12 @@
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/667.png as added in commit 5bdf22873d (2021-02-18, 'feat: add gen6 sprites')."
   },
   "668": {
-   "artists": [],
+   "artists": [
+    "Arkeis"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/668.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '668 Pyroar-male': Spriter 'Arkeis (front), Layell (back)', QC 'leParagon, G.E.Z.'; only 84% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '668 Pyroar-male': Spriter 'Arkeis (front), Layell (back)', QC 'leParagon, G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/668m-png.282237/, moved 1 row down. Michael picked this pair on 2026-10-29.",
    "name": "pyroar-male"
   },
   "669": {
@@ -676,9 +678,8 @@
    ],
    "role": "drew",
    "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas': Spriter 'N-Kin', QC 'princessofmusic, leParagon, G.E.Z.'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/716_1-png.273690/: 99.9% of opaque pixels overlap, 11% have the same colour (a revision or a palette change).",
-   "name": "xerneas",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/716.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit')."
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas': Spriter 'N-Kin', QC 'princessofmusic, leParagon, G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/716_1-png.273690/. Michael picked this pair on 2026-10-29.",
+   "name": "xerneas"
   },
   "717": {
    "artists": [
@@ -2996,11 +2997,11 @@
   },
   "949": {
    "artists": [
-    "KingOfThe-X-Roads"
+    "Sopita_Yorita"
    ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/949.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9'). PokéAPI sprites README, Special Thanks: 'KingOfThe-X-Roads for providing the front_default sprites for generation 9.' KingOfThe-X-Roads's deviation 'Gen 9 Sprites - Pokemon Scarlet and Violet' (deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834) lists this species under 'Sprites done'. No Smogon sheet row links the same drawing.",
+   "via": "gen9-resource-pack",
+   "evidence": "The Generation 9 Resource Pack's sheet 'Sprites list' (Drive 1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY), tab 'Pokemon Sprites', No 49 'Toedscruel': Front 'Sopita_Yorita' (export line 51). The app file is Graphics/Pokemon/Front/TOEDSCRUEL.png from Generation_9_Pack_v3.3.8.rar (sha256 396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490), 192x192, reduced by exactly 2 to 96x96, moved 5 rows up. Michael picked this pair on 2026-10-29.",
    "name": "toedscruel"
   },
   "950": {
@@ -3760,10 +3761,12 @@
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/1025.png as added in commit 471a90a202 (2026-03-08, 'Add missing Pokémon sprites (#196)')."
   },
   "10025": {
-   "artists": [],
+   "artists": [
+    "RedRooster"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10025.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '678 Meowstic-female': Spriter 'RedRooster', QC 'Quanyails, Layell, aXl, leParagon'; only 78% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '678 Meowstic-female': Spriter 'RedRooster', QC 'Quanyails, Layell, aXl, leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/678f-png.273647/, moved 2 rows down and 2 columns right. Michael picked this pair on 2026-10-29.",
    "name": "meowstic-female"
   },
   "10026": {
@@ -6071,33 +6074,13 @@
    "name": "hawlucha-mega"
   },
   "10301": {
-   "artists": [],
+   "artists": [
+    "Caruban"
+   ],
    "role": "drew",
-   "via": "my151",
-   "evidence": "my151's sprite lab drew it (spriteSources.json: source 'my151'). No outside artist.",
-   "name": "zygarde-mega",
-   "lineage": {
-    "mainReference": "The official artwork of Mega Zygarde.",
-    "colourReferences": [
-     {
-      "file": "10120.png",
-      "pokemon": "zygarde-complete",
-      "artists": [
-       "leParagon"
-      ]
-     },
-     {
-      "file": "718.png",
-      "pokemon": "zygarde-50",
-      "artists": [
-       "Legitimate Username",
-       "Noscium"
-      ]
-     }
-    ],
-    "note": "my151's sprite lab drew it from the official artwork; the two fan sprites went to the model as colour references only (Michael, 2026-10-13). Not credited in the panel (Michael, 2026-10-13: \"Do not credit my151 for zygarde\").",
-    "source": "sprite-lab/docs/model-inputs-audit.md on claude/sprite-lab"
-   }
+   "via": "gen9-resource-pack",
+   "evidence": "The Generation 9 Resource Pack's sheet 'Sprites list' (Drive 1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY), tab 'Pokemon Sprites', No 24 'Mega Zygarde': Front 'Caruban' (export line 202). The app file is Graphics/Pokemon/Front/ZYGARDE_4.png from Generation_9_Pack_v3.3.8.rar (sha256 396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490), 192x192, reduced by exactly 2 to 96x96. Michael picked this pair on 2026-10-29.",
+   "name": "zygarde-mega"
   },
   "10302": {
    "artists": [
@@ -6322,8 +6305,7 @@
    ],
    "role": "drew",
    "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/716_2-png.274485/: 99.4% of opaque pixels overlap, 13% have the same colour (a revision or a palette change).",
-   "cleanup": "Removed 66 faint stray pixels, at most 40 of 255 opaque, around the antlers. Every opaque pixel is unchanged."
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/716_2-png.274485/. Michael picked this pair on 2026-10-29."
   },
   "11002": {
    "artists": [
@@ -7828,6 +7810,7 @@
   "Brylark": {},
   "Buna": {},
   "Bynine": {},
+  "Caruban": {},
   "Corson": {},
   "Cynda": {},
   "Dleep": {},
@@ -7872,6 +7855,7 @@
   "RedRooster": {},
   "Siiilver": {},
   "Sleet": {},
+  "Sopita_Yorita": {},
   "SpheX": {},
   "Spook": {},
   "TeraVolt": {},
@@ -8007,7 +7991,9 @@
    "url": "https://eeveeexpo.com/resources/1101/",
    "sheet": "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY",
    "artists": [
-    "KingOfThe-X-Roads"
+    "Caruban",
+    "KingOfThe-X-Roads",
+    "Sopita_Yorita"
    ]
   },
   "pokeapi": {

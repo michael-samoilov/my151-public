@@ -16730,7 +16730,7 @@
  },
  {
   "file": "public/sprites/pokemon/668.png",
-  "sha256": "402dc30ff5c20df0937256c69042940b2aa70897d24aeac20899426b318e15d2",
+  "sha256": "c28f3144fec2926a77f66563d289846abb6e08baf04044dba1acead51d228e33",
   "pokemon": [
    "pyroar"
   ],
@@ -16739,18 +16739,36 @@
    "League builder",
    "Pokédex builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "pokeapi",
-  "evidenceType": "none",
+  "creditedNow": [
+   "Arkeis"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/668m-png.282237/",
-    "localCopy": "credits-audit/dl/smogon/668m-png.282237",
-    "sha256": "fa9d4ab681f63413c4c4454f5fec363ffd7acc8fb283bdf275304b055cecf6a2"
+    "sha256": "fa9d4ab681f63413c4c4454f5fec363ffd7acc8fb283bdf275304b055cecf6a2",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '668 Pyroar-male', Spriter 'Arkeis (front), Layell (back)'"
    }
   ],
-  "comparison": "closest Smogon attachment 668m-png.282237 (sheet row '668 Pyroar-male', Spriter 'Arkeis (front), Layell (back)'): mask IoU 0.8363, same colour on 0% of shared pixels; closest pack file Front/PYROAR.png: mask IoU 0.8363, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/668.png from commit b629bcff50 (2021-03-15), which names no artist",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), moved 1 row down so its ink is centred on the replaced sprite's ink and stands on its bottom edge",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "402dc30ff5c20df0937256c69042940b2aa70897d24aeac20899426b318e15d2",
+   "creditedNow": [],
+   "creditedVia": "pokeapi",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/668m-png.282237/",
+     "localCopy": "credits-audit/dl/smogon/668m-png.282237",
+     "sha256": "fa9d4ab681f63413c4c4454f5fec363ffd7acc8fb283bdf275304b055cecf6a2"
+    }
+   ],
+   "comparison": "closest Smogon attachment 668m-png.282237 (sheet row '668 Pyroar-male', Spriter 'Arkeis (front), Layell (back)'): mask IoU 0.8363, same colour on 0% of shared pixels; closest pack file Front/PYROAR.png: mask IoU 0.8363, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/668.png from commit b629bcff50 (2021-03-15), which names no artist",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/669.png",
@@ -18151,7 +18169,7 @@
  },
  {
   "file": "public/sprites/pokemon/716.png",
-  "sha256": "84a1403960504470a46dc66f167a211f82720234d50887ad8b574fd7d803ccd8",
+  "sha256": "2933e596cfdd523c20d52933663405cd9371df28806790739ed3965eefdd0ae2",
   "pokemon": [
    "xerneas"
   ],
@@ -18164,21 +18182,39 @@
    "N-Kin"
   ],
   "creditedVia": "smogon-gen6",
-  "evidenceType": "near-only",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/716_1-png.273690/",
-    "localCopy": "credits-audit/dl/smogon/716_1-png.273690",
-    "sha256": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d"
-   },
-   {
-    "url": "https://www.smogon.com/forums/attachments/716_2-png.274485/",
-    "localCopy": "credits-audit/dl/smogon/716_2-png.274485",
-    "sha256": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3"
+    "sha256": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '716 Xerneas', Spriter 'N-Kin'"
    }
   ],
-  "comparison": "closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9992, same colour on 11% of shared pixels; closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9319, same colour on 12% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/716-active.png from commit 8034a5f31e (2024-11-08), which names no artist. Kept credit comes from the record's sheet row '716 Xerneas' (Spriter 'N-Kin')",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), on the artist's canvas, which already centres the ink on the replaced sprite's ink and on its bottom edge",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "84a1403960504470a46dc66f167a211f82720234d50887ad8b574fd7d803ccd8",
+   "creditedNow": [
+    "N-Kin"
+   ],
+   "creditedVia": "smogon-gen6",
+   "evidenceType": "near-only",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/716_1-png.273690/",
+     "localCopy": "credits-audit/dl/smogon/716_1-png.273690",
+     "sha256": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d"
+    },
+    {
+     "url": "https://www.smogon.com/forums/attachments/716_2-png.274485/",
+     "localCopy": "credits-audit/dl/smogon/716_2-png.274485",
+     "sha256": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3"
+    }
+   ],
+   "comparison": "closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9992, same colour on 11% of shared pixels; closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9319, same colour on 12% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/716-active.png from commit 8034a5f31e (2024-11-08), which names no artist. Kept credit comes from the record's sheet row '716 Xerneas' (Spriter 'N-Kin')",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/717.png",
@@ -24771,7 +24807,7 @@
  },
  {
   "file": "public/sprites/pokemon/949.png",
-  "sha256": "479628728d497e8d68c029950c6c69b3832c77b6cd14481423646e7fb8a3c9fb",
+  "sha256": "5d0d3d43d235e312f03fe34963fa28e4ff81360a1813e4d5598bebef9136fd53",
   "pokemon": [
    "toedscruel"
   ],
@@ -24781,25 +24817,46 @@
    "Pokédex builder"
   ],
   "creditedNow": [
-   "KingOfThe-X-Roads"
+   "Sopita_Yorita"
   ],
-  "creditedVia": "pokeapi",
-  "evidenceType": "pokeapi-readme",
+  "creditedVia": "gen9-resource-pack",
+  "evidenceType": "exact-gen9-pack-sheet",
   "sources": [
    {
-    "url": "https://github.com/PokeAPI/sprites/blob/aa370b74e27b4028c23dabeb1aaa21e75f81231d/sprites/pokemon/949.png",
-    "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/.git",
-    "sha256": "479628728d497e8d68c029950c6c69b3832c77b6cd14481423646e7fb8a3c9fb",
-    "gitBlob": "c1476c5b955d1fe4ad463d4166ac88e40d446dcc"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/aa370b74e27b4028c23dabeb1aaa21e75f81231d/README.md#L312",
-    "sha256": null,
-    "quote": "for providing the front_default sprites for generation 9."
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "sha256": "ef18c08cbd93a9ba574b6daca60f4538f46ddc2c4ee65647b753c1a3d5297d39",
+    "archive": "Generation_9_Pack_v3.3.8.rar",
+    "archiveSha256": "396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490",
+    "archivePath": "Graphics/Pokemon/Front/TOEDSCRUEL.png",
+    "sheet": "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY",
+    "sheetRow": "tab 'Pokemon Sprites', No 49 'Toedscruel': Front 'Sopita_Yorita' (export line 51)"
    }
   ],
-  "comparison": "the app file is byte-identical to sprites/pokemon/949.png as added in PokéAPI commit aa370b74e2, the commit that put the README line crediting KingOfThe-X-Roads \"for providing the front_default sprites for generation 9.\" No file posted by the artist was found to compare pixel by pixel.",
-  "verdict": "confirmed"
+  "comparison": "exact pixel match to the pack file at 1/2 scale, moved 5 rows up so its ink is centred on the replaced sprite's ink and stands on its bottom edge; the pack sheet row names Sopita_Yorita",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "479628728d497e8d68c029950c6c69b3832c77b6cd14481423646e7fb8a3c9fb",
+   "creditedNow": [
+    "KingOfThe-X-Roads"
+   ],
+   "creditedVia": "pokeapi",
+   "evidenceType": "pokeapi-readme",
+   "sources": [
+    {
+     "url": "https://github.com/PokeAPI/sprites/blob/aa370b74e27b4028c23dabeb1aaa21e75f81231d/sprites/pokemon/949.png",
+     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/.git",
+     "sha256": "479628728d497e8d68c029950c6c69b3832c77b6cd14481423646e7fb8a3c9fb",
+     "gitBlob": "c1476c5b955d1fe4ad463d4166ac88e40d446dcc"
+    },
+    {
+     "url": "https://github.com/PokeAPI/sprites/blob/aa370b74e27b4028c23dabeb1aaa21e75f81231d/README.md#L312",
+     "sha256": null,
+     "quote": "for providing the front_default sprites for generation 9."
+    }
+   ],
+   "comparison": "the app file is byte-identical to sprites/pokemon/949.png as added in PokéAPI commit aa370b74e2, the commit that put the README line crediting KingOfThe-X-Roads \"for providing the front_default sprites for generation 9.\" No file posted by the artist was found to compare pixel by pixel.",
+   "verdict": "confirmed"
+  }
  },
  {
   "file": "public/sprites/pokemon/950.png",
@@ -27517,7 +27574,7 @@
  },
  {
   "file": "public/sprites/pokemon/10025.png",
-  "sha256": "5740bbfb12d5cfd5458c6b19186489a35533a2e329dc7db35977398565073333",
+  "sha256": "268532013357b06224303509a82195f60332b776b4afed931c78688b165f6363",
   "pokemon": [
    "meowstic-female"
   ],
@@ -27525,18 +27582,36 @@
    "Favorite picker",
    "League builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "pokeapi",
-  "evidenceType": "none",
+  "creditedNow": [
+   "RedRooster"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/678f-png.273647/",
-    "localCopy": "credits-audit/dl/smogon/678f-png.273647",
-    "sha256": "1831faf34e717dafa82598233c5ae0dfe49c444d2ad7183e87070ecfa85f00d2"
+    "sha256": "1831faf34e717dafa82598233c5ae0dfe49c444d2ad7183e87070ecfa85f00d2",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '678 Meowstic-female', Spriter 'RedRooster'"
    }
   ],
-  "comparison": "closest Smogon attachment 678f-png.273647 (sheet row '678 Meowstic-female', Spriter 'RedRooster'): mask IoU 0.778, same colour on 0% of shared pixels; closest pack file Front/MEOWSTIC_1.png: mask IoU 0.778, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10025.png from commit b629bcff50 (2021-03-15), which names no artist",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), moved 2 rows down and 2 columns right so its ink is centred on the replaced sprite's ink and stands on its bottom edge",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "5740bbfb12d5cfd5458c6b19186489a35533a2e329dc7db35977398565073333",
+   "creditedNow": [],
+   "creditedVia": "pokeapi",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/678f-png.273647/",
+     "localCopy": "credits-audit/dl/smogon/678f-png.273647",
+     "sha256": "1831faf34e717dafa82598233c5ae0dfe49c444d2ad7183e87070ecfa85f00d2"
+    }
+   ],
+   "comparison": "closest Smogon attachment 678f-png.273647 (sheet row '678 Meowstic-female', Spriter 'RedRooster'): mask IoU 0.778, same colour on 0% of shared pixels; closest pack file Front/MEOWSTIC_1.png: mask IoU 0.778, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10025.png from commit b629bcff50 (2021-03-15), which names no artist",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/10026.png",
@@ -33916,7 +33991,7 @@
  },
  {
   "file": "public/sprites/pokemon/10301.png",
-  "sha256": "c654558c9072c95d157754f19f6c3838a575a5093207627849a334cef406ab57",
+  "sha256": "ca33346a903e826c9e79888cffaec6d8209c390de29713be49da0db490958b45",
   "pokemon": [
    "Mega Zygarde"
   ],
@@ -33924,12 +33999,55 @@
    "Favorite picker",
    "League builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "my151",
-  "evidenceType": "repository-history",
-  "sources": [],
-  "comparison": "No outside source matches (closest: OGERPON_11.png IoU 0.5678). spriteAttribution.json records it as drawn in my151's sprite lab; the file entered this repository in commit 30bb4077.",
-  "verdict": "confirmed"
+  "creditedNow": [
+   "Caruban"
+  ],
+  "creditedVia": "gen9-resource-pack",
+  "evidenceType": "exact-gen9-pack-sheet",
+  "sources": [
+   {
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "sha256": "750bf1aefbfde1e760c7cfe3ce58c10b3b4becae2437bc979018a84f487010c9",
+    "archive": "Generation_9_Pack_v3.3.8.rar",
+    "archiveSha256": "396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490",
+    "archivePath": "Graphics/Pokemon/Front/ZYGARDE_4.png",
+    "sheet": "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY",
+    "sheetRow": "tab 'Pokemon Sprites', No 24 'Mega Zygarde': Front 'Caruban' (export line 202)"
+   }
+  ],
+  "comparison": "exact pixel match to the pack file at 1/2 scale, on the artist's canvas, which already centres the ink on the replaced sprite's ink and on its bottom edge; the pack sheet row names Caruban",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "c654558c9072c95d157754f19f6c3838a575a5093207627849a334cef406ab57",
+   "creditedNow": [],
+   "creditedVia": "my151",
+   "evidenceType": "repository-history",
+   "sources": [],
+   "comparison": "No outside source matches (closest: OGERPON_11.png IoU 0.5678). spriteAttribution.json records it as drawn in my151's sprite lab; the file entered this repository in commit 30bb4077.",
+   "verdict": "confirmed",
+   "lineage": {
+    "mainReference": "The official artwork of Mega Zygarde.",
+    "colourReferences": [
+     {
+      "file": "10120.png",
+      "pokemon": "zygarde-complete",
+      "artists": [
+       "leParagon"
+      ]
+     },
+     {
+      "file": "718.png",
+      "pokemon": "zygarde-50",
+      "artists": [
+       "Legitimate Username",
+       "Noscium"
+      ]
+     }
+    ],
+    "note": "my151's sprite lab drew it from the official artwork; the two fan sprites went to the model as colour references only (Michael, 2026-10-13). Not credited in the panel (Michael, 2026-10-13: \"Do not credit my151 for zygarde\").",
+    "source": "sprite-lab/docs/model-inputs-audit.md on claude/sprite-lab"
+   }
+  }
  },
  {
   "file": "public/sprites/pokemon/10302.png",
@@ -34678,7 +34796,7 @@
  },
  {
   "file": "public/sprites/pokemon/11001.png",
-  "sha256": "79d4b24cccadfc2551177a400d30f66236805de13206f59bf5803b10f396af31",
+  "sha256": "41bae923a6af66bc3f9591555e594500f340758f26255c7bdc51ecdcdd87f3a5",
   "pokemon": [
    "xerneas-neutral"
   ],
@@ -34691,21 +34809,40 @@
    "leParagon"
   ],
   "creditedVia": "smogon-gen6",
-  "evidenceType": "near-only",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/716_2-png.274485/",
-    "localCopy": "credits-audit/dl/smogon/716_2-png.274485",
-    "sha256": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3"
-   },
-   {
-    "url": "https://www.smogon.com/forums/attachments/716_1-png.273690/",
-    "localCopy": "credits-audit/dl/smogon/716_1-png.273690",
-    "sha256": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d"
+    "sha256": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'"
    }
   ],
-  "comparison": "closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9938, same colour on 13% of shared pixels; closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9353, same colour on 13% of shared pixels. Kept credit comes from the record's sheet row '716 Xerneas-inactive' (Spriter 'N-Kin, leParagon, G.E.Z. (Back)')",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), on the artist's canvas, which already centres the ink on the replaced sprite's ink and on its bottom edge",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "79d4b24cccadfc2551177a400d30f66236805de13206f59bf5803b10f396af31",
+   "creditedNow": [
+    "N-Kin",
+    "leParagon"
+   ],
+   "creditedVia": "smogon-gen6",
+   "evidenceType": "near-only",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/716_2-png.274485/",
+     "localCopy": "credits-audit/dl/smogon/716_2-png.274485",
+     "sha256": "11711456684131f74fd479998febc86b88973d5572b15e232357bf956ada56d3"
+    },
+    {
+     "url": "https://www.smogon.com/forums/attachments/716_1-png.273690/",
+     "localCopy": "credits-audit/dl/smogon/716_1-png.273690",
+     "sha256": "524d48511368024413cc603686d4691a38345f7337e546ca0fbd03889981a35d"
+    }
+   ],
+   "comparison": "closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9938, same colour on 13% of shared pixels; closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9353, same colour on 13% of shared pixels. Kept credit comes from the record's sheet row '716 Xerneas-inactive' (Spriter 'N-Kin, leParagon, G.E.Z. (Back)')",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/11002.png",
@@ -73998,6 +74135,153 @@
    }
   ],
   "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 54 '671 Florges-red': Spriter 'princessofmusic'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/668.png",
+  "sha256": "624baac450692bb29c4f6d0fe05b79a87354cc691f389fed55a666d8488610b1",
+  "pokemon": [
+   "pyroar (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Arkeis"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/668ms-png.282238/",
+    "sha256": "3b3b5bf77b876d9782b18c88ce429908fc4a0d780672e29f985fefcab6c70b38"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 41 '668 Pyroar-male': Spriter 'Arkeis (front), Layell (back)'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/716.png",
+  "sha256": "144ae08c216c5156c95a2a5f22914aa914edec860a42c3566ad29c22e6c8f530",
+  "pokemon": [
+   "xerneas (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "N-Kin"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/716_1s-png.273691/",
+    "sha256": "9ca1e2885e24445cde132b280abe91a4d83e2ffb96bcce6c490167f4776a7ac4"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 122 '716 Xerneas': Spriter 'N-Kin'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/949.png",
+  "sha256": "460c08a93037f38e3ae7e0ad32adf379fd91d3f243e689c2801317cc1fbe6a63",
+  "pokemon": [
+   "toedscruel (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Sopita_Yorita"
+  ],
+  "creditedVia": "gen9-resource-pack",
+  "evidenceType": "exact-gen9-pack-sheet",
+  "sources": [
+   {
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "archivePath": "Graphics/Pokemon/Front shiny/TOEDSCRUEL.png",
+    "sha256": "5f31699c7cc8ce425dea780249f9d94e0db1342cb6602e7ecd82fb79a1d9251b"
+   }
+  ],
+  "comparison": "same pixels as the Generation 9 pack shiny on the sheet row that names the artist, at 1/2 scale and placed as the normal sprite: pack 'Sprites list' sheet line 51 'Toedscruel': Gen 8 Pack Style Front 'Sopita_Yorita'; the sheet has no separate shiny-front column",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10025.png",
+  "sha256": "86d7cbaef8b1938c2b847359138662a1f0a840aa6f4da519d896ccb504b01296",
+  "pokemon": [
+   "meowstic-female (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "RedRooster"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/678fs-png.282244/",
+    "sha256": "50e01b5aeee809e2b768f8bb7a5c3b84c214da1823cf27f8a2f35877eba49d2a"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 75 '678 Meowstic-female': Spriter 'RedRooster'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10301.png",
+  "sha256": "076f9f248544d10e4225117caaf8e0f96e448fa733a1b61e149ef268cccd3262",
+  "pokemon": [
+   "Mega Zygarde (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Caruban"
+  ],
+  "creditedVia": "gen9-resource-pack",
+  "evidenceType": "exact-gen9-pack-sheet",
+  "sources": [
+   {
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "archivePath": "Graphics/Pokemon/Front shiny/ZYGARDE_4.png",
+    "sha256": "a9f1d5d702695ac3281bee525c4b28d057bc8d84522a3af1cc9d07b6c67a7399"
+   }
+  ],
+  "comparison": "same pixels as the Generation 9 pack shiny on the sheet row that names the artist, at 1/2 scale and placed as the normal sprite: pack 'Sprites list' sheet line 202 'Mega Zygarde': Gen 8 Pack Style Front 'Caruban'; the sheet has no separate shiny-front column",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/11001.png",
+  "sha256": "935de515c8385172f029032c6ddbbfaaf9838f4c5b1a553423e959afe0931ebc",
+  "pokemon": [
+   "xerneas-neutral (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "N-Kin",
+   "leParagon"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/716_2s-png.274486/",
+    "sha256": "0353b00ea57d94288dd45fae50f23652afdb6fe3a363db7f46251748c18cc958"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 123 '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'",
   "verdict": "confirmed"
  }
 ]
