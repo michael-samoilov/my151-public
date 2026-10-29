@@ -6,6 +6,8 @@ import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ShinyLookSwitch } from '@/components/shiny/ShinyLookSwitch';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
@@ -249,6 +251,7 @@ function FavoritesContent({ sel, setSel }: {
         body={t('favorites.nudge.complete.body')}
         onShown={completionShown}
       />
+      {PREVIEW_FEATURES ? <ShinyLookSwitch /> : null}
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} shiny={shiny} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />

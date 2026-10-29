@@ -37,6 +37,8 @@ import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
 import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ShinyLookSwitch } from '@/components/shiny/ShinyLookSwitch';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 
 const importExportOverlay = () => reloadIfStale(import('./components/LeagueExportOverlay'));
 const LeagueExportOverlay = lazy(() => importExportOverlay().then((m) => ({ default: m.LeagueExportOverlay })));
@@ -327,6 +329,7 @@ export function LeagueApp() {
             and goes `inert` when the other is showing, so a sheet mounted in
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
+        {PREVIEW_FEATURES ? <ShinyLookSwitch /> : null}
         {exportOpen && <ErrorBoundary where="league-export"><Suspense fallback={<ScreenSpinner />}><LeagueExportOverlay /></Suspense></ErrorBoundary>}
         <LeagueFunnelNudge />
       </div>

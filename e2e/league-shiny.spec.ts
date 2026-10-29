@@ -26,6 +26,7 @@ async function openCard(page: Page) {
 test('picks made with Shiny on are shiny on the card, its ace, partner, and legend, and its export', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   await openCard(page);
+  await expect(page.getByTestId('shiny-look-switch'), 'the preview-only look switch stays out of a production build').toHaveCount(0);
   await page.click('[data-testid="card-cell-1-1"]');
   const toggle = page.getByTestId('browser-shiny-toggle');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
