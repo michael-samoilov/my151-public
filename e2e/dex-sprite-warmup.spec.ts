@@ -33,3 +33,16 @@ test('Data Saver turns the background sprite download off', async ({ page }, tes
   await testInfo.attach('data-saver-sprites.json', { body: JSON.stringify(requested), contentType: 'application/json' });
   expect(requested).toEqual([]);
 });
+
+test('hovering a section moves its picker sprites to the front of the background download', async ({ page }, testInfo) => {
+  const requested = recordSprites(page);
+  await page.goto('/pokedex-builder?notme');
+  const mythical = page.locator('[data-section-id="mythical"]');
+  await mythical.hover();
+  const before = requested.length;
+  // Mew heads the Mythical picker, the last section on the page.
+  await expect.poll(() => requested.includes('151.png'), { timeout: 20_000 }).toBe(true);
+  const ahead = requested.indexOf('151.png') - before;
+  await testInfo.attach('hover-order.json', { body: JSON.stringify({ requestedBeforeHover: before, requestedBetweenHoverAndMew: ahead, requested }), contentType: 'application/json' });
+  expect(ahead).toBeLessThanOrEqual(8);
+});

@@ -105,7 +105,7 @@ function App() {
 
   const analyticsUnlocked = isAnalyticsUnlocked(usePokedexStore((s) => s.milestoneMax));
   useEffect(() => {
-    const conn = (navigator as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
     if (conn?.saveData) return;
     let cancelled = false;
     whenIdle(() => {
@@ -127,8 +127,7 @@ function App() {
                     }
                   });
                   whenIdle(() => {
-                    if (cancelled || conn?.effectiveType?.endsWith('2g')) return;
-                    warmSprites(spriteWarmupPlan(usePokedexStore.getState().sections));
+                    if (!cancelled) warmSprites(spriteWarmupPlan(usePokedexStore.getState().sections));
                   });
                 });
               });
