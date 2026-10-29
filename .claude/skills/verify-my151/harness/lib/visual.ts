@@ -89,8 +89,7 @@ const searchLeagueAce = (query: string) => async (page: Page) => {
   await page.locator('[data-testid="league-slot-12"]').click();
   await page.locator('[data-testid="slot-ace"]').click({ position: { x: 8, y: 8 } });
   await page.locator('[data-filter-chip="my-dex"]').first().waitFor({ timeout: 30_000 });
-  const search = page.getByRole('searchbox').or(page.locator('input[type="search"], input[type="text"]')).last();
-  await search.fill(query);
+  await page.locator('input[placeholder]').filter({ visible: true }).last().fill(query);
   await page.locator('[data-testid="verify-evo-card"] img[src*="/sprites/pokemon/"]').first().waitFor({ timeout: 30_000 });
 };
 const openArtist = (name: string) => async (page: Page) => {
