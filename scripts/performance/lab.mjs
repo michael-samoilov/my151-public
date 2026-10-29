@@ -94,7 +94,7 @@ function observe(readySelector) {
 }
 
 async function fullDexFixture(browser, origin) {
-  const context = await browser.newContext({ ignoreHTTPSErrors: true, serviceWorkers: 'block' });
+  const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
   await page.goto(`${origin}/pokedex-builder?tune&notme`);
   await page.waitForFunction(() => window.__pokedexStore);
@@ -114,7 +114,7 @@ async function fullDexFixture(browser, origin) {
 }
 
 async function measure(browser, origin, profile, spec, fixture) {
-  const context = await browser.newContext({ ...profile.context, ignoreHTTPSErrors: true, serviceWorkers: 'block' });
+  const context = await browser.newContext({ ...profile.context, serviceWorkers: 'block' });
   await context.addInitScript(() => localStorage.setItem('p151-league-promo-seen', '1'));
   if (spec.fullDex) await context.addInitScript((saved) => localStorage.setItem('personal-151-pokedex-v3', saved), fixture);
   await context.addInitScript(observe, spec.ready);
@@ -153,9 +153,11 @@ holdBrowserLock();
 {
   const work = fs.mkdtempSync(path.join(tmpdir(), 'my151-lab-'));
   const servers = [];
-  const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--allow-insecure-localhost'] });
+  const tls = selfSignedTls(work);
+  // Trust the lab's own certificate by its key. A certificate error that is
+  // only ignored also turns off Chrome's HTTP cache, which real visitors have.
+  const browser = await chromium.launch({ executablePath: chromiumPath(), args: [`--ignore-certificate-errors-spki-list=${tls.spki}`] });
   try {
-    const tls = selfSignedTls(work);
 
     const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
     const needsFixture = cases.some(([, spec]) => spec.fullDex);
