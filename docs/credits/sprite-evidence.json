@@ -60073,6 +60073,37 @@
   "verdict": "confirmed"
  },
  {
+  "file": "public/sprites/pokemon/shiny/919.png",
+  "sha256": "b4380b227da21a095a3e7b81181ead455d7a95fb4f131519007dda5fbe9c2e31",
+  "pokemon": [
+   "nymble (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Blaquaza"
+  ],
+  "creditedVia": "smogon-gen9",
+  "evidenceType": "exact-smogon-sheet",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/919s-png.732395/",
+    "sha256": "a38f5795e338461138bba80f26b445bda22b471cd700b2e277fc663cbdc01a75",
+    "post": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/post-10521294",
+    "postAuthor": "G.E.Z."
+   },
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/919.png",
+    "sha256": "a38f5795e338461138bba80f26b445bda22b471cd700b2e277fc663cbdc01a75"
+   }
+  ],
+  "comparison": "my151's recolour of the normal sprite in the colours of the Front shiny attachment of the sheet row that credits the normal sprite: smogon-gen9 sheet, tab 'static sprites', line 16 '919 Nymble': Spriter 'Blaquaza'. That shiny lies 6 pixels off the normal sprite's outline, so each of the normal sprite's 10 colours takes the shiny colour that most often lies over it; 878 of the 894 pixels that both cover follow that map. PokéAPI's Black and White shiny/919.png at ba40397 has the same bytes as the attachment",
+  "verdict": "confirmed"
+ },
+ {
   "file": "public/sprites/pokemon/shiny/920.png",
   "sha256": "b015cf3d18a99bbb218b1a53a2afbbfa844b7444eb211433ef9a69048f6a8ba7",
   "pokemon": [
@@ -63035,6 +63066,28 @@
   "verdict": "confirmed"
  },
  {
+  "file": "public/sprites/pokemon/shiny/1023.png",
+  "sha256": "1e8dc4b88bd4bb52fff8b9d771680fd58322bc4bea7e6f98066b174aab9cbea6",
+  "pokemon": [
+   "iron-crown (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [],
+  "creditedVia": "pokeapi",
+  "evidenceType": "follows-normal",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/1023.png",
+    "sha256": "c7a0a5d3fb9552e9f41cde3f5d680f6b5671dfcf9720906ae6eec4b1785264c1"
+   }
+  ],
+  "comparison": "the pixels of PokéAPI's shiny/1023.png, added in commit 4c8dbb2 (2023-12-22, 'Add shiny sprites'), moved 2 rows up onto the normal sprite's canvas. The normal sprite's row credits KingOfThe-X-Roads; no source names the shiny's artist, so the shiny follows its normal sprite",
+  "verdict": "unproven"
+ },
+ {
   "file": "public/sprites/pokemon/shiny/1024.png",
   "sha256": "2078cbbdc9f2cb8f226155cb1f4467a8c4dd81e5ea2e4144a1bbc0d0e2c4c344",
   "pokemon": [
@@ -63355,6 +63408,81 @@
    }
   ],
   "comparison": "PokéAPI's shiny of a file whose own row is unproven (none); the shiny's artist is not confirmed",
+  "verdict": "unproven"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10013.png",
+  "sha256": "76f4cdfc27dcb8f5bf093637850b99ac6655e5844f2220f530c2a32a377d966b",
+  "pokemon": [
+   "castform-sunny (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "pokeapi",
+  "evidenceType": "source-only",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10013.png",
+    "sha256": "3cdeaf3fd8b02d6a8b28ddf0aa93b9cfad7e519f6076b30d0ed2a225f227c5d8"
+   },
+   {
+    "url": "https://play.pokemonshowdown.com/sprites/gen5-shiny/castform-sunny.png",
+    "sha256": "3cdeaf3fd8b02d6a8b28ddf0aa93b9cfad7e519f6076b30d0ed2a225f227c5d8"
+   }
+  ],
+  "comparison": "pinned source identified; no source names the shiny's artist. The app file has the pixels of PokéAPI's Black and White shiny/10013.png, added in commit b629bcf (2021-03-15, 'feat: update gen-v folder with the new Smogon sprites'), moved 6 rows up and 1 column left onto the normal sprite's canvas. Pokémon Showdown's gen5-shiny/castform-sunny.png has the same pixels. The Smogon Sprite Project made the file; no sheet row names its artist",
+  "verdict": "unproven"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10014.png",
+  "sha256": "2c8e9343cdef660cae0a4ca8c9d5dcb0bfba6b182a806de7a7753fd1e6e11f3d",
+  "pokemon": [
+   "castform-rainy (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "pokeapi",
+  "evidenceType": "source-only",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10014.png",
+    "sha256": "fbda693d751416fcdaf7bf44a9975db3cfd751a7986cde0199339d752aec0857"
+   },
+   {
+    "url": "https://play.pokemonshowdown.com/sprites/gen5-shiny/castform-rainy.png",
+    "sha256": "344b2b968c59a44f102e22e4713fb011c74c7ae3ff159643ddbdf3eb6c6dfb88"
+   }
+  ],
+  "comparison": "pinned source identified; no source names the shiny's artist. The app file has the pixels of PokéAPI's Black and White shiny/10014.png, added in commit b629bcf (2021-03-15, 'feat: update gen-v folder with the new Smogon sprites'), moved 6 rows up and 3 columns left onto the normal sprite's canvas. Pokémon Showdown's gen5-shiny/castform-rainy.png has the same pixels. The Smogon Sprite Project made the file; no sheet row names its artist",
+  "verdict": "unproven"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10015.png",
+  "sha256": "c9e2542f967a5c428ec7e1329faea30b03d2783f32e455d9a87fda119f46a4e4",
+  "pokemon": [
+   "castform-snowy (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "pokeapi",
+  "evidenceType": "source-only",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10015.png",
+    "sha256": "ee4003efd671c1cb1f0f05722cfe8ecbf3216dbcd76d3806372eb154ea043457"
+   },
+   {
+    "url": "https://play.pokemonshowdown.com/sprites/gen5-shiny/castform-snowy.png",
+    "sha256": "4faa43e41c701cf237e0887d3945908e69c98ae8ba960ee13c2813651b9969fd"
+   }
+  ],
+  "comparison": "pinned source identified; no source names the shiny's artist. The app file has the pixels of PokéAPI's Black and White shiny/10015.png, added in commit b629bcf (2021-03-15, 'feat: update gen-v folder with the new Smogon sprites'), moved 6 rows up and 1 column left onto the normal sprite's canvas. Pokémon Showdown's gen5-shiny/castform-snowy.png has the same pixels. The Smogon Sprite Project made the file; no sheet row names its artist",
   "verdict": "unproven"
  },
  {
@@ -67132,6 +67260,32 @@
    }
   ],
   "comparison": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '264 Linoone', Spriter 'KingOfThe-X-Roads, leParagon (back)'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10176.png",
+  "sha256": "92f3d38b10de99f6b14ceeb73ad5a5c353c2770539a37a97aeb2af95ce0e2d37",
+  "pokemon": [
+   "darumaka-galar (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "G.E.Z."
+  ],
+  "creditedVia": "smogon-gen8",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/554_2s-png.208837/",
+    "sha256": "5baa38edd68cb5ab14f3521f61fdcfd3141f33ea50c7d22f1a7cab488bbd5777",
+    "post": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/post-8297649",
+    "postAuthor": "leParagon"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, moved 1 row down onto the normal sprite's canvas: smogon-gen8 sheet, tab 'static sprites', line 192 '554 Darumaka': Spriter 'G.E.Z.'",
   "verdict": "confirmed"
  },
  {
@@ -72359,6 +72513,28 @@
   "verdict": "official Game Freak"
  },
  {
+  "file": "public/sprites/pokemon/shiny/11064.png",
+  "sha256": "3284ff0591cf941279e268c7cab479e923bebe8a37e37c2cc0775d8b8a8d0e1a",
+  "pokemon": [
+   "pichu-spiky-eared (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [],
+  "creditedVia": null,
+  "evidenceType": "official-game-freak",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/172-spiky-eared.png",
+    "sha256": "4584ef3e850f23487a495b4f0f99a19b5af6e9dd691d9fa10f7ca6c19e4877e8"
+   }
+  ],
+  "comparison": "shiny of the Game Freak sprite: the pixels of PokéAPI's sprites/pokemon/shiny/172-spiky-eared.png from commit 5841d46 (pull request 247, 2026-08-04, 'Replace Spiky-eared Pichu Sprite'), which are PokéAPI's HeartGold and SoulSilver shiny/172-spiky-eared.png moved 8 rows down and 8 columns right",
+  "verdict": "official Game Freak"
+ },
+ {
   "file": "public/sprites/pokemon/shiny/11065.png",
   "sha256": "ebc63a8f825f8c4a2f143ebb7ec2418e1ead016f2679c1228ff9234f53e7d782",
   "pokemon": [
@@ -73215,6 +73391,37 @@
    }
   ],
   "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen7 sheet, tab 'static sprites', line 121 '802 Marshadow-zenith': Spriter 'leParagon'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/11112.png",
+  "sha256": "2f7fba6d1b37f4df2068fcb79225b9c56eb3ed57546f5fdb4e450a4432cb50a5",
+  "pokemon": [
+   "rotom-dj (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "KingOfThe-X-Roads"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://x.com/kingofthexroad5/status/2029643110163091657",
+    "sha256": "c163e7eb06f16239924f28e5e507d06cfa18f99149e14b59d8aee266415ae336",
+    "media": "https://pbs.twimg.com/media/HCq9osaWQAAOxrQ",
+    "quote": "I miss posting. You can have this Rotom Stereo sprite for free then - and predicted shiny"
+   },
+   {
+    "url": "https://x.com/kingofthexroad5/status/2031877478067663114",
+    "sha256": "c163e7eb06f16239924f28e5e507d06cfa18f99149e14b59d8aee266415ae336",
+    "media": "https://pbs.twimg.com/media/HDKtR2bXkAAN2Hi"
+   }
+  ],
+  "comparison": "KingOfThe-X-Roads's predicted shiny from his own X post of 2026-03-05, posted again with the same bytes on 2026-03-11: its 384x384 image is an exact 4x upscale, and at 1/4 scale it equals the app file except at 2 seam pixels, (41,40) and (34,68), that my151 recoloured to the shiny seam colour (139,0,49). The normal sprite has the same 2 pixels changed",
   "verdict": "confirmed"
  },
  {

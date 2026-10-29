@@ -347,6 +347,30 @@
       }
     },
     {
+      "file": "919",
+      "name": "Nymble",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/919.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/919.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "recolour": true,
+      "source": "Smogon Sprite Project via PokéAPI sprites",
+      "artists": [
+        "Blaquaza"
+      ],
+      "shinyArtists": [
+        "Blaquaza"
+      ],
+      "sha256": {
+        "normal": "ac7909aa58f967e327a00e61abee78173824d7fccde6e93659dc9cd8cfe5d79b",
+        "shiny": "a38f5795e338461138bba80f26b445bda22b471cd700b2e277fc663cbdc01a75",
+        "placed": "b4380b227da21a095a3e7b81181ead455d7a95fb4f131519007dda5fbe9c2e31"
+      }
+    },
+    {
       "file": "924",
       "name": "Tandemaus",
       "normal": "https://raw.githubusercontent.com/smogon/sprites/230bd7a051f167166065c91f8ec09ed36102eccf/src/sprites/gen5/standemaus.png",
@@ -435,6 +459,100 @@
       }
     },
     {
+      "file": "1023",
+      "name": "Iron Crown",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/1023.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/1023.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "shinyOffset": [
+        -2,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "c7bbb2cd4544276e375586beff0f266208547786f75201efe77f36036e03aace",
+        "shiny": "c7a0a5d3fb9552e9f41cde3f5d680f6b5671dfcf9720906ae6eec4b1785264c1",
+        "placed": "1e8dc4b88bd4bb52fff8b9d771680fd58322bc4bea7e6f98066b174aab9cbea6"
+      }
+    },
+    {
+      "file": "10013",
+      "name": "Castform (Sunny Form)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/10013.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10013.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "shinyOffset": [
+        -6,
+        -1
+      ],
+      "source": "Smogon Sprite Project via PokéAPI sprites",
+      "artists": [],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "8e03470ab427c5c05055bac3c89abc8198e3e67143b83ab726c79b081212a2e5",
+        "shiny": "3cdeaf3fd8b02d6a8b28ddf0aa93b9cfad7e519f6076b30d0ed2a225f227c5d8",
+        "placed": "76f4cdfc27dcb8f5bf093637850b99ac6655e5844f2220f530c2a32a377d966b"
+      }
+    },
+    {
+      "file": "10014",
+      "name": "Castform (Rainy Form)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/10014.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10014.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "shinyOffset": [
+        -6,
+        -3
+      ],
+      "source": "Smogon Sprite Project via PokéAPI sprites",
+      "artists": [],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "b8864dc46b6be9997884f6e1cffd415fc444dce4ea3cfa892dc2d33afe3649a7",
+        "shiny": "fbda693d751416fcdaf7bf44a9975db3cfd751a7986cde0199339d752aec0857",
+        "placed": "2c8e9343cdef660cae0a4ca8c9d5dcb0bfba6b182a806de7a7753fd1e6e11f3d"
+      }
+    },
+    {
+      "file": "10015",
+      "name": "Castform (Snowy Form)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/10015.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/shiny/10015.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "shinyOffset": [
+        -6,
+        -1
+      ],
+      "source": "Smogon Sprite Project via PokéAPI sprites",
+      "artists": [],
+      "shinyArtists": [],
+      "sha256": {
+        "normal": "5d4312e39535067e04c3fc8f438833b45278d1ba44c24a87b9a99ff76019ce7d",
+        "shiny": "ee4003efd671c1cb1f0f05722cfe8ecbf3216dbcd76d3806372eb154ea043457",
+        "placed": "c9e2542f967a5c428ec7e1329faea30b03d2783f32e455d9a87fda119f46a4e4"
+      }
+    },
+    {
       "file": "10065",
       "name": "Mega Sceptile",
       "normal": "https://play.pokemonshowdown.com/sprites/gen5/sceptile-mega.png",
@@ -458,6 +576,33 @@
         "normal": "c246e1da887ba942ce4f27dd964de05022d43c600c0664a284318ebaecb20afd",
         "shiny": "8ab4829e0d4acd52574341c87801e4f074a26df1540146cc84111afa754475eb",
         "placed": "1086ac5eba9dd56b23113f8de0045879fca8f363aaaefd53e94b4c3718f99fca"
+      }
+    },
+    {
+      "file": "10176",
+      "name": "Galarian Darumaka",
+      "normal": "https://www.smogon.com/forums/attachments/554_2-png.208835/",
+      "shiny": "https://www.smogon.com/forums/attachments/554_2s-png.208837/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "shinyOffset": [
+        1,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "G.E.Z."
+      ],
+      "shinyArtists": [
+        "G.E.Z."
+      ],
+      "sha256": {
+        "normal": "44f351e4a30baefac04e166343424a0d74e1b00c25c403f86bf457683ee8b19c",
+        "shiny": "5baa38edd68cb5ab14f3521f61fdcfd3141f33ea50c7d22f1a7cab488bbd5777",
+        "placed": "92f3d38b10de99f6b14ceeb73ad5a5c353c2770539a37a97aeb2af95ce0e2d37"
       }
     },
     {
@@ -1310,6 +1455,27 @@
       }
     },
     {
+      "file": "11064",
+      "name": "Spiky-eared Pichu",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/172-spiky-eared.png",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/172-spiky-eared.png",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "301c0ef7e6fcd99a90f7870429b8dbe25f31ab5f19cf970369d5f9dba9fba159",
+        "shiny": "4584ef3e850f23487a495b4f0f99a19b5af6e9dd691d9fa10f7ca6c19e4877e8",
+        "placed": "3284ff0591cf941279e268c7cab479e923bebe8a37e37c2cc0775d8b8a8d0e1a"
+      }
+    },
+    {
       "file": "11097",
       "name": "Furfrou (Star Trim)",
       "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_2.png",
@@ -1576,6 +1742,30 @@
         "normal": "56aff1a2e19009b4989c824fe8f9d02036e7a4b561ff98b781498db7b7982dc9",
         "shiny": "c7b200cbf94653bb22d7add1d7afa4f348a15a903779c966f26cd64d92d3e4c0",
         "placed": "8da66b01c291c3e969ce10bf622be388d6b5ab38a13878392d8f30211dd17b84"
+      }
+    },
+    {
+      "file": "11112",
+      "name": "DJ Rotom",
+      "normal": "https://pbs.twimg.com/media/HCq9oszaUAAc-fJ.png",
+      "shiny": "https://pbs.twimg.com/media/HCq9osaWQAAOxrQ.png",
+      "scale": 4,
+      "offset": [
+        0,
+        0
+      ],
+      "unchecked": "my151 recoloured the same 2 seam pixels in its normal and shiny, so neither equals the source",
+      "source": "KingOfThe-X-Roads's X post",
+      "artists": [
+        "KingOfThe-X-Roads"
+      ],
+      "shinyArtists": [
+        "KingOfThe-X-Roads"
+      ],
+      "sha256": {
+        "normal": "0c89d55a28a6e62aa1db21b49def046ebfff7003fdf344e39648291e23945f92",
+        "shiny": "c163e7eb06f16239924f28e5e507d06cfa18f99149e14b59d8aee266415ae336",
+        "placed": "2f7fba6d1b37f4df2068fcb79225b9c56eb3ed57546f5fdb4e450a4432cb50a5"
       }
     },
     {

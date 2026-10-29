@@ -1301,3 +1301,20 @@ Under the [credit rule of 2026-10-26](README.md#shiny-sprites), the panel counts
 | 1 | Mega-Pokebattlerz |
 
 Four artists appear only through shiny files: TheAetherPlayer, AMVictory, arinoelle, and Mega-Pokebattlerz.
+
+## Shiny sprites added on 2026-10-29
+
+Eight more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` names each source, and the harvest rebuilds every file but DJ Rotom's from it.
+
+| File | Pokémon | Shiny artist | Evidence |
+|---|---|---|---|
+| `shiny/919.png` | Nymble | Blaquaza | my151's recolour of the normal sprite in the colours of the Smogon sheet row's Front shiny attachment, which lies 6 pixels off the normal sprite's outline |
+| `shiny/1023.png` | Iron Crown | not confirmed | PokéAPI's shiny, moved 2 rows up; it follows the normal sprite |
+| `shiny/10013.png` | Castform (Sunny Form) | not confirmed | the Smogon Sprite Project's shiny from PokéAPI's Black and White folder, moved 6 rows up and 1 column left; no source names an artist |
+| `shiny/10014.png` | Castform (Rainy Form) | not confirmed | the same source, moved 6 rows up and 3 columns left |
+| `shiny/10015.png` | Castform (Snowy Form) | not confirmed | the same source, moved 6 rows up and 1 column left |
+| `shiny/10176.png` | Galarian Darumaka | G.E.Z. | the Smogon sheet row's Front shiny attachment, moved 1 row down |
+| `shiny/11064.png` | Spiky-eared Pichu | Game Freak | PokéAPI's shiny, which is the HeartGold and SoulSilver sprite |
+| `shiny/11112.png` | DJ Rotom | KingOfThe-X-Roads | the predicted shiny from his own X post, at 1/4 scale, with the same 2 seam pixels recoloured as in the normal sprite |
+
+Each named shiny artist also drew the normal sprite, so the panel counts none of these files on its own.
