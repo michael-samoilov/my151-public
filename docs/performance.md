@@ -123,6 +123,8 @@ a new animation) goes to Michael first, with before and after.
 | A `sizes` that follows the widest hub shot (October 8) | Accurate, but a 3x iPhone then loaded the 800px originals (722 KiB, not 270 KiB). Browsers pick the smallest copy that covers `sizes` times the pixel ratio. |
 | Draw the Pokédex picker's off-screen rows after its first paint (October 29) | No gain. Lab phone, first open after the sprite warm-up, 4 runs: Starters 485–631 to 488–660 ms until every sprite on screen shows, Forest 792–846 to 759–984 ms. |
 | Load the Pokédex picker's sprites eagerly, not lazily (October 29) | Mixed. Lab phone, first open after the sprite warm-up, 4 runs: Starters 529–614 to 469–513 ms, but Forest 789–873 to 839–992 ms. Adding `decoding="sync"`: Starters 474–603 ms, Forest 751–895 ms, no gain over lazy. |
+| Chrome compile hints (`//# allFunctionsCalledOnLoad`) on the picker's chunks (October 29) | No clear gain. Lab phone, first open, 5 runs: Starters 763 to 711 ms, Forest 1,232 to 1,175 ms, with overlapping ranges. |
+| Measure the picker's row height in its first group only (October 29) | No gain, and Forest got slower: 1,232 to 1,537 ms. |
 
 Lighthouse findings left open on purpose:
 
@@ -286,3 +288,16 @@ Left out: whole sections, about 0.8 MB, which a phone on a metered plan would
 pay for pickers it never opens. Also left out: the analytics drill-downs, which
 can list Pokémon outside the visitor's picks but sit behind 25 picks and two
 taps.
+
+## Next Pokédex picker avenues, measured October 29
+
+Throwaway prototypes, measured on the lab phone, first picker open after the
+sprite warm-up. The machine ran slower that afternoon than in the morning, so
+compare the numbers in one row, not across this page.
+
+| Avenue | Measured effect | Cost |
+|---|---|---|
+| Render a hidden Starters picker once at idle, inside React's `<Activity mode="hidden">`, then remove it | First Starters open 752–834 to 406–666 ms (4 runs). No frame over 76 ms while it renders. | About 30 lines in `App.tsx`. The same practice render in a visible, off-screen box blocks one frame of 259–382 ms. |
+| Lighter type badges | Upper bound, with no badges at all: Starters 763 to 578 ms, Forest 1,232 to 849 ms, on every open. Each badge is an inline SVG of five elements. | The badges must stay pixel-identical. A real change gains less than the upper bound. |
+| Inline the Pokédex stylesheet, as the hub does | First visit, 7 runs: phone FCP 660 to 420 ms and desktop 172 to 100 ms, with separated ranges. Phone LCP 2,244 to 1,944 ms, with overlapping ranges. | A repeat visit downloads 15.5 KB more and is not faster (phone FCP 336 to 344 ms). |
+
