@@ -348,18 +348,22 @@ interface UniqueUsersModel {
   scrubLabel: (index: number) => string[];
 }
 
+/** Room right of the plot for the last axis label when no count sits at the line's end. */
+const PLAIN_GRID_RIGHT = 16;
+
 function UniqueUsersLineChart({
   model,
   ariaLabel,
   seriesName,
   provisional,
-  counts,
+  endCount,
 }: {
   model: UniqueUsersModel;
   ariaLabel: string;
   seriesName: 'hourly' | 'daily';
   provisional: boolean;
-  counts: { hours24: number };
+  /** The last-24-hours count, drawn at the line's end. Only a line that ends on that count gets it. */
+  endCount: number | null;
 }) {
   const build = useCallback(
     (el: HTMLDivElement): EChartsOption => {
@@ -369,7 +373,9 @@ function UniqueUsersLineChart({
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
-      const right = Math.ceil(LABEL_INSET + measureWindowLabelPx('24h', counts.hours24, numSize) + LABEL_TAIL);
+      const right = endCount == null
+        ? PLAIN_GRID_RIGHT
+        : Math.ceil(LABEL_INSET + measureWindowLabelPx('24h', endCount, numSize) + LABEL_TAIL);
       const last = Math.max(values.length - 1, 1);
       return {
         animation: false,
@@ -411,7 +417,7 @@ function UniqueUsersLineChart({
             symbol: 'none',
             z: 2,
           },
-          {
+          ...(endCount == null ? [] : [{
             type: 'custom' as const,
             name: 'window counts',
             silent: true,
@@ -427,14 +433,14 @@ function UniqueUsersLineChart({
               const x = api.coord([i, 0])[0] + LABEL_INSET;
               return {
                 type: 'group',
-                children: [countLabel('24h', counts.hours24, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
+                children: [countLabel('24h', endCount, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
               };
             },
-          },
+          }]),
         ],
       };
     },
-    [model, seriesName, provisional, counts.hours24],
+    [model, seriesName, provisional, endCount],
   );
   const ref = useECharts(build, { scrub: { count: model.axisLabels.length, label: model.scrubLabel } });
 
@@ -479,7 +485,7 @@ function HourlyTrendChart({
       ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
       seriesName="hourly"
       provisional={lastPointIsCurrentHour(series, nowMs)}
-      counts={counts}
+      endCount={null}
     />
   );
 }
@@ -494,7 +500,7 @@ function DailyWeekdayChart({
   nowMs: number;
 }) {
   const { model, weekdayList } = useMemo(() => {
-    const values = series.map((p) => p.dau);
+    const values = chartDailyValues(series);
     const ticks = dailyWeekdayTicks(series);
     const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
     const axisLabels = series.map((_, i) => tickAt.get(i) ?? '');
@@ -514,7 +520,7 @@ function DailyWeekdayChart({
       ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
       seriesName="daily"
       provisional={lastPointIsToday(series, nowMs)}
-      counts={counts}
+      endCount={counts.hours24}
     />
   );
 }
@@ -540,10 +546,13 @@ export function ActiveUsersPanel({
   const faint = 'var(--color-muted-foreground)';
   const legend =
     range === '24h' ? (
-      <span className="inline-flex items-center gap-1">
-        <LegendSwatch color={faint} />
-        hourly
-      </span>
+      <>
+        <span className="inline-flex items-center gap-1">
+          <LegendSwatch color={faint} />
+          hourly
+        </span>
+        <span className="tabular-nums">{counts.hours24} in the last 24h</span>
+      </>
     ) : range === '7d' ? (
       <span className="inline-flex items-center gap-1">
         <LegendSwatch color={faint} />
