@@ -6108,11 +6108,11 @@
   },
   "10304": {
    "artists": [
-    "KingOfThe-X-Roads"
+    "Kyle Dove"
    ],
    "role": "drew",
-   "via": "own upload",
-   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/03id19f0dha, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+   "via": "pokeapi",
+   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10304.png as added in commit 4bc9d60186 (2026-06-22, 'Added Z-A mega sprites (#236)'). PokéAPI sprites README, Special Thanks: 'x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9.' Not compared with Kyle Dove's own uploads.",
    "name": "raichu-mega-x"
   },
   "10305": {

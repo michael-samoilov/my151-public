@@ -74,9 +74,9 @@ The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve 
 | Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)” (D and “Smeargle (Decorator)” since forms batch 3). https://sta.sh/0qi9vfww1kg |
 | Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
 | Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
-| Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
+| Mega Raichu X | 10304 | Replaced existing shared Picker/League art with a cache revision from 2026-10-17 to 2026-10-29. Identity stays 10304. https://sta.sh/03id19f0dha. On 2026-10-29 it went back to PokéAPI's normal and shiny pair, credited to Kyle Dove. |
 
-King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
+King's direct-upload credit lists 12 sprites since Mega Raichu X went back to PokéAPI's pair on 2026-10-29. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
 
 ## Added on 2026-10-12
 

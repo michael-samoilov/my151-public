@@ -33934,7 +33934,7 @@
  },
  {
   "file": "public/sprites/pokemon/10304.png",
-  "sha256": "4ab8d027bfa3d768cc567eb97e05f6de8816424781c692c2270d33a1a5127f58",
+  "sha256": "dd5b7b7cd905189bc68fb7633a73865005c95a496fa20d22e170e4f91490d85b",
   "pokemon": [
    "Mega Raichu X"
   ],
@@ -33943,19 +33943,24 @@
    "League builder"
   ],
   "creditedNow": [
-   "KingOfThe-X-Roads"
+   "Kyle Dove"
   ],
-  "creditedVia": "own upload",
-  "evidenceType": "exact-artist-own",
+  "creditedVia": "pokeapi",
+  "evidenceType": "pokeapi-readme",
   "sources": [
    {
-    "url": "https://sta.sh/03id19f0dha",
-    "localCopy": "docs/favorite-picker-work/sprites/2026-10-17-king-originals/mega-raichu-x.png",
-    "sha256": "4ab8d027bfa3d768cc567eb97e05f6de8816424781c692c2270d33a1a5127f58",
-    "title": "mega-raichu-x by KingOfThe-X-Roads"
+    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10304.png",
+    "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/.git",
+    "sha256": "dd5b7b7cd905189bc68fb7633a73865005c95a496fa20d22e170e4f91490d85b",
+    "gitBlob": "f0c46ad20046460b24f017e8f0babf8726217285"
+   },
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/README.md#L313",
+    "sha256": null,
+    "quote": "for providing the back_default, back_shiny and z-a mega sprites for generation 9."
    }
   ],
-  "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/03id19f0dha, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+  "comparison": "the app file is byte-identical to sprites/pokemon/10304.png as added in PokéAPI commit 4bc9d60186, the commit that put the README line crediting Kyle Dove \"for providing the back_default, back_shiny and z-a mega sprites for generation 9.\" No file posted by the artist was found to compare pixel by pixel.",
   "verdict": "confirmed"
  },
  {
@@ -70520,6 +70525,35 @@
    }
   ],
   "comparison": "the app file has the pixels of sprites/pokemon/shiny/10303.png as added in PokéAPI commit 4bc9d60186, the commit that put the README line crediting Kyle Dove \"for providing the back_default, back_shiny and z-a mega sprites for generation 9.\"",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/10304.png",
+  "sha256": "829bbf93bb792808f73ab6409ef76311ead0b33ed0c45dcb5cb24c1bede9a9c0",
+  "pokemon": [
+   "Mega Raichu X (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Kyle Dove"
+  ],
+  "creditedVia": "pokeapi",
+  "evidenceType": "pokeapi-readme",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/shiny/10304.png",
+    "sha256": "cbdf20ba0755cf5bebea3a98fd53f7d51641884a67e1396d1d17d8b20473918d"
+   },
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/README.md#L313",
+    "sha256": null,
+    "quote": "for providing the back_default, back_shiny and z-a mega sprites for generation 9."
+   }
+  ],
+  "comparison": "the app file has the pixels of sprites/pokemon/shiny/10304.png as added in PokéAPI commit 4bc9d60186, the commit that put the README line crediting Kyle Dove \"for providing the back_default, back_shiny and z-a mega sprites for generation 9.\"",
   "verdict": "confirmed"
  },
  {

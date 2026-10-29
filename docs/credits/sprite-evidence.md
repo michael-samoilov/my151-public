@@ -38,9 +38,9 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 | 698 | Game Freak sprite: exact match to PokéAPI's Black and White import |
 | 584 | Exact match to the Smogon attachment on a credit-sheet row naming the artist |
 | 47 | No source names an artist |
-| 45 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
+| 46 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
 | 18 | Near match only |
-| 24 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet); 2 of them carry my151's recorded pixel changes |
+| 23 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet); 2 of them carry my151's recorded pixel changes |
 | 7 | Exact match to the Generation 9 pack file on its sheet row |
 | 1 | Exact match to an attachment in a Smogon thread post |
 | 5 | my151's own work or change, by this repository's history: two drawings, one recolor of a Game Freak sprite, two fan sprites with added items |
@@ -576,7 +576,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10300.png` | Mega Hawlucha | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10300.png |
 | `10302.png` | Mega Drampa | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10302.png |
 | `10303.png` | Mega Falinks | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10303.png |
-| `10304.png` | Mega Raichu X | KingOfThe-X-Roads own upload | confirmed | https://sta.sh/03id19f0dha |
+| `10304.png` | Mega Raichu X | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10304.png |
 | `10306.png` | Mega Chimecho | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10306.png |
 | `10307.png` | Mega Absol Z | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10307.png |
 | `10308.png` | Mega Staraptor | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10308.png |
@@ -1252,7 +1252,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
-Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.
+Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources. On 2026-10-29 Mega Raichu X went back to PokéAPI's file; see [Shiny sprites added on 2026-10-29](#shiny-sprites-added-on-2026-10-29).
 
 ## kiriaura originals imported on 2026-10-19
 
@@ -1304,7 +1304,7 @@ Four artists appear only through shiny files: TheAetherPlayer, AMVictory, arinoe
 
 ## Shiny sprites added on 2026-10-29
 
-Eight more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` names each source, and the harvest rebuilds every file but DJ Rotom's from it.
+Nine more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` has a row for each but Mega Raichu X, whose shiny the harvest takes from PokéAPI's own folder. The harvest rebuilds every file but DJ Rotom's.
 
 | File | Pokémon | Shiny artist | Evidence |
 |---|---|---|---|
@@ -1314,7 +1314,10 @@ Eight more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-
 | `shiny/10014.png` | Castform (Rainy Form) | not confirmed | the same source, moved 6 rows up and 3 columns left |
 | `shiny/10015.png` | Castform (Snowy Form) | not confirmed | the same source, moved 6 rows up and 1 column left |
 | `shiny/10176.png` | Galarian Darumaka | G.E.Z. | the Smogon sheet row's Front shiny attachment, moved 1 row down |
+| `shiny/10304.png` | Mega Raichu X | Kyle Dove | PokéAPI's shiny, added with the normal sprite in the commit whose README line credits him |
 | `shiny/11064.png` | Spiky-eared Pichu | Game Freak | PokéAPI's shiny, which is the HeartGold and SoulSilver sprite |
 | `shiny/11112.png` | DJ Rotom | KingOfThe-X-Roads | the predicted shiny from his own X post, at 1/4 scale, with the same 2 seam pixels recoloured as in the normal sprite |
 
 Each named shiny artist also drew the normal sprite, so the panel counts none of these files on its own.
+
+Mega Raichu X (10304) goes back to PokéAPI's normal and shiny pair (Michael, 2026-10-29: "For now lets go with existing #26 which has a correct normal/shiny pair for Mega Raichu X"). KingOfThe-X-Roads's Sta.sh sprite showed another design. The normal file is byte-identical to the one the app showed before 2026-10-17, so its row is the one kept in `previous-mega-raichu-x-evidence.json`: PokéAPI commit 4bc9d60186 added the pair with the README line that credits Kyle Dove for the Z-A Mega sprites. `shiny/10304.png` has the pixels of that commit's shiny, and Kyle Dove's credit for the normal sprite covers it. KingOfThe-X-Roads's own entry lists 12 sprites, and Kyle Dove's PokéAPI count rises from 42 to 43.

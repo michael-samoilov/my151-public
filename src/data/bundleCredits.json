@@ -17,12 +17,12 @@
    ]
   },
   "artist:KingOfThe-X-Roads": {
-   "sprites": 13,
+   "sprites": 12,
    "unconfirmed": 1,
    "artists": [
     [
      "KingOfThe-X-Roads",
-     12
+     11
     ]
    ]
   },
@@ -47,12 +47,12 @@
    ]
   },
   "pokeapi-sprites": {
-   "sprites": 91,
+   "sprites": 92,
    "unconfirmed": 38,
    "artists": [
     [
      "Kyle Dove",
-     42
+     43
     ],
     [
      "KingOfThe-X-Roads",
@@ -310,7 +310,7 @@
  "pokeapi": {
   "official": 695,
   "smogon": 681,
-  "own": 91
+  "own": 92
  },
  "links": {
   "Falgaia": "https://www.deviantart.com/falgaia",
