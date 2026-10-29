@@ -34,6 +34,12 @@ export function splitProvisional(
   };
 }
 
+/** Calendar DAU, except the newest point, which shows the last 24 hours when the server sent that count. */
+export function chartDailyValues(series: DailyPoint[]): number[] {
+  const last = series.length - 1;
+  return series.map((p, i) => (i === last && p.label24h != null ? p.label24h : p.dau));
+}
+
 /** Unique users per clock hour, except the current hour, which shows the past 60 minutes when the server sent them. */
 export function chartHourlyValues(series: HourlyPoint[]): number[] {
   const last = series.length - 1;

@@ -27,9 +27,10 @@ function daysInLabel(label: string | null): number {
 
 const TODAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getUTCDay()];
 
-function gutter(label: string | null): { today: string | undefined; days7: string | undefined } {
+function gutter(label: string | null): { today: string | undefined; hours24: string | undefined; days7: string | undefined } {
   return {
     today: label?.match(new RegExp(`${TODAY} so far (\\d+)`))?.[1],
+    hours24: label?.match(/Last 24 hours (\d+)/)?.[1],
     days7: label?.match(/last 7 days (\d+)/)?.[1],
   };
 }
@@ -166,7 +167,7 @@ test.describe('admin active users range', () => {
     const panel = activeUsers(page);
     const growth = await panel.getByLabel('Implied growth over selected range').textContent();
     const expected = {
-      daily: [TODAY],
+      daily: ['24h'],
       weekly: ['7d', `${growth!.match(/WoW ([^ ]+)/)![1]} WoW`],
       monthly: ['30d', `${growth!.match(/MoM ([^ ]+)/)![1]} MoM`],
     };
@@ -211,6 +212,23 @@ test.describe('admin active users range', () => {
     await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
     await expect(panel.getByText('hourly', { exact: true })).toHaveCount(0);
     await expect(panel.getByRole('img')).toHaveCount(1);
+  });
+
+  test('ranges from 28d end the daily line on the last 24 hours, labeled 24h', async ({ page }) => {
+    const payload = activityPayload();
+    payload.lastPointLabels = { ...payload.lastPointLabels!, label24h: 97 };
+    await page.route('**/api/submissions?**', route => route.fulfill({ json: payload }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await openAdmin(page, '/?admin');
+    const chart = activeUsers(page).getByRole('img', { name: /Daily active users/ });
+    for (const range of ['All', '28d']) {
+      await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: range, exact: true }).click();
+      await expect(chart).toHaveAttribute('aria-label', /Last 24 hours 97,/);
+      const box = await chart.boundingBox();
+      await page.mouse.move(box!.x + box!.width - 1, box!.y + box!.height / 2);
+      await expect(chart.locator('[data-scrub-readout]')).toContainText('97 daily');
+      await page.mouse.move(0, 0);
+    }
   });
 
   test('7d ends its line on today\'s calendar-day count and labels it with the day name', async ({ page }) => {
