@@ -63,6 +63,16 @@ function measureWindowLabelPx({ unit, count, lowerBound }: EndLabel, numSize: nu
   return n + 2 + ctx.measureText(unit).width;
 }
 
+/** Space a month name keeps before the next one. */
+const MONTH_LABEL_GAP = 3;
+
+function axisTextPx(text: string, fontSize: number): number {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return text.length * fontSize * 0.6;
+  ctx.font = `${fontSize}px sans-serif`;
+  return ctx.measureText(text).width;
+}
+
 function gridRightPx(labels: EndLabel[], numSize: number, growthLabels: string[] = []): number {
   const ctx = document.createElement('canvas').getContext('2d');
   if (ctx) ctx.font = `400 ${growthFontSize(numSize)}px ${LABEL_FACE}`;
@@ -146,7 +156,6 @@ function TrendChart({
     const weeklySplit = splitProvisional(weekly.map(v => shown.weekly ? v : null), provisional);
     const monthlySplit = splitProvisional(monthly.map(v => shown.monthly ? v : null), provisional);
     const monthDividers = monthDividerIndices(days);
-    const monthTicks = monthLabelTicks(days);
     const newest = series.at(-1);
     const counts = { ...windowCounts(series), days30: newest?.label720h ?? newest?.recordedLabel720h ?? null };
     const rolling = newest?.label24h != null;
@@ -208,6 +217,7 @@ function TrendChart({
             renderItem: (params: { coordSys: { x: number; y: number; width: number; height: number } }) => {
               const { x, y, width, height } = params.coordSys;
               const last = Math.max(daily.length - 1, 1);
+              const monthTicks = monthLabelTicks(days, (abbr, span) => axisTextPx(abbr, axisFont) + MONTH_LABEL_GAP <= (span / last) * width);
               const ribbonTop = y + height;
               const nameY = ribbonTop + 2;
               const yearY = nameY + axisFont;
