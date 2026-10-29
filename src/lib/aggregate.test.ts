@@ -225,6 +225,18 @@ describe('hourlyActive', () => {
     expect(byHour.get(T0 + 3 * hour)).toBe(1);
     expect(byHour.get(T0 + 5 * hour)).toBe(0);
   });
+
+  it('gives the current hour the past 60 minutes, which reach into the previous clock hour', () => {
+    const now = T0 + 5 * hour + 20 * 60_000;
+    const at = (cid: string, ts: number) => dex({ cid, sessionLog: [{ ts }], firstTs: ts, lastTs: ts });
+    const series = hourlyActive([
+      at('inside-previous-hour', now - 50 * 60_000),
+      at('inside-current-hour', now - 5 * 60_000),
+      at('too-early', now - 70 * 60_000),
+    ], now);
+    expect(series.at(-1)).toEqual({ hour: T0 + 5 * hour, unique: 1, pastHour: 2 });
+    expect(series.slice(0, -1).every((point) => point.pastHour === undefined)).toBe(true);
+  });
 });
 
 describe('retention', () => {

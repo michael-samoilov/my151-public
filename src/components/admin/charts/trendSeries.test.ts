@@ -3,7 +3,6 @@ import { DAY_MS } from '../../../../api/_aggregate';
 import { dayStart } from '../../../../api/_aggregate';
 import { rangeStart } from '../../../../api/_range';
 import {
-  chartDailyValues,
   chartWeeklyValues,
   countLabelLayout,
   applyActivityLabels,
@@ -113,16 +112,6 @@ describe('applyActivityLabels', () => {
   });
 });
 
-describe('chartDailyValues', () => {
-  it('uses calendar DAU except the last point when label24h is set', () => {
-    const series = [
-      { day: day(1), dau: 2, rolling7: 2 },
-      { day: day(2), dau: 5, rolling7: 6, label24h: 7 },
-    ];
-    expect(chartDailyValues(series)).toEqual([2, 7]);
-  });
-});
-
 function denseSeries(fromDay: number, count: number): DailyPoint[] {
   return Array.from({ length: count }, (_, i) => ({
     day: fromDay + i * DAY_MS,
@@ -152,12 +141,12 @@ describe('chartWeeklyValues', () => {
 });
 
 describe('windowCounts', () => {
-  it('reads gutter labels from label24h and label168h on the last point', () => {
+  it('reads the 7d gutter label from label168h on the last point', () => {
     const series = [
       { day: day(12), dau: 3, rolling7: 8 },
       { day: day(13), dau: 4, rolling7: 9, label24h: 11, label168h: 16 },
     ];
-    expect(windowCounts(series)).toEqual({ hours24: 11, days7: 16 });
+    expect(windowCounts(series)).toEqual({ days7: 16 });
   });
 });
 

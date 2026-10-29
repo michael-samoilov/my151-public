@@ -34,13 +34,10 @@ export function splitProvisional(
   };
 }
 
-export function chartDailyValues(series: DailyPoint[]): number[] {
-  if (series.length === 0) return [];
+/** Unique users per clock hour, except the current hour, which shows the past 60 minutes when the server sent them. */
+export function chartHourlyValues(series: HourlyPoint[]): number[] {
   const last = series.length - 1;
-  return series.map((p, i) => {
-    if (i === last && p.label24h != null) return p.label24h;
-    return p.dau;
-  });
+  return series.map((p, i) => (i === last && p.pastHour != null ? p.pastHour : p.unique));
 }
 
 const INCOMPLETE_WEEKLY_DAYS = 6;
@@ -127,13 +124,10 @@ export function applyActivityLabels(
   return out;
 }
 
-export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
-  if (series.length === 0) return { hours24: 0, days7: null };
+export function windowCounts(series: DailyPoint[]): { days7: number | null } {
+  if (series.length === 0) return { days7: null };
   const last = series[series.length - 1];
-  return {
-    hours24: last.label24h ?? last.dau,
-    days7: last.label168h ?? last.rolling7,
-  };
+  return { days7: last.label168h ?? last.rolling7 };
 }
 
 export function weekLineIndices(days: number[], nowMs: number): number[] {
