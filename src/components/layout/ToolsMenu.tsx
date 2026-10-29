@@ -6,6 +6,7 @@ import { FAVORITES_NOTICE_END, isReturningVisitor, isFavoritesNoticeWindow, isFa
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { GymIcon, PokedexIcon, RibbonIcon } from '@/components/shared/AppIcons';
 import { pathScale } from '@/lib/pathScale';
+import { FAVORITES_TOTAL, useSavedToolProgress } from '@/lib/savedToolProgress';
 
 const TOOLS = [
   { id: 'dex', href: '/pokedex-builder', label: 'tools.dex', Icon: PokedexIcon, scale: 1 },
@@ -14,6 +15,39 @@ const TOOLS = [
 ] as const;
 
 type ToolId = (typeof TOOLS)[number]['id'];
+
+/** `hover` closes when the mouse leaves; `pinned` (a click or tap) waits for a click elsewhere. */
+type MenuState = 'closed' | 'hover' | 'pinned';
+
+const OPEN_DELAY = 100;
+const CLOSE_DELAY = 100;
+const AIM_GRACE = 400;
+
+type Point = { x: number; y: number };
+
+const inRect = (p: Point, r: DOMRect) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
+
+/** Whether `p` lies in the triangle from `apex` to the panel's top edge: the mouse is still on its way to an item. */
+function aimsAtPanel(p: Point, apex: Point, panel: DOMRect) {
+  const b = { x: panel.left, y: panel.top };
+  const c = { x: panel.right, y: panel.top };
+  const side = (u: Point, v: Point) => (p.x - v.x) * (u.y - v.y) - (u.x - v.x) * (p.y - v.y);
+  const d = [side(apex, b), side(b, c), side(c, apex)];
+  return !(d.some((x) => x < 0) && d.some((x) => x > 0));
+}
+
+function ToolCount({ count, total }: { count: number | null; total: number }) {
+  return (
+    <span className="ml-auto grid shrink-0 whitespace-nowrap pl-3 text-right tabular-nums">
+      <span aria-hidden className="invisible [grid-area:1/1]">{total}/{total}</span>
+      {count !== null && (
+        <span className="[grid-area:1/1]">
+          <span className="font-bold text-primary">{count}</span>/{total}
+        </span>
+      )}
+    </span>
+  );
+}
 
 export interface ToolsCallout {
   text: string;
@@ -42,17 +76,56 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
         onDismiss: () => { markFavoritesNoticeSeen(); setLaunchNotice(false); },
       }
     : isFavoritesNoticeWindow() ? null : pageCallout, [launchNotice, pageCallout, t]);
-  const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState<MenuState>('closed');
+  const open = menu !== 'closed';
+  const progress = useSavedToolProgress(open);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const openTimer = useRef(0);
+  const lastPoint = useRef<Point | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu('closed');
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  useEffect(() => {
+    if (menu !== 'hover') return;
+    let apex = lastPoint.current;
+    let leaving = 0;
+    let resting = 0;
+    const close = () => setMenu('closed');
+    const stay = () => { window.clearTimeout(leaving); window.clearTimeout(resting); leaving = 0; };
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || !buttonRef.current || !panelRef.current) return;
+      const p = { x: e.clientX, y: e.clientY };
+      const panel = panelRef.current.getBoundingClientRect();
+      if (inRect(p, buttonRef.current.getBoundingClientRect())) { apex = p; stay(); return; }
+      if (inRect(p, panel)) { apex = null; stay(); return; }
+      if (apex && aimsAtPanel(p, apex, panel)) {
+        stay();
+        resting = window.setTimeout(close, AIM_GRACE);
+        return;
+      }
+      window.clearTimeout(resting);
+      if (!leaving) leaving = window.setTimeout(close, CLOSE_DELAY);
+    };
+    const onOut = (e: MouseEvent) => { if (!e.relatedTarget) close(); };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('mouseout', onOut);
+    return () => {
+      stay();
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('mouseout', onOut);
+    };
+  }, [menu]);
+
+  useEffect(() => () => window.clearTimeout(openTimer.current), []);
 
   const tipRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -68,10 +141,23 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
 
   const button = (
     <button
+      ref={buttonRef}
       type="button"
+      onPointerMove={(e) => {
+        lastPoint.current = { x: e.clientX, y: e.clientY };
+        window.clearTimeout(openTimer.current);
+        if (e.pointerType !== 'mouse' || open || callout) return;
+        // Never open over the language menu or another menu beside this one.
+        if (menuRef.current?.parentElement?.querySelector('[aria-expanded="true"]')) return;
+        // Opens once the mouse stops on the button, so a mouse that crosses
+        // it on the way to the toolbar below never opens the menu over it.
+        openTimer.current = window.setTimeout(() => setMenu('hover'), OPEN_DELAY);
+      }}
+      onPointerLeave={() => window.clearTimeout(openTimer.current)}
       onClick={() => {
+        window.clearTimeout(openTimer.current);
         if (callout && !open) callout.onDismiss('menu');
-        setOpen((o) => !o);
+        setMenu((m) => (m === 'pinned' ? 'closed' : 'pinned'));
       }}
       aria-expanded={open}
       data-testid="tools-menu"
@@ -117,20 +203,24 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
       ) : (
         button
       )}
-      <div hidden={!open} className="absolute right-0 top-full z-[120] mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
-          {TOOLS.map((tool) => (
-            <a
-              key={tool.id}
-              href={tool.href}
-              className={cn(
-                'flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-sm transition-colors hover:bg-muted',
-                tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <tool.Icon className="w-4 h-4 shrink-0" {...pathScale(tool.scale)} />
-              {t(tool.label)}
-            </a>
-          ))}
+      <div ref={panelRef} hidden={!open} className="absolute right-0 top-full z-[120] mt-1 w-max min-w-[170px] max-w-[calc(100vw-1.5rem)] rounded-lg border bg-popover py-1 shadow-lg">
+          {TOOLS.map((tool) => {
+            const saved = progress[tool.id];
+            return (
+              <a
+                key={tool.id}
+                href={tool.href}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted',
+                  tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                )}
+              >
+                <tool.Icon className="w-4 h-4 shrink-0" {...pathScale(tool.scale)} />
+                <span className="min-w-0">{t(tool.label)}</span>
+                <ToolCount count={saved?.count ?? null} total={saved?.total ?? FAVORITES_TOTAL} />
+              </a>
+            );
+          })}
       </div>
     </div>
   );
