@@ -3,6 +3,9 @@
   "archive": "Generation_9_Pack_v3.3.8.rar is the Generation 9 Resource Pack, https://eeveeexpo.com/resources/1101/. Extract it so that <cache>/gen9pack/x/Graphics/Pokemon holds its Front and Front shiny folders.",
   "shinyArtists": "Who drew the shiny, as src/data/spriteAttribution.json credits it: 'Game Freak' for official art, empty when no source names an artist. `artists` drew the normal sprite.",
   "sha256": "SHA-256 of the normal and shiny source files the harvest reads (for a Sta.sh page, the image it shows; for a GIF frame, the whole GIF), and of the shiny file we ship.",
+  "shinyOffset": "[dy, dx] for the shiny alone, when its source canvas places it elsewhere than the normal; `offset` places the normal.",
+  "recolour": "true: ship our normal sprite in the shiny's colours. Each colour of our normal takes the shiny colour that most often lies over it once the shiny is placed.",
+  "unchecked": "Why the harvest keeps this row's shiny without checking it against the source.",
   "placed": [
     {
       "file": "59",

@@ -20,7 +20,14 @@
  *    scripts/data/shiny-sprite-sources.json), that folder's shiny file.
  * 3. The art found by hand in scripts/data/shiny-sprite-placed.json, with the
  *    integer downscale and offset that put it on our canvas, its credits, and
- *    the SHA-256 of both source files and of the shiny we ship.
+ *    the SHA-256 of both source files and of the shiny we ship. A row whose
+ *    shiny sits elsewhere on the source canvas than its normal gives the
+ *    shiny its own `shinyOffset`.
+ *
+ * A row with `recolour` ships our normal sprite in the shiny's colours, for an
+ * artist's shiny drawn a few pixels off our outline. Each colour of our normal
+ * takes the shiny colour that most often lies over it; the run rejects the row
+ * when the shiny lies over no pixel of some colour.
  *
  * Every PokéAPI URL reads one pinned commit (POKEAPI_COMMIT).
  *
@@ -34,8 +41,9 @@
  * A row whose source the run cannot read again keeps its file unchecked, and
  * the run says why: a Sta.sh page or a frame of an animated GIF, which this
  * script cannot decode; a source whose bytes no longer have the recorded
- * SHA-256; or the archive below, when it is not in the cache. The run reports
- * an unchecked file whose own SHA-256 differs from its row.
+ * SHA-256; the archive below, when it is not in the cache; or the row's own
+ * `unchecked` reason, for a shiny that my151 changed after it left its source.
+ * The run reports an unchecked file whose own SHA-256 differs from its row.
  *
  * After a run that adds files, commit them and shrink them as the normal
  * sprites were:
@@ -74,7 +82,16 @@ const OUTPUT = join(root, 'src/data/shinySprites.json');
 const REENCODES = join(root, 'scripts/sprite-reencodes.json');
 const cache = parseArgs({ options: { cache: { type: 'string' } } }).values.cache;
 
-interface Source { normal: string; shiny: string; scale: number; offset: readonly number[]; sha256?: Digests }
+interface Source {
+  normal: string;
+  shiny: string;
+  scale: number;
+  offset: readonly number[];
+  shinyOffset?: readonly number[];
+  recolour?: boolean;
+  unchecked?: string;
+  sha256?: Digests;
+}
 interface Digests { normal: string; shiny: string; placed: string }
 /** Why a run kept a shiny without checking it against its source. */
 interface Unread { unread: string }
@@ -181,11 +198,47 @@ function place(art: Raster, { scale, offset: [dy, dx] }: Source, like: Raster): 
   return { width, height, data };
 }
 
+/**
+ * `normal` with each colour replaced by the colour that `shiny` most often
+ * shows over it, ties to the lower RGB value. Null when the shiny covers no
+ * pixel of some colour.
+ */
+function recolour(normal: Raster, shiny: Raster): Raster | null {
+  const rgb = (data: Uint8Array, i: number) => (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+  const votes = new Map<number, Map<number, number>>();
+  for (let i = 0; i < normal.data.length; i += 4) {
+    if (normal.data[i + 3] === 0) continue;
+    const colour = rgb(normal.data, i);
+    const tally = votes.get(colour) ?? new Map<number, number>();
+    votes.set(colour, tally);
+    if (shiny.data[i + 3] === 0) continue;
+    const vote = rgb(shiny.data, i);
+    tally.set(vote, (tally.get(vote) ?? 0) + 1);
+  }
+  const map = new Map<number, number>();
+  for (const [colour, tally] of votes) {
+    const [best] = [...tally].sort(([a, m], [b, n]) => n - m || a - b);
+    if (!best) return null;
+    map.set(colour, best[0]);
+  }
+  const data = new Uint8Array(normal.data.length);
+  for (let i = 0; i < data.length; i += 4) {
+    if (normal.data[i + 3] === 0) continue;
+    const to = map.get(rgb(normal.data, i))!;
+    data.set([to >> 16, (to >> 8) & 0xff, to & 0xff, normal.data[i + 3]], i);
+  }
+  return { width: normal.width, height: normal.height, data };
+}
+
 async function judge(file: string, catalogs: Catalogs): Promise<Verdict> {
   const normal = decode(readFileSync(ours(file)));
   let mismatched: number | null | undefined;
   let unread: string | undefined;
   for (const source of sourcesFor(file, catalogs)) {
+    if (source.unchecked) {
+      unread ??= source.unchecked;
+      continue;
+    }
     const theirs = await load(source.normal, source.sha256?.normal);
     if (theirs && 'unread' in theirs) {
       unread ??= theirs.unread;
@@ -199,7 +252,11 @@ async function judge(file: string, catalogs: Catalogs): Promise<Verdict> {
     }
     if (!bytes) continue;
     const art = decode(bytes);
-    const shiny = place(art, source, normal);
+    const shiny = place(art, { ...source, offset: source.shinyOffset ?? source.offset }, normal);
+    if (source.recolour) {
+      const recoloured = recolour(normal, shiny);
+      if (recoloured) return { kind: 'pass', shiny: encode(recoloured) };
+    }
     const difference = maskDifference(shiny, normal);
     if (difference === 0) return { kind: 'pass', shiny: shiny === art && intact(bytes) ? bytes : encode(shiny) };
     mismatched ??= difference;
