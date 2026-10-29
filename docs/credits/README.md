@@ -29,7 +29,7 @@ Each bundle entry in the panel shows one permission quote from the bundle's own 
 `npm run credits:bundles` (`scripts/credits/bundle-credits.ts`) writes `src/data/bundleCredits.json` from the ledger and `src/data/spriteAttribution.json`. `npm run credits:check-sprites` fails when that file is out of date, or when the counts stop being a partition.
 
 - Every shown fan-made sprite file counts under exactly one entry. A direct upload counts under its artist's own entry. Any other file counts under the bundle whose records credit its artist: the Smogon Sprite Project for its four credit sheets (whether the file came through PokéAPI or not), PokéAPI for its own README credits, or the Generation 9 Resource Pack for its sheet. Fan-made files with no attribution row came from PokéAPI's files, so they count under PokéAPI.
-- Game Freak's sprites, the two Kyurem Overdrive stills (Game Freak's animation frames), and every `"via": "my151"` file count nowhere: Mega Zygarde, Purple Kecleon, Professor Tangrowth, Tinkmaster, and Chef Dente.
+- Game Freak's sprites, the two Kyurem Overdrive stills (Game Freak's animation frames), and every `"via": "my151"` file count nowhere: Purple Kecleon, Professor Tangrowth, Tinkmaster, and Chef Dente. Mega Zygarde was the sprite lab's drawing until 2026-10-29, when Caruban's Generation 9 Resource Pack sprite replaced it.
 - An artist counts a file only when the ledger's verdict is `confirmed`. Every other file counts under its entry as "Artist not confirmed". A file with two artists counts for each of them.
 - An artist's name links only to a profile whose `linkStatus` in `creditTerms.json` is `proven`, never to a Smogon member page. No artist's terms are quoted: the bundle's permission covers the files it carried.
 - A direct-upload artist's own files appear only in their own entry. That entry also lists the bundles that credit them, with the count from each.
@@ -47,7 +47,7 @@ An artist has an entry of their own only when my151 took the sprites from the ar
 
 Tinkmaster (#959 by Travis, with tools from an image-model edit) and Chef Dente (#820 by G.E.Z., with a hat, ladle and pan from the sprite lab's drawing) contain model-drawn parts. On 2026-10-20 Michael decided that the panel credits them like the lab's own drawings: no credit row, and no count in Travis's or G.E.Z.'s tally. Their rows say `"via": "my151"` and keep `"changedBy": "my151"`; the evidence names the base artist and how to credit the file to them instead. Travis and G.E.Z. stay credited for their own Tinkaton and Greedent through the Smogon Sprite Project, which meets its terms: "free for use as long as the spriter or the project itself is credited". Professor Tangrowth is the lab's own drawing from Game Freak's #465 and has no credit line.
 
-my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
+my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). The lineage of the lab's former Mega Zygarde drawing is kept in the `previousEvidence` of its row in `docs/credits/sprite-evidence.json`.
 
 ## Shiny sprites
 
