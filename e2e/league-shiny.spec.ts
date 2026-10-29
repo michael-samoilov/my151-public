@@ -138,14 +138,23 @@ test('the Pokédex builder browser has no Shiny switch and loads no shiny sprite
   expect(shinyRequests).toEqual([]);
 });
 
-test('the Shiny switch sits after the count and a divider, at the end of the search row @viewport', async ({ page }, testInfo) => {
+test('the Shiny switch sits after the count and a divider, at the end of the search row, and keeps its width when on @viewport', async ({ page }, testInfo) => {
   await openCard(page);
   await page.click('[data-testid="card-cell-1-1"]');
   const toggle = page.getByTestId('browser-shiny-toggle');
   await expect(toggle).toHaveText('Shiny');
   await expect(toggle.locator('path[d="m2 2 20 20"]')).toHaveCount(1);
+  const fit = () => toggle.evaluate((button) => ({
+    width: button.getBoundingClientRect().width,
+    countLeft: button.closest('div.flex')!.querySelector('[data-result-count]')!.getBoundingClientRect().left,
+  }));
+  const off = await fit();
   await toggle.click();
   await expect(toggle.locator('path[d="m2 2 20 20"]')).toHaveCount(0);
+  const on = await fit();
+  await testInfo.attach('toggle-fit.json', { body: JSON.stringify({ off, on }, null, 2), contentType: 'application/json' });
+  expect(on.width, 'turning Shiny on keeps the pill as wide').toBeCloseTo(off.width, 2);
+  expect(on.countLeft, 'and leaves the count where it was').toBeCloseTo(off.countLeft, 2);
   await search(page, 'furfrou');
   await expect(page.getByTestId('no-shiny-mark').first()).toBeVisible();
   const row = await toggle.evaluate((button) => {
