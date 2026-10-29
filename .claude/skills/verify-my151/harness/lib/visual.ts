@@ -24,6 +24,17 @@ const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixt
 const FAVORITES = {
   'favorite-picker': JSON.stringify({ state: { fills: JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills }, version: 3 }),
 };
+const BLANK_LEAGUE = {
+  'league-builder': JSON.stringify({
+    state: {
+      name: '',
+      cards: Array.from({ length: 14 }, () => ({
+        type: null, theme: '', lines: [], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null,
+      })),
+    },
+    version: 1,
+  }),
+};
 const DEX = {
   'personal-151-pokedex-v3': JSON.stringify({
     state: {
@@ -73,6 +84,15 @@ const pickTooltip = (cell: string, ids: number[]) => async (page: Page) => {
     return;
   }
 };
+/** Opens the endgame card's Ace picker and searches it, so its tiles show form codes. */
+const searchLeagueAce = (query: string) => async (page: Page) => {
+  await page.locator('[data-testid="league-slot-12"]').click();
+  await page.locator('[data-testid="slot-ace"]').click({ position: { x: 8, y: 8 } });
+  await page.locator('[data-filter-chip="my-dex"]').first().waitFor({ timeout: 30_000 });
+  const search = page.getByRole('searchbox').or(page.locator('input[type="search"], input[type="text"]')).last();
+  await search.fill(query);
+  await page.locator('[data-testid="verify-evo-card"] img[src*="/sprites/pokemon/"]').first().waitFor({ timeout: 30_000 });
+};
 const openArtist = (name: string) => async (page: Page) => {
   const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
   await link.scrollIntoViewIfNeeded();
@@ -110,6 +130,8 @@ export const SCREENS: Screen[] = [
   { id: 'league-home', path: '/custom-gym-leader', seed: LEAGUE },
   { id: 'league-card', path: '/custom-gym-leader', seed: LEAGUE, act: click('[data-testid="league-slot-0"]') },
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
+  { id: 'league-ace-shellos', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('shellos') },
+  { id: 'league-ace-aegislash', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('aegislash') },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   {
