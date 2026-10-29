@@ -35,10 +35,17 @@ function reloadForNewerDeploy(): Promise<boolean> {
   return check;
 }
 
-export function reloadIfStale<T>(load: Promise<T>): Promise<T> {
-  return load.catch(async (error: unknown) => {
+// After a dropped connection, Chrome and Firefox fetch the module again on the next
+// import(). WebKit answers with the cached failure and sends no request.
+const RETRY_DELAYS_MS = [1_000, 3_000];
+
+export function loadChunk<T>(load: () => Promise<T>, retryDelays = RETRY_DELAYS_MS): Promise<T> {
+  return load().catch(async (error: unknown) => {
     if (await reloadForNewerDeploy()) return new Promise<T>(() => {});
-    throw error;
+    const [delay, ...later] = retryDelays;
+    if (delay === undefined) throw error;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return loadChunk(load, later);
   });
 }
 

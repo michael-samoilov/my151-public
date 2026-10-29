@@ -63,6 +63,8 @@ whether that copy reaches a crawler at all.
 11. **`public/sitemap.xml` lists every indexable page.** `robots.txt` keeps its
     query-param disallows. Preview-only pages (`evolution-levels`, `slot-lab`, `foil-workshop`)
     carry `<meta name="robots" content="noindex">` and stay out of the sitemap.
+    The build derives `/llms.txt` from items 10 and 11 (`scripts/llms-txt.ts`)
+    and fails when they disagree.
 12. **Run `npm run build` and load each page with JavaScript disabled** to
     confirm items 2 and 3. Then load it normally and read every `h1` with
     `[...document.querySelectorAll('h1')].map(h => h.textContent)` at a phone
