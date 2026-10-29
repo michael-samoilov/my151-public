@@ -80,6 +80,13 @@ const hoverGridCell = (cell: string) => async (page: Page) => {
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
   await page.getByTestId('favorites-name-tooltip').waitFor({ state: 'visible', timeout: 10_000 });
 };
+/**
+ * Moves the pointer to the top-left corner on a phone. A full-page capture drops touch emulation, so
+ * a pointer left on a control would draw a hover state that a phone never shows.
+ */
+const parkPointerOnPhone = async (page: Page) => {
+  if ((page.viewportSize()?.width ?? 1280) < 1024) await page.mouse.move(0, 0);
+};
 const openArtist = (name: string) => async (page: Page) => {
   const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
   await link.scrollIntoViewIfNeeded();
@@ -135,6 +142,15 @@ export const SCREENS: Screen[] = [
       await page.locator('[data-result-count][hidden]').waitFor({ state: 'attached', timeout: 30_000 });
     },
   },
+  {
+    id: 'league-browser-shiny-hover', path: '/custom-gym-leader?lang=en',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').click();
+      await parkPointerOnPhone(page);
+    },
+  },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   { id: 'favorites-filled-hover', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: hoverGridCell('fire-1') },
@@ -156,6 +172,14 @@ export const SCREENS: Screen[] = [
     },
   },
   { id: 'favorites-selector-filled', path: '/favorite-pokemon-picker', seed: FAVORITES, act: openPickerCell('fire-5') },
+  {
+    id: 'favorites-selector-shiny', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES,
+    act: async (page) => {
+      await openPickerCell('fire-5')(page);
+      await click('[data-testid="favorites-shiny-toggle"]')(page);
+      await parkPointerOnPhone(page);
+    },
+  },
   { id: 'favorites-tooltip-pokopia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('normal-9', [11120]) },
   { id: 'favorites-tooltip-shadow-lugia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('psychic-3', [11123, 385]) },
   { id: 'favorites-tooltip-purple-kecleon', path: '/favorite-pokemon-picker?lang=fr', act: pickTooltip('normal-3', [11122, 352]) },
