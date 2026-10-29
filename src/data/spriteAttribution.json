@@ -6659,10 +6659,12 @@
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-yellow': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/671_2-png.276672/."
   },
   "11096": {
-   "artists": [],
+   "artists": [
+    "Larryturbo"
+   ],
    "role": "drew",
-   "via": "gen9-resource-pack",
-   "evidence": "Pixel-identical (after 2x downscale) to Generation 9 Pack file Front/FURFROU_1.png; the pack sheet has no row for it and Credits.txt credits Gen 6-8 sprites to the Smogon projects as a whole. Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '676 Furfrou-natural': Spriter 'Noscium, paintseagull (back reference), Layell (back)', QC 'leParagon'; only 80% of opaque pixels overlap, so it is a different drawing."
+   "via": "smogon-gen6",
+   "evidence": "Larryturbo's post 8240483 in the Smogon X/Y Sprite Project thread (https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/post-8240483, 2019-09-24): \"Here are all the Furfrou sprites using Leparagon's designs\". The first 96x96 cell of its normal front sheet https://www.smogon.com/forums/attachments/furfrou-normal-front-png.196215/ has the app file's pixels, moved 1 column right. The same pixels are Generation 9 Pack file Front/FURFROU_1.png at 1/2 scale; the pack sheet has no row for it."
   },
   "11097": {
    "artists": [],

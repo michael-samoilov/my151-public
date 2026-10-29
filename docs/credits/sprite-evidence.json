@@ -37134,10 +37134,18 @@
    "Favorite picker",
    "League builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "gen9-resource-pack",
-  "evidenceType": "none",
+  "creditedNow": [
+   "Larryturbo"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-post",
   "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/furfrou-normal-front-png.196215/",
+    "sha256": "7b45a6d022d046ae556e2885cfa94304748d763e1927d9f86dd541ad8f353ed6",
+    "post": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/post-8240483",
+    "postAuthor": "Larryturbo"
+   },
    {
     "url": "https://eeveeexpo.com/resources/1101/",
     "localCopy": "sprite-evidence-work/dl/pack-3.3.8-front/FURFROU_1.png",
@@ -37147,8 +37155,26 @@
     "archivePath": "Graphics/Pokemon/Front/FURFROU_1.png"
    }
   ],
-  "comparison": "exact pixel match to Generation 9 pack file Front/FURFROU_1.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the first 96x96 cell of the sheet that Larryturbo, the artist, posted in the Smogon X/Y Sprite Project thread (post 8240483, 2019-09-24: \"Here are all the Furfrou sprites using Leparagon's designs\"), moved 1 column right; the same pixels as Generation 9 pack file Front/FURFROU_1.png at 1/2 scale",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "80317da3b22cc287915061ff7fdce1fc66258934efec8daa9bbfb37901cac8b3",
+   "creditedNow": [],
+   "creditedVia": "gen9-resource-pack",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "localCopy": "sprite-evidence-work/dl/pack-3.3.8-front/FURFROU_1.png",
+     "sha256": "0fbd563f4ca659929b36555df7fe676d00b8ca8f4da149162adbe7a8b59fc7de",
+     "archive": "Generation_9_Pack_v3.3.8.rar",
+     "archiveSha256": "396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490",
+     "archivePath": "Graphics/Pokemon/Front/FURFROU_1.png"
+    }
+   ],
+   "comparison": "exact pixel match to Generation 9 pack file Front/FURFROU_1.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/11097.png",
@@ -74282,6 +74308,38 @@
    }
   ],
   "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 123 '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/11096.png",
+  "sha256": "48c22644d871843bc80f47470c4762074b105b265146e84aaa47f4636b38a0a6",
+  "pokemon": [
+   "furfrou-heart (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "Larryturbo"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-post",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/furfrou-shiny-front-png.196217/",
+    "sha256": "c835dc1a242a333855b9e17d99a75c97c311a862b0fada818da41f86aba8d765",
+    "post": "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/post-8240483",
+    "postAuthor": "Larryturbo"
+   },
+   {
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "archivePath": "Graphics/Pokemon/Front shiny/FURFROU_1.png",
+    "sha256": "e86bcb4b8e34de5b4ee85827f55ae8b43b0ab1634e3b4199b4f04cce25201fe7"
+   }
+  ],
+  "comparison": "Larryturbo's shiny from the same post: the first 96x96 cell of his shiny sheet, moved 1 column right as the normal sprite, with the 25 pixels it fills between the ear and the neck made transparent by my151, so its outline is the normal sprite's. Every other pixel is his. Generation 9 pack file Front shiny/FURFROU_1.png has the same pixels as his cell",
   "verdict": "confirmed"
  }
 ]

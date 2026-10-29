@@ -37,8 +37,8 @@
    ]
   },
   "gen9-resource-pack": {
-   "sprites": 19,
-   "unconfirmed": 10,
+   "sprites": 18,
+   "unconfirmed": 9,
    "artists": [
     [
      "KingOfThe-X-Roads",
@@ -73,7 +73,7 @@
    ]
   },
   "smogon-sprite-project": {
-   "sprites": 691,
+   "sprites": 692,
    "unconfirmed": 14,
    "artists": [
     [
@@ -109,11 +109,11 @@
      21
     ],
     [
-     "Basic Vanillite",
-     19
+     "Larryturbo",
+     20
     ],
     [
-     "Larryturbo",
+     "Basic Vanillite",
      19
     ],
     [

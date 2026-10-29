@@ -1832,6 +1832,7 @@
   "public/sprites/pokemon/shiny/11093.png": {"sha256": "52c38ab2a361a1824c6593f04e0c0e764fddf87e3704e1c1934a99c6464ce73c", "pokeapi": "ba403973:sprites/pokemon/shiny/671-yellow.png"},
   "public/sprites/pokemon/shiny/11094.png": {"sha256": "207493c213ddbdfc2e9a11c30a06d22b09b8a9bfce39486557d933cd54e19868", "pokeapi": "ba403973:sprites/pokemon/shiny/female/415.png"},
   "public/sprites/pokemon/shiny/11095.png": {"sha256": "f7c5271cabbe8b547fe1b2eeefcfad489d6689a656b04d9b90f8b20e64540f25", "pokeapi": "ba403973:sprites/pokemon/shiny/female/521.png"},
+  "public/sprites/pokemon/shiny/11096.png": {"sha256": "48c22644d871843bc80f47470c4762074b105b265146e84aaa47f4636b38a0a6", "pokeapi": null},
   "public/sprites/pokemon/shiny/11097.png": {"sha256": "a428528f1604d4a5bcb01ae1fac6261ab7773abcdedd2ca26e8dc501b884173b", "pokeapi": null},
   "public/sprites/pokemon/shiny/11098.png": {"sha256": "8738be7327c1a9868a7faeab734e51ec067245d6d6bb864c7643173a006b7f11", "pokeapi": null},
   "public/sprites/pokemon/shiny/11099.png": {"sha256": "a9d9eb9644036ab6df6555964bc5b10d9dbce2c2615df2e3eec33cb70da31e18", "pokeapi": null},

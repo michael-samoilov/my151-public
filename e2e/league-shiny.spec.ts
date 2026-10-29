@@ -37,12 +37,10 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(lapras).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/131\.png$/);
   await search(page, 'furfrou');
-  const heart = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/11096.png"]') });
-  await expect(heart.getByTestId('no-shiny-mark')).toBeVisible();
-  await expect(heart.locator('img[src*="/11096.png"]')).toHaveCSS('filter', 'grayscale(1)');
+  await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/11096.png"]'), "the Heart Trim shows Larryturbo's shiny").toBeVisible();
   await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/676.png"]')).toBeVisible();
   await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/11097.png"]')).toBeVisible();
-  await testInfo.attach('no-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
+  await testInfo.attach('furfrou-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
 
   await search(page, 'lapras');
   await lapras.click();
@@ -156,7 +154,7 @@ test('the Shiny switch sits after the count and a divider, at the end of the sea
   expect(on.width, 'turning Shiny on keeps the pill as wide').toBeCloseTo(off.width, 2);
   expect(on.countLeft, 'and leaves the count where it was').toBeCloseTo(off.countLeft, 2);
   await search(page, 'furfrou');
-  await expect(page.getByTestId('no-shiny-mark').first()).toBeVisible();
+  await expect(page.locator('img[src*="/shiny/11096.png"]').first()).toBeVisible();
   const row = await toggle.evaluate((button) => {
     const box = (el: Element) => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
     const searchRow = button.closest('div.flex')!;

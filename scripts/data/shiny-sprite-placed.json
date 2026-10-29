@@ -1687,6 +1687,30 @@
       }
     },
     {
+      "file": "11096",
+      "name": "Furfrou (Heart Trim)",
+      "normal": "https://www.smogon.com/forums/attachments/furfrou-normal-front-png.196215/",
+      "shiny": "https://www.smogon.com/forums/attachments/furfrou-shiny-front-png.196217/",
+      "scale": 1,
+      "offset": [
+        0,
+        1
+      ],
+      "unchecked": "my151 made transparent the 25 pixels that Larryturbo's shiny fills between the ear and the neck, outside the normal sprite's outline, so the file no longer equals the source",
+      "source": "Larryturbo's post in the Smogon X/Y Sprite Project thread",
+      "artists": [
+        "Larryturbo"
+      ],
+      "shinyArtists": [
+        "Larryturbo"
+      ],
+      "sha256": {
+        "normal": "7b45a6d022d046ae556e2885cfa94304748d763e1927d9f86dd541ad8f353ed6",
+        "shiny": "c835dc1a242a333855b9e17d99a75c97c311a862b0fada818da41f86aba8d765",
+        "placed": "48c22644d871843bc80f47470c4762074b105b265146e84aaa47f4636b38a0a6"
+      }
+    },
+    {
       "file": "11097",
       "name": "Furfrou (Star Trim)",
       "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU_2.png",
