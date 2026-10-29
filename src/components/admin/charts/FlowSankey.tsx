@@ -129,15 +129,6 @@ function nodeLabel(
       },
     };
   }
-  if (kind === 'referrer' && compact && !links.some((l) => l.target === n.name)) {
-    return {
-      position: 'left' as const,
-      width: 88,
-      overflow: 'break' as const,
-      lineHeight: 11,
-      formatter: '{b}',
-    };
-  }
   if (!compact) return { position: n.label, formatter: '{b}' };
   return compactLabel(compactFunnelLabelSide(n, nodes, links), fontSize, lines);
 }
@@ -295,6 +286,35 @@ function labelMeasure(fontSize: number): (text: string) => number {
 }
 
 const COMPACT_MIN_FONT_SIZE = 7;
+/** A referrer host wider than this share of the chart ends in "…" instead of squeezing the flows. */
+const REFERRER_LABEL_MAX_SHARE = 0.4;
+const REFERRER_LABEL_SLACK = 4;
+
+/**
+ * Referrer hosts sit left of their bars on one line. The left margin grows to the longest host,
+ * and on a phone the labels also clear the widest count chip, which is centered on its bar.
+ */
+function referrerSourceLabels(nodes: SankeyNode[], links: SankeyLink[], width: number, base: ReturnType<typeof sankeyGeometry>) {
+  const sources = nodes.filter((n) => !links.some((l) => l.target === n.name));
+  const measure = labelMeasure(base.fontSize);
+  const chip = Math.max(0, ...sources.map((n) =>
+    measure(String(Math.round(links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0)))))) + 4;
+  const distance = base.compact ? Math.max(LABEL_DISTANCE, Math.ceil(chip / 2 - base.nodeWidth / 2) + 3) : LABEL_DISTANCE;
+  // ECharts truncates a few pixels before the box edge, so the box gets that much slack.
+  const labelWidth = Math.min(Math.ceil(Math.max(0, ...sources.map((n) => measure(n.name)))) + REFERRER_LABEL_SLACK, Math.floor(width * REFERRER_LABEL_MAX_SHARE));
+  return {
+    names: new Set(sources.map((n) => n.name)),
+    left: Math.max(base.left, labelWidth + distance + 2),
+    label: {
+      position: 'left' as const,
+      distance,
+      width: labelWidth,
+      overflow: 'truncate' as const,
+      ellipsis: '…',
+      formatter: '{b}',
+    },
+  };
+}
 
 function funnelLayout(
   nodes: SankeyNode[],
@@ -362,8 +382,10 @@ export function FlowSankey({
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
       const width = el.clientWidth || 360;
       const base = sankeyGeometry(width, kind);
-      const { g, shares, lines } =
-        kind === 'funnel' ? funnelLayout(nodes, links, width, base) : { g: base, shares: null, lines: new Map<string, string[]>() };
+      const referrer = kind === 'referrer' ? referrerSourceLabels(nodes, links, width, base) : null;
+      const { g, shares, lines } = referrer
+        ? { g: { ...base, left: referrer.left }, shares: null, lines: new Map<string, string[]>() }
+        : funnelLayout(nodes, links, width, base);
       const chips = nodes.filter((n) => n.percentage || !chipInLabel(n, g.compact, kind, nodes, links));
 
       return {
@@ -404,7 +426,9 @@ export function FlowSankey({
               name: n.name,
               localX: shares?.get(n.name),
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize, lines.get(n.name), g.compact && !shares && links.some((l) => l.source === 'Exported')),
+              label: referrer?.names.has(n.name)
+                ? referrer.label
+                : nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize, lines.get(n.name), g.compact && !shares && links.some((l) => l.source === 'Exported')),
             })),
             links: links.map((l) => ({
               source: l.source,

@@ -214,6 +214,65 @@ test.describe('admin flows', () => {
     await expectFitsPhoneHeight(funnel);
   });
 
+  test('referrer labels each fit on one line inside the chart, apart from each other', { tag: '@viewport' }, async ({ page }) => {
+    const now = Date.now();
+    const builder = { cid: 'flow-e2e', firstTs: now - 60_000, lastTs: now, submits: 1, sessions: 1, sessionMs: [60_000],
+      sessionLog: [{ ts: now - 60_000, ids: [1] }, { ts: now, ids: [1] }], maxDepth: 1, everIds: [1], latestIds: [1], completed: false, exported: false };
+    const payload = buildDashboard({ clients: { 'flow-e2e': JSON.stringify(builder) }, archived: [], funnel: {}, funnelWindow: null, leagueClients: {} }, { range: 'all' }, now);
+    // Live sources from October 29: a long host and a run of sources too small to space their labels by size.
+    payload.referrerFlow = [
+      ['www.google.com', 50, 15, 8], ['www.bing.com', 20, 9, 3], ['duckduckgo.com', 7, 3, 1], ['noai.duckduckgo.com', 2, 1, 0],
+      ['search.yahoo.com', 2, 1, 0], ['arch.b4k.dev', 1, 1, 0], ['search.brave.com', 1, 1, 0], ['it.search.yahoo.com', 1, 0, 0],
+      ['referrer not known', 960, 640, 276],
+    ].map(([host, dex, league, favorites]) => ({ host: host as string, dex: dex as number, league: league as number, favorites: favorites as number, total: (dex as number) + (league as number) + (favorites as number) }));
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      const state = window as unknown as { referrerPaints: string[] };
+      state.referrerPaints = [];
+      CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
+        if (/Referrer to landing/.test(this.canvas.closest('[role="img"]')?.getAttribute('aria-label') ?? '')) state.referrerPaints.push(text);
+        return maxWidth === undefined ? original.call(this, text, x, y) : original.call(this, text, x, y, maxWidth);
+      };
+    });
+    await page.route('**/api/submissions?**', (route) => route.fulfill({ json: payload }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await openAdmin(page, '/?admin');
+    await page.getByRole('button', { name: 'Referrer → landing' }).click();
+    const chart = page.getByRole('img', { name: /Referrer to landing/ });
+    await expect(chart.locator('canvas')).toBeVisible();
+    const labels = await chart.evaluate((el) => {
+      type Rect = { x: number; y: number; width: number; height: number; clone(): Rect; applyTransform(matrix: number[]): void };
+      type Glyph = { getBoundingRect(): Rect; getComputedTransform(): number[] | undefined };
+      type Chart = { getWidth(): number; getHeight(): number; getModel(): { getSeriesByIndex(i: number): { getGraph(): { nodes: { id: string; getGraphicEl(): { getTextContent(): Glyph } }[] } } } };
+      type Hook = { memoizedState: unknown; next: Hook | null };
+      type Fiber = { memoizedState: Hook | null; return: Fiber | null };
+      const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'))!;
+      let fiber = (el as unknown as Record<string, Fiber>)[key], instance: Chart | undefined;
+      for (let i = 0; fiber && i < 30 && !instance; i++, fiber = fiber.return!) for (let hook = fiber.memoizedState; hook && !instance; hook = hook.next) {
+        const current = (hook.memoizedState as { current?: Chart } | null)?.current;
+        if (current && typeof current.getModel === 'function') instance = current;
+      }
+      if (!instance) throw new Error('Rendered referrer chart missing');
+      return { width: instance.getWidth(), height: instance.getHeight(), rects: instance.getModel().getSeriesByIndex(0).getGraph().nodes.map((n) => {
+        const g = n.getGraphicEl().getTextContent();
+        const r = g.getBoundingRect().clone(), matrix = g.getComputedTransform();
+        if (matrix) r.applyTransform(matrix);
+        return { name: n.id, x: r.x, y: r.y, width: r.width, height: r.height };
+      }) };
+    });
+    const line = Math.min(...labels.rects.map((r) => r.height));
+    for (const r of labels.rects) {
+      expect(r.x >= 0 && r.y >= 0 && r.x + r.width <= labels.width && r.y + r.height <= labels.height, `${r.name} stays inside ${JSON.stringify(r)}`).toBe(true);
+      expect(r.height, `${r.name} stays on one line`).toBeLessThan(line * 1.5);
+    }
+    const sources = labels.rects.filter((r) => payload.referrerFlow!.some((row) => row.host === r.name)).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < sources.length; i++) {
+      expect(sources[i].y, `${sources[i].name} clears ${sources[i - 1].name}`).toBeGreaterThanOrEqual(sources[i - 1].y + sources[i - 1].height);
+    }
+    const paints = await page.evaluate(() => (window as unknown as { referrerPaints: string[] }).referrerPaints);
+    for (const row of payload.referrerFlow!) expect(paints, `${row.host} paints in full`).toContain(row.host);
+  });
+
   test('phone referrer Sankey stays in the column', { tag: '@viewport' }, async ({ page }, info) => {
     test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     await page.getByRole('button', { name: 'Referrer → landing' }).click();
