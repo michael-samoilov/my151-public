@@ -1,5 +1,6 @@
 import { Activity, useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
 import { create } from 'zustand';
+import { createPortal } from 'react-dom';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { ToolbarSlotContext } from '@/components/layout/toolbarSlot';
@@ -83,10 +84,12 @@ const PRACTICE_RENDER_MS = 5000;
 /**
  * Builds a hidden Starters picker once while the page is idle, so the first
  * picker a visitor opens runs on warm code: on the lab phone, the first
- * Starters open fell from about 785 to 503 ms. Hidden `<Activity>` content
- * renders without effects or layout and yields to any input.
+ * Starters open fell from about 680 to 459 ms. Hidden `<Activity>` content
+ * renders without effects or layout and yields to any input. It renders into
+ * an element that is never attached, so no selector or screen reader finds it.
  */
 function PickerPracticeRender({ onDone }: { onDone: () => void }) {
+  const [host] = useState(() => document.createElement('div'));
   const [store] = useState(() => create<BrowserStoreState>()(() => ({
     ...usePokedexStore.getState(),
     activeSection: 'starter', activeCategoryFilter: 'starter', activeArchetypeFilter: null,
@@ -96,15 +99,16 @@ function PickerPracticeRender({ onDone }: { onDone: () => void }) {
     addToSection: () => {}, removeEvoLine: () => {}, setActiveSection: () => {}, setMobileBrowserOpen: () => {},
   })));
   useEffect(() => {
-    const id = setTimeout(onDone, PRACTICE_RENDER_MS);
+    const id = setTimeout(() => whenIdle(() => startTransition(onDone)), PRACTICE_RENDER_MS);
     return () => clearTimeout(id);
   }, [onDone]);
-  return (
+  return createPortal(
     <Activity mode="hidden">
       <BrowserStoreContext.Provider value={store}>
         <PokemonBrowser />
       </BrowserStoreContext.Provider>
-    </Activity>
+    </Activity>,
+    host,
   );
 }
 
