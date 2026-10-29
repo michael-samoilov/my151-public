@@ -58,7 +58,6 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   await page.getByTestId('favorites-cell-fire-1').click();
   const toggle = page.getByTestId('favorites-shiny-toggle');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.getByTestId('shiny-look-switch'), 'the preview-only look switch stays out of a production build').toHaveCount(0);
   await expect(toggle).toHaveText('Shiny');
   await expect(sprite(page.getByTestId('favorites-pick-6'))).not.toHaveAttribute('src', SHINY);
   await expect.poll(() => shinyRequests.map((url) => new URL(url).pathname), 'the sheet loads its shiny sprites before the toggle')

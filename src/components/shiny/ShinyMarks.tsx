@@ -1,24 +1,6 @@
-import { useId, type CSSProperties, type SVGProps } from 'react';
+import { useId, type CSSProperties } from 'react';
 import { useT } from '@/i18n';
-import { NO_SHINY, SHINY_GLYPH, SHINY_STAR, svgPaint, type Paint, type ShinyLook, type ShinyMark } from './shinyMarks';
-import { useShinyLook } from './useShinyLook';
-
-export type GradientBox = Pick<SVGProps<SVGLinearGradientElement>, 'gradientUnits' | 'x1' | 'y1' | 'x2' | 'y2'>;
-
-/** Defines the gradient that `svgPaint(paint, id)` refers to. A solid paint needs none. */
-export function PaintGradient({ id, paint, box }: { id: string; paint: Paint; box: GradientBox }) {
-  if (typeof paint === 'string') return null;
-  return (
-    <linearGradient id={id} {...box}>
-      {paint.map(([at, color]) => <stop key={at} offset={at} stopColor={color} />)}
-    </linearGradient>
-  );
-}
-
-/** Each star runs a gradient from its own top-left tips to its bottom-right tips. */
-const GLYPH_BOX: GradientBox = { x1: 0.25, y1: 0.25, x2: 0.75, y2: 0.75 };
-/** The card disc runs a gradient across its whole 38-unit box. */
-const DISC_BOX: GradientBox = { gradientUnits: 'userSpaceOnUse', x1: -7, y1: -7, x2: 31, y2: 31 };
+import { NO_SHINY, SHINY_GLYPH, SHINY_ON, SHINY_STAR, type ShinyMark } from './shinyMarks';
 
 export function ShinyStar({ className, style }: { className?: string; style?: CSSProperties }) {
   const t = useT();
@@ -38,29 +20,21 @@ export function ShinyStar({ className, style }: { className?: string; style?: CS
   );
 }
 
-/** The Shiny stars when on, in the look's stroke and fill. The edge keeps them as heavy as the gray outline ones. */
-function OnStars({ look }: { look: ShinyLook }) {
-  const id = useId();
+/** The Shiny stars when on: solid yellow. The edge keeps the stars as heavy as the gray outline ones. */
+function OnStars() {
   return (
-    <>
-      <defs>
-        <PaintGradient id={`${id}s`} paint={look.stroke} box={GLYPH_BOX} />
-        <PaintGradient id={`${id}f`} paint={look.starFill} box={GLYPH_BOX} />
-      </defs>
-      <g fill={svgPaint(look.starFill, `${id}f`)} stroke={svgPaint(look.stroke, `${id}s`)} strokeWidth={1.6} strokeLinejoin="round">
-        <path d={SHINY_GLYPH.big} />
-        <path d={SHINY_GLYPH.small} />
-      </g>
-    </>
+    <g fill={SHINY_ON.color} stroke={SHINY_ON.color} strokeWidth={1.6} strokeLinejoin="round">
+      <path d={SHINY_GLYPH.big} />
+      <path d={SHINY_GLYPH.small} />
+    </g>
   );
 }
 
 /** The Shiny glyph when on. */
 export function ShinyGlyph({ className, style }: { className?: string; style?: CSSProperties }) {
-  const look = useShinyLook();
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={className} style={style}>
-      <OnStars look={look} />
+      <OnStars />
     </svg>
   );
 }
@@ -96,24 +70,17 @@ const RING = 2.4;
 
 /**
  * The gym card's shiny button: the Shiny glyph in a disc the size of the card's reset and remove
- * discs. On, the look's stars in a ring of the look's stroke; off, gray stars in a thin gray ring;
- * with no shiny art, the crossed-out sparkle the browsers show. One svg holds the disc and the
- * glyph, so the two rasterise together under the card's zoom.
+ * discs. On, gold stars in a ring of the same gold; off, gray stars in a thin gray ring; with
+ * no shiny art, the crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so
+ * the two rasterise together under the card's zoom.
  */
 export function ShinyDisc({ mark }: { mark: ShinyMark }) {
-  const look = useShinyLook();
-  const id = useId();
   return (
     <svg viewBox="-7 -7 38 38" className="block aspect-square w-full" aria-hidden="true">
       {mark === 'on' ? (
         <>
-          <defs>
-            <PaintGradient id={`${id}r`} paint={look.stroke} box={DISC_BOX} />
-            <PaintGradient id={`${id}d`} paint={look.discFill} box={DISC_BOX} />
-          </defs>
-          <circle cx={12} cy={12} r={19 - (1.5 * RING) / 2} fill={svgPaint(look.discFill, `${id}d`)}
-            strokeWidth={1.5 * RING} stroke={svgPaint(look.stroke, `${id}r`)} />
-          <OnStars look={look} />
+          <circle cx={12} cy={12} r={19 - (1.5 * RING) / 2} fill="#ffffff" strokeWidth={1.5 * RING} stroke={SHINY_ON.color} />
+          <OnStars />
         </>
       ) : (
         <circle cx={12} cy={12} r={19 - RING / 2} fill="#ffffff" strokeWidth={RING}
