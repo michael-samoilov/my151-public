@@ -45,6 +45,11 @@
  * `unchecked` reason, for a shiny that my151 changed after it left its source.
  * The run reports an unchecked file whose own SHA-256 differs from its row.
  *
+ * `held` in scripts/data/shiny-sprite-sources.json names the shinies that
+ * Michael keeps out of the app, each with its reason. The run never ships
+ * one: it deletes a held file it finds and reports the held list. The kept
+ * copies and their records are in docs/favorite-picker-work/sprites/held-shinies/.
+ *
  * After a run that adds files, commit them and shrink them as the normal
  * sprites were:
  * `python3 scripts/optimize-sprites.py HEAD public/sprites/pokemon/shiny`.
@@ -73,6 +78,7 @@ const ARCHIVE = 'Generation_9_Pack_v3.3.8.rar:';
 const PROTECTED = new Set(['77', '130', '147', '443', '612']);
 const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
 const UNREADABLE = /^https:\/\/sta\.sh\/|#frame=\d+$/;
+const HELD = new Set(Object.keys(sources.held));
 const SPRITE_FILE = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/;
 
 const root = process.cwd();
@@ -101,7 +107,7 @@ type Verdict =
   | { kind: 'outline'; mismatched: number | null }
   | { kind: 'unavailable'; reason: string }
   | { kind: 'none' };
-type Result = 'added' | 'replaced' | 'kept' | 'unchecked' | 'removed' | 'protected' | 'none';
+type Result = 'added' | 'replaced' | 'kept' | 'unchecked' | 'removed' | 'protected' | 'held' | 'none';
 
 const placed = new Map<string, Source & { sha256: Digests }>(found.placed.map((entry) => [entry.file, entry]));
 for (const url of found.placed.flatMap((entry) => [entry.normal, entry.shiny])) {
@@ -274,6 +280,11 @@ async function harvest(file: string, catalogs: Catalogs): Promise<Result> {
   if (!existsSync(ours(file))) return 'none';
   const shinyFile = target(file);
   const present = existsSync(shinyFile);
+  if (HELD.has(file)) {
+    delete reencodes[`/sprites/pokemon/shiny/${file}.png`];
+    if (present) rmSync(shinyFile);
+    return 'held';
+  }
   if (PROTECTED.has(file)) {
     if (!present) return 'none';
     const difference = maskDifference(decode(readFileSync(shinyFile)), decode(readFileSync(ours(file))));
@@ -333,7 +344,9 @@ for (const file of files) {
 }
 const without = (set: Set<string>) => files.filter((file) => set.has(file) && !shipped.includes(file));
 const leagueOnly = new Set([...catalogs.league].filter((file) => !catalogs.picker.has(file)));
-console.log(`${shipped.length} of ${files.length} sprites have a shiny: ${count('added')} added, ${count('replaced')} replaced, ${count('kept')} kept, ${count('protected')} protected, ${count('removed')} removed.`);
+console.log(`${shipped.length} of ${files.length} sprites have a shiny: ${count('added')} added, ${count('replaced')} replaced, ${count('kept')} kept, ${count('protected')} protected, ${count('held')} held, ${count('removed')} removed.`);
+const held = files.filter((file) => results.get(file) === 'held');
+console.log(`Held out of the app by scripts/data/shiny-sprite-sources.json (${held.length}): ${held.join(' ')}`);
 console.log(`Rejected because the shiny's outline differs from our normal sprite (${outline.length}): ${outline.join(', ')}`);
 for (const [reason, kept] of unchecked) console.log(`Kept unchecked because ${reason} (${kept.length}): ${kept.join(' ')}`);
 if (unrecorded.length) console.log(`Kept unchecked, but the file's SHA-256 differs from its row in scripts/data/shiny-sprite-placed.json (${unrecorded.length}): ${unrecorded.join(' ')}`);

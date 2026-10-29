@@ -41,6 +41,11 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
   await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/676.png"]')).toBeVisible();
   await expect(page.locator('[data-testid="verify-evo-card"] img[src*="/shiny/11097.png"]')).toBeVisible();
   await testInfo.attach('furfrou-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
+  await search(page, 'pichu');
+  const spiky = page.locator('[data-testid="verify-evo-card"]', { has: page.locator('img[src*="/11064.png"]') });
+  await expect(spiky.getByTestId('no-shiny-mark'), 'a held shiny shows as no shiny').toBeVisible();
+  await expect(spiky.locator('img[src*="/11064.png"]')).toHaveCSS('filter', 'grayscale(1)');
+  await testInfo.attach('no-shiny-browser.png', { body: await page.screenshot(), contentType: 'image/png' });
 
   await search(page, 'lapras');
   await lapras.click();

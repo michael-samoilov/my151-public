@@ -64777,36 +64777,6 @@
   "verdict": "confirmed"
  },
  {
-  "file": "public/sprites/pokemon/shiny/10061.png",
-  "sha256": "36ad48b59cc32f79511c80b50ef50e28d3edb275252d124526f06deb3dad1ba8",
-  "pokemon": [
-   "floette-eternal (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "princessofmusic"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/670_6s-png.276666/",
-    "sha256": "103b5b5bf5d377e23c1e258de83bfc167fbfa1b49fa1468c61d9158f5ef6c479",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '670 Floette-eternal flower', Spriter 'princessofmusic'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10061.png",
-    "sha256": "674f92a1ce924dec6e29f162228467b512de10c28ba23daaf26bd16849050194"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '670 Floette-eternal flower', Spriter 'princessofmusic'",
-  "verdict": "confirmed"
- },
- {
   "file": "public/sprites/pokemon/shiny/10062.png",
   "sha256": "d54527c8f3b61702c50bc4199f839fe027c19480f4de7ce957341f5615f7d57a",
   "pokemon": [
@@ -65339,186 +65309,6 @@
   "verdict": "confirmed"
  },
  {
-  "file": "public/sprites/pokemon/shiny/10080.png",
-  "sha256": "9e986c8ae80c4181dd340abdd05c9f6d968eff6a47fe84d30a3737305119575c",
-  "pokemon": [
-   "pikachu-rock-star (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_2s-png.273726/",
-    "sha256": "0286e92be6142b2d13e9be5a509aa95ec9b6617ae8fc1efc37a151b7449e9ffd",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-rock star', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10080.png",
-    "sha256": "9e986c8ae80c4181dd340abdd05c9f6d968eff6a47fe84d30a3737305119575c"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-rock star', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10081.png",
-  "sha256": "504e43d2f74cda8d49d1df0303617eab93ec9a03d164d33b444198140ef98516",
-  "pokemon": [
-   "pikachu-belle (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_3s-png.273730/",
-    "sha256": "9bec5bafc5125272377578ed8b9278b3dde5032a9032a27d8f40b67266d62691",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-belle', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10081.png",
-    "sha256": "504e43d2f74cda8d49d1df0303617eab93ec9a03d164d33b444198140ef98516"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-belle', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10082.png",
-  "sha256": "6504f1d7526ea2470a0923d70bc1454612bedb384c3577f1a576c1bf0d801b2a",
-  "pokemon": [
-   "pikachu-pop-star (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_4s-png.273734/",
-    "sha256": "06b9ae09d22d4dd4b968ce7da02ae2c9ba8e4e8f7c19959d8a7267b53c9c17f2",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-pop star', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10082.png",
-    "sha256": "6504f1d7526ea2470a0923d70bc1454612bedb384c3577f1a576c1bf0d801b2a"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-pop star', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10083.png",
-  "sha256": "0dd953c1afedac3e23e447c35a3a7d8c976d70c51d8c4b6da6b7539669ba786d",
-  "pokemon": [
-   "pikachu-phd (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_5s-png.273738/",
-    "sha256": "9ae994a950702c0d9d0265186aeaa520b4d8612980e7c012a8974cc703d8847e",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-Ph. D', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10083.png",
-    "sha256": "0dd953c1afedac3e23e447c35a3a7d8c976d70c51d8c4b6da6b7539669ba786d"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-Ph. D', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10084.png",
-  "sha256": "c75bac6220a7e4a2982e69bfc19e0a876575cfd5e00b2c4e06c7a477a3aa3536",
-  "pokemon": [
-   "pikachu-libre (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_6s-png.273742/",
-    "sha256": "d3be1e0c93a90a8b3edf5a2bb93711009c23a5ccec059478a440c6ec1a1f8840",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-libre', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10084.png",
-    "sha256": "c75bac6220a7e4a2982e69bfc19e0a876575cfd5e00b2c4e06c7a477a3aa3536"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-libre', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10085.png",
-  "sha256": "fdd07d0f6e8b7999ae3575683c87229a092a9e9d30973e923afc55ad5c3c8bcb",
-  "pokemon": [
-   "pikachu-cosplay (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_1s-png.273722/",
-    "sha256": "19be36eab46c885b64fef537a0c6425fab55c3fa08b703ff4cb135e1cf8a14df",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "smogon-gen6 sheet, row '25 Pikachu-cosplay', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10085.png",
-    "sha256": "fdd07d0f6e8b7999ae3575683c87229a092a9e9d30973e923afc55ad5c3c8bcb"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '25 Pikachu-cosplay', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
   "file": "public/sprites/pokemon/shiny/10086.png",
   "sha256": "211b16a2e6711b35be7b4885c061a23185af17d8f795f7bd0ac259a28d0c553d",
   "pokemon": [
@@ -65728,186 +65518,6 @@
    }
   ],
   "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '20 Raticate', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10094.png",
-  "sha256": "36ff82383799fb6e26d69155194e65245a3b3dd3e781313033101951c58959ec",
-  "pokemon": [
-   "pikachu-original-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_7s-png.272409/",
-    "sha256": "380dc3ef5c7ffaf71acbcc0f9cba3cc86983ed7b2b451a33811dce5489537fa5",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-original cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10094.png",
-    "sha256": "ad6de0c02ebab8d286ef2308c8ea1b99fe6a7808b82ae8a60a27bce2bde48c73"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-original cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10095.png",
-  "sha256": "ad38d6b89e855e6e713bcfb2ff540853dc31abd34cd31a3f503354d4cfe6eb51",
-  "pokemon": [
-   "pikachu-hoenn-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_8s-png.272413/",
-    "sha256": "8abe1009e8dee4aa46da9d8f1c551d4c7a305545e9657210fc23e92fa359d8bf",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-hoenn cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10095.png",
-    "sha256": "5cf4007b9adb21add2b539460de650e72c7644637fa1976977caf0cd04cf0824"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-hoenn cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10096.png",
-  "sha256": "197bf18c8e4bd9844c24253422bb1534def8ff2e3914dc7e7dacce25d341c255",
-  "pokemon": [
-   "pikachu-sinnoh-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_9s-png.272417/",
-    "sha256": "1c6c450a87f15fcefc9a9344db6a14aa1965202bc229d700d8f8528216b13983",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-sinnoh cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10096.png",
-    "sha256": "1a06e32c6f28b27f82c0a11e9132dc4be62f95a8963674a8fb742cbe73fec67e"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-sinnoh cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10097.png",
-  "sha256": "f94575bdae5bb7de9cf63336ac3da08734c10ad83713b9831d86083673616b27",
-  "pokemon": [
-   "pikachu-unova-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_10s-png.272421/",
-    "sha256": "4d2f514a14925ea718cb0665c056a8dcfb58b8682c960b48a1a9dcb48bd427dc",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-unova cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10097.png",
-    "sha256": "1a9c82cbb83ad94e540644c209edd878ed7247acb0d6c7a8007c4a1790de1ab9"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-unova cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10098.png",
-  "sha256": "1ef6a283d7a8ec3e9662b050a4572577de8a3037d951b9746b945ce6cf1e2240",
-  "pokemon": [
-   "pikachu-kalos-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_11s-png.272425/",
-    "sha256": "51376a89dcd6b9d1df513c05569bbc730b913b3f05932a2673bb7a1f8474f4b9",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-kalos cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10098.png",
-    "sha256": "a9a659df3963e3caa8bfe92fcdf09963c02c86ab2b3077209c5a06ab7434cd1d"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-kalos cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10099.png",
-  "sha256": "18d40534be45611e43110e4f2d3aabe4b268e08a8b0157368289d84247725436",
-  "pokemon": [
-   "pikachu-alola-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_12s-png.272429/",
-    "sha256": "f7c302152104ee03e3ba461ff1fe29ed3d0a7bf9822405a17292ba832d1b19f9",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-alola cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10099.png",
-    "sha256": "8965c89ac1d508c66595303fe997684be0a6449a10fc3043d591a2d9a6a72d0a"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-alola cap', Spriter 'leParagon'",
   "verdict": "confirmed"
  },
  {
@@ -66393,35 +66003,6 @@
   "verdict": "confirmed"
  },
  {
-  "file": "public/sprites/pokemon/shiny/10117.png",
-  "sha256": "9dfa5d348f416ca62049c8133053b6d5d121a5f894d1e02b80654c44211a83ea",
-  "pokemon": [
-   "greninja-ash (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker"
-  ],
-  "creditedNow": [
-   "G.E.Z."
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/658_2s-png.273485/",
-    "sha256": "860413c56904ad7a0febccf2c00281b24501792b110e2e4642243a88a16061ba",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '658 Greninja-battle bond', Spriter 'G.E.Z., leParagon (back)'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10117.png",
-    "sha256": "9dfa5d348f416ca62049c8133053b6d5d121a5f894d1e02b80654c44211a83ea"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '658 Greninja-battle bond', Spriter 'G.E.Z., leParagon (back)'",
-  "verdict": "confirmed"
- },
- {
   "file": "public/sprites/pokemon/shiny/10120.png",
   "sha256": "336f72fe34c61235e70567271d04eeb6dad976cc4dd03cbe583cda5bd6d339c3",
   "pokemon": [
@@ -66865,36 +66446,6 @@
   "verdict": "confirmed"
  },
  {
-  "file": "public/sprites/pokemon/shiny/10148.png",
-  "sha256": "d067b424c4efa042d8ed8830ac67e90c2075b28ba488a40bdf1ac4881862411b",
-  "pokemon": [
-   "pikachu-partner-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_13s-png.272433/",
-    "sha256": "8513268f73db3b7204ce80e19b276c2f0dd0832e91816e4d163585912d3655d6",
-    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
-    "sheetRow": "smogon-gen7 sheet, row '25 Pikachu-partner cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10148.png",
-    "sha256": "9c3be9912750f5838e630b6ce83d6c80b54d564971a5a451f71eec6ff112a3a6"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '25 Pikachu-partner cap', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
   "file": "public/sprites/pokemon/shiny/10152.png",
   "sha256": "6a78e028237b8f3422e03d2ebaf3db8c27c7d9d1f9e61cb1d17f5e7476d48d7f",
   "pokemon": [
@@ -67009,36 +66560,6 @@
    }
   ],
   "comparison": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '800 Necrozma-ultra', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10160.png",
-  "sha256": "eea3bd655cc3649f7170394274180a3a6732fc02c18f23944429f608dc100e4b",
-  "pokemon": [
-   "pikachu-world-cap (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen7",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/025_15s-png.266708/",
-    "sha256": "b43f509e28f111352a9b1f1cc51f6e6d6a7bc37010fbf652a9b66f18276ba7a0",
-    "sheet": "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
-    "sheetRow": "smogon-gen8 sheet, row '25 Pikachu-world cap', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10160.png",
-    "sha256": "c1bfbce41e9bbb987efbf3aa656493dd4633f9622a479da9a2c1a4b73bfe9bd8"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '25 Pikachu-world cap', Spriter 'leParagon'",
   "verdict": "confirmed"
  },
  {
@@ -67932,36 +67453,6 @@
    }
   ],
   "comparison": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '892 Urshifu-rapid strike', Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/10192.png",
-  "sha256": "a5f2adcb0c927f9661cdf72417f694eaf3cacd6fc81ad075e18eda77aa0615d8",
-  "pokemon": [
-   "zarude-dada (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "leParagon"
-  ],
-  "creditedVia": "smogon-gen8",
-  "evidenceType": "exact-smogon-sheet",
-  "sources": [
-   {
-    "url": "https://www.smogon.com/forums/attachments/893_2s-png.266193/",
-    "sha256": "0a5b7b9c9eebf96b050773094099778af85a7517d1b25e5c8ba6554ab44ed138",
-    "sheet": "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
-    "sheetRow": "smogon-gen8 sheet, row '893 Zarude-dada', Spriter 'leParagon'"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/10192.png",
-    "sha256": "a5f2adcb0c927f9661cdf72417f694eaf3cacd6fc81ad075e18eda77aa0615d8"
-   }
-  ],
-  "comparison": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '893 Zarude-dada', Spriter 'leParagon'",
   "verdict": "confirmed"
  },
  {
@@ -70553,35 +70044,6 @@
   "verdict": "confirmed"
  },
  {
-  "file": "public/sprites/pokemon/shiny/10296.png",
-  "sha256": "b6dc04faa7acd355e930996ec9149028b3e431e72b9f3bccc0bcc36f177c8281",
-  "pokemon": [
-   "Mega Floette (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [
-   "Kyle Dove"
-  ],
-  "creditedVia": "pokeapi",
-  "evidenceType": "pokeapi-readme",
-  "sources": [
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/shiny/10296.png",
-    "sha256": "fe1319316f7837557715351650475369d7c931ef0e7d4fd1481315bc8b179fd1"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/README.md#L313",
-    "sha256": null,
-    "quote": "for providing the back_default, back_shiny and z-a mega sprites for generation 9."
-   }
-  ],
-  "comparison": "the app file has the pixels of sprites/pokemon/shiny/10296.png as added in PokéAPI commit 4bc9d60186, the commit that put the README line crediting Kyle Dove \"for providing the back_default, back_shiny and z-a mega sprites for generation 9.\"",
-  "verdict": "confirmed"
- },
- {
   "file": "public/sprites/pokemon/shiny/10297.png",
   "sha256": "c006dad9efa6752103352a7f59ecd136d4787de8bc415e94e41b81a0d5a251c7",
   "pokemon": [
@@ -72771,28 +72233,6 @@
   "verdict": "official Game Freak"
  },
  {
-  "file": "public/sprites/pokemon/shiny/11064.png",
-  "sha256": "3284ff0591cf941279e268c7cab479e923bebe8a37e37c2cc0775d8b8a8d0e1a",
-  "pokemon": [
-   "pichu-spiky-eared (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker",
-   "League builder"
-  ],
-  "creditedNow": [],
-  "creditedVia": null,
-  "evidenceType": "official-game-freak",
-  "sources": [
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/shiny/172-spiky-eared.png",
-    "sha256": "4584ef3e850f23487a495b4f0f99a19b5af6e9dd691d9fa10f7ca6c19e4877e8"
-   }
-  ],
-  "comparison": "shiny of the Game Freak sprite: the pixels of PokéAPI's sprites/pokemon/shiny/172-spiky-eared.png from commit 5841d46 (pull request 247, 2026-08-04, 'Replace Spiky-eared Pichu Sprite'), which are PokéAPI's HeartGold and SoulSilver shiny/172-spiky-eared.png moved 8 rows down and 8 columns right",
-  "verdict": "official Game Freak"
- },
- {
   "file": "public/sprites/pokemon/shiny/11065.png",
   "sha256": "ebc63a8f825f8c4a2f143ebb7ec2418e1ead016f2679c1228ff9234f53e7d782",
   "pokemon": [
@@ -73702,37 +73142,6 @@
    }
   ],
   "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen7 sheet, tab 'static sprites', line 121 '802 Marshadow-zenith': Spriter 'leParagon'",
-  "verdict": "confirmed"
- },
- {
-  "file": "public/sprites/pokemon/shiny/11112.png",
-  "sha256": "2f7fba6d1b37f4df2068fcb79225b9c56eb3ed57546f5fdb4e450a4432cb50a5",
-  "pokemon": [
-   "rotom-dj (shiny)"
-  ],
-  "shownIn": [
-   "Favorite picker"
-  ],
-  "creditedNow": [
-   "KingOfThe-X-Roads"
-  ],
-  "creditedVia": "own upload",
-  "evidenceType": "exact-artist-own",
-  "changedBy": "my151",
-  "sources": [
-   {
-    "url": "https://x.com/kingofthexroad5/status/2029643110163091657",
-    "sha256": "c163e7eb06f16239924f28e5e507d06cfa18f99149e14b59d8aee266415ae336",
-    "media": "https://pbs.twimg.com/media/HCq9osaWQAAOxrQ",
-    "quote": "I miss posting. You can have this Rotom Stereo sprite for free then - and predicted shiny"
-   },
-   {
-    "url": "https://x.com/kingofthexroad5/status/2031877478067663114",
-    "sha256": "c163e7eb06f16239924f28e5e507d06cfa18f99149e14b59d8aee266415ae336",
-    "media": "https://pbs.twimg.com/media/HDKtR2bXkAAN2Hi"
-   }
-  ],
-  "comparison": "KingOfThe-X-Roads's predicted shiny from his own X post of 2026-03-05, posted again with the same bytes on 2026-03-11: its 384x384 image is an exact 4x upscale, and at 1/4 scale it equals the app file except at 2 seam pixels, (41,40) and (34,68), that my151 recoloured to the shiny seam colour (139,0,49). The normal sprite has the same 2 pixels changed",
   "verdict": "confirmed"
  },
  {
