@@ -137,6 +137,58 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   expect(simplified.star, 'the simplified export draws no star').toBeLessThan(10);
 });
 
+test('a desktop hover over a filled cell offers remove and shiny controls, and a phone shows none @viewport', async ({ page }, testInfo) => {
+  await seed(page, { fills: { 'fire|1': 6, 'water|1': 9, 'grass|1': 3, 'normal|6': 11096, 'favorite|1': 6 }, shiny: { 'fire|1': 6 } });
+  await page.goto('/favorite-pokemon-picker?lang=en');
+  const grid = page.getByTestId('favorites-grid');
+  const cell = (id: string) => page.getByTestId(`favorites-cell-${id}`);
+  const around = (id: string) => cell(id).locator('xpath=..');
+  const gridSprite = (id: string) => cell(id).locator('img[data-grid-sprite-size]');
+  await expect(gridSprite('water-1')).toHaveCount(1);
+
+  if (testInfo.project.name !== 'desktop') {
+    await expect(grid.getByRole('button', { name: /^(Remove|Shiny) / })).toHaveCount(0);
+    await expect(grid.locator('[data-shiny-mark]')).toHaveCount(0);
+    await testInfo.attach('phone-grid.png', { body: await page.screenshot(), contentType: 'image/png' });
+    return;
+  }
+
+  const waterShiny = around('water-1').getByRole('button', { name: 'Shiny Blastoise' });
+  await expect(waterShiny).toHaveCSS('opacity', '0');
+  await cell('water-1').hover();
+  await expect(waterShiny).toHaveCSS('opacity', '1');
+  await expect(around('water-1').getByRole('button', { name: 'Remove Blastoise' })).toHaveCSS('opacity', '1');
+  await expect(around('fire-1').getByRole('button', { name: 'Shiny Charizard' })).toHaveAttribute('aria-pressed', 'true');
+
+  await waterShiny.click();
+  await expect(waterShiny).toHaveAttribute('aria-pressed', 'true');
+  await expect(gridSprite('water-1')).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/9\.png$/);
+  await expect(page.getByTestId('favorites-picker'), 'the shiny control opens no selector').toHaveCount(0);
+
+  await cell('grass-1').hover();
+  await around('grass-1').getByRole('button', { name: 'Remove Venusaur' }).click();
+  await expect(gridSprite('grass-1')).toHaveCount(0);
+  await expect(page.getByTestId('favorites-picker'), 'the remove control opens no selector').toHaveCount(0);
+
+  await cell('favorite-1').hover();
+  await expect(around('favorite-1').getByRole('button', { name: 'Remove Charizard' }), 'a pointer cell can be cleared').toHaveCSS('opacity', '1');
+  await expect(around('favorite-1').locator('[data-shiny-mark]'), 'a pointer cell follows its target\'s shiny').toHaveCount(0);
+  await cell('normal-6').hover();
+  await expect(around('normal-6').getByRole('img', { name: 'No shiny' })).toHaveCSS('opacity', '1');
+
+  await cell('fire-1').focus();
+  await page.keyboard.press('Tab');
+  await expect(around('fire-1').getByRole('button', { name: 'Shiny Charizard' })).toBeFocused();
+
+  await page.reload();
+  await expect(gridSprite('water-1')).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/9\.png$/);
+  await expect(gridSprite('grass-1')).toHaveCount(0);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('favorite-picker')!).state);
+  expect(saved.shiny).toEqual({ 'fire|1': 6, 'water|1': 9 });
+  await cell('water-1').hover();
+  await testInfo.attach('hover-controls.png', { body: await page.screenshot(), contentType: 'image/png' });
+});
+
 test('the sheet header keeps the title badges at full height and drops the pill labels only when tight @viewport', async ({ page }, testInfo) => {
   await seed(page, { fills: {} });
   await page.goto('/favorite-pokemon-picker?lang=en');

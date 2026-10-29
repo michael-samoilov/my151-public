@@ -199,7 +199,7 @@ function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
       const start = event.detail > 0 ? press : null;
       press = null;
       if (inPane(event.target) || start?.inside) return;
-      if (event.target instanceof Element && event.target.closest('button[data-testid^="favorites-cell-"]')) return;
+      if (event.target instanceof Element && event.target.closest('button[data-testid^="favorites-cell-"], button[data-cell-control]')) return;
       const scroller = ref.current?.parentElement?.parentElement;
       if (scroller && event.target instanceof Node && scroller.contains(event.target)) {
         event.preventDefault();

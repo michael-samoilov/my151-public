@@ -214,6 +214,7 @@ function FavoritesContent({ sel, setSel }: {
                 resolve={getPickerMon}
                 selected={sel}
                 onSelect={open}
+                edits={{ clear, place }}
                 desktop={desktop}
                 pane={desktop ? picker : null}
               />
