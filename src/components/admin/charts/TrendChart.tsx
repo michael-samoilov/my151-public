@@ -4,6 +4,7 @@ import { useECharts, cssVar, type EChartsOption } from './useECharts';
 import { impliedActivityGrowth, type ImpliedActivityGrowth } from '../../../../api/_aggregate';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
+  chartDailyValues,
   chartHourlyValues,
   chartMonthlyValues,
   chartWeeklyValues,
@@ -131,11 +132,12 @@ function TrendChart({
   shown: Record<'daily' | 'weekly' | 'monthly', boolean>;
   growth: ImpliedActivityGrowth;
 }) {
-  const { daily, labels, counts, dailyEnd, provisional, weeklyGrowth, monthlyGrowth, scrubLabel, build } = useMemo(() => {
+  const { daily, labels, counts, dailySpoken, weeklyGrowth, monthlyGrowth, scrubLabel, build } = useMemo(() => {
     const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
     const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
     const days = series.map((p) => p.day);
-    const daily = series.map((p) => p.dau);
+    // On these ranges the daily line ends on the last 24 hours; only the 7d range ends on the calendar day.
+    const daily = chartDailyValues(series);
     const weekly = chartWeeklyValues(series, historyOriginDay);
     const monthly = chartMonthlyValues(series);
     const labels = days.map(fmtDay);
@@ -147,7 +149,11 @@ function TrendChart({
     const monthTicks = monthLabelTicks(days);
     const newest = series.at(-1);
     const counts = { ...windowCounts(series), days30: newest?.label720h ?? newest?.recordedLabel720h ?? null };
-    const dailyEnd: EndLabel = { unit: newest ? fmtWeekday(newest.day) : '', count: daily.at(-1) ?? 0 };
+    const rolling = newest?.label24h != null;
+    const dailyEnd: EndLabel = { unit: rolling ? '24h' : newest ? fmtWeekday(newest.day) : '', count: daily.at(-1) ?? 0 };
+    const dailySpoken = rolling
+      ? `Last 24 hours ${dailyEnd.count}`
+      : `${dailyEnd.unit}${provisional ? ' so far' : ''} ${dailyEnd.count}`;
     const weeklyEnd: EndLabel | null = counts.days7 == null ? null : { unit: '7d', count: counts.days7 };
     const monthlyEnd: EndLabel | null = counts.days30 == null ? null : { unit: '30d', count: counts.days30, lowerBound: newest?.label720h == null };
     const scrubLabel = (i: number) => {
@@ -331,7 +337,7 @@ function TrendChart({
         ],
       };
     };
-    return { daily, labels, counts, dailyEnd, provisional, weeklyGrowth, monthlyGrowth, scrubLabel, build };
+    return { daily, labels, counts, dailySpoken, weeklyGrowth, monthlyGrowth, scrubLabel, build };
   }, [series, nowMs, historyOriginDay, shown, growth]);
   const ref = useECharts(build, { scrub: { count: labels.length, label: scrubLabel } });
 
@@ -346,7 +352,7 @@ function TrendChart({
       ref={ref}
       className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}${shown.weekly && counts.days7 != null && weeklyGrowth ? `, 7d label implied growth ${weeklyGrowth}` : ''}${shown.monthly && counts.days30 != null && monthlyGrowth ? `, 30d label implied growth ${monthlyGrowth}` : ''}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. ${dailyEnd.unit}${provisional ? ' so far' : ''} ${dailyEnd.count}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}${shown.weekly && counts.days7 != null && weeklyGrowth ? `, 7d label implied growth ${weeklyGrowth}` : ''}${shown.monthly && counts.days30 != null && monthlyGrowth ? `, 30d label implied growth ${monthlyGrowth}` : ''}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. ${dailySpoken}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
     />
   );
 }
