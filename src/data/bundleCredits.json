@@ -47,8 +47,8 @@
    ]
   },
   "pokeapi-sprites": {
-   "sprites": 92,
-   "unconfirmed": 38,
+   "sprites": 89,
+   "unconfirmed": 35,
    "artists": [
     [
      "Kyle Dove",
@@ -65,7 +65,7 @@
    ]
   },
   "smogon-sprite-project": {
-   "sprites": 686,
+   "sprites": 689,
    "unconfirmed": 16,
    "artists": [
     [
@@ -90,7 +90,7 @@
     ],
     [
      "princessofmusic",
-     22
+     25
     ],
     [
      "Falgaia",
@@ -134,7 +134,7 @@
     ],
     [
      "The Cynical Poet",
-     9
+     10
     ],
     [
      "RadicalCharizard",
@@ -309,8 +309,8 @@
  },
  "pokeapi": {
   "official": 695,
-  "smogon": 681,
-  "own": 92
+  "smogon": 684,
+  "own": 89
  },
  "links": {
   "Falgaia": "https://www.deviantart.com/falgaia",

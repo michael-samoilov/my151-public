@@ -188,24 +188,35 @@
    "name": "pyroar-male"
   },
   "669": {
-   "artists": [],
+   "artists": [
+    "The Cynical Poet",
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/669.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-red': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'; only 63% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-red': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_1-png.276624/. Michael picked this pair on 2026-10-29.",
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   },
    "name": "flabebe"
   },
   "670": {
-   "artists": [],
+   "artists": [
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/670.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '670 Floette-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'; only 59% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '670 Floette-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/670_1-png.276644/. Michael picked this pair on 2026-10-29.",
    "name": "floette"
   },
   "671": {
-   "artists": [],
+   "artists": [
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/671.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'; only 72% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/671_1-png.276668/. Michael picked this pair on 2026-10-29.",
    "name": "florges"
   },
   "672": {

@@ -263,6 +263,77 @@
       }
     },
     {
+      "file": "669",
+      "name": "Flabébé (Red Flower)",
+      "normal": "https://www.smogon.com/forums/attachments/669_1-png.276624/",
+      "shiny": "https://www.smogon.com/forums/attachments/669_1s-png.276626/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "The Cynical Poet",
+        "princessofmusic"
+      ],
+      "shinyArtists": [
+        "The Cynical Poet",
+        "princessofmusic"
+      ],
+      "sha256": {
+        "normal": "d197ac49b0cd619a2e4ca9f170524fdc54335a6cce5172ab3cc6a21f32c5bc92",
+        "shiny": "f4139e1dad3272f39f076109ea78198d4be7dfe76a55363a92ccdd4b1dd5d468",
+        "placed": "4779bed43a69bdd66e9738fc85ab4cc30b40b31e5a3dde153f9c2f1061fbd6c0"
+      }
+    },
+    {
+      "file": "670",
+      "name": "Floette (Red Flower)",
+      "normal": "https://www.smogon.com/forums/attachments/670_1-png.276644/",
+      "shiny": "https://www.smogon.com/forums/attachments/670_1s-png.276646/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "princessofmusic"
+      ],
+      "shinyArtists": [
+        "princessofmusic"
+      ],
+      "sha256": {
+        "normal": "a0aee6cccca81fa95bc48d40ac8ec9f2eee953c75e7d1bc486d231168e6f7344",
+        "shiny": "dc9bf12782792ee02423228ffaf6890175042a584da54998f434dee359bb9963",
+        "placed": "932f07679c1a4be553282c806819d7a02f066e532fec9e94df02f955c2fbfb5b"
+      }
+    },
+    {
+      "file": "671",
+      "name": "Florges (Red Flower)",
+      "normal": "https://www.smogon.com/forums/attachments/671_1-png.276668/",
+      "shiny": "https://www.smogon.com/forums/attachments/671_1s-png.276670/",
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ],
+      "source": "Smogon Sprite Project credit sheet",
+      "artists": [
+        "princessofmusic"
+      ],
+      "shinyArtists": [
+        "princessofmusic"
+      ],
+      "sha256": {
+        "normal": "76abf73ff769587bba98bfd419eb8102bcfa3abaad47ef657283eca485042004",
+        "shiny": "afbc90abf1c47d60ba88486da2c6550c88c53f861f71104897cb3777560c9ec9",
+        "placed": "6d319a0c967f7bc63fffb7f108804afbb0f5337ba4ff21e9ef6a8a79acf7a4b0"
+      }
+    },
+    {
       "file": "676",
       "name": "Furfrou (Natural Form)",
       "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/FURFROU.png",

@@ -16754,7 +16754,7 @@
  },
  {
   "file": "public/sprites/pokemon/669.png",
-  "sha256": "3d391d35f1536ad4d1b48b0ba7728dcf22cf5cf4f482eba4e926fbc8d708af53",
+  "sha256": "5157ae15569fe9919432f807aff9de0c9cd9d8bc4d0772756c9cfeda1d2de7e6",
   "pokemon": [
    "flabebe"
   ],
@@ -16763,27 +16763,46 @@
    "League builder",
    "Pokédex builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "pokeapi",
-  "evidenceType": "none",
+  "creditedNow": [
+   "The Cynical Poet",
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/669_1-png.276624/",
-    "localCopy": "credits-audit/dl/smogon/669_1-png.276624",
-    "sha256": "d197ac49b0cd619a2e4ca9f170524fdc54335a6cce5172ab3cc6a21f32c5bc92"
-   },
-   {
-    "url": "https://www.smogon.com/forums/attachments/669_2-png.276628/",
-    "localCopy": "credits-audit/dl/smogon/669_2-png.276628",
-    "sha256": "e5a0fa77c03d7a2d81ca77a6e214e53d1182044c8f0fa46c5ba7246772c20970"
+    "sha256": "d197ac49b0cd619a2e4ca9f170524fdc54335a6cce5172ab3cc6a21f32c5bc92",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '669 Flabébé-red', Spriter 'TheCynicalPoet, princessofmusic (colours)'"
    }
   ],
-  "comparison": "closest Smogon attachment 669_1-png.276624 (sheet row '669 Flabébé-red', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; closest Smogon attachment 669_2-png.276628 (sheet row '669 Flabébé-yellow', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/669-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), on the artist's canvas, where the blue form 11082 and the stage's other colours sit (0 pixels of outline differ)",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "3d391d35f1536ad4d1b48b0ba7728dcf22cf5cf4f482eba4e926fbc8d708af53",
+   "creditedNow": [],
+   "creditedVia": "pokeapi",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/669_1-png.276624/",
+     "localCopy": "credits-audit/dl/smogon/669_1-png.276624",
+     "sha256": "d197ac49b0cd619a2e4ca9f170524fdc54335a6cce5172ab3cc6a21f32c5bc92"
+    },
+    {
+     "url": "https://www.smogon.com/forums/attachments/669_2-png.276628/",
+     "localCopy": "credits-audit/dl/smogon/669_2-png.276628",
+     "sha256": "e5a0fa77c03d7a2d81ca77a6e214e53d1182044c8f0fa46c5ba7246772c20970"
+    }
+   ],
+   "comparison": "closest Smogon attachment 669_1-png.276624 (sheet row '669 Flabébé-red', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; closest Smogon attachment 669_2-png.276628 (sheet row '669 Flabébé-yellow', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/669-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/670.png",
-  "sha256": "71e4abcff085a39d6bfce15477c378569772a5b7f8eaeef590d51739116bb117",
+  "sha256": "9c6d85e4c487a2f8c326cda1c3686f6403615accfc062fa4eb0e9d17b93d0735",
   "pokemon": [
    "floette"
   ],
@@ -16792,27 +16811,45 @@
    "League builder",
    "Pokédex builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "pokeapi",
-  "evidenceType": "none",
+  "creditedNow": [
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
     "url": "https://www.smogon.com/forums/attachments/670_1-png.276644/",
-    "localCopy": "credits-audit/dl/smogon/670_1-png.276644",
-    "sha256": "a0aee6cccca81fa95bc48d40ac8ec9f2eee953c75e7d1bc486d231168e6f7344"
-   },
-   {
-    "url": "https://www.smogon.com/forums/attachments/670_2-png.276648/",
-    "localCopy": "credits-audit/dl/smogon/670_2-png.276648",
-    "sha256": "c07119750508ae539e1258a374cbcd6dd290ead149563c2e9dfb0dc77a40df0a"
+    "sha256": "a0aee6cccca81fa95bc48d40ac8ec9f2eee953c75e7d1bc486d231168e6f7344",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '670 Floette-red', Spriter 'princessofmusic'"
    }
   ],
-  "comparison": "closest Smogon attachment 670_1-png.276644 (sheet row '670 Floette-red', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; closest Smogon attachment 670_2-png.276648 (sheet row '670 Floette-yellow', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/670-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), on the artist's canvas, where the blue form 11086 and the stage's other colours sit (0 pixels of outline differ)",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "71e4abcff085a39d6bfce15477c378569772a5b7f8eaeef590d51739116bb117",
+   "creditedNow": [],
+   "creditedVia": "pokeapi",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/670_1-png.276644/",
+     "localCopy": "credits-audit/dl/smogon/670_1-png.276644",
+     "sha256": "a0aee6cccca81fa95bc48d40ac8ec9f2eee953c75e7d1bc486d231168e6f7344"
+    },
+    {
+     "url": "https://www.smogon.com/forums/attachments/670_2-png.276648/",
+     "localCopy": "credits-audit/dl/smogon/670_2-png.276648",
+     "sha256": "c07119750508ae539e1258a374cbcd6dd290ead149563c2e9dfb0dc77a40df0a"
+    }
+   ],
+   "comparison": "closest Smogon attachment 670_1-png.276644 (sheet row '670 Floette-red', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; closest Smogon attachment 670_2-png.276648 (sheet row '670 Floette-yellow', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/670-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/671.png",
-  "sha256": "4dab1a3c8834aad45d151feee744a9882e4c27fc50706d7a8a091c2e39ffc5a2",
+  "sha256": "b4735dbad8f21690c5b25dfe073942dc3e691553c5c5a1afcf24601de67e9963",
   "pokemon": [
    "florges"
   ],
@@ -16821,18 +16858,36 @@
    "League builder",
    "Pokédex builder"
   ],
-  "creditedNow": [],
-  "creditedVia": "pokeapi",
-  "evidenceType": "none",
+  "creditedNow": [
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
   "sources": [
    {
-    "url": "https://www.smogon.com/forums/attachments/671_5-png.276684/",
-    "localCopy": "credits-audit/dl/smogon/671_5-png.276684",
-    "sha256": "1b9b2dcb382dd7ff94f5bfe708a48e6df330788e1bd5604a8abe9e75e320e710"
+    "url": "https://www.smogon.com/forums/attachments/671_1-png.276668/",
+    "sha256": "76abf73ff769587bba98bfd419eb8102bcfa3abaad47ef657283eca485042004",
+    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '671 Florges-red', Spriter 'princessofmusic'"
    }
   ],
-  "comparison": "closest Smogon attachment 671_5-png.276684 (sheet row '671 Florges-white', Spriter 'princessofmusic'): mask IoU 0.6496, same colour on 6% of shared pixels; closest pack file Front/FLORGES_4.png: mask IoU 0.6496, same colour on 6% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/671-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
-  "verdict": "unproven"
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s), on the artist's canvas, where the blue form 11090 and the stage's other colours sit (0 pixels of outline differ)",
+  "verdict": "confirmed",
+  "previousEvidence": {
+   "sha256": "4dab1a3c8834aad45d151feee744a9882e4c27fc50706d7a8a091c2e39ffc5a2",
+   "creditedNow": [],
+   "creditedVia": "pokeapi",
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/671_5-png.276684/",
+     "localCopy": "credits-audit/dl/smogon/671_5-png.276684",
+     "sha256": "1b9b2dcb382dd7ff94f5bfe708a48e6df330788e1bd5604a8abe9e75e320e710"
+    }
+   ],
+   "comparison": "closest Smogon attachment 671_5-png.276684 (sheet row '671 Florges-white', Spriter 'princessofmusic'): mask IoU 0.6496, same colour on 6% of shared pixels; closest pack file Front/FLORGES_4.png: mask IoU 0.6496, same colour on 6% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/671-red.png from commit 8034a5f31e (2024-11-08), which names no artist",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/672.png",
@@ -73870,6 +73925,79 @@
    }
   ],
   "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 65 '869 Alcremie-vanilla strawberry': Spriter 'PumpkinPastel (front), leParagon (back)'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/669.png",
+  "sha256": "4779bed43a69bdd66e9738fc85ab4cc30b40b31e5a3dde153f9c2f1061fbd6c0",
+  "pokemon": [
+   "flabebe (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "The Cynical Poet",
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/669_1s-png.276626/",
+    "sha256": "f4139e1dad3272f39f076109ea78198d4be7dfe76a55363a92ccdd4b1dd5d468"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 43 '669 Flabébé-red': Spriter 'TheCynicalPoet, princessofmusic (colours)'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/670.png",
+  "sha256": "932f07679c1a4be553282c806819d7a02f066e532fec9e94df02f955c2fbfb5b",
+  "pokemon": [
+   "floette (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/670_1s-png.276646/",
+    "sha256": "dc9bf12782792ee02423228ffaf6890175042a584da54998f434dee359bb9963"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 48 '670 Floette-red': Spriter 'princessofmusic'",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/671.png",
+  "sha256": "6d319a0c967f7bc63fffb7f108804afbb0f5337ba4ff21e9ef6a8a79acf7a4b0",
+  "pokemon": [
+   "florges (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker",
+   "League builder"
+  ],
+  "creditedNow": [
+   "princessofmusic"
+  ],
+  "creditedVia": "smogon-gen6",
+  "evidenceType": "exact-smogon-sheet",
+  "sources": [
+   {
+    "url": "https://www.smogon.com/forums/attachments/671_1s-png.276670/",
+    "sha256": "afbc90abf1c47d60ba88486da2c6550c88c53f861f71104897cb3777560c9ec9"
+   }
+  ],
+  "comparison": "same pixels as the Front shiny attachment of the sheet row that credits the shiny, placed as the normal sprite: smogon-gen6 sheet, tab 'static sprites', line 54 '671 Florges-red': Spriter 'princessofmusic'",
   "verdict": "confirmed"
  }
 ]
