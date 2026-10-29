@@ -1657,6 +1657,28 @@
       }
     },
     {
+      "file": "11106",
+      "name": "Zekrom (Overdrive)",
+      "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/644.gif#frame=2",
+      "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/shiny/644.gif",
+      "scale": 1,
+      "offset": [
+        2,
+        -3
+      ],
+      "unchecked": "its shiny is our normal in Game Freak's shiny palette, read from an animated GIF that this script cannot decode",
+      "source": "PokéAPI sprites (CC0 repository; art by its artists)",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "f267925d8a0b2159b7702bfb976a5d87e748080007e087c7939e0cd7c1a534cb",
+        "shiny": "7d2a8539e566a8be934b6a0b4075f6cb83f33b0689c6f5dd3a546a5be5550424",
+        "placed": "711b85183639dc44b534d0c00a592f6ab69b9571e72e699c5ab4083cf222c1f2"
+      }
+    },
+    {
       "file": "11107",
       "name": "Black Kyurem (Overdrive)",
       "normal": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/10022.gif#frame=0",
@@ -1675,6 +1697,28 @@
         "normal": "61a02fc766ddf45e349e09b4c2684aabbf20cb0cc1338a3c92f17c91dd2e4765",
         "shiny": "aa2700eae5b787572f8af9db525c91405bb59b2e5d744da0d8479887fe429cb9",
         "placed": "2d46b2613456b32e53dc25af6d153405fb804ed5715e4f3e28d8347bcafc0249"
+      }
+    },
+    {
+      "file": "11108",
+      "name": "White Kyurem (Overdrive)",
+      "normal": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front/KYUREM_3.png",
+      "shiny": "Generation_9_Pack_v3.3.8.rar:Graphics/Pokemon/Front shiny/KYUREM_3.png",
+      "scale": 2,
+      "offset": [
+        -2,
+        -1
+      ],
+      "unchecked": "my151 grafted Game Freak's fire from frames 76 and 120 of PokéAPI's animated 10023.gif onto the pack still, in its normal and shiny",
+      "source": "Generation 9 Resource Pack (Eevee Expo, resource 1101), with Game Freak fire from PokéAPI sprites",
+      "artists": [],
+      "shinyArtists": [
+        "Game Freak"
+      ],
+      "sha256": {
+        "normal": "a04f1564790727a7a594887385d7ca5fb97dfbeb686e0db4bba256f280b070c4",
+        "shiny": "65800a06362e03c88eeb9027531b3b64b6af6618338f2175a95c5ad2ffa9f029",
+        "placed": "56ecbdeb37fd92fab4a66ee16508e02457d615cd061b135e9b320af2964844eb"
       }
     },
     {

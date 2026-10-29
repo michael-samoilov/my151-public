@@ -1304,7 +1304,7 @@ Four artists appear only through shiny files: TheAetherPlayer, AMVictory, arinoe
 
 ## Shiny sprites added on 2026-10-29
 
-Nine more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` has a row for each but Mega Raichu X, whose shiny the harvest takes from PokéAPI's own folder. The harvest rebuilds every file but DJ Rotom's.
+Eleven more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` has a row for each but Mega Raichu X, whose shiny the harvest takes from PokéAPI's own folder. The harvest rebuilds every file but DJ Rotom's and the two Overdrive forms'.
 
 | File | Pokémon | Shiny artist | Evidence |
 |---|---|---|---|
@@ -1316,6 +1316,8 @@ Nine more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-p
 | `shiny/10176.png` | Galarian Darumaka | G.E.Z. | the Smogon sheet row's Front shiny attachment, moved 1 row down |
 | `shiny/10304.png` | Mega Raichu X | Kyle Dove | PokéAPI's shiny, added with the normal sprite in the commit whose README line credits him |
 | `shiny/11064.png` | Spiky-eared Pichu | Game Freak | PokéAPI's shiny, which is the HeartGold and SoulSilver sprite |
+| `shiny/11106.png` | Zekrom (Overdrive) | Game Freak | the normal sprite in Game Freak's shiny palette; every pixel has the official shiny colour at its place in the Black and White animation |
+| `shiny/11108.png` | White Kyurem (Overdrive) | Game Freak | the Generation 9 Resource Pack's shiny still with Game Freak's fire grafted on, as in the normal sprite; every pixel has the official shiny colour at its place |
 | `shiny/11112.png` | DJ Rotom | KingOfThe-X-Roads | the predicted shiny from his own X post, at 1/4 scale, with the same 2 seam pixels recoloured as in the normal sprite |
 
 Each named shiny artist also drew the normal sprite, so the panel counts none of these files on its own.

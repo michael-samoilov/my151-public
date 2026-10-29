@@ -73339,6 +73339,32 @@
   "verdict": "official Game Freak"
  },
  {
+  "file": "public/sprites/pokemon/shiny/11106.png",
+  "sha256": "711b85183639dc44b534d0c00a592f6ab69b9571e72e699c5ab4083cf222c1f2",
+  "pokemon": [
+   "zekrom-overdrive (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": null,
+  "evidenceType": "official-game-freak",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/shiny/644.gif",
+    "sha256": "7d2a8539e566a8be934b6a0b4075f6cb83f33b0689c6f5dd3a546a5be5550424"
+   },
+   {
+    "url": "https://play.pokemonshowdown.com/sprites/gen5ani-shiny/zekrom.gif",
+    "sha256": "8c63e473ab984c7bb762b84e2916721e260aa8b18ee6aacb01fbd754eafbdf70"
+   }
+  ],
+  "comparison": "shiny of the Game Freak sprite: the normal sprite (frame 2 of PokéAPI's animated/644.gif) in Game Freak's shiny palette, as the sprite lab made it (selection add-zekrom-overdrive). No shiny frame is the same drawing, so on 2026-10-29 each pixel was checked against the official shiny colour at the same place in the closest frame pairs of PokéAPI's and Pokémon Showdown's rips of the Black and White animation: 0 pixels differ (RGB555), and each normal colour maps to one shiny colour",
+  "verdict": "official Game Freak"
+ },
+ {
   "file": "public/sprites/pokemon/shiny/11107.png",
   "sha256": "2d46b2613456b32e53dc25af6d153405fb804ed5715e4f3e28d8347bcafc0249",
   "pokemon": [
@@ -73357,6 +73383,33 @@
    }
   ],
   "comparison": "shiny of the Game Freak sprite: Game Freak animation via PokéAPI sprites/pokemon/versions/generation-v/black-white/animated/shiny/10022.gif at 0744010 2026-09-07 Gen5 sprites Update (#273)",
+  "verdict": "official Game Freak"
+ },
+ {
+  "file": "public/sprites/pokemon/shiny/11108.png",
+  "sha256": "56ecbdeb37fd92fab4a66ee16508e02457d615cd061b135e9b320af2964844eb",
+  "pokemon": [
+   "kyurem-white-overdrive (shiny)"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "gen9-resource-pack",
+  "evidenceType": "official-game-freak",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://eeveeexpo.com/resources/1101/",
+    "archivePath": "Graphics/Pokemon/Front shiny/KYUREM_3.png",
+    "sha256": "65800a06362e03c88eeb9027531b3b64b6af6618338f2175a95c5ad2ffa9f029"
+   },
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/animated/shiny/10023.gif",
+    "sha256": "0f0ee7256c95fdbf1a2f581e0d44a2d83a7e12b04bd51b0029e729c60de8b0f1"
+   }
+  ],
+  "comparison": "shiny of the Game Freak sprite: the Generation 9 Resource Pack's shiny still KYUREM_3.png at 1/2 scale, which is frame 0 of Game Freak's Black 2 and White 2 animation (the pack's Credits.txt credits its Gen 1-5 sprites to veekun), with Game Freak's fire from frames 76 and 120 grafted on as in the normal sprite (selection add-kyurem-white-overdrive, confirmed by Michael on 2026-10-12). On 2026-10-29 each pixel was checked against the official shiny colour at the same place in PokéAPI's and Pokémon Showdown's rips: 0 pixels differ (RGB555). Its one split colour, the yellow that is the fire core and the eye, splits the same way in Game Freak's palette",
   "verdict": "official Game Freak"
  },
  {
