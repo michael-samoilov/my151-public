@@ -3,6 +3,7 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getAllPokemon, getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
+import { whenIdle } from '@/lib/whenIdle';
 
 /**
  * Background download of the sprites a visitor is likely to see next, so the
@@ -37,8 +38,14 @@ function lineSprites(ids: Iterable<number>, limit: number): string[] {
   return sprites;
 }
 
+const generationOf = (id: number) => getPokemonById(id)?.generation ?? Infinity;
+
+/** A section's Pokémon in picker order: generation first, then the archetype's curated order. */
 function sectionIds(filterType: 'archetype' | 'category' | null, filterId: string | null): number[] {
-  if (filterType === 'archetype') return ARCHETYPES.find((a) => a.id === filterId)?.pokemonIds ?? [];
+  if (filterType === 'archetype') {
+    const curated = ARCHETYPES.find((a) => a.id === filterId)?.pokemonIds ?? [];
+    return [...curated].sort((a, b) => generationOf(a) - generationOf(b));
+  }
   const category = filterType === 'category' ? CATEGORIES.find((c) => c.id === filterId) : undefined;
   const pool = category ? getAllPokemon().filter(category.filter) : getAllPokemon();
   return [...pool].sort(byGenerationThenId).map((p) => p.id);
@@ -65,28 +72,39 @@ let queue: string[] = [];
 /** Held until each load settles: an unreferenced Image can be collected mid-load and never report back. */
 const inFlight = new Set<HTMLImageElement>();
 let paused = false;
+let pumpScheduled = false;
 
-function pump() {
-  while (!paused && inFlight.size < MAX_IN_FLIGHT && queue.length > 0) {
-    const img = new Image();
-    img.fetchPriority = 'low';
-    img.onload = img.onerror = () => {
-      inFlight.delete(img);
-      pump();
-    };
-    inFlight.add(img);
-    img.src = queue.shift()!;
-  }
+/**
+ * Starts the next loads when the main thread is idle, so a tap is never queued
+ * behind them. The 200 ms cap matters on Safari, which has no idle callback
+ * and falls back to a timer of that length.
+ */
+function schedulePump() {
+  if (pumpScheduled) return;
+  pumpScheduled = true;
+  whenIdle(() => {
+    pumpScheduled = false;
+    while (!paused && inFlight.size < MAX_IN_FLIGHT && queue.length > 0) {
+      const img = new Image();
+      img.fetchPriority = 'low';
+      img.onload = img.onerror = () => {
+        inFlight.delete(img);
+        schedulePump();
+      };
+      inFlight.add(img);
+      img.src = queue.shift()!;
+    }
+  }, 200);
 }
 
 export function warmSprites(urls: readonly string[]) {
   if (typeof Image === 'undefined') return;
   queue = [...new Set([...queue, ...urls])];
-  pump();
+  schedulePump();
 }
 
 /** While a picker is open its own sprites come first, so the warm-up waits. */
 export function pauseSpriteWarmup(pause: boolean) {
   paused = pause;
-  pump();
+  schedulePump();
 }
