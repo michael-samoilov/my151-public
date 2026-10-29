@@ -8,7 +8,7 @@ import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
-import { cardShades } from '@/league/theme';
+import { NO_TYPE_STAR_RADIUS, cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
 import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
 
@@ -68,7 +68,7 @@ function TypeMark({ t }: { t?: string }) {
     return (
       <svg viewBox="0 0 22 22" className="aspect-square w-full rounded-[3px]" aria-label="No type" role="img">
         <rect width="22" height="22" rx="5" fill="#9CA3AF" />
-        <path d={starPath(11, 11, 7)} fill="#ffffff" />
+        <path d={starPath(11, 11, 22 * NO_TYPE_STAR_RADIUS)} fill="#ffffff" />
       </svg>
     );
   }

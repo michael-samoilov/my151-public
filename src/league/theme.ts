@@ -22,6 +22,9 @@ const LUMINANCE_SCALE = 0.25;
 
 export const NO_TYPE = '#9CA3AF';
 
+/** The no-type star's radius as a fraction of its square tile's side. */
+export const NO_TYPE_STAR_RADIUS = 7 / 22;
+
 export const BASE_TINT = 0.063;
 
 type Rgb = [number, number, number];
