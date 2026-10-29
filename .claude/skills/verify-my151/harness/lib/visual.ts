@@ -73,6 +73,13 @@ const pickTooltip = (cell: string, ids: number[]) => async (page: Page) => {
     return;
   }
 };
+/** Rests the mouse on a filled grid cell, so a desktop render shows its name tooltip and hover controls. A phone has no hover. */
+const hoverGridCell = (cell: string) => async (page: Page) => {
+  if ((page.viewportSize()?.width ?? 1280) < 1024) return;
+  const box = (await page.getByTestId(`favorites-cell-${cell}`).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
+  await page.getByTestId('favorites-name-tooltip').waitFor({ state: 'visible', timeout: 10_000 });
+};
 const openArtist = (name: string) => async (page: Page) => {
   const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
   await link.scrollIntoViewIfNeeded();
@@ -130,6 +137,7 @@ export const SCREENS: Screen[] = [
   },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  { id: 'favorites-filled-hover', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: hoverGridCell('fire-1') },
   {
     id: 'builder-search-empty', path: '/pokedex-builder', seed: DEX,
     act: async (page) => {
