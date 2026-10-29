@@ -2,10 +2,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView.js';
 import type { SearchPerformanceSnapshot, SearchSnapshotPart } from '../src/lib/searchPerformance.js';
 import { buildDailySearchSnapshot, buildHourlySearchSnapshot } from './_searchPerformance.js';
-import { firstQueryValue, redis, requireAdmin } from './_shared.js';
+import { firstQueryValue, isReadOnlyDeployment, redis, requireAdmin } from './_shared.js';
 
-const DAILY_KEY = 'admin:search-performance:v2:daily';
-const HOURLY_KEY = 'admin:search-performance:v2:hourly';
+const DAILY_KEY = 'admin:search-performance:v3:daily';
+const HOURLY_KEY = 'admin:search-performance:v3:hourly';
 
 const MINUTE_MS = 60_000;
 const READY_MAX_AGE_MS = { daily: 24 * 60 * MINUTE_MS, hourly: 60 * MINUTE_MS };
@@ -36,9 +36,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await requireAdmin(req, res))) return;
 
   res.setHeader('Cache-Control', 'no-store');
+  // A preview builds its own snapshot, so it never shows or overwrites the live site's cache.
+  const shared = !isReadOnlyDeployment(req);
   let cached: [Daily | null, Hourly | null] = [null, null];
   try {
-    cached = await redis.mget<[Daily | null, Hourly | null]>(DAILY_KEY, HOURLY_KEY);
+    if (shared) cached = await redis.mget<[Daily | null, Hourly | null]>(DAILY_KEY, HOURLY_KEY);
   } catch (error) {
     logFailure('cache read', error);
   }
@@ -55,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ...(keepDaily ? {} : { [DAILY_KEY]: daily }),
     ...(keepHourly ? {} : { [HOURLY_KEY]: hourly }),
   };
-  if (Object.keys(writes).length > 0) {
+  if (shared && Object.keys(writes).length > 0) {
     try {
       await redis.mset(writes);
     } catch (error) {

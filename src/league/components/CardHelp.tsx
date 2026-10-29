@@ -10,11 +10,13 @@ import { raw, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { ArceusCrestIcon } from './ArceusCrestIcon';
 
+// align-middle centres the disc on Inter's x-height. Its cap height sits
+// 0.09em higher, so the lift centres it on the capitals and the text box.
 function ResetDisc() {
   return (
     <span
       aria-hidden
-      className="mx-[0.0625rem] inline-grid h-[1.1em] w-[1.1em] place-items-center rounded-full align-[-0.2em] text-white"
+      className="relative -top-[0.09em] mx-[0.0625rem] inline-grid h-[1.1em] w-[1.1em] place-items-center rounded-full align-middle text-white"
       style={{ background: '#2563eb' }}
     >
       <RotateCcw className="h-[0.7em] w-[0.7em]" strokeWidth={3} />

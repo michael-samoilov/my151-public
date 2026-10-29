@@ -27,7 +27,7 @@ import { slotLabel } from '../slotLabel';
 import { localeUppercase, spriteAlt, typeLabel, useNamesVersion, useT, type NoArgKey } from '@/i18n';
 import { useDndAccessibility } from '@/lib/dndAccessibility';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
-import { cardShades } from '../theme';
+import { NO_TYPE_STAR_RADIUS, cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
 import {
   fitHomeLayout,
@@ -154,7 +154,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
           {card.type === 'none' ? (
             <svg viewBox="0 0 22 22" className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" aria-label={t('league.type.none')} role="img">
               <rect width="22" height="22" rx="5" fill="#9CA3AF" />
-              <path d={starPath(11, 11, 7)} fill="#ffffff" />
+              <path d={starPath(11, 11, 22 * NO_TYPE_STAR_RADIUS)} fill="#ffffff" />
             </svg>
           ) : card.type ? (
             <img src={typeIconPath(card.type)} alt={typeLabel(card.type)} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />

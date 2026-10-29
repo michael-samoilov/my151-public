@@ -24,6 +24,7 @@ test.describe('admin search performance', () => {
     await expect(panel.getByText('Previous —', { exact: true })).toBeVisible();
     await expect(panel.locator('[data-kpi="clicks"]')).toContainText('—');
     await expect(panel.getByText('28d')).toHaveCount(0);
+    await expect(panel.getByText('Not final yet: Sep 22–Sep 23', { exact: true })).toBeVisible();
 
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
     await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
@@ -40,6 +41,7 @@ test.describe('admin search performance', () => {
     const ribbon = page.getByRole('group', { name: 'Date range' });
     await ribbon.getByRole('button', { name: '24h' }).click();
     await expect(panel.getByText('Current —', { exact: true })).toBeVisible();
+    await expect(panel.getByText(/^Not final yet/)).toHaveCount(0);
     await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Google' }).click();
     await expect(panel.getByText(/^Current \w{3} \d+, \d+ [AP]M–/)).toBeVisible();
     await ribbon.getByRole('button', { name: '7d' }).click();

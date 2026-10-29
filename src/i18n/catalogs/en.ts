@@ -2,9 +2,7 @@ import { enData } from './en.data';
 
 export const enUi = {
   'ack.alsoCredited': 'Also credited through',
-  'ack.artistCount_one': '{count} artist',
-  'ack.artistCount_other': '{count} artists',
-  'ack.artists': 'Artists',
+  'ack.artists': 'Credited artists',
   'ack.back': 'Back',
   'ack.bundleSprites_one': '{count} fan-made sprite in the app is credited through this project.',
   'ack.bundleSprites_other': '{count} fan-made sprites in the app are credited through this project.',
@@ -473,10 +471,10 @@ export const enUi = {
   'league.help.evolve.body': 'Drag a Pokémon up or down its column to change the gym where it evolves. Tap the {undo}',
   'league.help.evolve.title': 'Change when it evolves',
   'league.help.evolve.undo': 'blue {disc} to undo.',
-  'league.help.legend.body': 'Tap a Pokémon in the Endgame Boss row to swap in a legendary. Only that row changes. Drag the legendary to another column to move it.',
+  'league.help.legend.body': 'Tap a Pokémon in the Endgame Boss row to swap in a legendary. Drag the legendary to another column to move it.',
   'league.help.legend.title': 'Add an Endgame legendary',
   'league.help.ok': 'Got it',
-  'league.help.reorder.body': 'Press and hold a Pokémon, then drag it left or right. Its whole column moves.',
+  'league.help.reorder.body': 'Press and hold a Pokémon, then drag it left or right to move its whole column.',
   'league.help.reorder.title': 'Reorder your team',
   'league.help.title': 'How to edit this card',
   'league.hint.add': 'Tap an empty slot to add an evolution line',

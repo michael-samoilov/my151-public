@@ -4,7 +4,7 @@ import { useECharts, cssVar, type EChartsOption } from './useECharts';
 import { impliedActivityGrowth, type ImpliedActivityGrowth } from '../../../../api/_aggregate';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
-  chartDailyValues,
+  chartHourlyValues,
   chartMonthlyValues,
   chartWeeklyValues,
   dailyWeekdayTicks,
@@ -43,45 +43,51 @@ function subSize(numSize: number): number {
   return Math.max(7, Math.round(numSize * 0.55));
 }
 
-function measureWindowLabelPx(kind: '30d' | '7d' | '24h', count: number, numSize: number): number {
+/**
+ * A count drawn at a line's end. It always equals the line's newest point. The unit names what
+ * that point counts: a day name for a calendar day, or a duration for a window that ends now.
+ */
+interface EndLabel {
+  unit: string;
+  count: number;
+  lowerBound?: boolean;
+}
+
+function measureWindowLabelPx({ unit, count, lowerBound }: EndLabel, numSize: number): number {
   const ctx = document.createElement('canvas').getContext('2d');
   if (!ctx) return 56;
   ctx.font = `700 ${numSize}px ${LABEL_FACE}`;
-  const n = ctx.measureText(`${kind === '30d' ? '≥' : ''}${count}`).width;
+  const n = ctx.measureText(`${lowerBound ? '≥' : ''}${count}`).width;
   ctx.font = `400 ${subSize(numSize)}px ${LABEL_FACE}`;
-  return n + 2 + ctx.measureText(kind).width;
+  return n + 2 + ctx.measureText(unit).width;
 }
 
-function gridRightPx(counts: { hours24: number; days7: number | null; days30: number | null }, numSize: number, growthLabels: string[] = []): number {
-  const w24 = measureWindowLabelPx('24h', counts.hours24, numSize);
-  const w7 = counts.days7 == null ? 0 : measureWindowLabelPx('7d', counts.days7, numSize);
-  const w30 = counts.days30 == null ? 0 : measureWindowLabelPx('30d', counts.days30, numSize);
+function gridRightPx(labels: EndLabel[], numSize: number, growthLabels: string[] = []): number {
   const ctx = document.createElement('canvas').getContext('2d');
   if (ctx) ctx.font = `400 ${growthFontSize(numSize)}px ${LABEL_FACE}`;
   const growthWidth = Math.max(0, ...growthLabels.map(label => ctx?.measureText(label).width ?? 0));
-  return Math.ceil(LABEL_INSET + Math.max(w24, w7, w30, growthWidth) + LABEL_TAIL);
+  return Math.ceil(LABEL_INSET + Math.max(...labels.map(label => measureWindowLabelPx(label, numSize)), growthWidth) + LABEL_TAIL);
 }
 
 const growthFontSize = (numSize: number) => numSize < 16 ? 9 : 10;
 
 function countLabel(
-  kind: '24h' | '7d' | '30d',
-  count: number,
+  name: 'daily' | 'weekly' | 'monthly' | 'hourly',
+  { unit, count, lowerBound }: EndLabel,
   color: string,
   x: number,
   y: number,
   numSize: number,
-  lowerBound = false,
   growth?: string,
 ) {
   const sub = subSize(numSize);
   const countText = {
-    name: kind,
+    name,
     type: 'text' as const,
     x,
     y,
     style: {
-      text: `{n|${lowerBound ? '≥' : ''}${count}}{k|${kind}}`,
+      text: `{n|${lowerBound ? '≥' : ''}${count}}{k|${unit}}`,
       fill: color,
       fontSize: numSize,
       fontWeight: 700,
@@ -101,7 +107,7 @@ function countLabel(
       },
     },
   };
-  return growth ? { name: kind, type: 'group' as const, children: [countText, {
+  return growth ? { name, type: 'group' as const, children: [countText, {
     type: 'text' as const, x, y: y + numSize / 2 + 4,
     style: { text: growth, fill: color, fontSize: growthFontSize(numSize), fontFamily: LABEL_FACE,
       textAlign: 'left' as const, textVerticalAlign: 'top' as const },
@@ -125,11 +131,11 @@ function TrendChart({
   shown: Record<'daily' | 'weekly' | 'monthly', boolean>;
   growth: ImpliedActivityGrowth;
 }) {
-  const { daily, labels, counts, weeklyGrowth, monthlyGrowth, scrubLabel, build } = useMemo(() => {
+  const { daily, labels, counts, dailyEnd, provisional, weeklyGrowth, monthlyGrowth, scrubLabel, build } = useMemo(() => {
     const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
     const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
     const days = series.map((p) => p.day);
-    const daily = chartDailyValues(series);
+    const daily = series.map((p) => p.dau);
     const weekly = chartWeeklyValues(series, historyOriginDay);
     const monthly = chartMonthlyValues(series);
     const labels = days.map(fmtDay);
@@ -139,7 +145,11 @@ function TrendChart({
     const monthlySplit = splitProvisional(monthly.map(v => shown.monthly ? v : null), provisional);
     const monthDividers = monthDividerIndices(days);
     const monthTicks = monthLabelTicks(days);
-    const counts = { ...windowCounts(series), days30: series.at(-1)?.label720h ?? series.at(-1)?.recordedLabel720h ?? null };
+    const newest = series.at(-1);
+    const counts = { ...windowCounts(series), days30: newest?.label720h ?? newest?.recordedLabel720h ?? null };
+    const dailyEnd: EndLabel = { unit: newest ? fmtWeekday(newest.day) : '', count: daily.at(-1) ?? 0 };
+    const weeklyEnd: EndLabel | null = counts.days7 == null ? null : { unit: '7d', count: counts.days7 };
+    const monthlyEnd: EndLabel | null = counts.days30 == null ? null : { unit: '30d', count: counts.days30, lowerBound: newest?.label720h == null };
     const scrubLabel = (i: number) => {
       const w = weekly[i];
       const m = monthly[i];
@@ -157,7 +167,7 @@ function TrendChart({
       const gridLine = { color: grid, width: 1 };
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
-      const right = gridRightPx(counts, numSize, [shown.weekly ? weeklyGrowth : undefined, shown.monthly ? monthlyGrowth : undefined].filter((text): text is string => text !== undefined));
+      const right = gridRightPx([dailyEnd, weeklyEnd, monthlyEnd].filter((label): label is EndLabel => label != null), numSize, [shown.weekly ? weeklyGrowth : undefined, shown.monthly ? monthlyGrowth : undefined].filter((text): text is string => text !== undefined));
 
       return {
         animation: false,
@@ -303,9 +313,9 @@ function TrendChart({
               const last = daily.length - 1;
               const x = api.coord([last, 0])[0] + LABEL_INSET;
               const gutterLabels = [
-                ...(shown.daily ? [{ kind: '24h' as const, count: counts.hours24, color: faint, value: daily[last], lowerBound: false, growth: undefined }] : []),
-                ...(shown.weekly && counts.days7 != null ? [{ kind: '7d' as const, count: counts.days7, color: red, value: weekly[last] ?? counts.days7, lowerBound: false, growth: weeklyGrowth }] : []),
-                ...(shown.monthly && counts.days30 != null ? [{ kind: '30d' as const, count: counts.days30, color: monthlyColor, value: monthly[last] ?? counts.days30, lowerBound: series[last].label720h == null, growth: monthlyGrowth }] : []),
+                ...(shown.daily ? [{ name: 'daily' as const, end: dailyEnd, color: faint, value: daily[last], growth: undefined }] : []),
+                ...(shown.weekly && weeklyEnd ? [{ name: 'weekly' as const, end: weeklyEnd, color: red, value: weekly[last] ?? weeklyEnd.count, growth: weeklyGrowth }] : []),
+                ...(shown.monthly && monthlyEnd ? [{ name: 'monthly' as const, end: monthlyEnd, color: monthlyColor, value: monthly[last] ?? monthlyEnd.count, growth: monthlyGrowth }] : []),
               ].map(label => ({ ...label, y: api.coord([last, label.value])[1] })).sort((a, b) => a.y - b.y);
               for (let i = 1; i < gutterLabels.length; i++) {
                 gutterLabels[i].y = Math.max(gutterLabels[i].y, gutterLabels[i - 1].y + numSize + 4 + (gutterLabels[i - 1].growth ? growthFontSize(numSize) + 4 : 0));
@@ -313,7 +323,7 @@ function TrendChart({
               const bottom = gutterLabels.at(-1);
               const overflow = Math.max(0, (bottom?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2 + (bottom?.growth ? growthFontSize(numSize) + 4 : 0));
               for (const label of gutterLabels) label.y -= overflow;
-              const children = gutterLabels.map(label => countLabel(label.kind, label.count, label.color, x, label.y, numSize, label.lowerBound, label.growth));
+              const children = gutterLabels.map(label => countLabel(label.name, label.end, label.color, x, label.y, numSize, label.growth));
               // Labels reorder as lines toggle; match windows by name to preserve their transforms.
               return { type: 'group', $mergeChildren: 'byName', children };
             },
@@ -321,7 +331,7 @@ function TrendChart({
         ],
       };
     };
-    return { daily, labels, counts, weeklyGrowth, monthlyGrowth, scrubLabel, build };
+    return { daily, labels, counts, dailyEnd, provisional, weeklyGrowth, monthlyGrowth, scrubLabel, build };
   }, [series, nowMs, historyOriginDay, shown, growth]);
   const ref = useECharts(build, { scrub: { count: labels.length, label: scrubLabel } });
 
@@ -336,7 +346,7 @@ function TrendChart({
       ref={ref}
       className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}${shown.weekly && counts.days7 != null && weeklyGrowth ? `, 7d label implied growth ${weeklyGrowth}` : ''}${shown.monthly && counts.days30 != null && monthlyGrowth ? `, 30d label implied growth ${monthlyGrowth}` : ''}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. Last 24 hours ${counts.hours24}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}${shown.weekly && counts.days7 != null && weeklyGrowth ? `, 7d label implied growth ${weeklyGrowth}` : ''}${shown.monthly && counts.days30 != null && monthlyGrowth ? `, 30d label implied growth ${monthlyGrowth}` : ''}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. ${dailyEnd.unit}${provisional ? ' so far' : ''} ${dailyEnd.count}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
     />
   );
 }
@@ -353,13 +363,13 @@ function UniqueUsersLineChart({
   ariaLabel,
   seriesName,
   provisional,
-  counts,
+  end,
 }: {
   model: UniqueUsersModel;
   ariaLabel: string;
   seriesName: 'hourly' | 'daily';
   provisional: boolean;
-  counts: { hours24: number };
+  end: EndLabel;
 }) {
   const build = useCallback(
     (el: HTMLDivElement): EChartsOption => {
@@ -369,7 +379,7 @@ function UniqueUsersLineChart({
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
-      const right = Math.ceil(LABEL_INSET + measureWindowLabelPx('24h', counts.hours24, numSize) + LABEL_TAIL);
+      const right = Math.ceil(LABEL_INSET + measureWindowLabelPx(end, numSize) + LABEL_TAIL);
       const last = Math.max(values.length - 1, 1);
       return {
         animation: false,
@@ -427,14 +437,14 @@ function UniqueUsersLineChart({
               const x = api.coord([i, 0])[0] + LABEL_INSET;
               return {
                 type: 'group',
-                children: [countLabel('24h', counts.hours24, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
+                children: [countLabel(seriesName, end, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
               };
             },
           },
         ],
       };
     },
-    [model, seriesName, provisional, counts.hours24],
+    [model, seriesName, provisional, end],
   );
   const ref = useECharts(build, { scrub: { count: model.axisLabels.length, label: model.scrubLabel } });
 
@@ -453,47 +463,47 @@ function UniqueUsersLineChart({
 
 function HourlyTrendChart({
   series,
-  counts,
   nowMs,
 }: {
   series: HourlyPoint[];
-  counts: { hours24: number; days7: number | null };
   nowMs: number;
 }) {
-  const model = useMemo<UniqueUsersModel>(() => {
-    const values = series.map((p) => p.unique);
+  const { model, end, endName } = useMemo(() => {
+    const values = chartHourlyValues(series);
     const hourLabels = series.map((p) => fmtHour(p.hour));
     const last = Math.max(values.length - 1, 1);
-    return {
+    const pastHour = series.at(-1)?.pastHour != null;
+    const endName = pastHour ? 'Past hour' : hourLabels.at(-1) ?? '';
+    const model: UniqueUsersModel = {
       values,
       axisLabels: hourLabels,
       showTick: (i) => i === 0 || i === last || i % 6 === 0,
-      scrubLabel: (i) => [hourLabels[i], `<b>${values[i]}</b> hourly`],
+      scrubLabel: (i) => [i === values.length - 1 ? endName : hourLabels[i], `<b>${values[i]}</b> hourly`],
     };
+    const end: EndLabel = { unit: pastHour ? '1h' : hourLabels.at(-1) ?? '', count: values.at(-1) ?? 0 };
+    return { model, end, endName };
   }, [series]);
   const lo = model.values.length ? Math.min(...model.values) : 0;
   const hi = model.values.length ? Math.max(...model.values) : 0;
   return (
     <UniqueUsersLineChart
       model={model}
-      ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
+      ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. ${endName} ${end.count}.`}
       seriesName="hourly"
       provisional={lastPointIsCurrentHour(series, nowMs)}
-      counts={counts}
+      end={end}
     />
   );
 }
 
 function DailyWeekdayChart({
   series,
-  counts,
   nowMs,
 }: {
   series: DailyPoint[];
-  counts: { hours24: number; days7: number | null };
   nowMs: number;
 }) {
-  const { model, weekdayList } = useMemo(() => {
+  const { model, weekdayList, end } = useMemo(() => {
     const values = series.map((p) => p.dau);
     const ticks = dailyWeekdayTicks(series);
     const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
@@ -504,17 +514,20 @@ function DailyWeekdayChart({
       showTick: (i) => tickAt.has(i),
       scrubLabel: (i) => [fmtWeekday(series[i].day), `<b>${values[i]}</b> daily`],
     };
-    return { model, weekdayList: ticks.map((t) => t.weekday).join(', ') };
+    const newest = series.at(-1);
+    const end: EndLabel = { unit: newest ? fmtWeekday(newest.day) : '', count: values.at(-1) ?? 0 };
+    return { model, end, weekdayList: ticks.map((t) => t.weekday).join(', ') };
   }, [series]);
   const lo = model.values.length ? Math.min(...model.values) : 0;
   const hi = model.values.length ? Math.max(...model.values) : 0;
+  const provisional = lastPointIsToday(series, nowMs);
   return (
     <UniqueUsersLineChart
       model={model}
-      ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
+      ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. ${end.unit}${provisional ? ' so far' : ''} ${end.count}. ${weekdayList}.`}
       seriesName="daily"
-      provisional={lastPointIsToday(series, nowMs)}
-      counts={counts}
+      provisional={provisional}
+      end={end}
     />
   );
 }
@@ -535,7 +548,6 @@ export function ActiveUsersPanel({
   const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
   const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
-  const counts = windowCounts(padded);
   const growth = useMemo(() => impliedActivityGrowth(series, rangeStart(range, nowMs), nowMs), [series, nowMs, range]);
   const faint = 'var(--color-muted-foreground)';
   const legend =
@@ -573,9 +585,9 @@ export function ActiveUsersPanel({
       legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
       {range === '24h' ? (
-        <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
+        <HourlyTrendChart series={hourly24} nowMs={nowMs} />
       ) : range === '7d' ? (
-        <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
+        <DailyWeekdayChart series={daily7} nowMs={nowMs} />
       ) : (
         <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} shown={shown} growth={growth} />
       )}
