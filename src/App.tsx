@@ -45,6 +45,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { whenIdle } from '@/lib/whenIdle';
+import { pauseSpriteWarmup, spriteWarmupPlan, warmSprites } from '@/lib/spriteWarmup';
 
 console.log(`[P151] build: ${BUILD_TIMESTAMP}`);
 
@@ -125,6 +126,9 @@ function App() {
                       setAnalyticsMounted(true);
                     }
                   });
+                  whenIdle(() => {
+                    if (!cancelled) warmSprites(spriteWarmupPlan(usePokedexStore.getState().sections));
+                  });
                 });
               });
           });
@@ -142,6 +146,8 @@ function App() {
     });
     return () => { cancelled = true; };
   }, [analyticsUnlocked, analyticsMounted]);
+
+  useEffect(() => pauseSpriteWarmup(Boolean(activeSection)), [activeSection]);
 
   const [browserPanelMounted, setBrowserPanelMounted] = useState(false);
   if (activeSection && !browserPanelMounted) setBrowserPanelMounted(true);
