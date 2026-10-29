@@ -220,3 +220,56 @@ ranges and a changed LCP image. Desktop score stays 100; modeled LCP rises
 for the selected composition, and local lab records DOM growth of 32%.
 The handoff retains every negative, full Google reports, unscored insights,
 resource prescriptions, source identities, and proportional CI receipts.
+
+## Pokédex picker sprite warm-up, 29 October
+
+When the page is idle, after the hidden View and Analytics code loads,
+`src/lib/spriteWarmup.ts` downloads sprites at low priority, 4 at a time, in
+idle callbacks. It loads the visitor's own Pokémon first: the grid, the View
+page, and the analytics charts show these. Then it loads the grass, fire, and
+water starter pickers in full, then about one phone screen (24 sprites) of
+every other section's picker, in page order. It follows each picker's own
+order: generation first, or a section's subgroups when it has them. It waits
+while a picker is open, and it does not run with Data Saver or on 2G.
+
+A new visitor downloads 621 sprites, 455 KB. On the lab phone (1.6 Mbps) they
+load from 6.0 s to 31.4 s after the page opens; on desktop from 0.9 s to
+7.9 s. After the warm-up, the browser already has 98.8% of the sprites that are
+on screen when any section's picker opens on the phone, and 100% on desktop.
+Temple, Other Areas, and Legendary each miss 2 on the phone. Legendary draws
+two columns side by side, which the warm-up does not follow.
+
+Time from a tap on a section until every sprite on screen in its picker is
+decoded, production → warm-up build, median of 5 runs (3 at 35 s):
+
+| Tap | Starters | Regional Bird | Forest | Legendary |
+|---|---:|---:|---:|---:|
+| Phone, 8 s after load | 674 → 445 ms | 724 → 463 ms | 959 → 972 ms | 1,013 → 1,028 ms |
+| Phone, 35 s after load | 630 → 471 ms | | 961 → 810 ms | 1,010 → 844 ms |
+| Desktop, 8 s after load | 198 → 132 ms | 214 → 130 ms | 281 → 197 ms | 281 → 181 ms |
+
+At 8 s on the phone, the warm-up has not reached Forest and Legendary yet.
+Their ranges overlap with production's. An earlier version started its loads on
+plain timers and made that case 134 ms slower; idle callbacks removed it.
+
+`lab.mjs`, 7 runs (11 for the phone `dex` case): every metric's range overlaps
+production's. The phone medians are LCP 2,024 → 2,004 ms, FCP 596 → 584 ms,
+blocking time 369 → 389 ms, and picker open 416 → 360 ms. Typing stays at 144 ms.
+With a full Pokédex, blocking time is 948 → 982 ms on the phone and
+115 → 127 ms on desktop.
+
+`lighthouse.mjs` fails one guard: desktop "last visual change" 2,803 →
+4,006 ms. In every run, for both builds, that time is the end of the trace,
+because the intro screenshots float without stopping. The warm-up keeps the
+network busy longer, so Lighthouse ends its trace later. The filmstrip frames
+between show no change, and the settled pages match production in pixels.
+
+Before October 29, `lab.mjs` ran Chrome with certificate errors ignored rather
+than with the lab certificate trusted. Chrome does not cache such responses, so
+a repeat request in a lab run always went to the server. It now trusts the lab
+certificate by key, as `lighthouse.mjs` does.
+
+Left out: whole sections, about 0.8 MB, which a phone on a metered plan would
+pay for pickers it never opens. Also left out: the analytics drill-downs, which
+can list Pokémon outside the visitor's picks but sit behind 25 picks and two
+taps.
