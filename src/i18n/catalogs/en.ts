@@ -418,7 +418,6 @@ export const enUi = {
   'home.next.blurb': 'Share an idea or feedback,\nwe read everything that comes in!',
   'home.next.title': 'What would you like to see next?',
   'intro.body': 'Curate your regional Pokédex, analyze detailed stats, then export as an image to save a copy and share.',
-  'intro.cta': 'Choose your starters',
   'intro.dismiss': 'Dismiss intro',
   'intro.headline': 'Build your own {count}',
   'intro.shot.complete': 'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',

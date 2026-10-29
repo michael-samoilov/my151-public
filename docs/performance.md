@@ -297,7 +297,7 @@ compare the numbers in one row, not across this page.
 
 | Avenue | Measured effect | Cost |
 |---|---|---|
-| Render a hidden Starters picker once at idle, inside React's `<Activity mode="hidden">`, then remove it | First Starters open 752–834 to 406–666 ms (4 runs). No frame over 76 ms while it renders. | About 30 lines in `App.tsx`. The same practice render in a visible, off-screen box blocks one frame of 259–382 ms. |
+| Render a hidden Starters picker once at idle, inside React's `<Activity mode="hidden">`, then remove it | Shipped October 29 (`PickerPracticeRender` in `App.tsx`). First open, 5 runs: Starters 680 to 459 ms, Forest 1,097 to 874 ms. Desktop typing in the search box: lab INP 24 ms in all 7 production runs, 24–40 ms with it (median 32). | It renders into an element that is never attached: a hidden copy in the page let page-wide selectors find its result count, and six browser tests did. It ends at idle as a transition: on a plain timer, its removal landed during typing. |
 | Lighter type badges | Upper bound, with no badges at all: Starters 763 to 578 ms, Forest 1,232 to 849 ms, on every open. Each badge is an inline SVG of five elements. | The badges must stay pixel-identical. A real change gains less than the upper bound. |
 | Inline the Pokédex stylesheet, as the hub does | First visit, 7 runs: phone FCP 660 to 420 ms and desktop 172 to 100 ms, with separated ranges. Phone LCP 2,244 to 1,944 ms, with overlapping ranges. | A repeat visit downloads 15.5 KB more and is not faster (phone FCP 336 to 344 ms). |
 

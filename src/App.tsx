@@ -1,9 +1,12 @@
-import { useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
+import { Activity, useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
+import { create } from 'zustand';
+import { createPortal } from 'react-dom';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { ToolbarSlotContext } from '@/components/layout/toolbarSlot';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
+import { BrowserStoreContext, type BrowserStoreState } from '@/components/browser/browserStore';
 
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { loadChunk } from '@/lib/staleDeploy';
@@ -75,6 +78,40 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
   );
 }
 
+/** Hidden content renders at the lowest priority, after everything else; 5 s covers the lab phone. */
+const PRACTICE_RENDER_MS = 5000;
+
+/**
+ * Builds a hidden Starters picker once while the page is idle, so the first
+ * picker a visitor opens runs on warm code: on the lab phone, the first
+ * Starters open fell from about 680 to 459 ms. Hidden `<Activity>` content
+ * renders without effects or layout and yields to any input. It renders into
+ * an element that is never attached, so no selector or screen reader finds it.
+ */
+function PickerPracticeRender({ onDone }: { onDone: () => void }) {
+  const [host] = useState(() => document.createElement('div'));
+  const [store] = useState(() => create<BrowserStoreState>()(() => ({
+    ...usePokedexStore.getState(),
+    activeSection: 'starter', activeCategoryFilter: 'starter', activeArchetypeFilter: null,
+    searchQuery: '', typeFilter: ['grass'], typeFilterMode: 'any', generationFilter: null,
+    shapeFilter: null, colorFilter: null, eggGroupFilter: null, evoLineSizeFilter: null,
+    // Never the visitor's own Pokédex: nothing here may write to it.
+    addToSection: () => {}, removeEvoLine: () => {}, setActiveSection: () => {}, setMobileBrowserOpen: () => {},
+  })));
+  useEffect(() => {
+    const id = setTimeout(() => whenIdle(() => startTransition(onDone)), PRACTICE_RENDER_MS);
+    return () => clearTimeout(id);
+  }, [onDone]);
+  return createPortal(
+    <Activity mode="hidden">
+      <BrowserStoreContext.Provider value={store}>
+        <PokemonBrowser />
+      </BrowserStoreContext.Provider>
+    </Activity>,
+    host,
+  );
+}
+
 function App() {
   useDocumentLocale();
   useCompletionBeacon();
@@ -84,6 +121,8 @@ function App() {
   const [toolbarEl, setToolbarEl] = useState<HTMLElement | null>(null);
   const [viewMounted, setViewMounted] = useState(false);
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
+  const [practiceRender, setPracticeRender] = useState(false);
+  const endPracticeRender = useCallback(() => setPracticeRender(false), []);
   useEffect(() => {
     if (analyticsMounted) void importDrillDown();
   }, [analyticsMounted]);
@@ -127,7 +166,9 @@ function App() {
                     }
                   });
                   whenIdle(() => {
-                    if (!cancelled) warmSprites(spriteWarmupPlan(usePokedexStore.getState().sections));
+                    if (cancelled) return;
+                    warmSprites(spriteWarmupPlan(usePokedexStore.getState().sections));
+                    startTransition(() => setPracticeRender(true));
                   });
                 });
               });
@@ -264,6 +305,8 @@ function App() {
       )}
 
       {currentView === 'analytics' && drillDownSegment && !isDesktop && <Suspense fallback={<ScreenSpinner />}><DrillDownSheet topGap={headerHeight} /></Suspense>}
+
+      {practiceRender && <PickerPracticeRender onDone={endPracticeRender} />}
 
       <FeedbackHost route={currentView} />
 
