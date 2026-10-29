@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { preload } from 'react-dom';
 import { HomeScreenshot, MobileArtwork } from '@/home/artwork';
 import { mobileArtwork, MOBILE_MEDIA } from '@/home/artwork-data';
@@ -81,9 +81,19 @@ function readSavedState(key: string): Record<string, unknown> | null {
   }
 }
 
+declare global {
+  interface Window { p151HubCounts?: { dex: number | null; league: number; favorites: number | null } }
+}
+
+// Counted by the hub's boot script and already written into the prerendered
+// page (scripts/prerender-hub.ts). The first render starts from them, so
+// hydration matches; the app's own counts follow.
+const bootCounts = typeof window === 'undefined' ? undefined : window.p151HubCounts;
+const noSubscription = () => () => {};
+
 function useSavedToolProgress() {
-  const [league, setLeague] = useState(0);
-  const [favorites, setFavorites] = useState({ filled: 0, total: 257 });
+  const [league, setLeague] = useState(bootCounts?.league ?? 0);
+  const [favorites, setFavorites] = useState({ filled: bootCounts?.favorites ?? 0, total: 257 });
   useEffect(() => {
     let active = true;
     async function readSaved() {
@@ -94,12 +104,9 @@ function useSavedToolProgress() {
         ).length : 0);
         const savedFills = readSavedState('favorite-picker')?.fills;
         if (savedFills && typeof savedFills === 'object' && !Array.isArray(savedFills)) {
-          const fills = Object.fromEntries(Object.entries(savedFills).filter(
-            (entry): entry is [string, number] => typeof entry[1] === 'number',
-          ));
-          const { buildFavoritesSnapshot } = await import('@/favorites/export/snapshot');
-          const { filled, total } = buildFavoritesSnapshot(fills).completion;
-          if (active) setFavorites({ filled, total });
+          const { recordSavedPicks } = await import('@/favorites/export/savedPicks');
+          const completion = recordSavedPicks();
+          if (active && completion) setFavorites({ filled: completion.filled, total: completion.total });
         } else if (active) setFavorites({ filled: 0, total: 257 });
       } catch {
         return;
@@ -427,8 +434,9 @@ export function HomePage() {
     document.dispatchEvent(new Event('p151-hub-interactive'));
     sendEventBeacon('hub-shown', { once: true });
   }, []);
-  const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
-  const tools = useTools(placed);
+  const storedPlaced = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
+  const hydrating = useSyncExternalStore(noSubscription, () => false, () => true);
+  const tools = useTools(hydrating && bootCounts ? bootCounts.dex ?? 0 : storedPlaced);
 
   useEffect(() => { markLeaguePromoSeen(); }, []);
   const desktopCols = tools.length;

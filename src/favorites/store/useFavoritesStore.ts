@@ -11,7 +11,14 @@ import {
 } from '../model/packing';
 import { pointerPool, prunePointers } from '../model/pointers';
 
-const FAVORITES_STORAGE_KEY = 'favorite-picker';
+export const FAVORITES_STORAGE_KEY = 'favorite-picker';
+/**
+ * The picks count the app shows, with the exact saved picker data it was
+ * counted from (`recordSavedPicks`). The hub's boot script shows it before the
+ * app runs only while that data is unchanged: it cannot check picks itself, so
+ * it never shows a count the app would then correct.
+ */
+export const SAVED_PICKS_KEY = 'p151-hub-picks';
 
 export function migrateFavoriteFills(saved: Record<string, number>): Record<string, number> {
   const fills = { ...saved };
