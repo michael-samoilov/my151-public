@@ -257,6 +257,15 @@ describe('parseCards', () => {
     expect(c.pw).toEqual([[9, 1, 0, 0]]);
   });
 
+  it('keeps the shiny flag of a line and of a legendary, so the admin can draw them shiny', () => {
+    const c = parseCards([card({
+      l: [{ b: [1, 2, 3], s: 1 }, { b: [4], s: true }, { b: [7] }],
+      lg: [[2, 144, 1], [3, 145, 'yes'], [4, 146]],
+    })])![0];
+    expect(c.l).toEqual([{ b: [1, 2, 3], s: 1 }, { b: [4] }, { b: [7] }]);
+    expect(c.lg).toEqual([[2, 144, 1], [3, 145], [4, 146]]);
+  });
+
   it('drops a malformed legendary without losing the card', () => {
     const c = parseCards([card({ lg: [[99, 144], 'nope', [2, 145]] })])![0];
     expect(c.lg).toEqual([[2, 145]]);

@@ -1,20 +1,17 @@
 import { TypeBadge } from '@/components/shared/TypeBadge';
-import { TYPE_BADGE_ASPECT, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { displayCoordinate } from './coordinatePresentation';
-import { generationBadgeUnits } from './badgeStyle';
+import { titleUnits, TITLE_BADGE_PX } from './titleGeometry';
 import { AxisBadge, GenerationBadge } from './WordBadge';
 import type { ExtraTypeAxis, ExtraGenAxis, GenAxisId, TypeAxisId } from '../model/cells';
 import { isGenNumber, isTypeName } from '../model/cells';
 
-const TITLE_BADGE_PX = 22;
-
 export function PickerTitle({ type, gen, maxWidth, gapPx = 6 }: { type: TypeAxisId; gen: GenAxisId; maxWidth?: number; gapPx?: number }) {
   const display = displayCoordinate(type, gen);
   const summary = type === gen;
-  const genAspect = display.gen == null ? 0 : isGenNumber(display.gen)
-    ? generationBadgeUnits() / TYPE_BADGE_H : TYPE_BADGE_ASPECT;
+  const { aspect, gaps } = titleUnits(type, gen);
   const height = maxWidth == null ? TITLE_BADGE_PX
-    : Math.min(TITLE_BADGE_PX, Math.max(1, maxWidth - (display.gen == null ? 0 : gapPx)) / (TYPE_BADGE_ASPECT + genAspect));
+    : Math.min(TITLE_BADGE_PX, Math.max(1, maxWidth - gaps * gapPx) / aspect);
   const typeBadge = isTypeName(display.type) ? (
     <span className="block shrink-0" style={{ width: height * TYPE_BADGE_ASPECT }}>
       <TypeBadge type={display.type} className="block w-full overflow-visible" />

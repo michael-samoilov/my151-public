@@ -29,7 +29,7 @@ Each bundle entry in the panel shows one permission quote from the bundle's own 
 `npm run credits:bundles` (`scripts/credits/bundle-credits.ts`) writes `src/data/bundleCredits.json` from the ledger and `src/data/spriteAttribution.json`. `npm run credits:check-sprites` fails when that file is out of date, or when the counts stop being a partition.
 
 - Every shown fan-made sprite file counts under exactly one entry. A direct upload counts under its artist's own entry. Any other file counts under the bundle whose records credit its artist: the Smogon Sprite Project for its four credit sheets (whether the file came through PokéAPI or not), PokéAPI for its own README credits, or the Generation 9 Resource Pack for its sheet. Fan-made files with no attribution row came from PokéAPI's files, so they count under PokéAPI.
-- Game Freak's sprites, the two Kyurem Overdrive stills (Game Freak's animation frames), and every `"via": "my151"` file count nowhere: Mega Zygarde, Purple Kecleon, Professor Tangrowth, Tinkmaster, and Chef Dente.
+- Game Freak's sprites, the two Kyurem Overdrive stills (Game Freak's animation frames), and every `"via": "my151"` file count nowhere: Purple Kecleon, Professor Tangrowth, Tinkmaster, and Chef Dente. Mega Zygarde was the sprite lab's drawing until 2026-10-29, when Caruban's Generation 9 Resource Pack sprite replaced it.
 - An artist counts a file only when the ledger's verdict is `confirmed`. Every other file counts under its entry as "Artist not confirmed". A file with two artists counts for each of them.
 - An artist's name links only to a profile whose `linkStatus` in `creditTerms.json` is `proven`, never to a Smogon member page. No artist's terms are quoted: the bundle's permission covers the files it carried.
 - A direct-upload artist's own files appear only in their own entry. That entry also lists the bundles that credit them, with the count from each.
@@ -47,7 +47,28 @@ An artist has an entry of their own only when my151 took the sprites from the ar
 
 Tinkmaster (#959 by Travis, with tools from an image-model edit) and Chef Dente (#820 by G.E.Z., with a hat, ladle and pan from the sprite lab's drawing) contain model-drawn parts. On 2026-10-20 Michael decided that the panel credits them like the lab's own drawings: no credit row, and no count in Travis's or G.E.Z.'s tally. Their rows say `"via": "my151"` and keep `"changedBy": "my151"`; the evidence names the base artist and how to credit the file to them instead. Travis and G.E.Z. stay credited for their own Tinkaton and Greedent through the Smogon Sprite Project, which meets its terms: "free for use as long as the spriter or the project itself is credited". Professor Tangrowth is the lab's own drawing from Game Freak's #465 and has no credit line.
 
-my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
+my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). The lineage of the lab's former Mega Zygarde drawing is kept in the `previousEvidence` of its row in `docs/credits/sprite-evidence.json`.
+
+## Shiny sprites
+
+On 2026-10-25 the Favorite Pokémon Picker and the league builder gained a Shiny switch. `scripts/credits/shownSprites.ts` lists every shiny file that the switch can show. Each one needs a ledger row like any other shown file, and the row records the shiny's source and artist.
+
+Michael set the credit rule on 2026-10-26. When the same artist drew the normal and the shiny sprite, the credit for the normal sprite also covers the shiny. The panel credits a shiny on its own only when one of these holds:
+
+- A source confirms that another artist drew the shiny, such as a Smogon sheet row that names a different "(shiny)" spriter.
+- A source asks for normal and shiny forms to be credited separately.
+
+A shiny whose artist is not confirmed counts as the same artist's work. Only a shiny that the panel credits on its own has a row in `src/data/spriteAttribution.json`, with the key `shiny/<file>`. The bundles count it under its shiny artist, and they count no other shiny. `npx tsx scripts/credits/bundle-credits.ts --check` fails when a shiny's row names no confirmed artist beyond its normal sprite's. On 2026-10-26, 85 shinies had such a row, and no source asked for separate credit.
+
+The research found each shiny's source this way:
+
+- `scripts/data/shiny-sprite-placed.json` names the source and the shiny artist of each shiny that the harvest takes from outside PokéAPI's own folders. The research run of 2026-10-25 traced these, and 60 more PokéAPI shinies, to their credit sheets. The run is not in the repository, so each ledger row keeps its source URLs and SHA-256 values.
+- Any other shiny is PokéAPI's file. It is Game Freak's when its pixels equal PokéAPI's Black and White shiny. A Smogon shiny is compared with the Front shiny attachment on the sheet row that credits its normal sprite. On an exact match, the artists that the row marks "(shiny)" drew it, or the row's artists when it marks none. A PokéAPI shiny is credited through the README only when the commit whose README line credits its normal sprite also added the shiny, and the line covers shinies.
+- A shiny with no such match has an artist that is not confirmed. Its ledger row says `"evidenceType": "follows-normal"`.
+
+On 2026-10-29 Michael held 20 shinies out of the app: forms that are one individual that is never shiny, and two forms with no shiny in any game. They have no ledger row. [The held shinies](../favorite-picker-work/sprites/held-shinies/README.md) keeps the files and the rules, and `held` in `scripts/data/shiny-sprite-sources.json` keeps the harvest from adding them back.
+
+An artist's own entry lists a shiny only when the panel credits it on its own. The shiny follows the matching normal sprite, marked with the shiny star. On 2026-10-26 no own entry lists a shiny.
 
 ## Non-profit
 

@@ -17,16 +17,26 @@ import { CoordinatePills } from './CoordinatePills';
 import { equalAreaDiscSize, originShapeGeometry, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
+import { shinySpriteUrl } from '@/lib/spriteUrl';
+import { NoShinyMark } from '@/components/shiny/ShinyMarks';
+import { NO_SHINY } from '@/components/shiny/shinyMarks';
 
 const ROW_GAP_PX = 4;
 
-export function PrettySpriteGrid({
-  mons,
+/** One tile of a selector: a Pokémon, and whether the tile shows it shiny. */
+export interface SelectorOption {
+  mon: PickerMon;
+  shiny: boolean;
+}
+
+export function PrettySpriteGrid<T extends SelectorOption>({
+  options,
   maxCols,
   spritePx: requestedSpritePx,
   lineKey,
   formKey,
-  selectedId,
+  selected,
+  converting = false,
   onPick,
   takenMarks,
   showIcons = true,
@@ -40,30 +50,34 @@ export function PrettySpriteGrid({
   caption,
   captionPx = 0,
 }: {
-  mons: readonly PickerMon[];
+  /** A shiny option without a shiny sprite shows faded, under the no-shiny mark. */
+  options: readonly T[];
   maxCols: number;
   spritePx?: number;
-  lineKey?: (mon: PickerMon) => number;
-  formKey?: (mon: PickerMon) => number;
-  selectedId?: number;
-  onPick: (mon: PickerMon) => void;
+  lineKey?: (option: T) => number;
+  formKey?: (option: T) => number;
+  selected?: (option: T) => boolean;
+  /** The selected tile shows another look than the pick it stands for, so a tap converts the pick instead of clearing it. */
+  converting?: boolean;
+  onPick: (option: T) => void;
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
+  /** A pointer selector lists a Pokémon once for each look its sources show it in. */
   pointer?: boolean;
-  sourceMarks?: (id: number) => PointerMark[];
-  coordinates?: (id: number) => SourceCoordinate[];
+  sourceMarks?: (option: T) => PointerMark[];
+  coordinates?: (option: T) => SourceCoordinate[];
   originContext?: OriginContext;
   onClear?: () => void;
   clearLabel?: string;
   fitToHeight?: boolean;
-  caption?: (mon: PickerMon) => ReactNode;
+  caption?: (option: T) => ReactNode;
   captionPx?: number;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
   const baseSpritePx = requestedSpritePx ?? pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  const rows = prettyRows(mons, maxCols, lineKey, formKey);
+  const rows = prettyRows(options, maxCols, lineKey, formKey);
   const fitRows = rows.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
@@ -120,22 +134,24 @@ export function PrettySpriteGrid({
             data-pretty-row={r}
             data-pretty-len={row.length}
           >
-            {row.map((mon) => (
+            {row.map((option) => (
               <PickCell
-                key={mon.id}
-                mon={mon}
+                key={pointer ? `${option.mon.id}-${option.shiny ? 'shiny' : 'normal'}` : option.mon.id}
+                mon={option.mon}
                 spritePx={spritePx}
-                selected={selectedId === mon.id}
-                taken={takenMarks?.(mon.id) ?? []}
+                selected={selected?.(option) ?? false}
+                converting={converting}
+                shiny={option.shiny}
+                taken={takenMarks?.(option.mon.id) ?? []}
                 showIcons={showIcons}
                 pointer={pointer}
-                sourceMarks={sourceMarks?.(mon.id) ?? []}
-                coordinates={coordinates?.(mon.id)}
+                sourceMarks={sourceMarks?.(option) ?? []}
+                coordinates={coordinates?.(option)}
                 originContext={originContext}
-                onPick={onPick}
+                onPick={() => onPick(option)}
                 onClear={onClear}
                 clearLabel={clearLabel}
-                caption={caption?.(mon)}
+                caption={caption?.(option)}
                 captionPx={captionPx}
               />
             ))}
@@ -149,6 +165,8 @@ function PickCell({
   mon,
   spritePx,
   selected,
+  converting,
+  shiny,
   taken,
   showIcons,
   pointer,
@@ -164,48 +182,55 @@ function PickCell({
   mon: PickerMon;
   spritePx: number;
   selected: boolean;
+  converting: boolean;
+  shiny: boolean;
   taken: PointerMark[];
   showIcons: boolean;
   pointer: boolean;
   sourceMarks: PointerMark[];
   coordinates?: SourceCoordinate[];
   originContext?: OriginContext;
-  onPick: (mon: PickerMon) => void;
+  onPick: () => void;
   onClear?: () => void;
   clearLabel?: string;
   caption?: ReactNode;
   captionPx: number;
 }) {
   const originsId = useId();
-  const clearing = selected && Boolean(onClear);
+  const clearing = selected && !converting && Boolean(onClear);
+  const shinySprite = shiny ? shinySpriteUrl(mon.sprite) : null;
+  const noShiny = shiny && !shinySprite && !selected;
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const discSize = equalAreaDiscSize(mark);
   const { roundedSide, roundedRadius } = originShapeGeometry(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
+  const name = pointer && shinySprite ? `${labelOf(mon)} · ${t('shiny.label')}` : labelOf(mon);
   const tile = (
     <button
       type="button"
-      onClick={() => selected && onClear ? onClear() : onPick(mon)}
+      onClick={() => clearing ? onClear?.() : onPick()}
       data-testid={`favorites-pick-${mon.id}`}
+      data-variant={pointer ? (shiny ? 'shiny' : 'normal') : undefined}
       aria-pressed={selected}
       aria-describedby={coordinates?.length ? originsId : undefined}
-      aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
+      aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${name}` : name}
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <PickerSprite
-        sprite={mon.sprite}
+        sprite={shinySprite ?? mon.sprite}
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
         className={clearing ? 'relative z-10 opacity-35' : 'relative z-10'}
-        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
+        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, ...(noShiny ? NO_SHINY.sprite : null) }}
         decoding="sync"
         draggable={false}
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
+      {noShiny ? <NoShinyMark size={`${mark}px`} left="2px" top="2px" /> : null}
       {showIcons ? <span
         className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}

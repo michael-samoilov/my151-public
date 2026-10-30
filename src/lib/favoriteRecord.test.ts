@@ -17,6 +17,14 @@ describe('favorite record failure guards',()=>{
   const s=parseFavoriteSnapshot({v:1,filled:257,fills:{'water|1':7,'fire|1':7,'favorite|1':4,'Bad|1':25}})!;
   expect(s.filled).toBe(1);expect(s.fills).toEqual({'water|1':7});
  });
+ it('keeps a shiny pick or pointer only while its cell holds that Pokémon, and adds no field when nothing is shiny',()=>{
+  const s=parseFavoriteSnapshot({v:1,fills:{'water|1':7,'fire|1':4,'favorite|1':7},shiny:{'water|1':7,'fire|1':5,'favorite|1':7,'favorite|2':7,'water|favorite':7,'Bad|1':7,'grass|1':1}})!;
+  expect(s.shiny).toEqual({'water|1':7,'favorite|1':7});
+  expect(parseFavoriteSnapshot({v:1,fills:{'water|1':7},shiny:{'water|1':7}})!.shiny).toEqual({'water|1':7});
+  expect(snapshot()).not.toHaveProperty('shiny');
+  const r=mergeFavoriteRecord(null,{...input('shiny-000001'),snapshot:s});
+  expect(parseFavoriteRecord(JSON.stringify(r))!.latest.shiny).toEqual({'water|1':7,'favorite|1':7});
+ });
  it('counts valid pick and pointer cells without counting pointer votes twice',()=>{
   expect(snapshot()).toMatchObject({filled:2,picksFilled:1,pointersFilled:1,uniqueIds:[7]});
  });

@@ -22,6 +22,7 @@ import { buildFavoritesSnapshot } from './export/snapshot';
 import { recordSavedPicks } from './export/savedPicks';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useCompletionNudge } from './hooks/useCompletionNudge';
 import { filledCount, useAnalyticsUnlock } from './hooks/useAnalyticsUnlock';
 import { AnalyticsNudge } from './components/AnalyticsNudge';
@@ -35,7 +36,8 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
-const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
+// v2: Icons now starts off. v1 held `1` for nearly everyone, written on the first visit, not chosen.
+const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v2';
 const FavoritesAnalyticsDashboard = lazy(() => loadChunk(() => import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => loadChunk(() => import('./components/FavoritesExportOverlay')));
 
@@ -47,8 +49,8 @@ function completionShown() {
 }
 
 function savedShowIcons(): boolean {
-  try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
-  catch { return true; }
+  try { return window.localStorage.getItem(ICONS_STORAGE_KEY) === '1'; }
+  catch { return false; }
 }
 
 function GlobalHeader() {
@@ -94,10 +96,12 @@ function FavoritesContent({ sel, setSel }: {
   useDocumentLocale();
   const desktop = useIsDesktop();
   const fills = useFavoritesStore((s) => s.fills);
+  const shiny = useFavoritesStore((s) => s.shiny);
   const place = useFavoritesStore((s) => s.place);
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
+  const [shinyView, setShinyView] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
@@ -150,6 +154,7 @@ function FavoritesContent({ sel, setSel }: {
     if (kind === 'disabled' || kind === 'null') return;
     openCell(type, gen);
     setCurrentView('picker');
+    setShinyView(false);
     setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
 
@@ -159,17 +164,26 @@ function FavoritesContent({ sel, setSel }: {
       type={sel.type}
       gen={sel.gen}
       fills={fills}
+      shiny={shiny}
       currentId={fills[cellKey(sel.type, sel.gen)]}
       showIcons={showIcons}
+      shinyView={shinyView}
       sortOrder={sortOrder}
-      onToggleIcons={() => setShowIcons((value) => !value)}
+      onToggleIcons={() => {
+        if (!showIcons) sendEventBeacon('favorites-icons-on', { once: true });
+        setShowIcons(!showIcons);
+      }}
+      onToggleShiny={() => {
+        if (!shinyView) sendEventBeacon('favorites-shiny-on', { once: true });
+        setShinyView(!shinyView);
+      }}
       onClose={() => {
         if (sel.keyboard) requestAnimationFrame(() => {
           document.querySelector<HTMLButtonElement>(`[data-testid="favorites-cell-${sel.type}-${sel.gen}"]`)?.focus({ preventScroll: true });
         });
         setSel(null);
       }}
-      onPlace={(id) => place(sel.type, sel.gen, id)}
+      onPlace={(id, shinyPick) => place(sel.type, sel.gen, id, shinyPick)}
       onApplyPack={(path: PackMove[]) => {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);
       }}
@@ -197,7 +211,7 @@ function FavoritesContent({ sel, setSel }: {
             if (view === 'analytics') setAnalyticsMounted(true);
             setCurrentView(view);
           }}
-          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills); }} />
+          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills, shiny); }} />
         <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
@@ -205,9 +219,11 @@ function FavoritesContent({ sel, setSel }: {
             <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
               <FavoritesGrid
                 fills={fills}
+                shiny={shiny}
                 resolve={getPickerMon}
                 selected={sel}
                 onSelect={open}
+                edits={{ clear, place }}
                 desktop={desktop}
                 pane={desktop ? picker : null}
               />
@@ -243,7 +259,7 @@ function FavoritesContent({ sel, setSel }: {
         onShown={completionShown}
       />
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
-        <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
+        <FavoritesExportOverlay fills={fills} shiny={shiny} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
       </Suspense>}
     </>

@@ -21,9 +21,19 @@ interface Screen {
 
 const read = (file: string) => fs.readFileSync(path.join(REPO_ROOT, file), 'utf8');
 const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixture.json') };
+/** The league fixture with its first card's first two lines shiny, so the home and the card show shiny marks. */
+const LEAGUE_SHINY = (() => {
+  const league = JSON.parse(LEAGUE['league-builder']);
+  for (const line of league.state.cards[0].lines.slice(0, 2)) line.shiny = true;
+  return { 'league-builder': JSON.stringify(league) };
+})();
 const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
 const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
 const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
+/** Gen I's favorite is Tentacruel, which Water / Gen I holds shiny and Poison / Gen I holds normal. */
+const FAVORITES_SHINY_PAIR = {
+  'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'poison|1': 73 }, shiny: { 'water|1': 73 } }, version: 4 }),
+};
 const BLANK_LEAGUE = {
   'league-builder': JSON.stringify({
     state: {
@@ -84,6 +94,28 @@ const pickTooltip = (cell: string, ids: number[]) => async (page: Page) => {
     return;
   }
 };
+/** Rests the mouse on a filled grid cell, so a desktop render shows its name tooltip and hover controls. A phone has no hover. */
+const hoverGridCell = (cell: string) => async (page: Page) => {
+  if ((page.viewportSize()?.width ?? 1280) < 1024) return;
+  const box = (await page.getByTestId(`favorites-cell-${cell}`).boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
+  await page.getByTestId('favorites-name-tooltip').waitFor({ state: 'visible', timeout: 10_000 });
+};
+/** Scrolls a grid cell into view, then waits for the minimap that the scroll shows to fade. */
+const showGridCell = (cell: string) => async (page: Page) => {
+  await page.getByTestId(`favorites-cell-${cell}`).scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => {
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    return !map || getComputedStyle(map).opacity === '0';
+  }, undefined, { timeout: 10_000 });
+};
+/**
+ * Moves the pointer to the top-left corner on a phone. A full-page capture drops touch emulation, so
+ * a pointer left on a control would draw a hover state that a phone never shows.
+ */
+const parkPointerOnPhone = async (page: Page) => {
+  if ((page.viewportSize()?.width ?? 1280) < 1024) await page.mouse.move(0, 0);
+};
 /** Opens the endgame card's Ace picker and searches it, so its tiles show form codes. */
 const searchLeagueAce = (query: string) => async (page: Page) => {
   await page.locator('[data-testid="league-slot-12"]').click();
@@ -142,11 +174,41 @@ export const SCREENS: Screen[] = [
   { id: 'league', path: '/custom-gym-leader' },
   { id: 'league-home', path: '/custom-gym-leader', seed: LEAGUE },
   { id: 'league-card', path: '/custom-gym-leader', seed: LEAGUE, act: click('[data-testid="league-slot-0"]') },
+  { id: 'league-home-shiny', path: '/custom-gym-leader', seed: LEAGUE_SHINY },
+  { id: 'league-card-shiny', path: '/custom-gym-leader', seed: LEAGUE_SHINY, act: click('[data-testid="league-slot-0"]') },
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
+  {
+    id: 'league-browser-es', path: '/custom-gym-leader?lang=es',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+    },
+  },
+  {
+    id: 'league-browser-cleared', path: '/custom-gym-leader?lang=en',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+      await page.getByRole('button', { name: 'Clear', exact: true }).click();
+      await page.locator('[data-result-count][hidden]').waitFor({ state: 'attached', timeout: 30_000 });
+    },
+  },
+  {
+    id: 'league-browser-shiny-hover', path: '/custom-gym-leader?lang=en',
+    act: async (page) => {
+      await click('[data-testid="league-slot-1"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').click();
+      await parkPointerOnPhone(page);
+    },
+  },
   { id: 'league-ace-shellos', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('shellos') },
   { id: 'league-ace-aegislash', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('aegislash') },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  { id: 'favorites-filled-hover', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: hoverGridCell('fire-1') },
   {
     id: 'builder-search-empty', path: '/pokedex-builder', seed: DEX,
     act: async (page) => {
@@ -165,6 +227,22 @@ export const SCREENS: Screen[] = [
     },
   },
   { id: 'favorites-selector-filled', path: '/favorite-pokemon-picker', seed: FAVORITES, act: openPickerCell('fire-5') },
+  {
+    id: 'favorites-selector-shiny', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES,
+    act: async (page) => {
+      await openPickerCell('fire-5')(page);
+      await click('[data-testid="favorites-shiny-toggle"]')(page);
+      await parkPointerOnPhone(page);
+    },
+  },
+  { id: 'favorites-shiny-pair', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_SHINY_PAIR, act: showGridCell('favorite-1') },
+  {
+    id: 'favorites-selector-shiny-pair', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_SHINY_PAIR,
+    act: async (page) => {
+      await openPickerCell('favorite-1')(page);
+      await parkPointerOnPhone(page);
+    },
+  },
   { id: 'favorites-tooltip-pokopia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('normal-9', [11120]) },
   { id: 'favorites-tooltip-shadow-lugia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('psychic-3', [11123, 385]) },
   { id: 'favorites-tooltip-purple-kecleon', path: '/favorite-pokemon-picker?lang=fr', act: pickTooltip('normal-3', [11122, 352]) },
@@ -182,6 +260,17 @@ export const SCREENS: Screen[] = [
   { id: 'favorites-filled-crocalor', path: '/favorite-pokemon-picker', seed: FAVORITES_CROCALOR },
   { id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en', act: openArtist('KingOfThe-X-Roads') },
   { id: 'ack-project-smogon', path: '/?lang=en', act: openProject('smogon-sprite-project') },
+  {
+    id: 'ack-smogon-artists', path: '/?lang=en',
+    act: async (page) => {
+      const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
+      await link.scrollIntoViewIfNeeded();
+      await link.click();
+      const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+      await dialog.locator('[data-ack-id="smogon-sprite-project"]').click();
+      await dialog.getByTestId('ack-artists').scrollIntoViewIfNeeded();
+    },
+  },
   {
     id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,
     act: async (page) => {

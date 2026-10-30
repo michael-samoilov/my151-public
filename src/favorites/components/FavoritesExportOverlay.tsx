@@ -18,21 +18,22 @@ type ExportMode = 'full' | 'simplified';
 const MODES: ExportMode[] = ['full', 'simplified'];
 const VARIANTS = ['full', 'full-stats', 'simplified', 'simplified-stats'] as const;
 
-export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
+export default function FavoritesExportOverlay({ fills, shiny, onClose, onReview }: {
   fills: Readonly<Record<string, number>>;
+  shiny: Readonly<Record<string, number>>;
   onClose: () => void;
   onReview: (type: TypeAxisId, gen: GenAxisId) => void;
 }) {
   const t = useT();
   const locale = useLocale();
   const desktop = useIsDesktop();
-  const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);
+  const snapshot = useMemo(() => buildFavoritesSnapshot(fills, shiny), [fills, shiny]);
   const [attempt, setAttempt] = useState(0);
   const [mode, setMode] = useState<ExportMode>('full');
   const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [errorKeys, setErrorKeys] = useState<Record<string, true>>({});
   const [saving, setSaving] = useState(false);
-  const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}`).join(',')}`;
+  const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}${cell.shiny ? '*' : ''}`).join(',')}`;
   const variant = showDetailedStats ? `${mode}-stats` as const : mode;
   const key = `${variant}-${contentKey}`;
   const error = !!errorKeys[key];
@@ -93,7 +94,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
       const blob = await (await fetch(url)).blob();
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
-      sendFavoriteExportBeacon(snapshot, mode, showDetailedStats);
+      sendFavoriteExportBeacon(snapshot, shiny, mode, showDetailedStats);
       onClose();
     } catch { setErrorKeys(previous => ({ ...previous, [key]: true })); }
     finally { setSaving(false); }

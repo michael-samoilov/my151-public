@@ -1072,6 +1072,21 @@
    ],
    "linkStatus": "fallback-thread-post"
   },
+  "Sopita_Yorita": {
+   "urls": [],
+   "status": "read (the Generation 9 Resource Pack's terms, 2026-10-29 (second sentence re-read; first sentence from creditTerms.json, 2026-10-13)); no profile of their own recorded",
+   "termsSource": "gen9-resource-pack",
+   "terms": [
+    {
+     "text": "This is an open collaboration project for Essentials v21.1. So, everyone can contribute to this pack, and please give the properly credit.",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page overview",
+     "read": "2026-10-29"
+    }
+   ],
+   "linkEvidence": [],
+   "linkStatus": "none-found"
+  },
   "SpheX": {
    "urls": [],
    "status": "read (project terms); no page of the artist's own was checked",

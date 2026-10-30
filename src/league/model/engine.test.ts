@@ -82,7 +82,7 @@ describe('boundaries and stages', () => {
 });
 
 describe('deriveRow', () => {
-  const lines = [CHINCHOU, WOOPER, MAGIKARP, LAPRAS].map(makePlacedLine);
+  const lines = [CHINCHOU, WOOPER, MAGIKARP, LAPRAS].map((branch) => makePlacedLine(branch));
 
   it('overlays one legendary per seat, so the row can be all of them', () => {
     const legends = [

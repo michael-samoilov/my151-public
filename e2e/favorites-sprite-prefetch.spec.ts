@@ -24,7 +24,8 @@ function countRequests(target: Page | BrowserContext): Requests {
       seen.bulk.push(url);
       if (url === firstBulk) seen.firstBulkCount = response.body().then((body) => body.readUInt32LE(0));
     } else if (url.includes('/sprites/packs/picker-cell-')) seen.cells.push(url);
-    else if (url.includes('/sprites/pokemon/')) seen.files.push(url);
+    // An open pick sheet also loads its shiny sprites, which have no packs.
+    else if (url.includes('/sprites/pokemon/') && !url.includes('/sprites/pokemon/shiny/')) seen.files.push(url);
   });
   return seen;
 }

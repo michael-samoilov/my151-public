@@ -13,6 +13,12 @@
  * - a fan-made file with no attribution row counts under PokéAPI when it came
  *   from PokéAPI's files, and otherwise must be in GAME_FREAK.
  *
+ * A shiny counts only for an artist who did not draw its normal sprite. When
+ * the artist is the same, or not confirmed, the normal sprite's credit covers
+ * the shiny, which then counts nowhere (Michael, 2026-10-26). Only a shiny
+ * that names another confirmed artist keeps a row in
+ * src/data/spriteAttribution.json.
+ *
  * Game Freak's own sprites and my151's own drawing count nowhere. An artist
  * counts a file only when docs/credits/sprite-evidence.json confirms it;
  * every other file counts under its entry as "artist not confirmed". The
@@ -24,7 +30,8 @@
  *
  * Usage: npx tsx scripts/credits/bundle-credits.ts [--check]
  * --check writes nothing. It fails when the partition has a gap or an
- * overlap, or when the JSON file is out of date.
+ * overlap, when a shiny's row repeats its normal sprite's credit, or when the
+ * JSON file is out of date.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -104,13 +111,32 @@ const terms = read<{ artists: Record<string, ArtistTerms> }>('src/data/creditTer
 const DELIVERY = 'docs/credits/pokeapi-delivery.json';
 const delivery = read<{ files: Record<string, DeliveryRow> }>(DELIVERY).files;
 
-const fileId = (file: string) => file.replace(/^.*\/|\.png$/g, '');
+/** A ledger file's key in src/data/spriteAttribution.json: `650`, or `shiny/650` for its shiny. */
+const fileId = (file: string) => file.replace(/^public\/sprites\/pokemon\/|\.png$/g, '');
 const fromPokeApi = (row: LedgerRow) => row.sources.some((s) => s.url?.startsWith('https://github.com/PokeAPI/sprites/'));
 
-/** The entry each shown fan-made file counts under; Game Freak's and my151's files are absent. */
-const entryOf = new Map<string, string>();
+const SHINY = 'shiny/';
 const problems: string[] = [];
+const covered = new Set<string>();
 for (const row of ledger) {
+  const id = fileId(row.file);
+  if (!id.startsWith(SHINY)) continue;
+  const credit = attribution[id];
+  if (!credit) {
+    covered.add(id);
+    continue;
+  }
+  const normal = attribution[id.slice(SHINY.length)]?.artists ?? [];
+  if (row.verdict !== 'confirmed' || credit.artists.every((name) => normal.includes(name))) {
+    problems.push(`${row.file}: names no confirmed artist beyond its normal sprite's, whose credit covers it. Remove its row from src/data/spriteAttribution.json.`);
+  }
+}
+/** The shown files that the panel counts: all but the shinies their normal sprite's credit covers. */
+const panelFiles = ledger.filter((row) => !covered.has(fileId(row.file)));
+
+/** The entry each counted fan-made file counts under; Game Freak's and my151's files are absent. */
+const entryOf = new Map<string, string>();
+for (const row of panelFiles) {
   const id = fileId(row.file);
   const credit = attribution[id];
   if (row.evidenceType === 'official-game-freak' || GAME_FREAK[id] || credit?.via === OUR_OWN) continue;
@@ -127,7 +153,7 @@ for (const row of ledger) {
 
 const entries: Record<string, BundleEntry> = {};
 const byArtist = new Map<string, Map<string, number>>();
-for (const row of ledger) {
+for (const row of panelFiles) {
   const id = fileId(row.file);
   const entry = entryOf.get(id);
   if (!entry) continue;
@@ -158,7 +184,7 @@ const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.l
 // other file that these counts can include needs a current delivery row.
 const pokeapi: PokeApiDelivery = { official: 0, smogon: 0, own: 0 };
 const DELIVERY_COUNT: Record<string, keyof PokeApiDelivery> = { 'smogon-sprite-project': 'smogon', 'pokeapi-sprites': 'own' };
-for (const row of ledger) {
+for (const row of panelFiles) {
   const id = fileId(row.file);
   const count = row.evidenceType === 'official-game-freak' || GAME_FREAK[id] ? 'official' : DELIVERY_COUNT[entryOf.get(id) ?? ''];
   if (!count || attribution[id]?.changedBy === OUR_OWN) continue;
@@ -180,7 +206,7 @@ const credits: BundleCredits = {
 };
 
 // The partition: every fan-made file under one entry, and the totals add up.
-const fanFiles = ledger.filter((row) => {
+const fanFiles = panelFiles.filter((row) => {
   const id = fileId(row.file);
   return row.evidenceType !== 'official-game-freak' && !GAME_FREAK[id] && attribution[id]?.via !== OUR_OWN;
 });
@@ -189,10 +215,9 @@ if (counted !== fanFiles.length) problems.push(`The entries count ${counted} fil
 const gaps = fanFiles.filter((row) => !entryOf.has(fileId(row.file)));
 for (const row of gaps) problems.push(`${row.file}: fan-made, but counts under no entry.`);
 
-const total = ledger.length;
-const gameFreak = ledger.filter((row) => row.evidenceType === 'official-game-freak' || GAME_FREAK[fileId(row.file)]).length;
-const ours = ledger.filter((row) => attribution[fileId(row.file)]?.via === OUR_OWN).length;
-console.log(`bundle-credits: ${total} shown files = ${gameFreak} Game Freak + ${ours} my151 + ${fanFiles.length} fan-made`);
+const gameFreak = panelFiles.filter((row) => row.evidenceType === 'official-game-freak' || GAME_FREAK[fileId(row.file)]).length;
+const ours = panelFiles.filter((row) => attribution[fileId(row.file)]?.via === OUR_OWN).length;
+console.log(`bundle-credits: ${ledger.length} shown files = ${covered.size} shinies their normal sprite covers + ${gameFreak} Game Freak + ${ours} my151 + ${fanFiles.length} fan-made`);
 console.log('entry'.padEnd(28), 'files'.padStart(6), 'confirmed'.padStart(10), 'not conf.'.padStart(10), 'artists'.padStart(8), 'linked'.padStart(7));
 for (const [entry, tally] of Object.entries(sorted)) {
   const linked = tally.artists.filter(([name]) => links[name]).length;

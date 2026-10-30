@@ -25,7 +25,7 @@ const SIMPLIFIED_CHART_LAYOUT = {
 export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promise<Blob> {
   await document.fonts.ready;
   const urls = new Set([
-    ...snapshot.summary.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
+    ...snapshot.summary.flatMap(cell => cell.sprite ? [cell.sprite] : []),
     ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.leaf, FAVORITE_ORNAMENTS.crown,
   ]);
@@ -66,8 +66,9 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     ctx.restore();
     const spriteTop = special ? Math.round(top + (height - badgeHeight / 2 - size) / 2) : top + 16;
     const cy = spriteTop + size / 2;
-    if (entry.mon) drawSprite(ctx, images.get(entry.mon.sprite)!, cx, cy, size);
-    else {
+    if (entry.sprite) {
+      drawSprite(ctx, images.get(entry.sprite)!, cx, cy, size);
+    } else {
       const ultimate = entry.type === 'favorite' && entry.generation === 'favorite';
       drawBall(ctx, ultimate ? 'master' : 'ultra', cx, cy, ultimate ? 96 : 48);
     }

@@ -59,7 +59,7 @@ function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number
 export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges = true } = {}): Promise<Blob> {
   await document.fonts.ready;
   const urls = new Set<string>([
-    ...snapshot.cells.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
+    ...snapshot.cells.flatMap(cell => cell.sprite ? [cell.sprite] : []),
     ...TYPE_AXIS.flatMap(axis => isTypeName(axis) ? [] : [EXTRA_ICONS[axis]]),
     ...GEN_AXIS.filter(isGenNumber).map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.crown,
@@ -100,10 +100,10 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
     ctx.strokeStyle = '#e4e4e7';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
-    if (entry.mon) {
+    if (entry.mon && entry.sprite) {
       drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], TYPE_COLORS[entry.mon.types[1] ?? entry.mon.types[0]],
         EXPORT_SPRITE_PX * 0.84, x + cell / 2, contentY);
-      drawSprite(ctx, images.get(entry.mon.sprite)!, x + cell / 2, contentY, EXPORT_SPRITE_PX);
+      drawSprite(ctx, images.get(entry.sprite)!, x + cell / 2, contentY, EXPORT_SPRITE_PX);
     } else if (entry.kind === 'pick' || entry.kind === 'pointer') {
       const kind = entry.kind === 'pick' ? 'poke' : entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra';
       drawBall(ctx, kind, x + cell / 2, contentY);

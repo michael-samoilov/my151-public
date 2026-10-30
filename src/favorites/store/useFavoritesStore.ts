@@ -69,9 +69,16 @@ function migrateRetypedForms(fills: Record<string, number>) {
   }
 }
 
+/** Drops shiny entries whose cell no longer holds that id. They already read as normal. */
+function currentShiny(shiny: Record<string, number>, fills: Record<string, number>): Record<string, number> {
+  return Object.fromEntries(Object.entries(shiny).filter(([key, id]) => fills[key] === id));
+}
+
 interface FavoritesState {
   fills: Record<string, number>;
-  place: (type: TypeAxisId, gen: GenAxisId, id: number) => void;
+  /** Cells set to shiny, by cell key, holding the id they held then: a pick made shiny, or a pointer set to its shiny option. */
+  shiny: Record<string, number>;
+  place: (type: TypeAxisId, gen: GenAxisId, id: number, shiny?: boolean) => void;
   applyPack: (gen: number, path: PackMove[]) => void;
   clear: (type: TypeAxisId, gen: GenAxisId) => void;
 }
@@ -80,23 +87,30 @@ export const useFavoritesStore = create<FavoritesState>()(
   persist(
     (set) => ({
       fills: {},
-      place: (type, gen, id) =>
+      shiny: {},
+      place: (type, gen, id, shiny = false) =>
         set((s) => {
-          const placed = { ...s.fills, [cellKey(type, gen)]: id };
-          return { fills: prunePointers(placed) };
+          const key = cellKey(type, gen);
+          const fills = prunePointers({ ...s.fills, [key]: id });
+          const marked = { ...s.shiny };
+          if (shiny) marked[key] = id;
+          else delete marked[key];
+          return { fills, shiny: currentShiny(marked, fills) };
         }),
       applyPack: (gen, path) =>
         set((s) => {
           if (!isGenNumber(gen)) return s;
           const map = typeMapFromFills(s.fills, gen, getPickerMon);
           const packed = applyPathToTypeMap(map, path);
-          return { fills: prunePointers(applyTypeMapToFills(s.fills, gen, packed)) };
+          const fills = prunePointers(applyTypeMapToFills(s.fills, gen, packed));
+          return { fills, shiny: currentShiny(s.shiny, fills) };
         }),
       clear: (type, gen) =>
         set((s) => {
           const next = { ...s.fills };
           delete next[cellKey(type, gen)];
-          return { fills: prunePointers(next) };
+          const fills = prunePointers(next);
+          return { fills, shiny: currentShiny(s.shiny, fills) };
         }),
     }),
     {

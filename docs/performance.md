@@ -335,6 +335,15 @@ immutable for a year. In WebKitGTK, cold starts then delivered the home images
 in 27–47 ms. On the owner's iPhone, the two loads after the update showed the
 artwork at 101 and 104 ms, against 2.0–4.5 s on three of five loads before.
 The first visit after the update still ran on the old worker.
+Two later loads after long idle, about 5 h and 1 h 50 min, showed the
+artwork at 146 and 244 ms. The phone's site storage fell from 325 MB to 1.9 MB.
+
+The same phone measured the cost per entry. Its first touch of the new sprite
+cache, at 825 entries, took 278 ms (`caches.has`, in the `?trace` panel): about
+0.34 ms per entry, or about 2.5 s for the old 7,314 entries. Pages that show
+sprites pay that cost on their first sprite after idle, and the sprite cache
+grows toward the 1,547 files under `public/sprites`. The `?trace` panel reports
+it on each hub load as the sprite cache's `hasMs`.
 
 Not yet measured: the field effect. Speed Insights stored no data from October
 26 at about 08:00 UTC, while visits continued. The pages that show sprites

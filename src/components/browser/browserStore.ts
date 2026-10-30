@@ -51,6 +51,8 @@ export interface BrowserStoreState {
   setScopeFilter?: (on: boolean) => void;
   scopeFilterLines?: number[][];
   standaloneTiles?: boolean;
+  shinyView?: boolean;
+  setShinyView?: (on: boolean) => void;
 }
 
 type RestrictionInputs = Pick<BrowserStoreState, 'restrictIds' | 'myDexFilter' | 'myDexIds' | 'scopeFilter' | 'scopeFilterIds'>

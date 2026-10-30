@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import type { PokemonLabel } from '@/i18n/names';
@@ -63,6 +63,9 @@ interface PokemonTileContentProps {
   displayLabel?: PokemonLabel;
   pokemon: Pokemon;
   spriteUrl?: string;
+  spriteStyle?: CSSProperties;
+  /** Drawn over the sprite, positioned in the sprite's own box. */
+  spriteOverlay?: ReactNode;
   contentClassName?: string;
   afterTypes?: ReactNode;
   imgLoading?: 'lazy' | 'eager';
@@ -72,6 +75,8 @@ export function PokemonTileContent({
   pokemon,
   displayLabel,
   spriteUrl,
+  spriteStyle,
+  spriteOverlay,
   contentClassName,
   afterTypes,
   imgLoading = 'lazy',
@@ -98,6 +103,7 @@ export function PokemonTileContent({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
+          position: spriteOverlay ? 'relative' : undefined,
         }}
       >
         <img
@@ -110,8 +116,9 @@ export function PokemonTileContent({
           draggable={false}
           // Tailwind's reset constrains img to `max-width: 100%`; override
           // so the 2× sprite can overflow its narrower flex parent.
-          style={{ imageRendering: 'pixelated', maxWidth: 'none' }}
+          style={{ imageRendering: 'pixelated', maxWidth: 'none', ...spriteStyle }}
         />
+        {spriteOverlay}
       </div>
       <PokemonName label={label} className="w-full text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight" />
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">

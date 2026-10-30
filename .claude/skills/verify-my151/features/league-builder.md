@@ -34,6 +34,22 @@ and a legendary on the boss row.
   and Groudon's Mega button shows their orb (`/powerups/primal-kyogre.png`,
   `primal-groudon.png`) and is labelled "Primal Reversion". The Gigantamax
   button's `aria-label` is "Dynamax".
+- The league's Pokédex browser ends its search row with a divider and the
+  Shiny switch (`[data-testid="browser-shiny-toggle"]`); the Pokédex builder's
+  browser has none. It starts off each time the browser opens, and on when
+  the browser opens over a shiny line, partner, or legend. While it is off,
+  the browser loads the shiny sprites of the rows it draws when the page is
+  idle. With it on, tiles show shiny sprites, or a faded sprite
+  under `[data-testid="no-shiny-mark"]`. A pick takes the switch's look as
+  `shiny: true` on its line, legend, or `partnerShiny`. On the card, a line's
+  top cell, a legend, the ace, and the partner carry a shiny button
+  (`button[data-shiny-mark]`, `aria-pressed` on when shiny) at the top-left;
+  it toggles that flag. The reset sits at the top centre and the remove at the
+  top-right. A line or Pokémon with no shiny art shows the crossed-out sparkle
+  (`role="img"`, "No shiny") in its place. Below 390px a cell's three discs
+  shrink to fit it. Neither export draws a star: a shiny Pokémon shows by its
+  shiny sprite alone. The home rows in the app put a gold star
+  (`[data-testid="shiny-star"]`) on each shiny cell.
 - Desktop (1024px and wider) opens on the league pane alone. Opening a gym
   splits the width in halves with the card, and the picker makes thirds.
   Content widths follow the pane. One compact page footer sits below the fold.

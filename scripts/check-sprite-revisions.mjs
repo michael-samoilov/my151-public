@@ -16,15 +16,19 @@
  * that does not exist.
  *
  * A replaced file needs neither when `scripts/sprite-reencodes.json` lists its
- * current content: scripts/optimize-sprites.py wrote it as a lossless re-encode
- * that renders like the old file, so no browser can show stale art. An entry
- * that no longer matches its file fails, so a later art change needs a revision.
+ * current content and it decodes to the same pixels as the base file:
+ * scripts/optimize-sprites.py wrote it as a lossless re-encode, so no browser can
+ * show stale art. The optimizer records every file it shrinks against the base it
+ * was given, which can be a commit with new art, so the entry alone proves
+ * nothing. An entry that no longer matches its file fails, so a later art change
+ * needs a revision.
  *
  * Usage: node scripts/check-sprite-revisions.mjs [base-ref]
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
+import { decode, samePixels } from './png-rgba.ts';
 
 const BASE = process.argv[2] ?? 'origin/claude/pokedex-region-builder-AviYF';
 const REVISIONS = 'src/data/spriteRevisions.json';
@@ -61,7 +65,11 @@ try {
 } catch {
   console.warn(`check-sprite-revisions: ${BASE} is not available, so only the entries were checked.`);
 }
-const reencoded = replaced.filter((file) => reencodes[file.slice('public'.length)] === shortHash(file));
+const atBase = (file) => execFileSync('git', ['show', `${BASE}:${file}`], { maxBuffer: 1 << 26 });
+const looksSameAsBase = (file) => {
+  try { return samePixels(decode(atBase(file)), decode(readFileSync(file))); } catch { return false; }
+};
+const reencoded = replaced.filter((file) => reencodes[file.slice('public'.length)] === shortHash(file) && looksSameAsBase(file));
 replaced = replaced.filter((file) => !reencoded.includes(file));
 for (const file of replaced) {
   const path = file.slice('public'.length);

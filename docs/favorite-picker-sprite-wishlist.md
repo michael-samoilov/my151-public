@@ -74,9 +74,9 @@ The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve 
 | Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)” (D and “Smeargle (Decorator)” since forms batch 3). https://sta.sh/0qi9vfww1kg |
 | Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
 | Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
-| Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
+| Mega Raichu X | 10304 | Replaced existing shared Picker/League art with a cache revision from 2026-10-17 to 2026-10-29. Identity stays 10304. https://sta.sh/03id19f0dha. On 2026-10-29 it went back to PokéAPI's normal and shiny pair, credited to Kyle Dove. |
 
-King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
+King's direct-upload credit lists 12 sprites since Mega Raichu X went back to PokéAPI's pair on 2026-10-29. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
 
 ## Added on 2026-10-12
 
@@ -89,7 +89,7 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 | Black Kyurem Overdrive and White Kyurem Overdrive | 11107, 11108 | `alternateForms.ts`, owned by Kyurem (646). The Kyurem line reads Kyurem, Black Kyurem, its Overdrive, White Kyurem, its Overdrive. |
 | Solgaleo Radiant Sun phase, Lunala Full Moon phase, and Marshadow Zenith | 11109–11111 | `alternateForms.ts`, beside each owner in its Gen VII cells. |
 | DJ Rotom | 11112 | `alternateForms.ts`, Generation IX: it debuted in Pokémon Pokopia (2026). It sorts last in Electric × IX and Ghost × IX. |
-| Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
+| Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. Since 2026-10-29 the sprite is Caruban's, from the Generation 9 Resource Pack, with its shiny. |
 | Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
 Overdrive, the two phases, Zenith, and DJ Rotom have no localized name from a game-text source in the repository. Since 2026-10-19, the phases and DJ Rotom take their official name in each locale from Bulbapedia, and Zenith takes its Japanese name ぜんりょくのマーシャドー, with `official-bulbapedia` provenance. Bulbapedia gives no localized name for Overdrive, or for Zenith outside Japanese, so those keep the English descriptor with `english-only` provenance. Since forms batch 3, Overdrive is オーバードライブ and 오버드라이브 (`official-usage`) and 超频驱动 and 超頻驅動 (`idiomatic`). See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia).
@@ -103,6 +103,10 @@ Female Mega Meowstic (10326) is not added. Michael decided on 2026-10-12: PokéA
 Base Furfrou (676) changed on 2026-10-12, by Michael's rules of that day: one artist per species when avoidable, and Smogon has no trim sprites. The new file is the pack's `FURFROU.png` at 1x (every second pixel of the 192x192 file), placed as `sprite-lab/src/chooser/missing.py` placed the trims: centered on the old sprite's ink and on its bottom edge. A rerun of `missing.py` reads the new 676.png, whose ink center sits half a pixel left, so it would place three trims (Heart, Diamond, and Kabuki) 1 px further left. Keep the committed trim files.
 
 Michael decided on 2026-10-12 that every Ogerpon sprite comes from one artist, KingOfThe-X-Roads. The four masks (1017 and 10273–10275) also use his own uploads, in his own placement.
+
+## Normal and shiny pairs picked on 2026-10-29
+
+Michael picked an artist-made normal and shiny pair for these forms. Each pair replaces the normal sprite, with a cache revision, and adds its shiny: Pyroar (668), the red Flabébé, Floette, and Florges (669-671), Xerneas in Active Mode (716) and Neutral Mode (11001), female Meowstic (10025), Toedscruel (949), and Mega Zygarde (10301). Furfrou (Heart Trim) (11096) keeps its normal sprite and gains Larryturbo's shiny. The sources, the placement, and the credit changes are in [the sprite evidence ledger](credits/sprite-evidence.md#normal-and-shiny-pairs-replaced-on-2026-10-29).
 
 ## Pokopia candidates
 

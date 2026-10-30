@@ -31,6 +31,7 @@ export function describeLeague(cards: GymCard[]): LeagueCardShape[] {
       if (boundaries.some((row, stage) => row !== fallback[stage])) {
         shape.bd = [...boundaries];
       }
+      if (line.shiny) shape.s = 1;
       return shape;
     });
     const card: LeagueCardShape = { i, l: lines };
@@ -42,7 +43,7 @@ export function describeLeague(cards: GymCard[]): LeagueCardShape[] {
 
     const legends = legendsOf(c);
     if (legends.length > 0) {
-      card.lg = legends.map((l): [number, number] => [l.seat, l.pokemonId]);
+      card.lg = legends.map((l): [number, number, 1?] => (l.shiny ? [l.seat, l.pokemonId, 1] : [l.seat, l.pokemonId]));
     }
 
     const pw: [number, number, number, number][] = [];

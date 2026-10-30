@@ -14,11 +14,12 @@ a changed or added sprite needs a new run.
 The run needs the network once, for the clone. Requires Pillow.
 
     git clone --filter=blob:none --no-checkout https://github.com/PokeAPI/sprites pokeapi-sprites
-    git -C pokeapi-sprites sparse-checkout set --no-cone '/sprites/pokemon/*.png' \\
-      '/sprites/pokemon/female/*.png' '/sprites/pokemon/shiny/*.png' \\
+    git -C pokeapi-sprites sparse-checkout set --no-cone \\
+      '/sprites/pokemon/shiny/*.png' '/sprites/pokemon/shiny/female/*.png' \\
       '/sprites/pokemon/versions/generation-v/black-white/*.png' \\
       '/sprites/pokemon/versions/generation-v/black-white/female/*.png' \\
-      '/sprites/pokemon/versions/generation-v/black-white/shiny/*.png'
+      '/sprites/pokemon/versions/generation-v/black-white/shiny/*.png' \\
+      '/sprites/pokemon/versions/generation-v/black-white/shiny/female/*.png'
     git -C pokeapi-sprites checkout <pokeapiCommit of docs/credits/pokeapi-form-sources.json>
     python3 scripts/credits/pokeapi-delivery.py pokeapi-sprites
 """
