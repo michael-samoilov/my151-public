@@ -55,6 +55,21 @@ export interface BrowserStoreState {
   setShinyView?: (on: boolean) => void;
 }
 
+type RestrictionInputs = Pick<BrowserStoreState, 'restrictIds' | 'myDexFilter' | 'myDexIds' | 'scopeFilter' | 'scopeFilterIds'>
+  & Pick<FavoriteBrowserState, 'favoritesFilter' | 'favoriteIds'>;
+
+export function restrictionIds({
+  restrictIds, favoritesFilter, favoriteIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds,
+}: RestrictionInputs): Set<number> | undefined {
+  const active: Set<number>[] = [];
+  if (restrictIds) active.push(restrictIds);
+  if (favoritesFilter) active.push(favoriteIds);
+  if (myDexFilter && myDexIds) active.push(myDexIds);
+  if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
+  if (active.length === 0) return undefined;
+  return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
+}
+
 type BrowserStoreHook = UseBoundStore<Omit<StoreApi<BrowserStoreState>, 'setState'>>;
 
 export const BrowserStoreContext = createContext<BrowserStoreHook>(
