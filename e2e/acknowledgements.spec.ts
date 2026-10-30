@@ -73,9 +73,9 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(row).toBeFocused();
 
     await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
-    const pokeapiUse = dialog.getByTestId('ack-detail').getByText(/^The source of \d+ official sprites from the games, and \d+ sprites by Smogon Sprite Project artists\. We also use it for \d+ additional fan-made sprites\.$/);
+    const pokeapiUse = dialog.getByTestId('ack-detail').getByText(/^The source of [\d,]+ of the app's sprites: [\d,]+ official sprites from the games, [\d,]+ by Smogon Sprite Project artists, and [\d,]+ by other fan artists\. The Smogon artists are credited under their project, and the other [\d,]+ sprites below\.$/);
     await expect(pokeapiUse).toBeVisible();
-    const pokeapiOwn = (await pokeapiUse.textContent())!.match(/for (\d+) additional/)![1];
+    const pokeapiOwn = (await pokeapiUse.textContent())!.match(/and the other ([\d,]+) sprites below/)![1];
     await expect(dialog.getByTestId('ack-artists-summary')).toHaveText(`${pokeapiOwn} fan-made sprites in the app are credited through this project.`);
     expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(dialog.getByTestId('ack-artists')));
     await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);

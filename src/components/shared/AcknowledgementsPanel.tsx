@@ -356,7 +356,12 @@ function useProjectUse() {
     const files = bundleCredit(id)?.sprites ?? 0;
     switch (id) {
       case 'pokeapi-sprites':
-        return t('ack.usedPokeapi', { official: delivery.official, smogon: delivery.smogon, own: delivery.own });
+        return t('ack.usedPokeapi', {
+          total: formatNumber(projectSprites(id, delivery.own)),
+          official: formatNumber(delivery.official),
+          smogon: formatNumber(delivery.smogon),
+          own: formatNumber(delivery.own),
+        });
       case 'smogon-sprite-project':
         return t('ack.usedSmogon', { drawn: files, delivered: delivery.smogon });
       case 'gen9-resource-pack':
