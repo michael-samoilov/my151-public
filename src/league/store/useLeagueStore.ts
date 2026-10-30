@@ -21,6 +21,7 @@ import {
 } from '../model/powerups';
 import {
   defaultBoundaries,
+  keepsShiny,
   leagueSlotIsEmpty,
   levelBoundaries,
   makePlacedLine,
@@ -322,7 +323,7 @@ export const useLeagueStore = create<LeagueState>()(
             lines: c.lines.map((line, i) => {
               if (i !== seat - 1) return line;
               const { shiny: _, ...rest } = line;
-              return shiny ? { ...rest, shiny: true } : rest;
+              return keepsShiny(line.branch, shiny) ? { ...rest, shiny: true } : rest;
             }),
           })),
         })),
@@ -400,7 +401,7 @@ export const useLeagueStore = create<LeagueState>()(
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             const { partnerShiny: _, ...rest } = c;
-            return pokemonId !== null && shiny ? { ...rest, partnerId: pokemonId, partnerShiny: true } : { ...rest, partnerId: pokemonId };
+            return pokemonId !== null && keepsShiny([pokemonId], shiny) ? { ...rest, partnerId: pokemonId, partnerShiny: true } : { ...rest, partnerId: pokemonId };
           }),
         })),
 
@@ -422,7 +423,8 @@ export const useLeagueStore = create<LeagueState>()(
             const rest = legendsOf(c).filter((l) => l.seat !== target);
             // The form on the boss row belonged to the Pokémon that leaves it.
             const { powerups } = withPowerups(c, (p, row) => (row === BOSS_ROW && p.seat === target ? null : p));
-            return { ...c, legends: legend ? [...rest, legend] : rest, legend: null, powerups, powerup: null };
+            const kept = legend?.shiny && !keepsShiny([legend.pokemonId], true) ? { pokemonId: legend.pokemonId, seat: legend.seat } : legend;
+            return { ...c, legends: kept ? [...rest, kept] : rest, legend: null, powerups, powerup: null };
           }),
         })),
 
@@ -433,7 +435,7 @@ export const useLeagueStore = create<LeagueState>()(
             legends: legendsOf(c).map((legend) => {
               if (legend.seat !== seat) return legend;
               const { shiny: _, ...rest } = legend;
-              return shiny ? { ...rest, shiny: true } : rest;
+              return keepsShiny([legend.pokemonId], shiny) ? { ...rest, shiny: true } : rest;
             }),
             legend: null,
           })),

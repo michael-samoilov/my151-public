@@ -36,6 +36,9 @@ export function shinyMark(ids: readonly number[], shiny: boolean): ShinyMark {
   return shiny ? 'on' : 'off';
 }
 
+/** Whether a shiny flag may be saved for these Pokémon: only when one of them has shiny art. */
+export const keepsShiny = (ids: readonly number[], shiny: boolean): boolean => shiny && shinyMark(ids, true) !== 'none';
+
 export function levelBoundaries(branch: number[]): number[] {
   return branch.map((id, stage) => {
     if (stage === 0) return 1;
@@ -65,7 +68,7 @@ export function defaultBoundaries(branch: number[]): number[] {
 }
 
 export function makePlacedLine(branch: number[], shiny = false): PlacedLine {
-  return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto', ...(shiny ? { shiny: true } : null) };
+  return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto', ...(keepsShiny(branch, shiny) ? { shiny: true } : null) };
 }
 
 export function effectiveBoundaries(line: PlacedLine): number[] {
