@@ -6,8 +6,14 @@ import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
  * unselected filter pill. Its colors switch at once and hover darkens only the border: the on ink is
  * near-black, so a fade or a dark hover ink would show a pill just turned off as still on. On, hover
  * adds `HOVER_LAYER`.
+ *
+ * On a touch screen the pill takes taps over a band at least 44 px tall, centred on it, so a 22 px pill
+ * is easy to hit. The band grows only up and down, into empty header space; a mouse keeps the drawn
+ * size.
  */
-export const PILL_CLASS = 'inline-flex shrink-0 cursor-pointer items-center gap-1 border text-xs font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+export const PILL_CLASS = 'relative inline-flex shrink-0 cursor-pointer items-center gap-1 border text-xs font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+  + " pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:content-['']"
+  + ' pointer-coarse:after:top-[min(0px,calc((100%_-_44px)/2))] pointer-coarse:after:bottom-[min(0px,calc((100%_-_44px)/2))]';
 export const PILL_OFF = 'border-border bg-background text-muted-foreground hover:border-foreground/30';
 
 /** A badge pill's corner radius in px. A filter pill is fully round. */
