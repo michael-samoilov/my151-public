@@ -23,15 +23,20 @@ import { NO_SHINY } from '@/components/shiny/shinyMarks';
 
 const ROW_GAP_PX = 4;
 
-export function PrettySpriteGrid({
-  mons,
+/** One tile of a selector: a Pokémon, and whether the tile shows it shiny. */
+export interface SelectorOption {
+  mon: PickerMon;
+  shiny: boolean;
+}
+
+export function PrettySpriteGrid<T extends SelectorOption>({
+  options,
   maxCols,
   spritePx: requestedSpritePx,
   lineKey,
   formKey,
-  selectedId,
+  selected,
   converting = false,
-  shinyFor,
   onPick,
   takenMarks,
   showIcons = true,
@@ -45,34 +50,33 @@ export function PrettySpriteGrid({
   caption,
   captionPx = 0,
 }: {
-  mons: readonly PickerMon[];
+  /** A shiny option without a shiny sprite shows faded, under the no-shiny mark. */
+  options: readonly T[];
   maxCols: number;
   spritePx?: number;
-  lineKey?: (mon: PickerMon) => number;
-  formKey?: (mon: PickerMon) => number;
-  selectedId?: number;
+  lineKey?: (option: T) => number;
+  formKey?: (option: T) => number;
+  selected?: (option: T) => boolean;
   /** The selected tile shows another look than the pick it stands for, so a tap converts the pick instead of clearing it. */
   converting?: boolean;
-  /** Whether a tile shows its Pokémon shiny. One without a shiny then shows faded, under the no-shiny mark. */
-  shinyFor?: (mon: PickerMon) => boolean;
-  onPick: (mon: PickerMon) => void;
+  onPick: (option: T) => void;
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
   pointer?: boolean;
-  sourceMarks?: (id: number) => PointerMark[];
-  coordinates?: (id: number) => SourceCoordinate[];
+  sourceMarks?: (option: T) => PointerMark[];
+  coordinates?: (option: T) => SourceCoordinate[];
   originContext?: OriginContext;
   onClear?: () => void;
   clearLabel?: string;
   fitToHeight?: boolean;
-  caption?: (mon: PickerMon) => ReactNode;
+  caption?: (option: T) => ReactNode;
   captionPx?: number;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
   const baseSpritePx = requestedSpritePx ?? pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  const rows = prettyRows(mons, maxCols, lineKey, formKey);
+  const rows = prettyRows(options, maxCols, lineKey, formKey);
   const fitRows = rows.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
@@ -129,24 +133,24 @@ export function PrettySpriteGrid({
             data-pretty-row={r}
             data-pretty-len={row.length}
           >
-            {row.map((mon) => (
+            {row.map((option) => (
               <PickCell
-                key={mon.id}
-                mon={mon}
+                key={option.mon.id}
+                mon={option.mon}
                 spritePx={spritePx}
-                selected={selectedId === mon.id}
+                selected={selected?.(option) ?? false}
                 converting={converting}
-                shiny={shinyFor?.(mon) ?? false}
-                taken={takenMarks?.(mon.id) ?? []}
+                shiny={option.shiny}
+                taken={takenMarks?.(option.mon.id) ?? []}
                 showIcons={showIcons}
                 pointer={pointer}
-                sourceMarks={sourceMarks?.(mon.id) ?? []}
-                coordinates={coordinates?.(mon.id)}
+                sourceMarks={sourceMarks?.(option) ?? []}
+                coordinates={coordinates?.(option)}
                 originContext={originContext}
-                onPick={onPick}
+                onPick={() => onPick(option)}
                 onClear={onClear}
                 clearLabel={clearLabel}
-                caption={caption?.(mon)}
+                caption={caption?.(option)}
                 captionPx={captionPx}
               />
             ))}
@@ -185,7 +189,7 @@ function PickCell({
   sourceMarks: PointerMark[];
   coordinates?: SourceCoordinate[];
   originContext?: OriginContext;
-  onPick: (mon: PickerMon) => void;
+  onPick: () => void;
   onClear?: () => void;
   clearLabel?: string;
   caption?: ReactNode;
@@ -204,7 +208,7 @@ function PickCell({
   const tile = (
     <button
       type="button"
-      onClick={() => clearing ? onClear?.() : onPick(mon)}
+      onClick={() => clearing ? onClear?.() : onPick()}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
       aria-describedby={coordinates?.length ? originsId : undefined}

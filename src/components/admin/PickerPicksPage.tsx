@@ -53,14 +53,14 @@ function PickSelector({
   const { type, gen } = cell;
   const ranked = useMemo(() => rankCell(cell, rows), [cell, rows]);
   const counts = useMemo(() => new Map(ranked.map((r) => [r.mon.id, r.picks])), [ranked]);
-  const mons = useMemo(() => ranked.map((r) => r.mon), [ranked]);
+  const options = useMemo(() => ranked.map((r) => ({ mon: r.mon, shiny: false })), [ranked]);
   const max = ranked[0]?.picks ?? 0;
   const filled = ranked.reduce((n, r) => n + r.picks, 0);
   const color = axisColor(type);
   const viewportPx = useLayoutViewportCssPx();
   const spritePx = pickerSpriteCssPx(viewportPx);
   const inset = pickerRowInsetPx(viewportPx, spritePx);
-  const widestRow = Math.max(0, ...prettyRows(mons, MAX_COLS).map((row) => row.length));
+  const widestRow = Math.max(0, ...prettyRows(options, MAX_COLS).map((row) => row.length));
   const paneWidth = Math.max(200, spritePx * widestRow + inset * 2 + 2);
   const summaryRef = useRef<HTMLSpanElement>(null);
   const [summaryWidth, setSummaryWidth] = useState(0);
@@ -92,17 +92,17 @@ function PickSelector({
       className="pb-4 pt-1 [&_[data-selector-tile]:has([data-unpicked])_img]:opacity-40"
       style={{ paddingLeft: inset, paddingRight: inset }}
     >
-      {mons.length === 0 ? (
+      {options.length === 0 ? (
         <p className="px-3 py-4 text-center text-xs text-muted-foreground">No picks yet.</p>
       ) : (
         <PrettySpriteGrid
-          mons={mons}
+          options={options}
           maxCols={MAX_COLS}
           onPick={() => {}}
           showIcons={false}
           pointer={kindFor(type, gen) === 'pointer'}
           fitToHeight={false}
-          caption={(mon) => <PickCount picks={counts.get(mon.id) ?? 0} max={max} color={color} />}
+          caption={({ mon }) => <PickCount picks={counts.get(mon.id) ?? 0} max={max} color={color} />}
           captionPx={CAPTION_PX}
         />
       )}
@@ -177,7 +177,7 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
     });
   }, [preference, available]);
   const entries = useMemo(() => new Map(ranked.map(({ entry }) => [entry.id, entry])), [ranked]);
-  const mons = useMemo(() => ranked.map(({ mon }) => mon), [ranked]);
+  const options = useMemo(() => ranked.map(({ mon }) => ({ mon, shiny: false })), [ranked]);
   const maxCols = Math.max(1, Math.min(MAX_COLS, Math.floor(width / spritePx)));
 
   return (
@@ -206,15 +206,15 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
         </details>
       </div>
       <div ref={hostRef} className="min-w-0">
-        {mons.length > 0 ? (
+        {options.length > 0 ? (
           <PrettySpriteGrid
-            mons={mons}
+            options={options}
             maxCols={maxCols}
             spritePx={spritePx}
             onPick={() => {}}
             showIcons={false}
             fitToHeight={false}
-            caption={(mon) => <PreferenceCaption entry={entries.get(mon.id)!} available={available} />}
+            caption={({ mon }) => <PreferenceCaption entry={entries.get(mon.id)!} available={available} />}
             captionPx={36}
           />
         ) : preference ? (

@@ -36,7 +36,7 @@ import { coordinateLabel } from './coordinatePresentation';
 import { generationLabel } from './badgeStyle';
 import { PickerTitle } from './PickerTitle';
 import { pickerTitleFullWidth, TITLE_BADGE_PX } from './titleGeometry';
-import { PrettySpriteGrid } from './PrettySpriteGrid';
+import { PrettySpriteGrid, type SelectorOption } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
 import { DesktopPane } from './DesktopPane';
 
@@ -115,41 +115,42 @@ export function PickerSheet({
     else setPacking(null);
   }
 
-  const mons = useMemo(() => {
-    if (kind === 'pointer') {
-      return pointerPool(type, gen, fills)
-        .map(getPickerMon)
-        .filter((m): m is PickerMon => Boolean(m));
-    }
-    return eligibleFor(type, gen, sortOrder);
-  }, [kind, type, gen, fills, sortOrder]);
+  const picks = useMemo(() => (kind === 'pick' ? eligibleFor(type, gen, sortOrder) : []), [kind, type, gen, sortOrder]);
+  // A pick sheet shows the look the switch asks for; a pointer sheet shows each candidate as the cells it points at have it.
+  const options = useMemo((): SelectorOption[] => (kind === 'pointer'
+    ? pointerPool(type, gen, fills).flatMap((id) => {
+      const mon = getPickerMon(id);
+      const key = cellKey(type, gen);
+      return mon ? [{ mon, shiny: isShinyCell({ ...fills, [key]: id }, shiny, key) }] : [];
+    })
+    : picks.map((mon) => ({ mon, shiny: shinyView }))), [kind, type, gen, fills, shiny, picks, shinyView]);
   const shinySprites = useMemo(
-    () => (kind === 'pick' ? mons.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null) : []),
-    [kind, mons],
+    () => picks.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null),
+    [picks],
   );
   usePreloadImages(shinySprites);
   const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
-  const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? evolutionLineKey : undefined;
-  const widestRow = Math.max(0, ...prettyRows(mons, maxCols, lineKey).map((row) => row.length));
+  const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? (option: SelectorOption) => evolutionLineKey(option.mon) : undefined;
+  const widestRow = Math.max(0, ...prettyRows(options, maxCols, lineKey).map((row) => row.length));
   const paneWidth = Math.max(
-    mons.length === 0 ? 290 : kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? 200 : 150,
+    options.length === 0 ? 290 : kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? 200 : 150,
     spritePx * widestRow + inset * 2 + 2,
   );
 
-  const empty = mons.length === 0 ? emptyCopy(type, gen, fills, onOpenCell) : null;
+  const empty = options.length === 0 ? emptyCopy(type, gen, fills, onOpenCell) : null;
 
   const key = cellKey(type, gen);
-  // A pick sheet shows the look the switch asks for; a pointer sheet shows each candidate as the cells it points at have it.
-  const shinyFor = kind === 'pointer' ? (mon: PickerMon) => isShinyCell({ ...fills, [key]: mon.id }, shiny, key) : () => shinyView;
   const placesShiny = (mon: PickerMon) => kind === 'pick' && shinyView && pickerShinySprite(mon.id) !== null;
   const current = currentId == null ? undefined : getPickerMon(currentId);
   const converting = kind === 'pick' && current != null && placesShiny(current) !== isShinyCell(fills, shiny, key);
+  const isCurrent = (option: SelectorOption) => option.mon.id === currentId;
 
-  function pick(mon: PickerMon) {
-    if (mon.id === currentId && !converting) {
+  function pick(option: SelectorOption) {
+    const { mon } = option;
+    if (isCurrent(option) && !converting) {
       onClose();
       return;
     }
@@ -179,25 +180,24 @@ export function PickerSheet({
       heading={t('favorites.packing.heading')}
     />
   ) : (
-    <div ref={bodyRef} id="favorites-selector" className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
+    <div ref={bodyRef} id="favorites-selector" className={options.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: options.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
       {empty && currentId == null ? (
         <EmptyState testId="favorites-picker-empty" className="max-w-[17rem] px-5" {...empty} />
       ) : (
         <PrettySpriteGrid
-          mons={mons}
+          options={options}
           maxCols={maxCols}
           lineKey={lineKey}
-          selectedId={currentId}
+          selected={isCurrent}
           converting={converting}
-          shinyFor={shinyFor}
           onPick={pick}
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showIcons={showIcons}
           pointer={kind === 'pointer'}
           originContext={{ type, gen }}
-          coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)
-            : !isTypeCell(type, gen) ? (id) => pickedCoordinates.get(id) ?? [] : undefined}
-          sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
+          coordinates={kind === 'pointer' ? (option) => pointerCoordinates(type, gen, fills, option.mon.id)
+            : !isTypeCell(type, gen) ? (option) => pickedCoordinates.get(option.mon.id) ?? [] : undefined}
+          sourceMarks={kind === 'pointer' ? (option) => pointerMarks(type, gen, fills, option.mon.id) : undefined}
           onClear={
             currentId != null
               ? () => {
@@ -216,12 +216,12 @@ export function PickerSheet({
   const titleRoom = viewportPx - 16 - (packing ? 20 : 0);
   // On a narrow phone, the pills drop their labels before the title badges shrink below the pills' height.
   const headerTight = useTightFit(
-    desktop || mons.length === 0 ? null : `${titleRoom}|${locale}|${type}|${gen}`,
+    desktop || options.length === 0 ? null : `${titleRoom}|${locale}|${type}|${gen}`,
     headerButtonsRef,
     (buttons) => pickerTitleFullWidth(type, gen, titleGap) + buttons.getBoundingClientRect().width > titleRoom,
   );
   const title = <PickerTitle type={type} gen={gen}
-    maxWidth={desktop ? undefined : Math.max(1, titleRoom - (mons.length > 0 ? headerButtonsWidth : 0))}
+    maxWidth={desktop ? undefined : Math.max(1, titleRoom - (options.length > 0 ? headerButtonsWidth : 0))}
     gapPx={titleGap} />;
   const iconToggle = (
     <button
@@ -237,7 +237,7 @@ export function PickerSheet({
       <span className={headerTight ? 'sr-only' : undefined}>{t('favorites.icons')}</span>
     </button>
   );
-  const headerButtons = mons.length === 0 ? null : (
+  const headerButtons = options.length === 0 ? null : (
     <div ref={headerButtonsRef} className={`flex shrink-0 items-center ${desktop ? 'gap-2' : 'gap-1.5'}`}>
       {kind === 'pick' ? <ShinyToggle on={shinyView} onToggle={onToggleShiny} badgePx={TITLE_BADGE_PX} iconOnly={headerTight} testId="favorites-shiny-toggle" /> : null}
       {iconToggle}
