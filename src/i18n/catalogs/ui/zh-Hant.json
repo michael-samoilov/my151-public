@@ -66,7 +66,6 @@
   "header.toolNameCore": "寶可夢圖鑑製作器",
   "header.toolNameQualifier": "自訂",
   "intro.body": "打造你的地區圖鑑，分析詳細統計，再匯出為圖片，儲存副本並分享。",
-  "intro.cta": "選擇最初夥伴",
   "intro.dismiss": "關閉簡介",
   "intro.headline": "打造你自己的{count}隻",
   "intro.shot.complete": "生成的圖鑑圖片：完成的151隻圖鑑，旁邊是屬性分布、世代來源和種族值圖表。",

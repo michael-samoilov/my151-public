@@ -152,7 +152,9 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
   });
 }
 
-test('before the app runs, a tool with saved work holds its count back and the others show 0', async ({ browser, baseURL }, testInfo) => {
+// The boot script counts saved work and writes it into the page before its
+// first paint, so the counts need no app code.
+test('before the app runs, the hub already shows the saved counts', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));
   await context.route('**/assets/*.js', (route) => route.abort());
@@ -175,11 +177,47 @@ test('before the app runs, a tool with saved work holds its count back and the o
   await testInfo.attach('before-app.json', { body: JSON.stringify(lines, null, 1), contentType: 'application/json' });
   await context.close();
   expect(lines.map(({ tool, text }) => ({ tool, text }))).toEqual([
-    { tool: 'dex', text: '' },
+    { tool: 'dex', text: '3/151 entries saved in this browser' },
     { tool: 'league', text: '0/14 trainers saved in this browser' },
     { tool: 'favorites', text: '0/257 picks saved in this browser' },
   ]);
   for (const line of lines) expect(line.height).toBeGreaterThan(0);
+});
+
+// The boot script cannot check picks the way the app does, so before the app
+// runs it shows only the count the app recorded for the same saved picks.
+// Without that record the line waits for the app, and never shows a number
+// the app then corrects.
+test('before the app runs, the picks line shows only the count the app recorded for the same picks', async ({ browser, baseURL }, testInfo) => {
+  const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
+  await context.clock.setFixedTime(new Date(AFTER_NOTICE));
+  let appRuns = false;
+  await context.route('**/assets/*.js', (route) => (appRuns ? route.fallback() : route.abort()));
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.evaluate((picks) => localStorage.setItem('favorite-picker', picks), SAVED['favorite-picker']);
+  const picksLine = async () => {
+    await page.goto('/');
+    await expect(page.locator('#root h1')).toBeVisible();
+    const count = page.locator('[data-card-progress="favorites"] [data-progress-count]');
+    return count.evaluate((el) => (getComputedStyle(el).visibility === 'hidden' ? '' : el.textContent));
+  };
+  const seen: Record<string, string | null> = {};
+  seen['before the app has counted these picks'] = await picksLine();
+  appRuns = true;
+  await page.goto('/');
+  await expect(page.locator('[data-card-progress="favorites"] [data-progress-count]')).toHaveText('3/257 picks saved in this browser');
+  appRuns = false;
+  seen['after the app counted these picks'] = await picksLine();
+  await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'normal|1': 16 } }, version: 4 })));
+  seen['after the picks changed elsewhere'] = await picksLine();
+  await testInfo.attach('picks-before-app.json', { body: JSON.stringify(seen, null, 1), contentType: 'application/json' });
+  await context.close();
+  expect(seen).toEqual({
+    'before the app has counted these picks': '',
+    'after the app counted these picks': '3/257 picks saved in this browser',
+    'after the picks changed elsewhere': '',
+  });
 });
 
 for (const [name, options, settings] of [

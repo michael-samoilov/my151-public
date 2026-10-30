@@ -339,7 +339,8 @@ export function usePickerSprite(sprite: string, keep = false): string {
   return src;
 }
 
-const SERVICE_WORKER_CACHE = 'p151-sprites-v2';
+// The cache that public/sw.js serves sprites from.
+const SERVICE_WORKER_CACHE = 'p151-sprites-v3';
 const kept = new Set<string>();
 
 function keepForNextVisit(sprite: string) {

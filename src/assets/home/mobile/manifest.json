@@ -1,11 +1,11 @@
 {
   "version": 1,
   "status": "PASS",
-  "baseCommit": "ea2cead79a723bd64c4d3f1833d8d908beb15988",
+  "baseCommit": "382375ab8df90c8d9bd27d6d52d3f244f8d2b37f",
   "inputs": [
     {
       "path": "src/components/home/HomePage.tsx",
-      "sha256": "3ee1118d815c423bace3f6febc0e8a6439cc1334b751222b8e13bae08e6cb050"
+      "sha256": "326c2982ad476d93211a0d842c089f68206c0881e1c4957e05ad81e9e84a4b04"
     },
     {
       "path": "src/home/artwork.tsx",
@@ -1168,9 +1168,9 @@
     }
   ],
   "provenance": {
-    "sourceCommit": "ea2cead79a723bd64c4d3f1833d8d908beb15988",
-    "sourceDirty": " M scripts/prerender-hub.ts\n M src/home/artwork.tsx\n",
-    "browserVersion": "151.0.7922.173",
+    "sourceCommit": "382375ab8df90c8d9bd27d6d52d3f244f8d2b37f",
+    "sourceDirty": "M  e2e/hub-prerender.spec.ts\nMM scripts/prerender-hub.ts\nMM src/components/home/HomePage.tsx\n M src/favorites/FavoritesApp.tsx\n M src/favorites/store/useFavoritesStore.ts\n M src/home/prerender.ts\n M src/store/usePokedexStore.ts\n?? dist-part1/\n?? src/favorites/export/savedPicks.ts\n",
+    "browserVersion": "156.0.8078.73",
     "pillowVersions": [
       "12.3.0"
     ],
@@ -1188,7 +1188,7 @@
       480
     ],
     "dpr": 3,
-    "startedAt": "2026-10-19T12:44:27.625Z",
-    "finishedAt": "2026-10-19T12:45:11.350Z"
+    "startedAt": "2026-10-29T22:12:04.035Z",
+    "finishedAt": "2026-10-29T22:12:40.473Z"
   }
 }

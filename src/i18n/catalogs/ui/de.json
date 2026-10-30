@@ -76,7 +76,6 @@
   "header.toolNameCore": "Pokédex-Builder",
   "header.toolNameQualifier": "Eigener",
   "intro.body": "Stell deinen regionalen Pokédex zusammen, analysiere detaillierte Statistiken und exportiere ihn dann als Bild, um eine Kopie zu speichern und zu teilen.",
-  "intro.cta": "Wähle deine Starter",
   "intro.dismiss": "Einführung schließen",
   "intro.headline": "Stell deine eigenen {count} zusammen",
   "intro.shot.complete": "Ein erstelltes Pokédex-Bild: ein fertiger 151er-Dex neben seinen Diagrammen zu Typverteilung, Generationen und Basiswerten.",

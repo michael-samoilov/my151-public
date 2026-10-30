@@ -45,15 +45,15 @@ const problems: string[] = [];
 for (const file of [...shown.keys()].sort()) {
   const served = `public/sprites/${file}`;
   const row = byFile.get(served);
-  if (!row) {
-    problems.push(`${served}: shown, but has no row in ${LEDGER}.`);
-    continue;
-  }
   const bytes = readFileSync(path.join(root, served));
   const digest = createHash('sha256').update(bytes).digest('hex');
+  if (!row) {
+    problems.push(`${served}: shown, but has no row in ${LEDGER}. Add a row with "sha256": "${digest}" and the sources that prove who drew it.`);
+    continue;
+  }
   const reencoded = reencodes[`/sprites/${file}`] === createHash('md5').update(bytes).digest('hex').slice(0, 8);
   if (digest !== row.sha256 && !reencoded) {
-    problems.push(`${served}: sha256 is ${digest}, but its row says ${row.sha256}. Re-prove who drew the new file and update the row.`);
+    problems.push(`${served}: sha256 is ${digest}, but its row in ${LEDGER} says ${row.sha256}. Re-prove who drew the new file. Then set the row's "sha256" to "${digest}", and say in its "comparison" how the file differs from its sources.`);
   }
 }
 for (const row of rows) {

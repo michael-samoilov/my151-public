@@ -32,11 +32,14 @@ const stopPropagation = (e: Event) => e.stopPropagation();
  * pressed and you are holding it, leave it and you are dragging.
  *
  * Movement never stands the sensor down. The cells ask for
- * `touch-action: pinch-zoom`, so there is no pan for the browser to start,
- * and a pinch it does take fires `touchcancel`, which is the one thing that
- * ends the gesture early. The rest mirrors the stock sensor: a click after
- * a begun drag is stopped before it reaches the cell, text selection is
- * kept off, and Escape cancels.
+ * `touch-action: pinch-zoom`, so there is no pan for the browser to start.
+ * A second finger ends the gesture early, held column or not: it is
+ * a pinch, and the browser takes it. Blink fires no `touchcancel` when it
+ * does. It keeps sending the moves, uncancelable, so a sensor that waited
+ * for one followed the first finger through the zoom and dropped it as a
+ * drag, and a pinch swapped two lines. The rest mirrors the stock sensor: a
+ * click after a begun drag is stopped before it reaches the cell, text
+ * selection is kept off, and Escape cancels.
  */
 export class HoldOrMoveTouchSensor implements SensorInstance {
   static activators: Activators<HoldOrMoveOptions> = [
@@ -82,6 +85,8 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     this.win.addEventListener('contextmenu', preventDefault);
     this.win.addEventListener('dragstart', preventDefault);
     this.doc.addEventListener('keydown', this.onKeydown);
+    // On the document, because the second finger can land on any element.
+    this.doc.addEventListener('touchstart', this.onTouchStart, { capture: true, passive: true });
 
     this.timer = setTimeout(this.start, props.options.delay);
     props.onPending(props.active, this.constraint(), this.initial);
@@ -128,6 +133,10 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     onEnd();
   };
 
+  private onTouchStart = (e: TouchEvent) => {
+    if (e.touches.length > 1) this.onCancel();
+  };
+
   private onCancel = () => {
     const { onAbort, onCancel, active } = this.props;
     this.detach();
@@ -147,6 +156,7 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     this.target.removeEventListener('touchmove', this.onMove);
     this.target.removeEventListener('touchend', this.onEnd);
     this.target.removeEventListener('touchcancel', this.onCancel);
+    this.doc.removeEventListener('touchstart', this.onTouchStart, { capture: true });
     this.win.removeEventListener('resize', this.onCancel);
     this.win.removeEventListener('visibilitychange', this.onCancel);
     this.win.removeEventListener('contextmenu', preventDefault);

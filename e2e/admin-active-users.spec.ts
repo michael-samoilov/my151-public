@@ -2,8 +2,8 @@ import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
-function activityPayload() {
-    const now = Date.now(), day = 86_400_000;
+function activityPayload(now = Date.now()) {
+    const day = 86_400_000;
     const today = Math.floor(now / day) * day;
     const clients = Object.fromEntries(Array.from({length:32}, (_,i) => {
       const cid = `activity-e2e-${i}`;
@@ -27,9 +27,10 @@ function daysInLabel(label: string | null): number {
 
 const TODAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getUTCDay()];
 
-function gutter(label: string | null): { today: string | undefined; days7: string | undefined } {
+function gutter(label: string | null): { today: string | undefined; hours24: string | undefined; days7: string | undefined } {
   return {
     today: label?.match(new RegExp(`${TODAY} so far (\\d+)`))?.[1],
+    hours24: label?.match(/Last 24 hours (\d+)/)?.[1],
     days7: label?.match(/last 7 days (\d+)/)?.[1],
   };
 }
@@ -166,7 +167,7 @@ test.describe('admin active users range', () => {
     const panel = activeUsers(page);
     const growth = await panel.getByLabel('Implied growth over selected range').textContent();
     const expected = {
-      daily: [TODAY],
+      daily: ['24h'],
       weekly: ['7d', `${growth!.match(/WoW ([^ ]+)/)![1]} WoW`],
       monthly: ['30d', `${growth!.match(/MoM ([^ ]+)/)![1]} MoM`],
     };
@@ -211,6 +212,54 @@ test.describe('admin active users range', () => {
     await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
     await expect(panel.getByText('hourly', { exact: true })).toHaveCount(0);
     await expect(panel.getByRole('img')).toHaveCount(1);
+  });
+
+  test('a month name that would run into the next is left out, and the year moves on', { tag: '@viewport' }, async ({ page }) => {
+    // On October 28 the 90 days of activity start on July 31, one day before August.
+    const now = Date.UTC(2026, 9, 28, 12);
+    await page.clock.setFixedTime(now);
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      const state = window as unknown as { axisPaints: { text: string; x: number; width: number }[] };
+      state.axisPaints = [];
+      CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
+        if (/^([A-Z][a-z]{2}|\d{4})$/.test(text) && this.canvas.closest('[role="img"]')?.getAttribute('aria-label')?.startsWith('Daily active users')) {
+          const at = this.getTransform().transformPoint({ x, y });
+          state.axisPaints.push({ text, x: at.x, width: this.measureText(text).width * this.getTransform().a });
+        }
+        return maxWidth === undefined ? original.call(this, text, x, y) : original.call(this, text, x, y, maxWidth);
+      };
+    });
+    await page.route('**/api/submissions?**', route => route.fulfill({ json: activityPayload(now) }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await openAdmin(page, '/?admin');
+    await page.evaluate(() => { (window as unknown as { axisPaints: unknown[] }).axisPaints = []; });
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '90d', exact: true }).click();
+    await expect(activeUsers(page).getByRole('img', { name: /over 9[01] days/ })).toBeVisible();
+    const paints = () => page.evaluate(() => (window as unknown as { axisPaints: { text: string; x: number; width: number }[] }).axisPaints);
+    await expect.poll(async () => (await paints()).map((p) => p.text)).toContain('Oct');
+    const last = new Map((await paints()).map((p) => [p.text, p]));
+    expect([...last.keys()].sort()).toEqual(['2026', 'Aug', 'Oct', 'Sep']);
+    expect(last.get('2026')!.x).toBeCloseTo(last.get('Aug')!.x, 0);
+    const months = ['Aug', 'Sep', 'Oct'].map((m) => last.get(m)!);
+    for (let i = 1; i < months.length; i++) expect(months[i - 1].x + months[i - 1].width).toBeLessThan(months[i].x);
+  });
+
+  test('ranges from 28d end the daily line on the last 24 hours, labeled 24h', async ({ page }) => {
+    const payload = activityPayload();
+    payload.lastPointLabels = { ...payload.lastPointLabels!, label24h: 97 };
+    await page.route('**/api/submissions?**', route => route.fulfill({ json: payload }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await openAdmin(page, '/?admin');
+    const chart = activeUsers(page).getByRole('img', { name: /Daily active users/ });
+    for (const range of ['All', '28d']) {
+      await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: range, exact: true }).click();
+      await expect(chart).toHaveAttribute('aria-label', /Last 24 hours 97,/);
+      const box = await chart.boundingBox();
+      await page.mouse.move(box!.x + box!.width - 1, box!.y + box!.height / 2);
+      await expect(chart.locator('[data-scrub-readout]')).toContainText('97 daily');
+      await page.mouse.move(0, 0);
+    }
   });
 
   test('7d ends its line on today\'s calendar-day count and labels it with the day name', async ({ page }) => {

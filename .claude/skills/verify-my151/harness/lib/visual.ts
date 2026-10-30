@@ -21,9 +21,9 @@ interface Screen {
 
 const read = (file: string) => fs.readFileSync(path.join(REPO_ROOT, file), 'utf8');
 const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixture.json') };
-const FAVORITES = {
-  'favorite-picker': JSON.stringify({ state: { fills: JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills }, version: 3 }),
-};
+const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
+const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
+const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
 const BLANK_LEAGUE = {
   'league-builder': JSON.stringify({
     state: {
@@ -179,6 +179,9 @@ export const SCREENS: Screen[] = [
   { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
   { id: 'ack-list', path: '/?lang=en', act: openProject() },
   { id: 'ack-project-pokeapi', path: '/?lang=en', act: openProject('pokeapi-sprites') },
+  { id: 'favorites-filled-crocalor', path: '/favorite-pokemon-picker', seed: FAVORITES_CROCALOR },
+  { id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en', act: openArtist('KingOfThe-X-Roads') },
+  { id: 'ack-project-smogon', path: '/?lang=en', act: openProject('smogon-sprite-project') },
   {
     id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,
     act: async (page) => {

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
 import { cssVar, useECharts, type EChartsOption } from '@/components/admin/charts/useECharts';
 import type {
@@ -24,15 +24,16 @@ const PROVIDERS: { key: SearchProviderKey; label: string }[] = [
   { key: 'bing', label: 'Bing' },
 ];
 
-function compact(value: number): string {
+/** `short` abbreviates from 1,000 (1.6K) instead of from 10,000. */
+function compact(value: number, short = false): string {
   return new Intl.NumberFormat(undefined, {
-    notation: value >= 10_000 ? 'compact' : 'standard',
+    notation: short || Math.abs(value) >= 10_000 ? 'compact' : 'standard',
     maximumFractionDigits: 1,
   }).format(value);
 }
 
-function signed(value: number): string {
-  return `${value > 0 ? '+' : ''}${compact(value)}`;
+function signed(value: number, short = false): string {
+  return `${value > 0 ? '+' : ''}${compact(value, short)}`;
 }
 
 function percent(value: number): string {
@@ -73,11 +74,11 @@ function statusDot(status: SearchProviderStatus): string {
   return 'bg-muted-foreground/50';
 }
 
-function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' | 'impressions'): string {
-  if (!comparison) return '—';
+function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' | 'impressions', short = false): string[] {
+  if (!comparison) return ['—'];
   const absolute = comparison.delta[metric];
   const relative = comparison.delta[`${metric}Pct`];
-  return relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`;
+  return relative == null ? [signed(absolute, short)] : [signed(absolute, short), signedPercent(relative)];
 }
 
 type SearchKpiKey = 'clicks' | 'impressions' | 'ctr' | 'position';
@@ -92,9 +93,11 @@ interface SearchKpi {
   /** Smallest gap between axis ticks, so whole-number metrics get whole-number ticks. */
   minInterval?: number;
   pick: (metric: SearchMetric) => number | null;
-  format: (value: number) => string;
+  /** `short` asks for an abbreviated count (1.6K); a figure that is already short ignores it. */
+  format: (value: number, short?: boolean) => string;
   axis: (value: number) => string;
-  delta: (comparison: SearchRangeComparison | null) => string;
+  /** The change from the previous period, one part per line. */
+  delta: (comparison: SearchRangeComparison | null, short?: boolean) => string[];
 }
 
 const SEARCH_KPIS: SearchKpi[] = [
@@ -107,8 +110,8 @@ const SEARCH_KPIS: SearchKpi[] = [
     emphasis: true,
     pick: (m) => m.clicks,
     format: compact,
-    axis: compact,
-    delta: (c) => countDelta(c, 'clicks'),
+    axis: (value) => compact(value),
+    delta: (c, short) => countDelta(c, 'clicks', short),
   },
   {
     key: 'impressions',
@@ -118,8 +121,8 @@ const SEARCH_KPIS: SearchKpi[] = [
     color: '#5E35B1',
     pick: (m) => m.impressions,
     format: compact,
-    axis: compact,
-    delta: (c) => countDelta(c, 'impressions'),
+    axis: (value) => compact(value),
+    delta: (c, short) => countDelta(c, 'impressions', short),
   },
   {
     key: 'ctr',
@@ -129,7 +132,7 @@ const SEARCH_KPIS: SearchKpi[] = [
     pick: (m) => m.ctr,
     format: percent,
     axis: (value) => `${+(value * 100).toFixed(1)}%`,
-    delta: (c) => (c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
+    delta: (c) => [c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'],
   },
   {
     key: 'position',
@@ -142,14 +145,47 @@ const SEARCH_KPIS: SearchKpi[] = [
     format: position,
     axis: (value) => String(+value.toFixed(1)),
     delta: (c) =>
-      c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
+      [c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—'],
   },
 ];
 
 const DEFAULT_KPIS: SearchKpiKey[] = ['clicks', 'impressions'];
 
-function shown(kpi: SearchKpi, value: number | null): string {
-  return value == null ? '—' : kpi.format(value);
+function shown(kpi: SearchKpi, value: number | null, short = false): string {
+  return value == null ? '—' : kpi.format(value, short);
+}
+
+/**
+ * Whether a tile abbreviates its counts (1.6K). It does only when its change badge would
+ * otherwise drop below the figure. `full` is what the tile shows unabbreviated, so new
+ * numbers or a new tile width start from full counts again.
+ */
+function useShortCounts(ref: RefObject<HTMLElement | null>, full: string): boolean {
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const [shortFor, setShortFor] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // The height changes when a badge drops, such as after a late font load.
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const next = { width: Math.round(rect.width), height: Math.round(rect.height) };
+      setBox((prev) => (prev.width === next.width && prev.height === next.height ? prev : next));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  const key = `${box.width}|${full}`;
+  const short = shortFor === key;
+  useLayoutEffect(() => {
+    if (short) return;
+    const badge = ref.current?.querySelector<HTMLElement>('[data-delta]');
+    const figure = badge?.previousElementSibling as HTMLElement | null | undefined;
+    if (badge && figure && badge.offsetTop > figure.offsetTop) setShortFor(key);
+  }, [ref, key, short, box.height]);
+  return short;
 }
 
 /** Search Console labels its axes only while one or two metrics are on. */
@@ -282,6 +318,9 @@ function KpiToggle({
   on: boolean;
   onToggle: () => void;
 }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const value = metric ? kpi.pick(metric) : null;
+  const short = useShortCounts(ref, `${shown(kpi, value)}|${kpi.delta(comparison).join()}`);
   const fill = {
     backgroundColor: kpi.color,
     color: '#ffffff',
@@ -290,18 +329,19 @@ function KpiToggle({
   } as CSSProperties;
   return (
     <button
+      ref={ref}
       type="button"
       data-kpi={kpi.key}
       aria-pressed={on}
       onClick={onToggle}
-      className={cn('rounded-lg p-2.5 text-left transition-colors', !on && 'hover:bg-muted/60')}
+      className={cn('rounded-lg p-2.5 text-left transition-colors max-md:flex max-md:flex-col', !on && 'hover:bg-muted/60')}
       style={on ? fill : undefined}
     >
       <Kpi
         emphasis={kpi.emphasis}
-        value={metric ? shown(kpi, kpi.pick(metric)) : '—'}
+        value={shown(kpi, value, short)}
         label={kpi.label}
-        delta={<Delta>{kpi.delta(comparison)}</Delta>}
+        delta={<Delta parts={kpi.delta(comparison, short)} />}
       />
     </button>
   );
