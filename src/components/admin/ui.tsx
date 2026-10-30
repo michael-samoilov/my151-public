@@ -110,7 +110,7 @@ export function Kpi({
 }) {
   return (
     <div className="flex min-w-[6.5rem] flex-col">
-      <div className="flex items-baseline gap-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
         <span className={cn('font-bold tabular-nums leading-none', emphasis ? 'text-4xl' : 'text-2xl')}>
           {value}
         </span>
@@ -124,7 +124,7 @@ export function Kpi({
 
 export function Delta({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded bg-muted px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums text-muted-foreground">
+    <span className="whitespace-nowrap rounded bg-muted px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums text-muted-foreground">
       {children}
     </span>
   );
