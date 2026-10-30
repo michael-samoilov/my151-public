@@ -46,6 +46,8 @@ function initialSections(): Record<string, number[]> {
   return base;
 }
 
+export const POKEDEX_PERSIST_VERSION = 10;
+
 const INITIAL_SECTIONS = initialSections();
 const INITIAL_COUNT = Object.values(INITIAL_SECTIONS).reduce((s, a) => s + a.length, 0);
 
@@ -499,7 +501,7 @@ export const usePokedexStore = create<PokedexState>()(
 
         return result;
       },
-      version: 10,
+      version: POKEDEX_PERSIST_VERSION,
     }
   )
 );

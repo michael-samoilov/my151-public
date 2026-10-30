@@ -5,6 +5,12 @@ import { SheetCloseGuardContext, type SheetCloseGuard, type SheetCloseVia } from
 
 const DISMISS_THRESHOLD = 120;
 
+// A finger held still drifts a few pixels in no set direction. Below this
+// distance a touch has no axis yet.
+const AXIS_SLOP_PX = 10;
+
+type Axis = 'x' | 'y' | 'either';
+
 interface BottomSheetProps {
   onClose: () => void;
   onHeaderClick?: () => void;
@@ -256,11 +262,11 @@ export function BottomSheet({
       startY = t.clientY;
     };
 
-    const scrollsOnAxis = (n: HTMLElement, horizontal: boolean) => {
+    const scrollsOnAxis = (n: HTMLElement, axis: Axis) => {
       const cs = getComputedStyle(n);
-      return horizontal
-        ? (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth
-        : (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
+      const x = (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth;
+      const y = (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
+      return axis === 'x' ? x : axis === 'y' ? y : x || y;
     };
 
     const swallow = (e: Event) => {
@@ -272,10 +278,10 @@ export function BottomSheet({
         if (owner instanceof HTMLElement && overlay.contains(owner)) return;
       }
 
-      let horizontal: boolean;
+      let axis: Axis;
       if (e.type === 'wheel') {
         const we = e as WheelEvent;
-        horizontal = Math.abs(we.deltaX) > Math.abs(we.deltaY);
+        axis = Math.abs(we.deltaX) > Math.abs(we.deltaY) ? 'x' : 'y';
       } else {
         const t = (e as TouchEvent).touches[0];
         if (!t) return;
@@ -286,12 +292,17 @@ export function BottomSheet({
         // where no scroller takes them, so this walk cancelled them all.
         const selection = document.getSelection();
         if (selection && !selection.isCollapsed && overlay.contains(selection.focusNode)) return;
-        horizontal = Math.abs(t.clientX - startX) > Math.abs(t.clientY - startY);
+        // On a press-and-hold of a list's scroll thumb, the first move is
+        // that drift. A sideways guess cancelled it, and iOS then froze the
+        // thumb drag that followed.
+        const dx = Math.abs(t.clientX - startX);
+        const dy = Math.abs(t.clientY - startY);
+        axis = Math.max(dx, dy) < AXIS_SLOP_PX ? 'either' : dx > dy ? 'x' : 'y';
       }
 
       for (let n = e.target as Node | null; n && n !== overlay; n = n.parentElement) {
         if (!(n instanceof HTMLElement)) continue;
-        if (scrollsOnAxis(n, horizontal)) return;
+        if (scrollsOnAxis(n, axis)) return;
       }
       e.preventDefault();
     };

@@ -19,6 +19,7 @@ import { getPickerMon } from './model/catalog';
 import { openCell, prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
+import { recordSavedPicks } from './export/savedPicks';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
@@ -108,6 +109,7 @@ function FavoritesContent({ sel, setSel }: {
   const completionNudge = useCompletionNudge();
   const analytics = useAnalyticsUnlock();
   const filled = useMemo(() => filledCount(fills), [fills]);
+  useEffect(() => { recordSavedPicks(); }, [fills]);
   useEffect(() => {
     if (completionNudge.armed) preloadCompletionConfetti();
   }, [completionNudge.armed]);

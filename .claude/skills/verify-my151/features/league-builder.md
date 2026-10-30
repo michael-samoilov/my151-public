@@ -23,6 +23,10 @@ and a legendary on the boss row.
   When the card has room, a pick also seats the tapped Pokémon's whole line.
 - A cell dragged up or down moves an evolution boundary. A press and hold lifts
   the column to reorder it. The moving stage wears a wash of its primary type.
+- A two-finger pinch on the card zooms the page and never moves a line: a
+  second finger cancels the drag. The gestures stay the same at every zoom.
+  One finger on a filled cell moves it, and one finger elsewhere pans. There
+  is no zoomed-in pan mode. Michael chose this on 2026-10-29.
 - Mega and Gigantamax buttons on rows 9-11, the bottom three. A press sets its
   row and every row below it that shows the same form on that seat. A boss-row
   legendary has its own buttons, and a press on the line above skips it. Its

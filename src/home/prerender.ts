@@ -4,6 +4,8 @@ import { HomePage } from '../components/home/HomePage';
 
 export { LOCALES } from '../i18n/config';
 export { SLOT_COUNT } from '../league/model/constants';
+export { SAVED_PICKS_KEY } from '../favorites/store/useFavoritesStore';
+export { POKEDEX_PERSIST_VERSION } from '../store/usePokedexStore';
 export { FAVORITES_NOTICE_END, FAVORITES_NOTICE_SEEN_KEY, FAVORITES_NOTICE_START } from '../lib/launchFlags';
 export { RETURNING_KEYS } from '../lib/visitorAtBoot';
 

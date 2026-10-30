@@ -40,6 +40,8 @@ interface BootInputs {
   HOME_MOBILE_MEDIA: string;
   LOCALES: readonly string[];
   SLOT_COUNT: number;
+  SAVED_PICKS_KEY: string;
+  POKEDEX_PERSIST_VERSION: number;
   FAVORITES_NOTICE_START: number;
   FAVORITES_NOTICE_END: number;
   FAVORITES_NOTICE_SEEN_KEY: string;
@@ -55,6 +57,15 @@ interface BootInputs {
  */
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
+
+/**
+ * Writes the boot script's saved counts into the prerendered progress lines.
+ * It runs where the parser meets it, before the end marker lets the hub paint,
+ * so the first paint already shows them. HomePage hydrates from the same
+ * counts. A null count is one the app may correct, so its line waits for the app.
+ */
+const COUNTS_SCRIPT =
+  "(function(){var c=window.p151HubCounts;if(c)for(var k in c){var p=document.querySelector('[data-card-progress=\"'+k+'\"]'),n=p&&p.querySelector('[data-progress-count] .text-primary');if(!n||c[k]==null)continue;n.textContent=String(c[k]);if(c[k]>0)p.removeAttribute('data-empty')}})()";
 
 export function splitImagePreloads(markup: string): { preloads: string[]; markup: string } {
   // Explicit React preloads put href before as; automatic preloads do not.
@@ -94,15 +105,19 @@ loaded();painted()
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
+  // `?trace` loads the hub load timeline, public/trace.js. It blocks the
+  // parser on purpose, so its observers exist before the body parses.
   return `(function(){
+if(new URLSearchParams(location.search).has('trace'))document.write('<script src="/trace.js"><\\/script>');
 var d=document.documentElement;
 d.classList.add('p151-hub-images-pending');
 var earlyButton=null;
 function earlyClick(e){var root=document.getElementById('root'),t=e.target,b=t&&t.closest&&t.closest('button');if(!root||!b||!root.contains(b)||d.classList.contains('p151-wait'))return;e.preventDefault();e.stopImmediatePropagation();earlyButton=b}
 function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
-function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
+function J(k){try{return JSON.parse(G(k)||'null')}catch(e){return null}}
+function S(k){var s=J(k);return s&&s.state||null}
 function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
-var L=${j(input.LOCALES)},q=new URLSearchParams(location.search),loc=q.get('lang'),dex=S(${j(STORE_KEY)}),lg=S('league-builder'),fv=S('favorite-picker');
+var L=${j(input.LOCALES)},q=new URLSearchParams(location.search),loc=q.get('lang'),dexSave=J(${j(STORE_KEY)}),dex=dexSave&&dexSave.state||null,lg=S('league-builder'),fv=S('favorite-picker');
 function m(t){t=String(t).toLowerCase();var p=t.split('-')[0],i;if(p==='zh')return'zh';
 for(i=0;i<L.length;i++)if(L[i].toLowerCase()===t)return L[i];
 for(i=0;i<L.length;i++)if(L[i].toLowerCase().split('-')[0]===p)return L[i];return null}
@@ -113,6 +128,11 @@ var saved={dex:!!dex&&some(dex.sections,function(x){return Array.isArray(x)&&x.l
 league:!!lg&&Array.isArray(lg.cards)&&some(lg.cards.slice(0,${input.SLOT_COUNT}),function(c){return!!c&&Array.isArray(c.lines)&&c.lines.length>0}),
 favorites:!!fv&&some(fv.fills,function(x){return typeof x==='number'})},any=false;
 for(var t in saved)if(saved[t]){any=true;d.classList.add('p151-saved-'+t)}
+function sum(o,f){var c=0;for(var k in o)c+=f(o[k]);return c}
+var picks=J(${j(input.SAVED_PICKS_KEY)});
+window.p151HubCounts={dex:!dex?0:dexSave.version===${input.POKEDEX_PERSIST_VERSION}?sum(dex.sections,function(x){return Array.isArray(x)?x.length:0}):null,
+league:lg&&Array.isArray(lg.cards)?sum(lg.cards.slice(0,${input.SLOT_COUNT}),function(c){return c&&Array.isArray(c.lines)&&c.lines.length>0?1:0}):0,
+favorites:!saved.favorites?0:picks&&picks.saved===G('favorite-picker')&&typeof picks.filled==='number'?picks.filled:null};
 var now=Date.now(),notice=now>=${input.FAVORITES_NOTICE_START}&&now<${input.FAVORITES_NOTICE_END}&&G(${j(input.FAVORITES_NOTICE_SEEN_KEY)})!=='1'&&(any||${j(input.RETURNING_KEYS)}.some(function(k){return G(k)!==null}));
 if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait');
 if(!d.classList.contains('p151-wait')){
@@ -184,7 +204,7 @@ export function prerenderHub(): Plugin {
           const media = `${inputs.HOME_MOBILE_MEDIA} and (min-width:${lo}px) and (max-width:${hi}px)`;
           pose.cards.forEach(card => imagePreloads.push(`<link rel="preload" as="image" type="image/avif" fetchpriority="high" media="${media}" href="/assets/home-mobile/${card.avif.file}">`));
         });
-        html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
+        html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><script>${COUNTS_SCRIPT}</script><span id="p151-end" hidden></span>`);
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
         html = html.replace(viewport, (tag) => [tag, ...imagePreloads].join('\n    '));
