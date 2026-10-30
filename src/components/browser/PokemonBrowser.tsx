@@ -6,8 +6,7 @@ import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
 import { mergeEvolutionBranches } from './chainMerge';
-import { restrictionIds, useBrowserStore, useFavoriteBrowserStore } from './browserStore';
-import { readFavoritePickerIds } from './favoritePickerBridge';
+import { browserFavoriteIds, browserFilterOptions, useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
@@ -119,8 +118,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const addToSection = useBrowserStore((s) => s.addToSection);
   const favoritesFilter = useFavoriteBrowserStore((s) => s.favoritesFilter);
   const storedFavoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
-  const favoriteIds = useMemo(() => dataSource?.favoritePickerId
-    ? readFavoritePickerIds(dataSource.favoritePickerId) : storedFavoriteIds, [storedFavoriteIds, dataSource]);
+  const favoriteIds = useMemo(() => browserFavoriteIds(storedFavoriteIds, dataSource), [storedFavoriteIds, dataSource]);
   const setFavoritesFilter = useFavoriteBrowserStore((s) => s.setFavoritesFilter);
   const refreshFavorites = useFavoriteBrowserStore((s) => s.refreshFavorites);
   useLayoutEffect(() => { refreshFavorites(); }, [activeSection, refreshFavorites]);
@@ -324,25 +322,25 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     ? (labelForSection ? labelForSection(activeSection) : sectionLabel(activeSection))
     : null;
 
-  const restrictToIds = useMemo(
-    () => restrictionIds({ restrictIds, favoritesFilter, favoriteIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds }),
-    [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds],
-  );
-
-  const filterOptions = useMemo(() => ({
-    dataSource,
-    search: searchInput,
-    category: activeCategory,
-    archetype: activeArchetype,
-    types: typeFilter,
-    typeMode: typeFilterMode,
-    generations: generationFilter,
-    shapes: shapeFilter,
-    colors: colorFilter,
-    eggGroups: eggGroupFilter,
-    evoLineSize: evoLineSizeFilter,
-    restrictToIds: restrictToIds,
-  }), [dataSource, searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
+  const browseOptions = useMemo(() => browserFilterOptions({
+    activeCategoryFilter: activeCategory,
+    activeArchetypeFilter: activeArchetype,
+    typeFilter,
+    typeFilterMode,
+    generationFilter,
+    shapeFilter,
+    colorFilter,
+    eggGroupFilter,
+    evoLineSizeFilter,
+    restrictIds,
+    favoritesFilter,
+    favoriteIds,
+    myDexFilter,
+    myDexIds,
+    scopeFilter,
+    scopeFilterIds,
+  }, dataSource), [dataSource, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictIds, favoritesFilter, favoriteIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds]);
+  const filterOptions = useMemo(() => ({ ...browseOptions, search: searchInput }), [browseOptions, searchInput]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
   const lookupPokemon = deferredOptions.dataSource?.getPokemonById ?? getPokemonById;

@@ -71,6 +71,61 @@ interface BridgeState extends BrowserStoreState {
   typeBeforeScope?: string[] | null;
 }
 
+/**
+ * What the browser shows when it opens on a card for a purpose. My dex and the
+ * team scope stay as the last open left them, so `kept` passes them in.
+ */
+export function pickerOpenState(
+  card: number,
+  purpose: BrowserPurpose,
+  kept: Pick<BridgeState, 'myDexFilter' | 'scopeFilter'>,
+  targetSeat: number,
+) {
+  const gym = useLeagueStore.getState().cards[card];
+  const type = gym?.type ?? null;
+  const lines = gym?.lines ?? [];
+  const placed = new Set(placedIds(lines));
+  const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
+  const scopeLocked = purpose === 'signature' && cardFull;
+  const scoped = purpose === 'signature' || purpose === 'partner';
+  const scopeOn = scoped && lines.length > 0
+    ? (scopeLocked || (kept.scopeFilter ?? false))
+    : false;
+  const gymType: string[] | null = type && type !== 'none' ? [type] : null;
+  return {
+    activeSection: sectionKey(card),
+    sections: { [sectionKey(card)]: placedIds(lines) },
+    searchQuery: '',
+    activeCategoryFilter: null,
+    activeArchetypeFilter: null,
+    typeFilter: scopeOn ? null : gymType,
+    typeBeforeScope: scopeOn ? gymType : null,
+    typeFilterMode: 'any',
+    generationFilter: null,
+    shapeFilter: null,
+    colorFilter: null,
+    eggGroupFilter: null,
+    evoLineSizeFilter: null,
+    myDexFilter: kept.myDexFilter ?? false,
+    myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
+    myDexSections: usePokedexStore.getState().sections,
+    restrictIds:
+      purpose === 'legend'
+        ? LEGEND_ELIGIBLE
+        : purpose === 'signature' && cardFull
+          ? placed
+          : undefined,
+    scopeFilter: scopeOn,
+    scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
+    scopeFilterLabel: scoped && lines.length > 0 ? t('league.scope.team') : undefined,
+    scopeFilterLocked: scopeLocked,
+    scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
+    scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
+    standaloneTiles: purpose === 'signature' || purpose === 'legend' || purpose === 'partner',
+    shinyView: gym ? SHINY_AT_OPEN[purpose](gym, targetSeat) : false,
+  } satisfies Partial<BridgeState>;
+}
+
 export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
   const ui = () => useLeagueUi.getState();
   const league = () => useLeagueStore.getState();
@@ -114,50 +169,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
 
     openFor: (card) => {
       useFavoriteBrowserStore.getState().refreshFavorites();
-      const purpose = ui().browserPurpose;
-      const gym = league().cards[card];
-      const type = gym?.type ?? null;
-      const lines = gym?.lines ?? [];
-      const placed = new Set(placedIds(lines));
-      const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
-      const scopeLocked = purpose === 'signature' && cardFull;
-      const scoped = purpose === 'signature' || purpose === 'partner';
-      const scopeOn = scoped && lines.length > 0
-        ? (scopeLocked || (get().scopeFilter ?? false))
-        : false;
-      const gymType: string[] | null = type && type !== 'none' ? [type] : null;
-      set({
-        activeSection: sectionKey(card),
-        sections: { [sectionKey(card)]: placedIds(league().cards[card]?.lines ?? []) },
-        searchQuery: '',
-        activeCategoryFilter: null,
-        activeArchetypeFilter: null,
-        typeFilter: scopeOn ? null : gymType,
-        typeBeforeScope: scopeOn ? gymType : null,
-        typeFilterMode: 'any',
-        generationFilter: null,
-        shapeFilter: null,
-        colorFilter: null,
-        eggGroupFilter: null,
-        evoLineSizeFilter: null,
-        myDexFilter: get().myDexFilter ?? false,
-        myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
-        myDexSections: usePokedexStore.getState().sections,
-        restrictIds:
-          purpose === 'legend'
-            ? LEGEND_ELIGIBLE
-            : purpose === 'signature' && cardFull
-              ? placed
-              : undefined,
-        scopeFilter: scopeOn,
-        scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
-        scopeFilterLabel: scoped && lines.length > 0 ? t('league.scope.team') : undefined,
-        scopeFilterLocked: scopeLocked,
-        scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
-        scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
-        standaloneTiles: purpose === 'signature' || purpose === 'legend' || purpose === 'partner',
-        shinyView: gym ? SHINY_AT_OPEN[purpose](gym, ui().targetSeat) : false,
-      });
+      set(pickerOpenState(card, ui().browserPurpose, get(), ui().targetSeat));
     },
 
     refresh: () => set({ sections: mirror() }),
