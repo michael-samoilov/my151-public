@@ -15,9 +15,9 @@ import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
 interface VisitCard {
   i: number;
   t?: string;
-  l: { b: number[]; bd?: number[] }[];
+  l: { b: number[]; bd?: number[]; s?: 1 }[];
   aceId?: number;
-  lg?: [number, number][];
+  lg?: [number, number, 1?][];
 }
 
 const MIN_CARD_W = 90;

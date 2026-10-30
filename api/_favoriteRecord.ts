@@ -17,6 +17,8 @@ export interface FavoriteSnapshot {
   picksFilled: number;
   pointersFilled: number;
   uniqueIds: number[];
+  /** Pick cells made shiny, by cell key, holding the id picked. Absent when none is, and on records saved before the flag. */
+  shiny?: Record<string, number>;
 }
 export interface FavoriteSessionEntry {
   id: string;
@@ -95,7 +97,9 @@ export function parseFavoriteSnapshot(value: unknown): FavoriteSnapshot | null {
     if (cell.kind === 'pointer' && typeof id === 'number' && cell.sources?.some(source => fills[source] === id)) fills[key] = id;
   }
   const filled = Object.keys(fills).length;
-  return {v:1,fills,filled,picksFilled,pointersFilled:filled-picksFilled,uniqueIds};
+  const rawShiny = o.shiny && typeof o.shiny === 'object' && !Array.isArray(o.shiny) ? o.shiny as Record<string, unknown> : {};
+  const shiny = Object.fromEntries(Object.entries(rawShiny).filter((entry): entry is [string, number] => cells[entry[0]]?.kind === 'pick' && fills[entry[0]] === entry[1]));
+  return {v:1,fills,filled,picksFilled,pointersFilled:filled-picksFilled,uniqueIds,...(Object.keys(shiny).length ? {shiny} : {})};
 }
 export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
   let value = raw;
