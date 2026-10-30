@@ -1,18 +1,24 @@
-// Service worker: cache sprites and static assets to reduce edge requests
-const CACHE_NAME = 'p151-sprites-v2';
+// Service worker: cache sprites to reduce edge requests.
+//
+// Built files under /assets/ stay with the browser's HTTP cache: their names
+// carry a content hash and they are cached as immutable for a year. Routing
+// them through this cache cost the hub its artwork on iPhones: the cache kept
+// every file of every deploy, and WebKit reopens it on the first request after
+// the app has been idle, before it can answer even one image.
+const CACHE_NAME = 'p151-sprites-v3';
 
-// Cache sprites and static assets on fetch
+// Replace the previous worker on this visit, so its large cache goes now.
+self.addEventListener('install', () => self.skipWaiting());
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Only cache same-origin GET requests for sprites and built assets
   if (event.request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
 
   const path = url.pathname;
   const shouldCache =
     path.startsWith('/sprites/') ||
-    path.startsWith('/assets/') ||
     path === '/favicon.svg' ||
     path === '/icons.svg';
 
