@@ -41,7 +41,7 @@ export const enUi = {
   'ack.title': 'Acknowledgements',
   'ack.usedFor': 'Used for',
   'ack.usedGen9Pack': "The source of {files} of the app's fan-made sprites, for newer forms and Mega Evolutions.",
-  'ack.usedPokeapi': "The source of {official} official sprites from the games, and {smogon} sprites by Smogon Sprite Project artists. We also use it for {own} additional fan-made sprites.",
+  'ack.usedPokeapi': "The source of {total} of the app's sprites: {official} official sprites from the games, {smogon} by Smogon Sprite Project artists, and {own} by other fan artists. The Smogon artists are credited under their project, and the other {own} sprites below.",
   'ack.usedSmogon': "Its artists drew {drawn} of the app's fan-made sprites. {delivered} of them reach the app through PokéAPI.",
   'advisor.allTypes': 'All 18 types covered',
   'advisor.categoryMissing': 'No {category} assigned yet',

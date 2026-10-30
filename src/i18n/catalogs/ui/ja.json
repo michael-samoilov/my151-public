@@ -32,7 +32,7 @@
   "ack.title": "謝辞",
   "ack.usedFor": "使用箇所",
   "ack.usedGen9Pack": "新しいフォルムやメガシンカなど、アプリのファンメイドのドット絵{files}点の入手元です。",
-  "ack.usedPokeapi": "ゲームの公式ドット絵{official}点と、Smogon Sprite Project のアーティストによるドット絵{smogon}点の入手元です。さらにファンメイドのドット絵{own}点にも使っています。",
+  "ack.usedPokeapi": "アプリのドット絵{total}点の入手元です。内訳は、ゲームの公式ドット絵{official}点、Smogon Sprite Project のアーティストによるもの{smogon}点、その他のファンアーティストによるもの{own}点です。Smogon のアーティストは同プロジェクトの項目で、その他の{own}点は下記でクレジットしています。",
   "ack.usedSmogon": "アプリのファンメイドのドット絵のうち{drawn}点を、このプロジェクトのアーティストが描きました。そのうち{delivered}点は PokéAPI 経由でアプリに届いています。",
   "advisor.allTypes": "全18タイプを網羅",
   "advisor.categoryMissing": "{category}がまだいません",

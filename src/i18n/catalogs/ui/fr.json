@@ -39,7 +39,7 @@
   "ack.title": "Remerciements",
   "ack.usedFor": "Utilisé pour",
   "ack.usedGen9Pack": "La source de {files} sprites de fans de l’app, pour des formes récentes et des Méga-Évolutions.",
-  "ack.usedPokeapi": "La source de {official} sprites officiels des jeux et de {smogon} sprites d’artistes du Smogon Sprite Project. Nous l’utilisons aussi pour {own} sprites de fans supplémentaires.",
+  "ack.usedPokeapi": "La source de {total} sprites de l’app : {official} sprites officiels des jeux, {smogon} d’artistes du Smogon Sprite Project et {own} d’autres artistes fans. Les artistes de Smogon sont crédités sous leur projet, et les {own} autres sprites ci-dessous.",
   "ack.usedSmogon": "Ses artistes ont dessiné {drawn} des sprites de fans de l’app. {delivered} d’entre eux arrivent dans l’app via PokéAPI.",
   "advisor.allTypes": "Les 18 types sont couverts",
   "advisor.categoryMissing": "{category} : aucun pour l’instant",

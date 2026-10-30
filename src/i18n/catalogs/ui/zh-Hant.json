@@ -32,7 +32,7 @@
   "ack.title": "致謝",
   "ack.usedFor": "用途",
   "ack.usedGen9Pack": "應用程式中 {files} 張同人精靈圖的來源，包括較新的形態和超級進化。",
-  "ack.usedPokeapi": "提供遊戲官方精靈圖 {official} 張，以及 Smogon Sprite Project 繪師的精靈圖 {smogon} 張。我們還用它取得另外 {own} 張同人精靈圖。",
+  "ack.usedPokeapi": "應用程式中 {total} 張精靈圖的來源：遊戲官方精靈圖 {official} 張，Smogon Sprite Project 繪師的精靈圖 {smogon} 張，其他同人繪師的精靈圖 {own} 張。Smogon 繪師在該專案條目中署名，其餘 {own} 張在下方署名。",
   "ack.usedSmogon": "該專案的繪師繪製了應用程式中的 {drawn} 張同人精靈圖，其中 {delivered} 張經由 PokéAPI 進入應用程式。",
   "advisor.allTypes": "已涵蓋全部18種屬性",
   "advisor.categoryMissing": "尚未加入{category}",
