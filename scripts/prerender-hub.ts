@@ -105,7 +105,10 @@ loaded();painted()
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
+  // `?trace` loads the hub load timeline, public/trace.js. It blocks the
+  // parser on purpose, so its observers exist before the body parses.
   return `(function(){
+if(new URLSearchParams(location.search).has('trace'))document.write('<script src="/trace.js"><\\/script>');
 var d=document.documentElement;
 d.classList.add('p151-hub-images-pending');
 var earlyButton=null;
