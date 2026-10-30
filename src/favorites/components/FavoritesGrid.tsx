@@ -895,7 +895,7 @@ function BodyCell({
   if (!mon || locked) return cell;
   const named = <NameTooltip mon={mon}>{cell}</NameTooltip>;
   if (!edits) return named;
-  // A pointer cell shows the shiny of the cell it points at, so it has no shiny control of its own.
+  // A pointer cell takes its look from the cells it points at, and its sheet chooses between two looks, so it has no shiny control of its own.
   const mark: ShinyMark | null = kind === 'pointer' ? null
     : pickerShinySprite(mon.id) === null ? 'none' : shinyHere ? 'on' : 'off';
   return (

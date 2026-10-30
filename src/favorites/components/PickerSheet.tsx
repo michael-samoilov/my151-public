@@ -28,7 +28,7 @@ import {
 } from '../model/packing';
 import { pointerMarks, pointerPool, pointerCoordinates, pointerSourceKeys } from '../model/pointers';
 import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
-import { isShinyCell, pickerShinySprite } from '../model/shiny';
+import { isShinyCell, pickerShinySprite, pointerOptions } from '../model/shiny';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { PILL_CLASS, PILL_OFF, pillStyle } from '@/components/shiny/pill';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,9 @@ import { DesktopPane } from './DesktopPane';
 
 const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('packing') === '1';
+
+/** A pointer option also names the source cells that show it in its look. A pick option has none. */
+type SheetOption = SelectorOption & { sources: readonly string[] };
 
 export function PickerSheet({
   type,
@@ -116,14 +119,13 @@ export function PickerSheet({
   }
 
   const picks = useMemo(() => (kind === 'pick' ? eligibleFor(type, gen, sortOrder) : []), [kind, type, gen, sortOrder]);
-  // A pick sheet shows the look the switch asks for; a pointer sheet shows each candidate as the cells it points at have it.
-  const options = useMemo((): SelectorOption[] => (kind === 'pointer'
-    ? pointerPool(type, gen, fills).flatMap((id) => {
+  // A pick sheet shows the look the switch asks for; a pointer sheet shows each Pokémon in each look its sources show it in.
+  const options = useMemo((): SheetOption[] => (kind === 'pointer'
+    ? pointerOptions(type, gen, fills, shiny).flatMap(({ id, shiny: look, sources }) => {
       const mon = getPickerMon(id);
-      const key = cellKey(type, gen);
-      return mon ? [{ mon, shiny: isShinyCell({ ...fills, [key]: id }, shiny, key) }] : [];
+      return mon ? [{ mon, shiny: look, sources }] : [];
     })
-    : picks.map((mon) => ({ mon, shiny: shinyView }))), [kind, type, gen, fills, shiny, picks, shinyView]);
+    : picks.map((mon) => ({ mon, shiny: shinyView, sources: [] }))), [kind, type, gen, fills, shiny, picks, shinyView]);
   const shinySprites = useMemo(
     () => picks.map((mon) => pickerShinySprite(mon.id)).filter((url): url is string => url !== null),
     [picks],
@@ -133,7 +135,7 @@ export function PickerSheet({
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
-  const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? (option: SelectorOption) => evolutionLineKey(option.mon) : undefined;
+  const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? (option: SheetOption) => evolutionLineKey(option.mon) : undefined;
   const widestRow = Math.max(0, ...prettyRows(options, maxCols, lineKey).map((row) => row.length));
   const paneWidth = Math.max(
     options.length === 0 ? 290 : kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? 200 : 150,
@@ -145,10 +147,13 @@ export function PickerSheet({
   const key = cellKey(type, gen);
   const placesShiny = (mon: PickerMon) => kind === 'pick' && shinyView && pickerShinySprite(mon.id) !== null;
   const current = currentId == null ? undefined : getPickerMon(currentId);
-  const converting = kind === 'pick' && current != null && placesShiny(current) !== isShinyCell(fills, shiny, key);
-  const isCurrent = (option: SelectorOption) => option.mon.id === currentId;
+  const currentShiny = isShinyCell(fills, shiny, key);
+  const converting = kind === 'pick' && current != null && placesShiny(current) !== currentShiny;
+  const isCurrent = (option: SheetOption) => option.mon.id === currentId && (kind === 'pick' || option.shiny === currentShiny);
+  // A pointer option stands for the source cells that show it in its look, so its pills and marks name only those.
+  const shownBy = (option: SheetOption) => Object.fromEntries(option.sources.map((source) => [source, option.mon.id]));
 
-  function pick(option: SelectorOption) {
+  function pick(option: SheetOption) {
     const { mon } = option;
     if (isCurrent(option) && !converting) {
       onClose();
@@ -164,7 +169,7 @@ export function PickerSheet({
         return;
       }
     }
-    onPlace(mon.id, placesShiny(mon));
+    onPlace(mon.id, kind === 'pointer' ? option.shiny : placesShiny(mon));
     onClose();
   }
 
@@ -195,9 +200,9 @@ export function PickerSheet({
           showIcons={showIcons}
           pointer={kind === 'pointer'}
           originContext={{ type, gen }}
-          coordinates={kind === 'pointer' ? (option) => pointerCoordinates(type, gen, fills, option.mon.id)
+          coordinates={kind === 'pointer' ? (option) => pointerCoordinates(type, gen, shownBy(option), option.mon.id)
             : !isTypeCell(type, gen) ? (option) => pickedCoordinates.get(option.mon.id) ?? [] : undefined}
-          sourceMarks={kind === 'pointer' ? (option) => pointerMarks(type, gen, fills, option.mon.id) : undefined}
+          sourceMarks={kind === 'pointer' ? (option) => pointerMarks(type, gen, shownBy(option), option.mon.id) : undefined}
           onClear={
             currentId != null
               ? () => {

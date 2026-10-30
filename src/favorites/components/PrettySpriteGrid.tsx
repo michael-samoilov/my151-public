@@ -62,6 +62,7 @@ export function PrettySpriteGrid<T extends SelectorOption>({
   onPick: (option: T) => void;
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
+  /** A pointer selector lists a Pokémon once for each look its sources show it in. */
   pointer?: boolean;
   sourceMarks?: (option: T) => PointerMark[];
   coordinates?: (option: T) => SourceCoordinate[];
@@ -135,7 +136,7 @@ export function PrettySpriteGrid<T extends SelectorOption>({
           >
             {row.map((option) => (
               <PickCell
-                key={option.mon.id}
+                key={pointer ? `${option.mon.id}-${option.shiny ? 'shiny' : 'normal'}` : option.mon.id}
                 mon={option.mon}
                 spritePx={spritePx}
                 selected={selected?.(option) ?? false}
@@ -205,14 +206,16 @@ function PickCell({
   const { roundedSide, roundedRadius } = originShapeGeometry(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
+  const name = pointer && shinySprite ? `${labelOf(mon)} · ${t('shiny.label')}` : labelOf(mon);
   const tile = (
     <button
       type="button"
       onClick={() => clearing ? onClear?.() : onPick()}
       data-testid={`favorites-pick-${mon.id}`}
+      data-variant={pointer ? (shiny ? 'shiny' : 'normal') : undefined}
       aria-pressed={selected}
       aria-describedby={coordinates?.length ? originsId : undefined}
-      aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
+      aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${name}` : name}
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >

@@ -229,3 +229,48 @@ test('the sheet header keeps the title badges at full height and drops the pill 
   expect(header.icons.right).toBeLessThanOrEqual(header.viewport);
   expect(header.scrollWidth).toBeLessThanOrEqual(header.viewport);
 });
+
+test('a pointer lists a Pokémon its sources show both normal and shiny as two options, and keeps the look chosen', async ({ page }, testInfo) => {
+  await seed(page, { fills: { 'fire|1': 6, 'flying|1': 6, 'favorite|1': 6 }, shiny: { 'fire|1': 6 } });
+  await page.goto('/favorite-pokemon-picker?lang=en');
+  const row = page.getByTestId('favorites-cell-favorite-1');
+  const rowSprite = row.locator('img[data-grid-sprite-size]');
+  const charizard = /\/sprites\/pokemon\/6\.png/;
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('favorite-picker')!).state);
+  await expect(rowSprite, 'the pointer stays normal until the user chooses shiny').toHaveAttribute('src', charizard);
+
+  await row.click();
+  const options = page.locator('#favorites-selector [data-testid="favorites-pick-6"]');
+  await expect(options).toHaveCount(2);
+  await expect(options.nth(0)).toHaveAttribute('data-variant', 'normal');
+  await expect(options.nth(1)).toHaveAttribute('data-variant', 'shiny');
+  await expect(sprite(options.nth(0))).toHaveAttribute('src', charizard);
+  await expect(sprite(options.nth(1))).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
+  await expect(options.nth(0), 'each option names only the cells that show it in its look').toHaveAccessibleDescription(/Flying/);
+  await expect(options.nth(0)).not.toHaveAccessibleDescription(/Fire/);
+  await expect(options.nth(1)).toHaveAccessibleDescription(/Fire/);
+  await expect(options.nth(1)).not.toHaveAccessibleDescription(/Flying/);
+  await expect(options.nth(1)).toHaveAccessibleName('Charizard · Shiny');
+  await expect(options.nth(0).getByTestId('favorites-selection-ring')).toBeVisible();
+  await expect(options.nth(1).getByTestId('favorites-selection-ring')).toHaveCount(0);
+
+  await options.nth(1).click();
+  await expect(rowSprite).toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
+  await page.reload();
+  await expect(rowSprite, 'the chosen look survives a reload').toHaveAttribute('src', /\/sprites\/pokemon\/shiny\/6\.png$/);
+  await row.click();
+  await expect(options.nth(1).getByTestId('favorites-selection-ring')).toBeVisible();
+  await options.nth(0).click();
+  await expect(rowSprite).toHaveAttribute('src', charizard);
+  expect((await saved()).shiny).toEqual({ 'fire|1': 6 });
+
+  await row.click();
+  await options.nth(1).click();
+  await page.getByTestId('favorites-cell-fire-1').click();
+  await page.locator('#favorites-selector [data-testid="favorites-pick-6"]').click();
+  await expect(rowSprite, 'with no shiny source left, the pointer shows normal and stays filled').toHaveAttribute('src', charizard);
+  const state = await saved();
+  expect(state.fills['favorite|1']).toBe(6);
+  await testInfo.attach('shiny-pointer-state.json', { body: JSON.stringify(state, null, 2), contentType: 'application/json' });
+  await testInfo.attach('shiny-pointer-grid.png', { body: await page.screenshot(), contentType: 'image/png' });
+});

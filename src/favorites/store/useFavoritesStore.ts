@@ -69,7 +69,7 @@ function currentShiny(shiny: Record<string, number>, fills: Record<string, numbe
 
 interface FavoritesState {
   fills: Record<string, number>;
-  /** Pick cells whose pick was made shiny, by cell key, holding the id picked. */
+  /** Cells set to shiny, by cell key, holding the id they held then: a pick made shiny, or a pointer set to its shiny option. */
   shiny: Record<string, number>;
   place: (type: TypeAxisId, gen: GenAxisId, id: number, shiny?: boolean) => void;
   applyPack: (gen: number, path: PackMove[]) => void;
