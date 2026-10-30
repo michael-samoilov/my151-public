@@ -301,3 +301,41 @@ compare the numbers in one row, not across this page.
 | Lighter type badges | Upper bound, with no badges at all: Starters 763 to 578 ms, Forest 1,232 to 849 ms, on every open. Each badge is an inline SVG of five elements. | The badges must stay pixel-identical. A real change gains less than the upper bound. |
 | Inline the Pokédex stylesheet, as the hub does | First visit, 7 runs: phone FCP 660 to 420 ms and desktop 172 to 100 ms, with separated ranges. Phone LCP 2,244 to 1,944 ms, with overlapping ranges. | A repeat visit downloads 15.5 KB more and is not faster (phone FCP 336 to 344 ms). |
 
+
+## iPhone home page wait, found October 29
+
+On an iPhone, the hub could show its spinner for 2 to 5 s after the header had
+painted. The lab never showed it: it drives Chromium, with the service worker
+blocked.
+
+Real-user data, October 21–26, phone home page LCP (Speed Insights API; the
+dashboard's score blends all pages, devices and metrics):
+
+| | Android | iPhone |
+|---|---:|---:|
+| p50 | 546 ms | 432 ms |
+| p75 | 1,090 ms | 1,752 ms |
+| p90 | 1,956 ms | 4,991 ms |
+
+iPhone FCP was 130 ms at p75: the wait came after the first paint. Only the hub
+holds its cards for its artwork; the iPhone Pokédex builder was 1,337 ms at p90.
+
+Cause, from the hidden `?trace` timeline on the owner's iPhone: the three home
+images arrived at 3.6 s on the first load after idle, and at 0.13 s and 1.1 s
+on the next loads. The service worker answered every `/assets/` request from one
+cache that kept every file of every deploy: 7,314 entries and 325 MB on that
+phone. WebKit reopens that cache on the first request after idle, before it
+answers any image. In WebKitGTK with the same cache size, cold browser starts
+delivered the home images in 453–516 ms, against 157–264 ms with an empty cache.
+
+Fix, October 30 (`84b34b2`): the worker caches sprites and icons only, under the
+name `p151-sprites-v3`, and skips waiting, so the old cache goes on the next
+visit. Built files rely on the HTTP cache: they carry a content hash and are
+immutable for a year. In WebKitGTK, cold starts then delivered the home images
+in 27–47 ms. On the owner's iPhone, the two loads after the update showed the
+artwork at 101 and 104 ms, against 2.0–4.5 s on three of five loads before.
+The first visit after the update still ran on the old worker.
+
+Not yet measured: the field effect. Speed Insights stored no data from October
+26 at about 08:00 UTC, while visits continued. The pages that show sprites
+still read the worker cache; it starts empty and holds sprites only.
