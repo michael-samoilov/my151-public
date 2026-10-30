@@ -6,7 +6,7 @@ import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
 import { mergeEvolutionBranches } from './chainMerge';
-import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
+import { restrictionIds, useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -319,15 +319,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     ? (labelForSection ? labelForSection(activeSection) : sectionLabel(activeSection))
     : null;
 
-  const restrictToIds = useMemo(() => {
-    const active: Set<number>[] = [];
-    if (restrictIds) active.push(restrictIds);
-    if (favoritesFilter) active.push(favoriteIds);
-    if (myDexFilter && myDexIds) active.push(myDexIds);
-    if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
-    if (active.length === 0) return undefined;
-    return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
-  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds]);
+  const restrictToIds = useMemo(
+    () => restrictionIds({ restrictIds, favoritesFilter, favoriteIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds }),
+    [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds],
+  );
 
   const filterOptions = useMemo(() => ({
     dataSource,

@@ -248,7 +248,7 @@ export interface PokemonDataSource {
   standaloneGroupId?(id: number): number;
 }
 
-interface UseFilteredPokemonOptions {
+export interface PokemonFilterOptions {
   dataSource?: PokemonDataSource;
   search?: string;
   category?: string | null;
@@ -264,6 +264,104 @@ interface UseFilteredPokemonOptions {
   evoLineSize?: number[] | null;
 }
 
+export function filterPokemon({
+  dataSource,
+  search = '',
+  category = null,
+  archetype = null,
+  types = null,
+  typeMode = 'any',
+  generations = null,
+  shapes = null,
+  colors = null,
+  eggGroups = null,
+  excludeIds,
+  restrictToIds,
+}: PokemonFilterOptions): Pokemon[] {
+  let filtered = dataSource ? [...dataSource.pokemon] : pokemonList;
+
+  if (search) {
+    const q = normalizeSearch(search);
+    const words = q.split(/[^\p{L}\p{N}♂♀]+/u).filter(Boolean);
+    filtered = filtered.filter(p => {
+      if (p.name.includes(q) || p.id.toString() === q) return true;
+      const full = `${p.name.replace(/-/g, ' ')} ${formSearchText(p.id) ?? ''}`;
+      if (words.length && words.every(word => full.includes(word))) return true;
+      const localized = speciesSearchText(p.id);
+      if (localized?.includes(q)) return true;
+      const resolvedFull = normalizeSearch(pokemonLabel(p.id, p.name).full);
+      return words.length > 0 && words.every(word => resolvedFull.includes(word));
+    });
+  } else {
+    if (category) {
+      const categoryDef = getCategoryById(category);
+      if (categoryDef) {
+        filtered = filtered.filter(categoryDef.filter);
+      }
+    }
+
+    if (archetype) {
+      const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
+      if (archetypeDef) {
+        const idSet = new Set(archetypeDef.pokemonIds);
+        filtered = filtered.filter(p => idSet.has(p.id) || idSet.has(dataSource?.archetypeMemberId?.(p.id) ?? p.id));
+      }
+    }
+
+    if (types && types.length > 0) {
+      if (typeMode === 'all') {
+        if (types.length <= 2) {
+          filtered = filtered.filter(p =>
+            types.every(t => p.types.includes(t as never))
+          );
+        } else {
+          filtered = filtered.filter(p =>
+            types.filter(t => p.types.includes(t as never)).length >= 2
+          );
+        }
+      } else {
+        filtered = filtered.filter(p =>
+          types.some(t => p.types.includes(t as never))
+        );
+      }
+    }
+
+    if (generations && generations.length > 0) {
+      const genSet = new Set(generations);
+      filtered = filtered.filter(p => genSet.has(p.generation));
+    }
+
+    if (shapes && shapes.length > 0) {
+      const shapeSet = new Set(shapes);
+      filtered = filtered.filter(p => shapeSet.has(p.shape));
+    }
+
+    if (colors && colors.length > 0) {
+      const colorSet = new Set(colors);
+      filtered = filtered.filter(p => colorSet.has(p.color));
+    }
+
+    if (eggGroups && eggGroups.length > 0) {
+      const eggSet = new Set(eggGroups);
+      filtered = filtered.filter(p => p.eggGroups.some(g => eggSet.has(g)));
+    }
+  }
+
+  if (archetype !== 'evolution-item' && !dataSource?.includeEvolutionItemForms) {
+    filtered = filtered.filter(p => !EVOLUTION_ITEM_ONLY_IDS.has(p.id));
+  }
+
+  if (excludeIds && excludeIds.size > 0) {
+    filtered = filtered.filter(p => !excludeIds.has(p.id));
+  }
+
+  if (restrictToIds) {
+    filtered = filtered.filter(p => restrictToIds.has(p.id));
+  }
+
+  return filtered;
+}
+
 function useFilteredPokemon({
   dataSource,
   search = '',
@@ -277,7 +375,7 @@ function useFilteredPokemon({
   eggGroups = null,
   excludeIds,
   restrictToIds,
-}: UseFilteredPokemonOptions): Pokemon[] {
+}: PokemonFilterOptions): Pokemon[] {
   const excludeKey = useMemo(
     () => (excludeIds ? `x:${[...excludeIds].sort((a, b) => a - b).join(',')}` : ''),
     [excludeIds]
@@ -296,97 +394,22 @@ function useFilteredPokemon({
 
   return useMemo(() => {
     void namesVersion;
-    const types = typesKey ? typesKey.split(',') : [];
-    const generations = gensKey ? gensKey.split(',').map(Number) : [];
-    const shapes = shapesKey ? shapesKey.split(',') : [];
-    const colors = colorsKey ? colorsKey.split(',') : [];
-    const eggGroups = eggGroupsKey ? eggGroupsKey.split(',') : [];
-    const excludeIds = new Set(excludeKey.slice(2).split(',').filter(Boolean).map(Number));
-    const restrictToIds = restrictKey
-      ? new Set(restrictKey.slice(2).split(',').filter(Boolean).map(Number))
-      : undefined;
-    let filtered = dataSource ? [...dataSource.pokemon] : pokemonList;
-
-    if (search) {
-      const q = normalizeSearch(search);
-      const words = q.split(/[^\p{L}\p{N}♂♀]+/u).filter(Boolean);
-      filtered = filtered.filter(p => {
-        if (p.name.includes(q) || p.id.toString() === q) return true;
-        const full = `${p.name.replace(/-/g, ' ')} ${formSearchText(p.id) ?? ''}`;
-        if (words.length && words.every(word => full.includes(word))) return true;
-        const localized = speciesSearchText(p.id);
-        if (localized?.includes(q)) return true;
-        const resolvedFull = normalizeSearch(pokemonLabel(p.id, p.name).full);
-        return words.length > 0 && words.every(word => resolvedFull.includes(word));
-      });
-    } else {
-      if (category) {
-        const categoryDef = getCategoryById(category);
-        if (categoryDef) {
-          filtered = filtered.filter(categoryDef.filter);
-        }
-      }
-
-      if (archetype) {
-        const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
-        if (archetypeDef) {
-          const idSet = new Set(archetypeDef.pokemonIds);
-          filtered = filtered.filter(p => idSet.has(p.id) || idSet.has(dataSource?.archetypeMemberId?.(p.id) ?? p.id));
-        }
-      }
-
-      if (types && types.length > 0) {
-        if (typeMode === 'all') {
-          if (types.length <= 2) {
-            filtered = filtered.filter(p =>
-              types.every(t => p.types.includes(t as never))
-            );
-          } else {
-            filtered = filtered.filter(p =>
-              types.filter(t => p.types.includes(t as never)).length >= 2
-            );
-          }
-        } else {
-          filtered = filtered.filter(p =>
-            types.some(t => p.types.includes(t as never))
-          );
-        }
-      }
-
-      if (generations && generations.length > 0) {
-        const genSet = new Set(generations);
-        filtered = filtered.filter(p => genSet.has(p.generation));
-      }
-
-      if (shapes && shapes.length > 0) {
-        const shapeSet = new Set(shapes);
-        filtered = filtered.filter(p => shapeSet.has(p.shape));
-      }
-
-      if (colors && colors.length > 0) {
-        const colorSet = new Set(colors);
-        filtered = filtered.filter(p => colorSet.has(p.color));
-      }
-
-      if (eggGroups && eggGroups.length > 0) {
-        const eggSet = new Set(eggGroups);
-        filtered = filtered.filter(p => p.eggGroups.some(g => eggSet.has(g)));
-      }
-    }
-
-    if (archetype !== 'evolution-item' && !dataSource?.includeEvolutionItemForms) {
-      filtered = filtered.filter(p => !EVOLUTION_ITEM_ONLY_IDS.has(p.id));
-    }
-
-    if (excludeIds && excludeIds.size > 0) {
-      filtered = filtered.filter(p => !excludeIds.has(p.id));
-    }
-
-    if (restrictToIds) {
-      filtered = filtered.filter(p => restrictToIds.has(p.id));
-    }
-
-    return filtered;
+    return filterPokemon({
+      dataSource,
+      search,
+      category,
+      archetype,
+      types: typesKey ? typesKey.split(',') : [],
+      typeMode,
+      generations: gensKey ? gensKey.split(',').map(Number) : [],
+      shapes: shapesKey ? shapesKey.split(',') : [],
+      colors: colorsKey ? colorsKey.split(',') : [],
+      eggGroups: eggGroupsKey ? eggGroupsKey.split(',') : [],
+      excludeIds: new Set(excludeKey.slice(2).split(',').filter(Boolean).map(Number)),
+      restrictToIds: restrictKey
+        ? new Set(restrictKey.slice(2).split(',').filter(Boolean).map(Number))
+        : undefined,
+    });
   }, [dataSource, search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
 }
 
@@ -396,61 +419,69 @@ export interface EvolutionGroup {
   matchedIds: Set<number>;
 }
 
-export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
+export function groupEvolutionLines(
+  filtered: readonly Pokemon[],
+  { archetype, dataSource, evoLineSize }: Pick<PokemonFilterOptions, 'archetype' | 'dataSource' | 'evoLineSize'>,
+): EvolutionGroup[] {
+  const filteredIds = new Set(filtered.map((p) => p.id));
+  const seenBranches = new Set<string>();
+  const result: EvolutionGroup[] = [];
+
+  const hideFormAlts = archetype !== 'evolution-item' && !dataSource?.includeEvolutionItemForms;
+
+  for (const p of filtered) {
+    const lines = dataSource?.getAllEvolutionLines(p.id) ?? getAllEvolutionLines(p.id);
+
+    for (const rawLine of lines) {
+      const line = hideFormAlts ? rawLine.filter(m => !EVOLUTION_ITEM_ONLY_IDS.has(m.id)) : rawLine;
+      if (line.length === 0) continue;
+
+      const branchKey = line.map((m) => m.id).join('-');
+      if (seenBranches.has(branchKey)) continue;
+      seenBranches.add(branchKey);
+
+      if (line.length < rawLine.length) {
+        const isSubset = result.some(
+          g => g.members.length > line.length &&
+            line.every(m => g.members.some(gm => gm.id === m.id)),
+        );
+        if (isSubset) continue;
+      }
+
+      const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
+
+      result.push({
+        chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
+        members: line,
+        matchedIds,
+      });
+    }
+  }
+
+  const compare = dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
+  result.sort((a, b) => compare(a.members[0].id, b.members[0].id));
+
+  if (evoLineSize && evoLineSize.length > 0) {
+    const sizes = new Set(evoLineSize);
+    return result.filter(group => {
+      const len = group.members.length;
+      if (sizes.has(3) && len >= 3) return true;
+      if (sizes.has(2) && len === 2) return true;
+      if (sizes.has(1) && len === 1) return true;
+      return false;
+    });
+  }
+
+  return result;
+}
+
+export function useFilteredPokemonGrouped(options: PokemonFilterOptions): EvolutionGroup[] {
   const filtered = useFilteredPokemon(options);
   const evoLineSizeKey = options.evoLineSize ? options.evoLineSize.join(',') : '';
 
-  return useMemo(() => {
-    const evoLineSize = evoLineSizeKey ? evoLineSizeKey.split(',').map(Number) : [];
-    const filteredIds = new Set(filtered.map((p) => p.id));
-    const seenBranches = new Set<string>();
-    const result: EvolutionGroup[] = [];
-
-    const hideFormAlts = options.archetype !== 'evolution-item' && !options.dataSource?.includeEvolutionItemForms;
-
-    for (const p of filtered) {
-      const lines = options.dataSource?.getAllEvolutionLines(p.id) ?? getAllEvolutionLines(p.id);
-
-      for (const rawLine of lines) {
-        const line = hideFormAlts ? rawLine.filter(m => !EVOLUTION_ITEM_ONLY_IDS.has(m.id)) : rawLine;
-        if (line.length === 0) continue;
-
-        const branchKey = line.map((m) => m.id).join('-');
-        if (seenBranches.has(branchKey)) continue;
-        seenBranches.add(branchKey);
-
-        if (line.length < rawLine.length) {
-          const isSubset = result.some(
-            g => g.members.length > line.length &&
-              line.every(m => g.members.some(gm => gm.id === m.id)),
-          );
-          if (isSubset) continue;
-        }
-
-        const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
-
-        result.push({
-          chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
-          members: line,
-          matchedIds,
-        });
-      }
-    }
-
-    const compare = options.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
-    result.sort((a, b) => compare(a.members[0].id, b.members[0].id));
-
-    if (evoLineSize.length > 0) {
-      const sizes = new Set(evoLineSize);
-      return result.filter(group => {
-        const len = group.members.length;
-        if (sizes.has(3) && len >= 3) return true;
-        if (sizes.has(2) && len === 2) return true;
-        if (sizes.has(1) && len === 1) return true;
-        return false;
-      });
-    }
-
-    return result;
-  }, [filtered, evoLineSizeKey, options.archetype, options.dataSource]);
+  return useMemo(() => groupEvolutionLines(filtered, {
+    archetype: options.archetype,
+    dataSource: options.dataSource,
+    evoLineSize: evoLineSizeKey ? evoLineSizeKey.split(',').map(Number) : [],
+  }), [filtered, evoLineSizeKey, options.archetype, options.dataSource]);
 }
