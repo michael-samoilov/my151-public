@@ -7,7 +7,8 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
-import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
+import { defaultBoundaries, deriveRows, visibleMembers, type LegendPick, type PlacedLine } from '@/league/model/engine';
+import { leagueSpriteUrl } from '@/league/leagueSprite';
 import { NO_TYPE_STAR_RADIUS, cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
 import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
@@ -78,7 +79,7 @@ function TypeMark({ t }: { t?: string }) {
   return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
 }
 
-function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: boolean; wash?: boolean }) {
+function MiniTile({ id, ace, fill, wash, shiny = false }: { id: number; ace?: boolean; fill?: boolean; wash?: boolean; shiny?: boolean }) {
   const p = getPokemonById(id);
   return (
     <div
@@ -93,7 +94,7 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
     >
       {p ? (
         <img
-          src={p.sprite}
+          src={leagueSpriteUrl(id, null, shiny)}
           alt={p.name}
           className="max-h-full max-w-full object-contain"
           style={{ imageRendering: 'pixelated' }}
@@ -133,14 +134,15 @@ function useSessionBoards(
   }, [captured, rootRef]);
 }
 
-function placedOf(card: VisitCard | undefined): { lines: PlacedLine[]; legends: { seat: number; pokemonId: number }[] } {
+function placedOf(card: VisitCard | undefined): { lines: PlacedLine[]; legends: LegendPick[] } {
   if (!card) return { lines: [], legends: [] };
   return {
     lines: card.l.map((line) => ({
       branch: line.b,
       boundaries: line.bd && line.bd.length === line.b.length ? line.bd : defaultBoundaries(line.b),
+      ...(line.s === 1 ? { shiny: true } : null),
     })),
-    legends: (card.lg ?? []).map(([seat, pokemonId]) => ({ seat, pokemonId })),
+    legends: (card.lg ?? []).map(([seat, pokemonId, shiny]) => ({ seat, pokemonId, ...(shiny === 1 ? { shiny: true } : null) })),
   };
 }
 
@@ -218,6 +220,7 @@ const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; 
                   ace={cell.pokemonId === card?.aceId}
                   fill
                   wash={row === stageRow}
+                  shiny={cell.shiny}
                 />
               </div>
             );
@@ -332,7 +335,7 @@ const MobileSlot = memo(function MobileSlot({ i, card }: { i: number; card: Visi
             if (gridRow === 1 && gridCol <= 2) return null;
             return (
               <div key={`${seat}-${id}-${stage}`} className="min-h-0" style={{ gridColumn: gridCol, gridRow }}>
-                <MiniTile id={id} ace={id === card.aceId} />
+                <MiniTile id={id} ace={id === card.aceId} shiny={line.s === 1} />
               </div>
             );
           });

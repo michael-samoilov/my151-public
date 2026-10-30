@@ -6,6 +6,7 @@ import {TypeBadge} from '@/components/shared/TypeBadge';
 import {useIsDesktop} from '@/hooks/useIsDesktop';
 import {GEN_AXIS,TYPE_AXIS,cellKey,isGenNumber,isTypeName,type GenAxisId,type TypeAxisId} from '@/favorites/model/cells';
 import {getPickerMon} from '@/favorites/model/catalog';
+import {isShinyCell,pickerShinySprite} from '@/favorites/model/shiny';
 import {kindFor} from '@/favorites/model/eligibility';
 import {labelOf} from '@/favorites/components/spriteLabel';
 import {coordinateLabel} from '@/favorites/components/coordinatePresentation';
@@ -85,13 +86,14 @@ function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
         {track.cells.map(({type,gen})=>{
           const key=cellKey(type,gen);
           const mon=getPickerMon(snapshot.fills[key]);
+          const shinySprite=mon&&isShinyCell(snapshot.fills,snapshot.shiny??{},key)?pickerShinySprite(mon.id):null;
           const kind=kindFor(type,gen);
           const favorite=type==='favorite'&&gen==='favorite';
           const title=`${coordinateLabel(type,gen)}${mon?`: ${labelOf(mon)}`:''}`;
           return <div key={key} role="cell" title={title} aria-label={title} data-favorite-coordinate={key} className="relative flex min-h-0 min-w-0 items-center justify-center border-[0.5px] border-neutral-200" style={{background:kind==='disabled'||kind==='null'?'#fafafa':undefined}}>
             {mon?<div className="relative h-4/5 w-4/5" style={{transform:favorite?'translateY(6%)':undefined}}>
               <PokeballBg pokemon={mon}/>
-              <img src={mon.sprite} alt="" aria-hidden data-favorite-sprite className="relative h-full w-full object-contain"/>
+              <img src={shinySprite??mon.sprite} alt="" aria-hidden data-favorite-sprite className="relative h-full w-full object-contain"/>
             </div>:kind==='pick'||kind==='pointer'?<EmptyBall kind={kind==='pick'?'poke':favorite?'master':'ultra'} className="h-3/5 w-3/5 text-neutral-400"/>:<svg viewBox="0 0 40 40" className="h-3/5 w-3/5 text-neutral-400" aria-hidden><path d="M15 20h10" stroke="currentColor" strokeWidth="1.5"/></svg>}
             {favorite&&<img src={FAVORITE_ORNAMENTS.crown} alt="" aria-hidden className="pointer-events-none absolute left-1/2 top-0 w-3/5 -translate-x-1/2 -translate-y-1/2"/>}
           </div>;
