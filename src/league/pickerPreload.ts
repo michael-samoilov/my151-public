@@ -1,9 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { restrictionIds, useFavoriteBrowserStore } from '@/components/browser/browserStore';
 import { readFavoritePickerIds } from '@/components/browser/favoritePickerBridge';
 import { filterPokemon, groupEvolutionLines, type EvolutionGroup } from '@/hooks/usePokemonData';
-import { warmImages } from '@/lib/warmImages';
-import { whenIdle } from '@/lib/whenIdle';
+import { warmSprites } from '@/lib/spriteWarmup';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { leaguePokemonDataSource as dataSource } from './data/catalog';
 import { useLeagueBrowserStore } from './store/browserBridge';
@@ -37,23 +36,14 @@ function pickerPageSprites(cardIndex: number): string[] {
 
 // A picker tile whose sprite is not in the browser yet opens blank, and stays
 // blank for as long as the fetch takes. The phone keeps the last card mounted
-// after it closes, so the sprites are held only while the card is open.
+// after it closes, so only an open card warms its picker.
 export function usePickerPreload(cardIndex: number): void {
   const open = useLeagueUi((s) => s.openCard === cardIndex);
   const type = useLeagueStore((s) => s.cards[cardIndex]?.type);
   const favoritesFilter = useFavoriteBrowserStore((s) => s.favoritesFilter);
   const myDexFilter = useLeagueBrowserStore((s) => s.myDexFilter);
   const sections = usePokedexStore((s) => s.sections);
-  const warmed = useRef<HTMLImageElement[]>([]);
   useEffect(() => {
-    if (!open) return;
-    let live = true;
-    whenIdle(() => {
-      if (live) warmed.current = warmImages(pickerPageSprites(cardIndex));
-    });
-    return () => {
-      live = false;
-      warmed.current = [];
-    };
+    if (open) warmSprites(pickerPageSprites(cardIndex), true);
   }, [open, cardIndex, type, favoritesFilter, myDexFilter, sections]);
 }

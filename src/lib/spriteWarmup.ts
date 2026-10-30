@@ -116,8 +116,8 @@ function enqueue(urls: readonly string[], first: boolean) {
   schedulePump();
 }
 
-export function warmSprites(urls: readonly string[]) {
-  if (warmupAllowed()) enqueue(urls, false);
+export function warmSprites(urls: readonly string[], first = false) {
+  if (warmupAllowed()) enqueue(urls, first);
 }
 
 /** A section the pointer rests on is the likeliest next tap, so its picker goes first. */
