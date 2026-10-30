@@ -125,7 +125,7 @@ export function Kpi({
 /** A change from the previous period beside a figure. Its parts stack, and it spans the figure's height. */
 export function Delta({ parts }: { parts: readonly string[] }) {
   return (
-    <span className="flex flex-col justify-center rounded bg-muted px-1.5 text-[0.65rem] font-bold leading-[1.1] tabular-nums text-muted-foreground">
+    <span data-delta className="flex flex-col justify-center rounded bg-muted px-1.5 text-[0.65rem] font-bold leading-[1.1] tabular-nums text-muted-foreground">
       {parts.map((part, i) => <span key={i} className="whitespace-nowrap">{part}</span>)}
     </span>
   );
