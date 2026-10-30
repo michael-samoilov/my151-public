@@ -14,6 +14,7 @@ import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { NO_TYPE_STAR_RADIUS } from '../theme';
 import { useCardView } from '../useCardView';
+import { usePickerPreload } from '../pickerPreload';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { SPRITE_REM } from '../slotLayout';
 import { spriteRendering, spriteScreen } from '../spriteScale';
@@ -254,6 +255,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   withBar?: boolean;
 }) {
   const view = useCardView(cardIndex);
+  usePickerPreload(cardIndex);
   const typePickerOpen = useLeagueUi((s) => s.typePickerOpen);
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
