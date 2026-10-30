@@ -3,6 +3,7 @@ import { readFavoritePickerIds } from './favoritePickerBridge';
 import { createContext, useContext } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import { usePokedexStore } from '@/store/usePokedexStore';
+import type { PokemonDataSource, PokemonFilterOptions } from '@/hooks/usePokemonData';
 
 export interface BrowserStoreState {
   sections: Record<string, number[]>;
@@ -55,12 +56,15 @@ export interface BrowserStoreState {
   setShinyView?: (on: boolean) => void;
 }
 
-type RestrictionInputs = Pick<BrowserStoreState, 'restrictIds' | 'myDexFilter' | 'myDexIds' | 'scopeFilter' | 'scopeFilterIds'>
+type FilterInputs = Pick<BrowserStoreState,
+  | 'activeCategoryFilter' | 'activeArchetypeFilter' | 'typeFilter' | 'typeFilterMode' | 'generationFilter'
+  | 'shapeFilter' | 'colorFilter' | 'eggGroupFilter' | 'evoLineSizeFilter'
+  | 'restrictIds' | 'myDexFilter' | 'myDexIds' | 'scopeFilter' | 'scopeFilterIds'>
   & Pick<FavoriteBrowserState, 'favoritesFilter' | 'favoriteIds'>;
 
-export function restrictionIds({
+function restrictionIds({
   restrictIds, favoritesFilter, favoriteIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds,
-}: RestrictionInputs): Set<number> | undefined {
+}: FilterInputs): Set<number> | undefined {
   const active: Set<number>[] = [];
   if (restrictIds) active.push(restrictIds);
   if (favoritesFilter) active.push(favoriteIds);
@@ -68,6 +72,28 @@ export function restrictionIds({
   if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
   if (active.length === 0) return undefined;
   return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
+}
+
+/** A data source with its own ids reads favorites from the picker's saved fills, not from the store. */
+export function browserFavoriteIds(stored: Set<number>, dataSource?: PokemonDataSource): Set<number> {
+  return dataSource?.favoritePickerId ? readFavoritePickerIds(dataSource.favoritePickerId) : stored;
+}
+
+/** The filter a browser in this state runs, before any search text. */
+export function browserFilterOptions(state: FilterInputs, dataSource?: PokemonDataSource): PokemonFilterOptions {
+  return {
+    dataSource,
+    category: state.activeCategoryFilter,
+    archetype: state.activeArchetypeFilter,
+    types: state.typeFilter,
+    typeMode: state.typeFilterMode,
+    generations: state.generationFilter,
+    shapes: state.shapeFilter,
+    colors: state.colorFilter,
+    eggGroups: state.eggGroupFilter,
+    evoLineSize: state.evoLineSizeFilter,
+    restrictToIds: restrictionIds(state),
+  };
 }
 
 type BrowserStoreHook = UseBoundStore<Omit<StoreApi<BrowserStoreState>, 'setState'>>;

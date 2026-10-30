@@ -1,31 +1,25 @@
 import { useEffect } from 'react';
-import { restrictionIds, useFavoriteBrowserStore } from '@/components/browser/browserStore';
-import { readFavoritePickerIds } from '@/components/browser/favoritePickerBridge';
+import { browserFavoriteIds, browserFilterOptions, useFavoriteBrowserStore } from '@/components/browser/browserStore';
 import { filterPokemon, groupEvolutionLines, type EvolutionGroup } from '@/hooks/usePokemonData';
 import { warmSprites } from '@/lib/spriteWarmup';
 import { whenIdle } from '@/lib/whenIdle';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { leaguePokemonDataSource as dataSource } from './data/catalog';
-import { useLeagueBrowserStore } from './store/browserBridge';
+import { pickerOpenState, useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 
-// The page an empty cell's picker opens to. The picker's other purposes show
-// a subset of it, or the card's own Pokémon, which the card already draws.
+// The page an empty cell's picker opens to, as long as the gym has a type. The
+// picker's other purposes show a subset of it, or the card's own Pokémon,
+// which the card already draws.
 function pickerPageSprites(cardIndex: number): string[] {
-  const type = useLeagueStore.getState().cards[cardIndex]?.type;
-  if (!type || type === 'none') return [];
-  const { favoritesFilter } = useFavoriteBrowserStore.getState();
-  const options = {
+  const state = pickerOpenState(cardIndex, 'lines', useLeagueBrowserStore.getState(), 1);
+  if (!state.typeFilter) return [];
+  const { favoritesFilter, favoriteIds } = useFavoriteBrowserStore.getState();
+  const options = browserFilterOptions(
+    { ...state, favoritesFilter, favoriteIds: browserFavoriteIds(favoriteIds, dataSource) },
     dataSource,
-    types: [type],
-    restrictToIds: restrictionIds({
-      favoritesFilter,
-      favoriteIds: favoritesFilter ? readFavoritePickerIds(dataSource.favoritePickerId) : new Set(),
-      myDexFilter: useLeagueBrowserStore.getState().myDexFilter,
-      myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
-    }),
-  };
+  );
   const groups = groupEvolutionLines(filterPokemon(options), options);
   // The picker files a line under each generation it matches in. The first
   // match is close enough, because the order only decides what loads first.
