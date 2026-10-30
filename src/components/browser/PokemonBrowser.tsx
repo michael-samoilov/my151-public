@@ -23,6 +23,9 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
+import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
+import { ShinyToggle } from '@/components/shiny/ShinyToggle';
+import { SearchRow } from './SearchRow';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -125,6 +128,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const myDexIds = useBrowserStore((s) => s.myDexIds);
   const myDexSections = useBrowserStore((s) => s.myDexSections);
   const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
+  const shinyView = useBrowserStore((s) => s.shinyView) ?? false;
+  const setShinyView = useBrowserStore((s) => s.setShinyView);
   const restrictIds = useBrowserStore((s) => s.restrictIds);
   const scopeFilter = useBrowserStore((s) => s.scopeFilter);
   const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
@@ -618,6 +623,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     const timer = setTimeout(() => setAnnouncedCount(shownCount), COUNT_ANNOUNCE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [shownCount]);
+  const countLabel = tn('browser.results', shownCount);
+  // The league's row, the one with the Shiny switch, shows the count only once a search or filter narrows the list.
+  const countHidden = !!setShinyView && !isSearching && !hasActiveFilters;
+  const placeholder = t(setShinyView ? 'browser.search.placeholderShort' : 'browser.search.placeholder');
 
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
@@ -841,7 +850,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       )}
       <div ref={browserHeaderRef}>
       <div className="p-3 pb-2">
-        <div className="flex items-center gap-2">
+        <SearchRow layout={setShinyView ? [placeholder, countHidden ? '' : countLabel, t('shiny.label'), isDesktop].join('|') : null}>
+          {(tight) => (<>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             {/* `value` stays bound to `searchQuery` and keeps updating through
@@ -854,7 +864,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onCompositionStart={() => setComposingFrom(searchQuery)}
               onCompositionEnd={() => setComposingFrom(null)}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('browser.search.placeholder')}
+              placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
               className="pl-9 pr-9"
             />
@@ -871,14 +881,22 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           <span
             className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap"
             data-result-count={shownCount}
+            hidden={countHidden}
             aria-hidden
           >
-            {tn('browser.results', shownCount)}
+            {tight ? shownCount : countLabel}
           </span>
           <span className="sr-only" aria-live="polite" aria-atomic="true">
             {tn('browser.results', announcedCount)}
           </span>
-        </div>
+          {setShinyView && (
+            // The divider is as tall as the filter rows' dividers below (a filter pill plus py-1), centered in this taller row.
+            <span className={cn('shrink-0 self-center flex items-center', !countHidden && 'h-[calc(1.75rem+2px)] pl-2 border-l border-border')}>
+              <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} iconOnly={tight} testId="browser-shiny-toggle" />
+            </span>
+          )}
+          </>)}
+        </SearchRow>
       </div>
 
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
@@ -1196,6 +1214,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       onToggleStage={handleToggleStage}
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
+                      shinyView={shinyView}
+                      preloadShinies={!!setShinyView && !shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1209,6 +1229,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                       onToggleStage={handleToggleStage}
                       removalStagedIds={removalStagedSet}
                       onToggleRemoval={handleToggleRemoval}
+                      shinyView={shinyView}
+                      preloadShinies={!!setShinyView && !shinyView}
                       cols={3}
                       showGenBadges={showGenBadges}
                       windowed
@@ -1237,6 +1259,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                     onToggleRemoval={handleToggleRemoval}
                     shinyIds={model.shinyIds}
                     spriteOverrides={model.spriteOverrides}
+                    shinyView={shinyView}
+                    preloadShinies={!!setShinyView && !shinyView}
                     showGenBadges={showGenBadges}
                     windowed
                   />
@@ -1401,8 +1425,9 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
       data-filter-chip={sheet}
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
+        // A translucent fill has no colour of its own to deepen, so the hover deepens an 8% tint.
         active
-          ? 'border-primary text-primary bg-primary/5'
+          ? `${HOVER_LAYER} border-primary text-primary bg-primary/5 [--fill:color-mix(in_srgb,var(--color-primary)_8%,var(--color-background))]`
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
       )}
     >
@@ -1454,8 +1479,10 @@ function LockedFilterChip({
         onClick={() => setShowing(true)}
         className={cn(
           'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer',
+          HOVER_LAYER,
           className,
         )}
+        style={fillVar('var(--color-foreground)')}
       >
         {label}
         <Lock size={10} aria-hidden />
@@ -1484,9 +1511,10 @@ function FilterChip({
     <span
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium',
+        HOVER_LAYER,
         className
       )}
-      style={style}
+      style={{ ...fillVar(style?.backgroundColor ?? 'var(--color-foreground)'), ...style }}
     >
       <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
       <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer" aria-label={t('browser.chip.remove')}>

@@ -1,5 +1,5 @@
 {
- "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon: Pokémon #650-#1025 (Alcremie as its sweet files), the PokéAPI forms from 10025 up that a tool shows, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 from production 60662926 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources. Trimmed on 2026-10-13: the files that no tool showed were deleted with their rows (869.png, which Alcremie's sweet files replace; the Pumpkaboo and Gourgeist sizes 10027-10032; and 31 PokéAPI forms from 10093 to 10259 that the app gives other ids, uses another file for, or leaves out). On 2026-10-16, two source-only rows were added or updated for the PokéAPI variants of Spiky-eared Pichu and female Pyroar; individual authorship is unproven.",
+ "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon: Pokémon #650-#1025 (Alcremie as its sweet files), the PokéAPI forms from 10025 up that a tool shows, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 from production 60662926 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources. Trimmed on 2026-10-13: the files that no tool showed were deleted with their rows (869.png, which Alcremie's sweet files replace; the Pumpkaboo and Gourgeist sizes 10027-10032; and 31 PokéAPI forms from 10093 to 10259 that the app gives other ids, uses another file for, or leaves out). On 2026-10-16, two source-only rows were added or updated for the PokéAPI variants of Spiky-eared Pichu and female Pyroar; individual authorship is unproven. On 2026-10-25, a \"shiny/<file>\" row was added for each fan-made shiny file that the Favorite Pokémon Picker and the league builder show with their Shiny switch on (docs/credits/README.md, 'Shiny sprites').",
  "sprites": {
   "650": {
    "artists": [
@@ -181,31 +181,44 @@
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/667.png as added in commit 5bdf22873d (2021-02-18, 'feat: add gen6 sprites')."
   },
   "668": {
-   "artists": [],
+   "artists": [
+    "Arkeis"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/668.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '668 Pyroar-male': Spriter 'Arkeis (front), Layell (back)', QC 'leParagon, G.E.Z.'; only 84% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '668 Pyroar-male': Spriter 'Arkeis (front), Layell (back)', QC 'leParagon, G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/668m-png.282237/, moved 1 row down. Michael picked this pair on 2026-10-29.",
    "name": "pyroar-male"
   },
   "669": {
-   "artists": [],
+   "artists": [
+    "The Cynical Poet",
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/669.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-red': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'; only 63% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-red': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_1-png.276624/. Michael picked this pair on 2026-10-29.",
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   },
    "name": "flabebe"
   },
   "670": {
-   "artists": [],
+   "artists": [
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/670.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '670 Floette-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'; only 59% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '670 Floette-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/670_1-png.276644/. Michael picked this pair on 2026-10-29.",
    "name": "floette"
   },
   "671": {
-   "artists": [],
+   "artists": [
+    "princessofmusic"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/671.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'; only 72% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-red': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/671_1-png.276668/. Michael picked this pair on 2026-10-29.",
    "name": "florges"
   },
   "672": {
@@ -665,9 +678,8 @@
    ],
    "role": "drew",
    "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas': Spriter 'N-Kin', QC 'princessofmusic, leParagon, G.E.Z.'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/716_1-png.273690/: 99.9% of opaque pixels overlap, 11% have the same colour (a revision or a palette change).",
-   "name": "xerneas",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/716.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit')."
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas': Spriter 'N-Kin', QC 'princessofmusic, leParagon, G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/716_1-png.273690/. Michael picked this pair on 2026-10-29.",
+   "name": "xerneas"
   },
   "717": {
    "artists": [
@@ -2985,11 +2997,11 @@
   },
   "949": {
    "artists": [
-    "KingOfThe-X-Roads"
+    "Sopita_Yorita"
    ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/949.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9'). PokéAPI sprites README, Special Thanks: 'KingOfThe-X-Roads for providing the front_default sprites for generation 9.' KingOfThe-X-Roads's deviation 'Gen 9 Sprites - Pokemon Scarlet and Violet' (deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834) lists this species under 'Sprites done'. No Smogon sheet row links the same drawing.",
+   "via": "gen9-resource-pack",
+   "evidence": "The Generation 9 Resource Pack's sheet 'Sprites list' (Drive 1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY), tab 'Pokemon Sprites', No 49 'Toedscruel': Front 'Sopita_Yorita' (export line 51). The app file is Graphics/Pokemon/Front/TOEDSCRUEL.png from Generation_9_Pack_v3.3.8.rar (sha256 396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490), 192x192, reduced by exactly 2 to 96x96, moved 5 rows up. Michael picked this pair on 2026-10-29.",
    "name": "toedscruel"
   },
   "950": {
@@ -3749,10 +3761,12 @@
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/1025.png as added in commit 471a90a202 (2026-03-08, 'Add missing Pokémon sprites (#196)')."
   },
   "10025": {
-   "artists": [],
+   "artists": [
+    "RedRooster"
+   ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10025.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '678 Meowstic-female': Spriter 'RedRooster', QC 'Quanyails, Layell, aXl, leParagon'; only 78% of opaque pixels overlap, so it is a different drawing.",
+   "via": "smogon-gen6",
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '678 Meowstic-female': Spriter 'RedRooster', QC 'Quanyails, Layell, aXl, leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/678f-png.273647/, moved 2 rows down and 2 columns right. Michael picked this pair on 2026-10-29.",
    "name": "meowstic-female"
   },
   "10026": {
@@ -6060,33 +6074,13 @@
    "name": "hawlucha-mega"
   },
   "10301": {
-   "artists": [],
+   "artists": [
+    "Caruban"
+   ],
    "role": "drew",
-   "via": "my151",
-   "evidence": "my151's sprite lab drew it (spriteSources.json: source 'my151'). No outside artist.",
-   "name": "zygarde-mega",
-   "lineage": {
-    "mainReference": "The official artwork of Mega Zygarde.",
-    "colourReferences": [
-     {
-      "file": "10120.png",
-      "pokemon": "zygarde-complete",
-      "artists": [
-       "leParagon"
-      ]
-     },
-     {
-      "file": "718.png",
-      "pokemon": "zygarde-50",
-      "artists": [
-       "Legitimate Username",
-       "Noscium"
-      ]
-     }
-    ],
-    "note": "my151's sprite lab drew it from the official artwork; the two fan sprites went to the model as colour references only (Michael, 2026-10-13). Not credited in the panel (Michael, 2026-10-13: \"Do not credit my151 for zygarde\").",
-    "source": "sprite-lab/docs/model-inputs-audit.md on claude/sprite-lab"
-   }
+   "via": "gen9-resource-pack",
+   "evidence": "The Generation 9 Resource Pack's sheet 'Sprites list' (Drive 1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY), tab 'Pokemon Sprites', No 24 'Mega Zygarde': Front 'Caruban' (export line 202). The app file is Graphics/Pokemon/Front/ZYGARDE_4.png from Generation_9_Pack_v3.3.8.rar (sha256 396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490), 192x192, reduced by exactly 2 to 96x96. Michael picked this pair on 2026-10-29.",
+   "name": "zygarde-mega"
   },
   "10302": {
    "artists": [
@@ -6108,11 +6102,11 @@
   },
   "10304": {
    "artists": [
-    "KingOfThe-X-Roads"
+    "Kyle Dove"
    ],
    "role": "drew",
-   "via": "own upload",
-   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/03id19f0dha, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+   "via": "pokeapi",
+   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10304.png as added in commit 4bc9d60186 (2026-06-22, 'Added Z-A mega sprites (#236)'). PokéAPI sprites README, Special Thanks: 'x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9.' Not compared with Kyle Dove's own uploads.",
    "name": "raichu-mega-x"
   },
   "10305": {
@@ -6311,8 +6305,7 @@
    ],
    "role": "drew",
    "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/716_2-png.274485/: 99.4% of opaque pixels overlap, 13% have the same colour (a revision or a palette change).",
-   "cleanup": "Removed 66 faint stray pixels, at most 40 of 255 opaque, around the antlers. Every opaque pixel is unchanged."
+   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '716 Xerneas-inactive': Spriter 'N-Kin, leParagon, G.E.Z. (Back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/716_2-png.274485/. Michael picked this pair on 2026-10-29."
   },
   "11002": {
    "artists": [
@@ -6666,10 +6659,12 @@
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '671 Florges-yellow': Spriter 'princessofmusic', QC 'Wobblebuns, leParagon (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/671_2-png.276672/."
   },
   "11096": {
-   "artists": [],
+   "artists": [
+    "Larryturbo"
+   ],
    "role": "drew",
-   "via": "gen9-resource-pack",
-   "evidence": "Pixel-identical (after 2x downscale) to Generation 9 Pack file Front/FURFROU_1.png; the pack sheet has no row for it and Credits.txt credits Gen 6-8 sprites to the Smogon projects as a whole. Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '676 Furfrou-natural': Spriter 'Noscium, paintseagull (back reference), Layell (back)', QC 'leParagon'; only 80% of opaque pixels overlap, so it is a different drawing."
+   "via": "smogon-gen6",
+   "evidence": "Larryturbo's post 8240483 in the Smogon X/Y Sprite Project thread (https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/post-8240483, 2019-09-24): \"Here are all the Furfrou sprites using Leparagon's designs\". The first 96x96 cell of its normal front sheet https://www.smogon.com/forums/attachments/furfrou-normal-front-png.196215/ has the app file's pixels, moved 1 column right. The same pixels are Generation 9 Pack file Front/FURFROU_1.png at 1/2 scale; the pack sheet has no row for it."
   },
   "11097": {
    "artists": [],
@@ -7034,9 +7029,776 @@
    "via": "own upload",
    "evidence": "DarkwarePX's own DeviantArt upload \"Shadow Mewtwo\" https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154 (96x96 GIF, 46 frames); frame 0 on a 96x96 canvas, every pixel unchanged. The shiny https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-Shiny-944072689 is the same drawing. Lab record: sprite-lab/inputs/darkwarepx/manifest.json.",
    "name": "mewtwo-shadow"
+  },
+  "shiny/651": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '651 Quilladin', Spriter 'aXl, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "quilladin (shiny)"
+  },
+  "shiny/652": {
+   "artists": [
+    "leParagon"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '652 Chesnaught', Spriter 'N-Kin, leParagon (shiny), G.E.Z. (back)'",
+   "name": "chesnaught (shiny)"
+  },
+  "shiny/664": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '664 Scatterbug', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "scatterbug (shiny)"
+  },
+  "shiny/665": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '665 Spewpa', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "spewpa (shiny)"
+  },
+  "shiny/666": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 20 '666 Vivillon-meadow': Spriter 'Wobblebuns, TheAetherPlayer (shiny)'",
+   "name": "vivillon (shiny)"
+  },
+  "shiny/688": {
+   "artists": [
+    "leParagon"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '688 Binacle', Spriter 'N-Kin, leParagon (shiny)'",
+   "name": "binacle (shiny)"
+  },
+  "shiny/691": {
+   "artists": [
+    "leParagon"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '691 Dragalge', Spriter 'N-Kin, leParagon (shiny)'",
+   "name": "dragalge (shiny)"
+  },
+  "shiny/693": {
+   "artists": [
+    "G.E.Z."
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '693 Clawitzer', Spriter 'aXl, G.E.Z. (Shiny)'",
+   "name": "clawitzer (shiny)"
+  },
+  "shiny/700": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '700 Sylveon', Spriter 'Layell, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "sylveon (shiny)"
+  },
+  "shiny/719": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '719 Diancie', Spriter 'Legitimate Username, leParagon (back), TheAetherPlayer (Shiny)'",
+   "name": "diancie (shiny)"
+  },
+  "shiny/749": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '749 Mudbray', Spriter 'Wobblebuns, leParagon (back), TheAetherPlayer (shiny)'",
+   "name": "mudbray (shiny)"
+  },
+  "shiny/752": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '752 Araquanid', Spriter 'The Cynical Poet, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "araquanid (shiny)"
+  },
+  "shiny/773": {
+   "artists": [
+    "AMVictory"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '773 Silvally-normal', Spriter 'leParagon, AMVictory (shiny)'",
+   "name": "silvally (shiny)"
+  },
+  "shiny/781": {
+   "artists": [
+    "Mega-Pokebattlerz"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '781 Dhelmise', Spriter 'leParagon, Mega-Pokebattlerz (shiny)'",
+   "name": "dhelmise (shiny)"
+  },
+  "shiny/797": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '797 Celesteela', Spriter 'fishbowlsoul90, leParagon (back), TheAetherPlayer (shiny)'",
+   "name": "celesteela (shiny)"
+  },
+  "shiny/804": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '804 Naganadel', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "naganadel (shiny)"
+  },
+  "shiny/811": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '811 Thwackey', Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "thwackey (shiny)"
+  },
+  "shiny/812": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '812 Rillaboom', Spriter 'Blaquaza, leParagon, TheAetherPlayer (shiny)'",
+   "name": "rillaboom (shiny)"
+  },
+  "shiny/815": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '815 Cinderace', Spriter 'Blaquaza, leParagon, TheAetherPlayer (shiny)'",
+   "name": "cinderace (shiny)"
+  },
+  "shiny/818": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '818 Inteleon', Spriter 'Blaquaza, leParagon, TheAetherPlayer (shiny)'",
+   "name": "inteleon (shiny)"
+  },
+  "shiny/822": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '822 Corvisquire', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "corvisquire (shiny)"
+  },
+  "shiny/824": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '824 Blipbug', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "blipbug (shiny)"
+  },
+  "shiny/827": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '827 Nickit', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "nickit (shiny)"
+  },
+  "shiny/835": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '835 Yamper', Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "yamper (shiny)"
+  },
+  "shiny/836": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '836 Boltund', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "boltund (shiny)"
+  },
+  "shiny/841": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '841 Flapple', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "flapple (shiny)"
+  },
+  "shiny/842": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '842 Appletun', Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "appletun (shiny)"
+  },
+  "shiny/846": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '846 Arrokuda', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "arrokuda (shiny)"
+  },
+  "shiny/847": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '847 Barraskewda', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "barraskewda (shiny)"
+  },
+  "shiny/849": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '849 Toxtricity-amped', Spriter 'Involuntary Twitch, leParagon, TheAetherPlayer (shiny)'",
+   "name": "toxtricity (shiny)"
+  },
+  "shiny/850": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '850 Sizzlipede', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "sizzlipede (shiny)"
+  },
+  "shiny/851": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '851 Centiskorch', Spriter 'mjco, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "centiskorch (shiny)"
+  },
+  "shiny/857": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '857 Hattrem', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "hattrem (shiny)"
+  },
+  "shiny/866": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '866 Mr. Rime', Spriter 'G.E.Z., TheAetherPlayer (shiny)'",
+   "name": "mr-rime (shiny)"
+  },
+  "shiny/867": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '867 Runerigus', Spriter 'Cynda, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "runerigus (shiny)"
+  },
+  "shiny/871": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '871 Pincurchin', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "pincurchin (shiny)"
+  },
+  "shiny/875": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '875 Eiscue-ice face', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "eiscue (shiny)"
+  },
+  "shiny/876": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '876 Indeedee-male', Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "indeedee (shiny)"
+  },
+  "shiny/877": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '877 Morpeko-full belly', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "morpeko (shiny)"
+  },
+  "shiny/895": {
+   "artists": [
+    "arinoelle"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '895 Regidrago', Spriter 'leParagon, arinoelle (shiny)'",
+   "name": "regidrago (shiny)"
+  },
+  "shiny/10034": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '6 Charizard-X', Spriter 'Layell, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "Mega Charizard X (shiny)"
+  },
+  "shiny/10050": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '257 Blaziken', Spriter 'Dleep, Layell, TheAetherPlayer (shiny)'",
+   "name": "Mega Blaziken (shiny)"
+  },
+  "shiny/10051": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '282 Gardevoir', Spriter 'Wobblebuns, TheAetherPlayer (shiny)'",
+   "name": "Mega Gardevoir (shiny)"
+  },
+  "shiny/10070": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '319 Sharpedo', Spriter 'Layell, TheAetherPlayer (shiny)'",
+   "name": "Mega Sharpedo (shiny)"
+  },
+  "shiny/10075": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '719 Diancie', Spriter 'leParagon, TheAetherPlayer (Shiny)'",
+   "name": "Mega Diancie (shiny)"
+  },
+  "shiny/10087": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen6 sheet row '323 Camerupt', Spriter 'WPS, TheAetherPlayer (shiny)'",
+   "name": "Mega Camerupt (shiny)"
+  },
+  "shiny/10104": {
+   "artists": [
+    "AMVictory"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '38 Ninetales', Spriter 'leParagon, AMVictory (shiny)'",
+   "name": "ninetales-alola (shiny)"
+  },
+  "shiny/10110": {
+   "artists": [
+    "AMVictory"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '75 Graveler', Spriter 'leParagon, AMVictory (shiny)'",
+   "name": "graveler-alola (shiny)"
+  },
+  "shiny/10124": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen7",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen7 sheet row '741 Oricorio-pa'u', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "oricorio-pau (shiny)"
+  },
+  "shiny/10166": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '83 Farfetch'd', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "farfetchd-galar (shiny)"
+  },
+  "shiny/10170": {
+   "artists": [
+    "G.E.Z."
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '145 Zapdos', Spriter 'leParagon, G.E.Z. (shiny)'",
+   "name": "zapdos-galar (shiny)"
+  },
+  "shiny/10172": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '199 Slowking', Spriter 'RadicalCharizard, leParagon, TheAetherPlayer (shiny)'",
+   "name": "slowking-galar (shiny)"
+  },
+  "shiny/10184": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '849 Toxtricity-low key', Spriter 'Involuntary Twitch, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "toxtricity-low-key (shiny)"
+  },
+  "shiny/10185": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '875 Eiscue-noice face', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "eiscue-noice (shiny)"
+  },
+  "shiny/10186": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '876 Indeedee-female', Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "indeedee-female (shiny)"
+  },
+  "shiny/10187": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '877 Morpeko-hangry', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "morpeko-hangry (shiny)"
+  },
+  "shiny/10216": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '841 Flapple', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "Gigantamax Flapple (shiny)"
+  },
+  "shiny/10217": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '841 Flapple', Spriter 'leParagon, TheAetherPlayer (shiny)'",
+   "name": "Gigantamax Appletun (shiny)"
+  },
+  "shiny/10218": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '844 Sandaconda', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny)'",
+   "name": "Gigantamax Sandaconda (shiny)"
+  },
+  "shiny/10224": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "exact pixel match to the Front shiny attachment of smogon-gen8 sheet row '879 Copperajah', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'",
+   "name": "Gigantamax Copperajah (shiny)"
+  },
+  "shiny/11018": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 29 '666 Vivillon-archipelago': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-archipelago (shiny)"
+  },
+  "shiny/11019": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 23 '666 Vivillon-continental': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-continental (shiny)"
+  },
+  "shiny/11020": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 25 '666 Vivillon-elegant': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-elegant (shiny)"
+  },
+  "shiny/11021": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 38 '666 Vivillon-fancy': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-fancy (shiny)"
+  },
+  "shiny/11022": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 24 '666 Vivillon-garden': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-garden (shiny)"
+  },
+  "shiny/11023": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 30 '666 Vivillon-high plains': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-high-plains (shiny)"
+  },
+  "shiny/11024": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 26 '666 Vivillon-icy snow': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-icy-snow (shiny)"
+  },
+  "shiny/11025": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 37 '666 Vivillon-jungle': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-jungle (shiny)"
+  },
+  "shiny/11026": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 28 '666 Vivillon-marine': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-marine (shiny)"
+  },
+  "shiny/11027": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 27 '666 Vivillon-modern': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-modern (shiny)"
+  },
+  "shiny/11028": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 33 '666 Vivillon-monsoon': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-monsoon (shiny)"
+  },
+  "shiny/11029": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 36 '666 Vivillon-ocean': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-ocean (shiny)"
+  },
+  "shiny/11030": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 39 '666 Vivillon-pokeball': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-pokeball (shiny)"
+  },
+  "shiny/11031": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 21 '666 Vivillon-polar': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-polar (shiny)"
+  },
+  "shiny/11032": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 32 '666 Vivillon-river': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-river (shiny)"
+  },
+  "shiny/11033": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 31 '666 Vivillon-sandstorm': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-sandstorm (shiny)"
+  },
+  "shiny/11034": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 34 '666 Vivillon-savanna': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-savanna (shiny)"
+  },
+  "shiny/11035": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 35 '666 Vivillon-sun': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-sun (shiny)"
+  },
+  "shiny/11036": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen6",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen6 sheet, tab 'static sprites', line 22 '666 Vivillon-tundra': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)'",
+   "name": "vivillon-tundra (shiny)"
+  },
+  "shiny/alcremie-berry": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 66 '869 Alcremie-vanilla berry': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-berry (shiny)"
+  },
+  "shiny/alcremie-clover": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 69 '869 Alcremie-vanilla clover': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-clover (shiny)"
+  },
+  "shiny/alcremie-flower": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 70 '869 Alcremie-vanilla flower': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-flower (shiny)"
+  },
+  "shiny/alcremie-love": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 67 '869 Alcremie-vanilla love': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-love (shiny)"
+  },
+  "shiny/alcremie-ribbon": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 71 '869 Alcremie-vanilla ribbon': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-ribbon (shiny)"
+  },
+  "shiny/alcremie-star": {
+   "artists": [
+    "TheAetherPlayer"
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "evidence": "same pixels as the Front shiny attachment of the sheet row that credits the shiny: smogon-gen8 sheet, tab 'static sprites', line 68 '869 Alcremie-vanilla star': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'",
+   "name": "alcremie-star (shiny)"
   }
  },
  "artists": {
+  "AMVictory": {},
+  "arinoelle": {},
   "Arkeis": {},
   "Banana Toast": {},
   "Basic Vanillite": {},
@@ -7050,6 +7812,7 @@
   "Brylark": {},
   "Buna": {},
   "Bynine": {},
+  "Caruban": {},
   "Corson": {},
   "Cynda": {},
   "Dleep": {},
@@ -7079,6 +7842,7 @@
   "Layell": {},
   "Legitimate Username": {},
   "leParagon": {},
+  "Mega-Pokebattlerz": {},
   "Mintly": {},
   "mjco": {},
   "MrDollSteak": {},
@@ -7093,6 +7857,7 @@
   "RedRooster": {},
   "Siiilver": {},
   "Sleet": {},
+  "Sopita_Yorita": {},
   "SpheX": {},
   "Spook": {},
   "TeraVolt": {},
@@ -7101,6 +7866,7 @@
     "TheCynicalPoet"
    ]
   },
+  "TheAetherPlayer": {},
   "Tooni": {
    "creditedAs": [
     "Toonie"
@@ -7148,6 +7914,7 @@
     "Sleet",
     "TeraVolt",
     "The Cynical Poet",
+    "TheAetherPlayer",
     "TrainerSplash",
     "Wobblebuns",
     "WPS",
@@ -7160,6 +7927,7 @@
    "url": "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/",
    "sheet": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
    "artists": [
+    "AMVictory",
     "Espeon Scientist",
     "Falgaia",
     "fishbowlsoul90",
@@ -7167,10 +7935,12 @@
     "HeaLnDeaL",
     "Layell",
     "leParagon",
+    "Mega-Pokebattlerz",
     "MyMarshlands",
     "N-Kin",
     "princessofmusic",
     "The Cynical Poet",
+    "TheAetherPlayer",
     "Wobblebuns",
     "Zerudez"
    ]
@@ -7180,6 +7950,7 @@
    "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
    "sheet": "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
    "artists": [
+    "arinoelle",
     "Blaquaza",
     "Cynda",
     "G.E.Z.",
@@ -7192,6 +7963,7 @@
     "PumpkinPastel",
     "RadicalCharizard",
     "Spook",
+    "TheAetherPlayer",
     "Travis",
     "Z-nogyroP"
    ]
@@ -7221,7 +7993,9 @@
    "url": "https://eeveeexpo.com/resources/1101/",
    "sheet": "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY",
    "artists": [
-    "KingOfThe-X-Roads"
+    "Caruban",
+    "KingOfThe-X-Roads",
+    "Sopita_Yorita"
    ]
   },
   "pokeapi": {

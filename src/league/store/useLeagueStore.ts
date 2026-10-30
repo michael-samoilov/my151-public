@@ -21,6 +21,7 @@ import {
 } from '../model/powerups';
 import {
   defaultBoundaries,
+  keepsShiny,
   leagueSlotIsEmpty,
   levelBoundaries,
   makePlacedLine,
@@ -40,6 +41,8 @@ export interface GymCard {
   signatureSeat: number | null;
   signatureId?: number | null;
   partnerId?: number | null;
+  /** The partner stands apart from its line, which can leave the card, so its flag is its own. */
+  partnerShiny?: true;
   tmMoveId: number | null;
   badgeName: string;
   legend?: LegendPick | null;
@@ -61,20 +64,22 @@ interface LeagueState {
   setView: (view: LeagueView) => void;
   setCardType: (card: number, type: CardType) => void;
   setCardTheme: (card: number, theme: string) => void;
-  placeBranch: (card: number, branch: number[], at?: 'end' | 'front') => void;
+  placeBranch: (card: number, branch: number[], at?: 'end' | 'front', shiny?: boolean) => void;
   removeLineAt: (card: number, seat: number) => void;
   removeLineWith: (card: number, pokemonId: number) => void;
-  replaceLine: (card: number, seat: number, branch: number[]) => void;
+  replaceLine: (card: number, seat: number, branch: number[], shiny?: boolean) => void;
+  setLineShiny: (card: number, seat: number, shiny: boolean) => void;
   cyclePowerup: (card: number, row: number, seat: number, kind: PowerupKind, pokemonId: number) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
   setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
   setLineBoundaries: (card: number, seat: number, boundaries: number[]) => void;
   clearCard: (card: number) => void;
   setSignatureSeat: (card: number, seat: number | null, pokemonId?: number | null) => void;
-  setPartner: (card: number, pokemonId: number | null) => void;
+  setPartner: (card: number, pokemonId: number | null, shiny?: boolean) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
   setLegend: (card: number, legend: LegendPick | null, seat?: number) => void;
+  setLegendShiny: (card: number, seat: number, shiny: boolean) => void;
   moveLegend: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
   markNudgeCelebrated: (id: LeagueNudgeId) => void;
@@ -262,11 +267,11 @@ export const useLeagueStore = create<LeagueState>()(
       setCardTheme: (card, theme) =>
         set((s) => ({ cards: withCard(s.cards, card, (c) => ({ ...c, theme })) })),
 
-      placeBranch: (card, branch, at = 'end') =>
+      placeBranch: (card, branch, at = 'end', shiny = false) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             if (branch.length === 0 || c.lines.length >= MAX_SEATS) return c;
-            const line = makePlacedLine(branch);
+            const line = makePlacedLine(branch, shiny);
             const lines =
               at === 'front' ? [line, ...c.lines] : [...c.lines, line];
             const signatureSeat =
@@ -299,16 +304,28 @@ export const useLeagueStore = create<LeagueState>()(
           }),
         })),
 
-      replaceLine: (card, seat, branch) =>
+      replaceLine: (card, seat, branch, shiny = false) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             if (seat < 1 || seat > c.lines.length) return c;
-            const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch) : line));
+            const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch, shiny) : line));
             return {
               ...withPowerups(c, (p, row) => (p.seat === seat && !legendCell(c, row, seat) ? null : p)),
               lines,
             };
           }),
+        })),
+
+      setLineShiny: (card, seat, shiny) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => ({
+            ...c,
+            lines: c.lines.map((line, i) => {
+              if (i !== seat - 1) return line;
+              const { shiny: _, ...rest } = line;
+              return keepsShiny(line.branch, shiny) ? { ...rest, shiny: true } : rest;
+            }),
+          })),
         })),
 
       removeLineWith: (card, pokemonId) =>
@@ -380,9 +397,12 @@ export const useLeagueStore = create<LeagueState>()(
           })),
         })),
 
-      setPartner: (card, pokemonId) =>
+      setPartner: (card, pokemonId, shiny = false) =>
         set((s) => ({
-          cards: withCard(s.cards, card, (c) => ({ ...c, partnerId: pokemonId })),
+          cards: withCard(s.cards, card, (c) => {
+            const { partnerShiny: _, ...rest } = c;
+            return pokemonId !== null && keepsShiny([pokemonId], shiny) ? { ...rest, partnerId: pokemonId, partnerShiny: true } : { ...rest, partnerId: pokemonId };
+          }),
         })),
 
       setTm: (card, moveId) =>
@@ -403,8 +423,22 @@ export const useLeagueStore = create<LeagueState>()(
             const rest = legendsOf(c).filter((l) => l.seat !== target);
             // The form on the boss row belonged to the Pokémon that leaves it.
             const { powerups } = withPowerups(c, (p, row) => (row === BOSS_ROW && p.seat === target ? null : p));
-            return { ...c, legends: legend ? [...rest, legend] : rest, legend: null, powerups, powerup: null };
+            const kept = legend?.shiny && !keepsShiny([legend.pokemonId], true) ? { pokemonId: legend.pokemonId, seat: legend.seat } : legend;
+            return { ...c, legends: kept ? [...rest, kept] : rest, legend: null, powerups, powerup: null };
           }),
+        })),
+
+      setLegendShiny: (card, seat, shiny) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => ({
+            ...c,
+            legends: legendsOf(c).map((legend) => {
+              if (legend.seat !== seat) return legend;
+              const { shiny: _, ...rest } = legend;
+              return keepsShiny([legend.pokemonId], shiny) ? { ...rest, shiny: true } : rest;
+            }),
+            legend: null,
+          })),
         })),
 
       moveLegend: (card, fromSeat, toSeat) =>

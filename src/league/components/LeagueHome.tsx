@@ -50,7 +50,7 @@ import {
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 import { LeagueRosterNudge } from './LeagueFunnelNudge';
-import { pokemonSpriteUrl } from '@/lib/spriteUrl';
+import { leagueSpriteUrl } from '../leagueSprite';
 
 const GREY = '#a3a3a3';
 const BAND_RED = '#dc2626';
@@ -168,12 +168,13 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
         {cells.map((cell) => {
           const p = cell.pokemonId !== null ? getPokemonById(cell.pokemonId) : undefined;
           const form = formAt(powerupsAt(card, row), row, cell.seat, cell.pokemonId);
+          const sprite = p ? leagueSpriteUrl(p.id, form, cell.shiny) : undefined;
           return (
-            <span key={cell.seat} className="flex items-center justify-center">
+            <span key={cell.seat} className="relative flex items-center justify-center">
               {p ? (
                 <img
-                  key={form ? pokemonSpriteUrl(form.id) : p.sprite}
-                  src={form ? pokemonSpriteUrl(form.id) : p.sprite}
+                  key={sprite}
+                  src={sprite}
                   alt={form ? powerupFormName(form) : spriteAlt(p.name, p.id)}
                   className="max-w-none"
                   style={{

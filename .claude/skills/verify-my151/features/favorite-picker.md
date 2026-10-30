@@ -67,9 +67,19 @@ gimmick, legendary, and favorite picks.
 - Repeat picks are always allowed. There is no No Repeats setting or settings
   gear. The old persisted setting is ignored without deleting saved picks.
   Pointer pools and unsupported-pointer pruning retain their rules.
-- The eye and localized Hide Icons / Show Icons action share one row with the
-  selector badges. It hides both type chips and origin indicators in all cells.
-  Mobile spacing tightens before title badges scale proportionally to fit.
+- The Shiny switch (`[data-testid="favorites-shiny-toggle"]`) starts off every
+  time a sheet opens, even over a shiny pick. A pick sheet loads its shiny
+  sprites within 300 ms of opening, so the switch repaints at once. With it on, candidates show shiny sprites, or a faded sprite under
+  `[data-testid="no-shiny-mark"]`, and a tap places the look shown. Shiny picks live in the store's `shiny` map. The
+  chart, pointer cells, and both exports show them by their shiny sprite alone,
+  with no star over it; the cell's label ends in "Shiny".
+- In pick sheets, the Shiny switch and the Icons toggle share one row with the
+  selector badges, in that order. Each keeps its label; `aria-pressed` and the
+  icon carry the state. Pointer sheets show only the Icons toggle, which hides
+  both type chips and origin indicators in all cells. Icons starts off and
+  keeps its last state across sheets and reloads
+  (`personal-151-favorites-show-icons-v2`). Mobile spacing tightens
+  before title badges scale proportionally to fit.
 - Special word badges contain centered text without white symbols. Standalone
   special origin icons retain their symbols. The packing sheet
   `[data-testid="favorites-packing"]` stays off for users.

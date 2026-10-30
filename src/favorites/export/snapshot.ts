@@ -4,6 +4,7 @@ import { GEN_AXIS, GEN_NUMBERS, TYPE_AXIS, TYPES18, cellKey, type GenAxisId, typ
 import { getPickerMon, pickerDexId, type PickerMon } from '../model/catalog';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { pointerPool } from '../model/pointers';
+import { isShinyCell, pickerShinySprite } from '../model/shiny';
 
 export interface FavoritesExportCell {
   key: string;
@@ -11,6 +12,8 @@ export interface FavoritesExportCell {
   generation: GenAxisId;
   kind: ReturnType<typeof kindFor>;
   mon: PickerMon | null;
+  shiny: boolean;
+  sprite: string | null;
 }
 
 export interface FavoritesCompletion {
@@ -44,7 +47,10 @@ const summaryKeys = [
   cellKey('gimmick', 'gimmick'), cellKey('favorite', 'favorite'),
 ];
 
-export function buildFavoritesSnapshot(fills: Readonly<Record<string, number>>): FavoritesSnapshot {
+export function buildFavoritesSnapshot(
+  fills: Readonly<Record<string, number>>,
+  shinyPicks: Readonly<Record<string, number>> = {},
+): FavoritesSnapshot {
   const valid: Record<string, number> = {};
   for (const position of positions) {
     const id = fills[position.key];
@@ -55,7 +61,11 @@ export function buildFavoritesSnapshot(fills: Readonly<Record<string, number>>):
     if (position.kind === 'pointer' && getPickerMon(id)
       && pointerPool(position.type, position.generation, valid).includes(id)) valid[position.key] = id;
   }
-  const cells = positions.map(position => ({ ...position, mon: getPickerMon(valid[position.key]) ?? null }));
+  const cells = positions.map(position => {
+    const mon = getPickerMon(valid[position.key]) ?? null;
+    const shiny = isShinyCell(valid, shinyPicks, position.key);
+    return { ...position, mon, shiny, sprite: (shiny && mon ? pickerShinySprite(mon.id) : null) ?? mon?.sprite ?? null };
+  });
   const byKey = new Map(cells.map(cell => [cell.key, cell]));
   const uniquePicks = [...new Map(cells.filter(cell => cell.kind === 'pick' && cell.mon)
     .map(cell => [cell.mon!.id, cell.mon!])).values()];

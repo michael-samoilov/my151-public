@@ -17,12 +17,12 @@
    ]
   },
   "artist:KingOfThe-X-Roads": {
-   "sprites": 13,
+   "sprites": 12,
    "unconfirmed": 1,
    "artists": [
     [
      "KingOfThe-X-Roads",
-     12
+     11
     ]
    ]
   },
@@ -37,26 +37,34 @@
    ]
   },
   "gen9-resource-pack": {
-   "sprites": 17,
-   "unconfirmed": 10,
+   "sprites": 18,
+   "unconfirmed": 9,
    "artists": [
     [
      "KingOfThe-X-Roads",
      7
+    ],
+    [
+     "Caruban",
+     1
+    ],
+    [
+     "Sopita_Yorita",
+     1
     ]
    ]
   },
   "pokeapi-sprites": {
-   "sprites": 91,
-   "unconfirmed": 38,
+   "sprites": 86,
+   "unconfirmed": 33,
    "artists": [
     [
      "Kyle Dove",
-     42
+     43
     ],
     [
      "KingOfThe-X-Roads",
-     11
+     10
     ],
     [
      "MyMarshlands",
@@ -65,15 +73,19 @@
    ]
   },
   "smogon-sprite-project": {
-   "sprites": 601,
-   "unconfirmed": 16,
+   "sprites": 692,
+   "unconfirmed": 14,
    "artists": [
     [
      "leParagon",
-     219
+     223
     ],
     [
      "KingOfThe-X-Roads",
+     75
+    ],
+    [
+     "TheAetherPlayer",
      75
     ],
     [
@@ -82,11 +94,11 @@
     ],
     [
      "G.E.Z.",
-     34
+     36
     ],
     [
      "princessofmusic",
-     22
+     25
     ],
     [
      "Falgaia",
@@ -97,11 +109,11 @@
      21
     ],
     [
-     "Basic Vanillite",
-     19
+     "Larryturbo",
+     20
     ],
     [
-     "Larryturbo",
+     "Basic Vanillite",
      19
     ],
     [
@@ -118,7 +130,7 @@
     ],
     [
      "N-Kin",
-     15
+     17
     ],
     [
      "Layell",
@@ -130,7 +142,7 @@
     ],
     [
      "The Cynical Poet",
-     9
+     10
     ],
     [
      "RadicalCharizard",
@@ -146,7 +158,7 @@
     ],
     [
      "RedRooster",
-     6
+     7
     ],
     [
      "fishbowlsoul90",
@@ -161,6 +173,10 @@
      5
     ],
     [
+     "Arkeis",
+     4
+    ],
+    [
      "branflakes",
      4
     ],
@@ -173,7 +189,7 @@
      4
     ],
     [
-     "Arkeis",
+     "AMVictory",
      3
     ],
     [
@@ -221,6 +237,10 @@
      2
     ],
     [
+     "arinoelle",
+     1
+    ],
+    [
      "Brylark",
      1
     ],
@@ -250,6 +270,10 @@
     ],
     [
      "KattenK",
+     1
+    ],
+    [
+     "Mega-Pokebattlerz",
      1
     ],
     [
@@ -292,11 +316,12 @@
   }
  },
  "pokeapi": {
-  "official": 700,
-  "smogon": 596,
-  "own": 91
+  "official": 695,
+  "smogon": 685,
+  "own": 86
  },
  "links": {
+  "Caruban": "https://eeveeexpo.com/resources/1101/",
   "Falgaia": "https://www.deviantart.com/falgaia",
   "Galifia": "https://www.deviantart.com/galifiastudios",
   "JoeTEStrikesBack": "https://www.deviantart.com/joetestrikesback",

@@ -76,6 +76,7 @@ async function denseCard(page: Page): Promise<void> {
 }
 
 const CONTROLS = {
+  shiny: 'button[data-shiny-mark]',
   remove: 'button[aria-label^="Remove"]',
   reset: 'button[aria-label*="evolution rows"]',
   powerup: 'button[data-powerup]',
@@ -111,6 +112,7 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
         expect.soft(geo.onScreen, `${geo.label} is wholly on screen`).toBe(true);
       }
     }
+    expect(seen.shiny, 'the seeded card draws its shiny buttons').toBeGreaterThanOrEqual(4);
     expect(seen.remove, 'the seeded card draws its crosses').toBeGreaterThanOrEqual(4);
     expect(seen.reset, 'the seeded card draws its resets').toBeGreaterThanOrEqual(2);
     expect(seen.powerup, 'the seeded card draws its powerups').toBeGreaterThanOrEqual(2);

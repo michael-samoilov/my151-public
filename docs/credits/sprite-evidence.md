@@ -28,22 +28,22 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 | 1425 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 666 | Verdict: confirmed |
+| 674 | Verdict: confirmed |
 | 0 | Verdict: corrected |
-| 67 | Verdict: unproven |
+| 59 | Verdict: unproven |
 | 698 | Verdict: official Game Freak |
 
 | Count | Evidence type |
 |---:|---|
 | 698 | Game Freak sprite: exact match to PokéAPI's Black and White import |
-| 584 | Exact match to the Smogon attachment on a credit-sheet row naming the artist |
-| 47 | No source names an artist |
+| 591 | Exact match to the Smogon attachment on a credit-sheet row naming the artist |
+| 41 | No source names an artist |
 | 45 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
-| 18 | Near match only |
-| 24 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet); 2 of them carry my151's recorded pixel changes |
-| 7 | Exact match to the Generation 9 pack file on its sheet row |
-| 1 | Exact match to an attachment in a Smogon thread post |
-| 5 | my151's own work or change, by this repository's history: two drawings, one recolor of a Game Freak sprite, two fan sprites with added items |
+| 16 | Near match only |
+| 23 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet); 2 of them carry my151's recorded pixel changes |
+| 9 | Exact match to the Generation 9 pack file on its sheet row |
+| 2 | Exact match to an attachment in a Smogon thread post |
+| 4 | my151's own work or change, by this repository's history: one drawing, one recolor of a Game Freak sprite, two fan sprites with added items |
 | 2 | Pinned source identified; individual artist unproven |
 
 ## Credit changes
@@ -69,13 +69,8 @@ Each row keeps its current credit (or none). The reason says what was compared a
 
 | File | Pokémon | Credited now | Reason |
 |---|---|---|---|
-| `668.png` | pyroar | (none) | closest Smogon attachment 668m-png.282237 (sheet row '668 Pyroar-male', Spriter 'Arkeis (front), Layell (back)'): mask IoU 0.8363, same colour on 0% of shared pixels; closest pack file Front/PYROAR.png: mask IoU 0.8363, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/668.png from commit b629bcff50 (2021-03-15), which names no artist |
-| `669.png` | flabebe | (none) | closest Smogon attachment 669_1-png.276624 (sheet row '669 Flabébé-red', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; closest Smogon attachment 669_2-png.276628 (sheet row '669 Flabébé-yellow', Spriter 'TheCynicalPoet, princessofmusic (colours)'): mask IoU 0.6299, same colour on 2% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/669-red.png from commit 8034a5f31e (2024-11-08), which names no artist |
-| `670.png` | floette | (none) | closest Smogon attachment 670_1-png.276644 (sheet row '670 Floette-red', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; closest Smogon attachment 670_2-png.276648 (sheet row '670 Floette-yellow', Spriter 'princessofmusic'): mask IoU 0.5433, same colour on 5% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/670-red.png from commit 8034a5f31e (2024-11-08), which names no artist |
-| `671.png` | florges | (none) | closest Smogon attachment 671_5-png.276684 (sheet row '671 Florges-white', Spriter 'princessofmusic'): mask IoU 0.6496, same colour on 6% of shared pixels; closest pack file Front/FLORGES_4.png: mask IoU 0.6496, same colour on 6% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/671-red.png from commit 8034a5f31e (2024-11-08), which names no artist |
 | `676.png` | furfrou | (none) | exact pixel match to Generation 9 pack file Front/FURFROU.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole |
 | `698.png` | amaura | Falgaia | exact pixel match to attachment 698-png.290763, posted by leParagon (post 8654688), who is not credited; the post may be an animation, a revision, or a repost, so it is not taken as authorship; exact pixel match to attachment 698-gif.369438, posted by Antiant (post 8965429), who is not credited; the post may be an animation, a revision, or a repost, so it is not taken as authorship; exact pixel match to Generation 9 pack file Front/AMAURA.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; closest Smogon attachment 698-png.492515 (sheet row '698 Amaura', Spriter 'aXl, leParagon (back)'): mask IoU 0.9429, same colour on 97% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/698.png from commit b629bcff50 (2021-03-15), which names no artist. Kept credit comes from the record's sheet row '698 Amaura' (Spriter 'aXl, leParagon (back)') |
-| `716.png` | xerneas | N-Kin | closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9992, same colour on 11% of shared pixels; closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9319, same colour on 12% of shared pixels; byte-identical to PokéAPI sprites/pokemon/lowres/716-active.png from commit 8034a5f31e (2024-11-08), which names no artist. Kept credit comes from the record's sheet row '716 Xerneas' (Spriter 'N-Kin') |
 | `733.png` | toucannon | (none) | exact pixel match to Generation 9 pack file Front/TOUCANNON.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/733.png from commit b629bcff50 (2021-03-15), which names no artist |
 | `736.png` | grubbin | Wobblebuns | exact pixel match to Generation 9 pack file Front/GRUBBIN.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/736.png from commit b629bcff50 (2021-03-15), which names no artist. Kept credit comes from the record's sheet row '736 Grubbin' (Spriter 'Wobblebuns') |
 | `743.png` | ribombee | (none) | exact pixel match to Generation 9 pack file Front/RIBOMBEE.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10150.png from commit 0744010d8d (2026-09-07), which names no artist |
@@ -115,14 +110,11 @@ Each row keeps its current credit (or none). The reason says what was compared a
 | `10022.png` | kyurem-black | (none) | exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/10022.png, but PokéAPI added that file in b629bcf ("feat: update gen-v folder with the new Smogon sprites"), and its README calls files above ID 650 in that folder not official. Exact pixel match to Pokémon Showdown gen5/kyurem-black.png, which names no maker. |
 | `10023.png` | kyurem-white | (none) | exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/10023.png, but PokéAPI added that file in b629bcf ("feat: update gen-v folder with the new Smogon sprites"), and its README calls files above ID 650 in that folder not official. Exact pixel match to Pokémon Showdown gen5/kyurem-white.png, which names no maker. |
 | `10024.png` | keldeo-resolute | (none) | exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/10024.png, but PokéAPI added that file in b629bcf ("feat: update gen-v folder with the new Smogon sprites"), and its README calls files above ID 650 in that folder not official. |
-| `10025.png` | meowstic-female | (none) | closest Smogon attachment 678f-png.273647 (sheet row '678 Meowstic-female', Spriter 'RedRooster'): mask IoU 0.778, same colour on 0% of shared pixels; closest pack file Front/MEOWSTIC_1.png: mask IoU 0.778, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10025.png from commit b629bcff50 (2021-03-15), which names no artist |
 | `10068.png` | Mega Gallade | (none) | exact pixel match to Generation 9 pack file Front/GALLADE_1.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; closest Smogon attachment 323_2-png.274427 (sheet row '323 Camerupt', Spriter 'WPS, TheAetherPlayer (shiny)'): mask IoU 0.6225, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10068.png from commit 46a3da86e0 (2026-03-12), which names no artist |
 | `10185.png` | eiscue-noice | KingOfThe-X-Roads | exact pixel match to Generation 9 pack file Front/EISCUE_1.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole; closest Smogon attachment 875_2-png.212860 (sheet row '875 Eiscue-noice face', Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)'): mask IoU 0.9992, same colour on 100% of shared pixels; byte-identical to PokéAPI sprites/pokemon/10185.png from commit ff8ae47984 (2022-02-16), which names no artist. Kept credit comes from the record's sheet row '875 Eiscue-noice face' (Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)') |
 | `10236.png` | samurott-hisui | KingOfThe-X-Roads | closest Smogon attachment 503_1-png.450194 (sheet row '503 Samurott', Spriter 'KingOfThe-X-Roads'): mask IoU 0.998, same colour on 99% of shared pixels; closest pack file Front/SAMUROTT.png: mask IoU 0.9118, same colour on 0% of shared pixels; byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/10236.png from commit 46a3da86e0 (2026-03-12), which names no artist. Kept credit comes from the record's sheet row '503 Samurott' (Spriter 'KingOfThe-X-Roads') |
-| `11001.png` | xerneas-neutral | N-Kin, leParagon | closest Smogon attachment 716_2-png.274485 (sheet row '716 Xerneas-inactive', Spriter 'N-Kin, leParagon, G.E.Z. (Back)'): mask IoU 0.9938, same colour on 13% of shared pixels; closest Smogon attachment 716_1-png.273690 (sheet row '716 Xerneas', Spriter 'N-Kin'): mask IoU 0.9353, same colour on 13% of shared pixels. Kept credit comes from the record's sheet row '716 Xerneas-inactive' (Spriter 'N-Kin, leParagon, G.E.Z. (Back)') |
 | `11064.png` | pichu-spiky-eared | (none) | Exact pinned PokéAPI file; individual artist unproven. |
 | `11071.png` | pyroar-female | (none) | Exact pinned PokéAPI file; previous artist evidence applies to the former version. |
-| `11096.png` | furfrou-heart | (none) | exact pixel match to Generation 9 pack file Front/FURFROU_1.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole |
 | `11097.png` | furfrou-star | (none) | exact pixel match to Generation 9 pack file Front/FURFROU_2.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole |
 | `11098.png` | furfrou-diamond | (none) | exact pixel match to Generation 9 pack file Front/FURFROU_3.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole |
 | `11099.png` | furfrou-debutante | (none) | exact pixel match to Generation 9 pack file Front/FURFROU_4.png (1/2 scale), but the pack sheet has no row for it and Credits.txt credits Generations 6-8 to the Smogon projects as a whole |
@@ -147,10 +139,11 @@ Each row keeps its current credit (or none). The reason says what was compared a
 
 Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white/` file from commit 96c282e (2020-08-01, "Add gen-v sprite images") or a frame of an animation from commit 6c9d4ef. Files: `1.png`, `2.png`, `3.png`, `4.png`, `5.png`, `6.png`, `7.png`, `8.png`, `9.png`, `10.png`, `11.png`, `12.png`, `13.png`, `14.png`, `15.png`, `16.png`, `17.png`, `18.png`, `19.png`, `20.png`, `21.png`, `22.png`, `23.png`, `24.png`, `25.png`, `26.png`, `27.png`, `28.png`, `29.png`, `30.png`, `31.png`, `32.png`, `33.png`, `34.png`, `35.png`, `36.png`, `37.png`, `38.png`, `39.png`, `40.png`, `41.png`, `42.png`, `43.png`, `44.png`, `45.png`, `46.png`, `47.png`, `48.png`, `49.png`, `50.png`, `51.png`, `52.png`, `53.png`, `54.png`, `55.png`, `56.png`, `57.png`, `58.png`, `59.png`, `60.png`, `61.png`, `62.png`, `63.png`, `64.png`, `65.png`, `66.png`, `67.png`, `68.png`, `69.png`, `70.png`, `71.png`, `72.png`, `73.png`, `74.png`, `75.png`, `76.png`, `77.png`, `78.png`, `79.png`, `80.png`, `81.png`, `82.png`, `83.png`, `84.png`, `85.png`, `86.png`, `87.png`, `88.png`, `89.png`, `90.png`, `91.png`, `92.png`, `93.png`, `94.png`, `95.png`, `96.png`, `97.png`, `98.png`, `99.png`, `100.png`, `101.png`, `102.png`, `103.png`, `104.png`, `105.png`, `106.png`, `107.png`, `108.png`, `109.png`, `110.png`, `111.png`, `112.png`, `113.png`, `114.png`, `115.png`, `116.png`, `117.png`, `118.png`, `119.png`, `120.png`, `121.png`, `122.png`, `123.png`, `124.png`, `125.png`, `126.png`, `127.png`, `128.png`, `129.png`, `130.png`, `131.png`, `132.png`, `133.png`, `134.png`, `135.png`, `136.png`, `137.png`, `138.png`, `139.png`, `140.png`, `141.png`, `142.png`, `143.png`, `144.png`, `145.png`, `146.png`, `147.png`, `148.png`, `149.png`, `150.png`, `151.png`, `152.png`, `153.png`, `154.png`, `155.png`, `156.png`, `157.png`, `158.png`, `159.png`, `160.png`, `161.png`, `162.png`, `163.png`, `164.png`, `165.png`, `166.png`, `167.png`, `168.png`, `169.png`, `170.png`, `171.png`, `172.png`, `173.png`, `174.png`, `175.png`, `176.png`, `177.png`, `178.png`, `179.png`, `180.png`, `181.png`, `182.png`, `183.png`, `184.png`, `185.png`, `186.png`, `187.png`, `188.png`, `189.png`, `190.png`, `191.png`, `192.png`, `193.png`, `194.png`, `195.png`, `196.png`, `197.png`, `198.png`, `199.png`, `200.png`, `201.png`, `202.png`, `203.png`, `204.png`, `205.png`, `206.png`, `207.png`, `208.png`, `209.png`, `210.png`, `211.png`, `212.png`, `213.png`, `214.png`, `215.png`, `216.png`, `217.png`, `218.png`, `219.png`, `220.png`, `221.png`, `222.png`, `223.png`, `224.png`, `225.png`, `226.png`, `227.png`, `228.png`, `229.png`, `230.png`, `231.png`, `232.png`, `233.png`, `234.png`, `235.png`, `236.png`, `237.png`, `238.png`, `239.png`, `240.png`, `241.png`, `242.png`, `243.png`, `244.png`, `245.png`, `246.png`, `247.png`, `248.png`, `249.png`, `250.png`, `251.png`, `252.png`, `253.png`, `254.png`, `255.png`, `256.png`, `257.png`, `258.png`, `259.png`, `260.png`, `261.png`, `262.png`, `263.png`, `264.png`, `265.png`, `266.png`, `267.png`, `268.png`, `269.png`, `270.png`, `271.png`, `272.png`, `273.png`, `274.png`, `275.png`, `276.png`, `277.png`, `278.png`, `279.png`, `280.png`, `281.png`, `282.png`, `283.png`, `284.png`, `285.png`, `286.png`, `287.png`, `288.png`, `289.png`, `290.png`, `291.png`, `292.png`, `293.png`, `294.png`, `295.png`, `296.png`, `297.png`, `298.png`, `299.png`, `300.png`, `301.png`, `302.png`, `303.png`, `304.png`, `305.png`, `306.png`, `307.png`, `308.png`, `309.png`, `310.png`, `311.png`, `312.png`, `313.png`, `314.png`, `315.png`, `316.png`, `317.png`, `318.png`, `319.png`, `320.png`, `321.png`, `322.png`, `323.png`, `324.png`, `325.png`, `326.png`, `327.png`, `328.png`, `329.png`, `330.png`, `331.png`, `332.png`, `333.png`, `334.png`, `335.png`, `336.png`, `337.png`, `338.png`, `339.png`, `340.png`, `341.png`, `342.png`, `343.png`, `344.png`, `345.png`, `346.png`, `347.png`, `348.png`, `349.png`, `350.png`, `351.png`, `352.png`, `353.png`, `354.png`, `355.png`, `356.png`, `357.png`, `358.png`, `359.png`, `360.png`, `361.png`, `362.png`, `363.png`, `364.png`, `365.png`, `366.png`, `367.png`, `368.png`, `369.png`, `370.png`, `371.png`, `372.png`, `373.png`, `374.png`, `375.png`, `376.png`, `377.png`, `378.png`, `379.png`, `380.png`, `381.png`, `382.png`, `383.png`, `384.png`, `385.png`, `386.png`, `387.png`, `388.png`, `389.png`, `390.png`, `391.png`, `392.png`, `393.png`, `394.png`, `395.png`, `396.png`, `397.png`, `398.png`, `399.png`, `400.png`, `401.png`, `402.png`, `403.png`, `404.png`, `405.png`, `406.png`, `407.png`, `408.png`, `409.png`, `410.png`, `411.png`, `412.png`, `413.png`, `414.png`, `415.png`, `416.png`, `417.png`, `418.png`, `419.png`, `420.png`, `421.png`, `422.png`, `423.png`, `424.png`, `425.png`, `426.png`, `427.png`, `428.png`, `429.png`, `430.png`, `431.png`, `432.png`, `433.png`, `434.png`, `435.png`, `436.png`, `437.png`, `438.png`, `439.png`, `440.png`, `441.png`, `442.png`, `443.png`, `444.png`, `445.png`, `446.png`, `447.png`, `448.png`, `449.png`, `450.png`, `451.png`, `452.png`, `453.png`, `454.png`, `455.png`, `456.png`, `457.png`, `458.png`, `459.png`, `460.png`, `461.png`, `462.png`, `463.png`, `464.png`, `465.png`, `466.png`, `467.png`, `468.png`, `469.png`, `470.png`, `471.png`, `472.png`, `473.png`, `474.png`, `475.png`, `476.png`, `477.png`, `478.png`, `479.png`, `480.png`, `481.png`, `482.png`, `483.png`, `484.png`, `485.png`, `486.png`, `487.png`, `488.png`, `489.png`, `490.png`, `491.png`, `492.png`, `493.png`, `494.png`, `495.png`, `496.png`, `497.png`, `498.png`, `499.png`, `500.png`, `501.png`, `502.png`, `503.png`, `504.png`, `505.png`, `506.png`, `507.png`, `508.png`, `509.png`, `510.png`, `511.png`, `512.png`, `513.png`, `514.png`, `515.png`, `516.png`, `517.png`, `518.png`, `519.png`, `520.png`, `521.png`, `522.png`, `523.png`, `524.png`, `525.png`, `526.png`, `527.png`, `528.png`, `529.png`, `530.png`, `531.png`, `532.png`, `533.png`, `534.png`, `535.png`, `536.png`, `537.png`, `538.png`, `539.png`, `540.png`, `541.png`, `542.png`, `543.png`, `544.png`, `545.png`, `546.png`, `547.png`, `548.png`, `549.png`, `550.png`, `551.png`, `552.png`, `553.png`, `554.png`, `555.png`, `556.png`, `557.png`, `558.png`, `559.png`, `560.png`, `561.png`, `562.png`, `563.png`, `564.png`, `565.png`, `566.png`, `567.png`, `568.png`, `569.png`, `570.png`, `571.png`, `572.png`, `573.png`, `574.png`, `575.png`, `576.png`, `577.png`, `578.png`, `579.png`, `580.png`, `581.png`, `582.png`, `583.png`, `584.png`, `585.png`, `586.png`, `587.png`, `588.png`, `589.png`, `590.png`, `591.png`, `592.png`, `593.png`, `594.png`, `595.png`, `596.png`, `597.png`, `598.png`, `599.png`, `600.png`, `601.png`, `602.png`, `603.png`, `604.png`, `605.png`, `606.png`, `607.png`, `608.png`, `609.png`, `610.png`, `611.png`, `612.png`, `613.png`, `614.png`, `615.png`, `616.png`, `617.png`, `618.png`, `619.png`, `620.png`, `621.png`, `622.png`, `623.png`, `624.png`, `625.png`, `626.png`, `627.png`, `628.png`, `629.png`, `630.png`, `631.png`, `632.png`, `633.png`, `634.png`, `635.png`, `636.png`, `637.png`, `638.png`, `639.png`, `640.png`, `641.png`, `642.png`, `643.png`, `644.png`, `645.png`, `646.png`, `647.png`, `648.png`, `649.png`, `11008.png`, `11009.png`, `11010.png`, `11011.png`, `11012.png`, `11013.png`, `11037.png`, `11038.png`, `11039.png`, `11040.png`, `11041.png`, `11042.png`, `11043.png`, `11044.png`, `11045.png`, `11046.png`, `11047.png`, `11048.png`, `11049.png`, `11050.png`, `11051.png`, `11052.png`, `11053.png`, `11054.png`, `11055.png`, `11056.png`, `11057.png`, `11058.png`, `11059.png`, `11060.png`, `11061.png`, `11062.png`, `11063.png`, `11065.png`, `11066.png`, `11067.png`, `11068.png`, `11069.png`, `11070.png`, `11094.png`, `11095.png`, `11105.png`, `11106.png`, `11128.png`, `shiny/77.png`, `shiny/130.png`, `shiny/147.png`, `shiny/443.png`, `shiny/612.png`.
 
-### Arkeis (3 files)
+### Arkeis (4 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
+| `668.png` | pyroar | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/668m-png.282237/ |
 | `683.png` | aromatisse | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/683-png.275700/ |
 | `685.png` | slurpuff | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/685-png.273659/ |
 | `695.png` | heliolisk | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/695-png.293922/ |
@@ -259,6 +252,12 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 |---|---|---|---|---|
 | `687.png` | malamar | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/687-png.276692/ |
 | `10040.png` | Mega Pinsir | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/127_2-png.300578/ |
+
+### Caruban (1 files)
+
+| File | Pokémon | Evidence | Verdict | Source |
+|---|---|---|---|---|
+| `10301.png` | Mega Zygarde | pack sheet | confirmed | https://eeveeexpo.com/resources/1101/ |
 
 ### Corson (1 files)
 
@@ -436,7 +435,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 |---|---|---|---|---|
 | `10244.png` | decidueye-hisui | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/724_1-png.420750/ |
 
-### KingOfThe-X-Roads (106 files)
+### KingOfThe-X-Roads (105 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
@@ -480,7 +479,6 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `945.png` | grafaiai | pack sheet | confirmed | https://eeveeexpo.com/resources/1101/ |
 | `946.png` | bramblin | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/946-png.603587/ |
 | `947.png` | brambleghast | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/947-png.603589/ |
-| `949.png` | toedscruel | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/aa370b74e27b4028c23dabeb1aaa21e75f81231d/sprites/pokemon/949.png |
 | `953.png` | rellor | artist's own file | confirmed | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
 | `954.png` | rabsca | artist's own file | confirmed | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
 | `962.png` | bombirdier | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/962-png.512410/ |
@@ -576,7 +574,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10300.png` | Mega Hawlucha | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10300.png |
 | `10302.png` | Mega Drampa | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10302.png |
 | `10303.png` | Mega Falinks | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10303.png |
-| `10304.png` | Mega Raichu X | KingOfThe-X-Roads own upload | confirmed | https://sta.sh/03id19f0dha |
+| `10304.png` | Mega Raichu X | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10304.png |
 | `10306.png` | Mega Chimecho | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10306.png |
 | `10307.png` | Mega Absol Z | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10307.png |
 | `10308.png` | Mega Staraptor | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10308.png |
@@ -597,7 +595,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10324.png` | Mega Tatsugiri (Stretchy Form), tatsugiri-stretchy-mega | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10324.png |
 | `10325.png` | Mega Baxcalibur | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10325.png |
 
-### Larryturbo (19 files)
+### Larryturbo (20 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
@@ -620,6 +618,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `11034.png` | vivillon-savanna | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/666_15-png.273608/ |
 | `11035.png` | vivillon-sun | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/666_16-png.273610/ |
 | `11036.png` | vivillon-tundra | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/666_3-png.273584/ |
+| `11096.png` | furfrou-heart | Smogon post | confirmed | https://www.smogon.com/forums/attachments/furfrou-normal-front-png.196215/ |
 
 ### Layell (13 files)
 
@@ -867,7 +866,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10222.png` | Gigantamax Grimmsnarl | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/861_g-png.255106/ |
 | `10223.png` | Gigantamax Alcremie | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/869_g-png.255109/ |
 | `10225.png` | Gigantamax Duraludon | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/884_g-png.255111/ |
-| `11001.png` | xerneas-neutral | near only | unproven | https://www.smogon.com/forums/attachments/716_2-png.274485/ |
+| `11001.png` | xerneas-neutral | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/716_2-png.274485/ |
 | `11109.png` | solgaleo-radiant-sun | near only | unproven | https://www.smogon.com/forums/attachments/791_2-png.272364/ |
 | `11110.png` | lunala-full-moon | near only | unproven | https://www.smogon.com/forums/attachments/792_2-png.272370/ |
 | `11111.png` | marshadow-zenith | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/802_2-png.272391/ |
@@ -920,14 +919,14 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `697.png` | tyrantrum | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/697-png.276694/ |
 | `709.png` | trevenant | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/709-png.293924/ |
 | `711.png` | gourgeist | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/711_1-png.293926/ |
-| `716.png` | xerneas | near only | unproven | https://www.smogon.com/forums/attachments/716_1-png.273690/ |
+| `716.png` | xerneas | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/716_1-png.273690/ |
 | `721.png` | volcanion | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/721-png.273701/ |
 | `722.png` | rowlet | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/722-png.102484/ |
 | `725.png` | litten | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/725-png.102486/ |
 | `728.png` | popplio | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/728-png.102488/ |
 | `10026.png` | aegislash-blade | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/681_2-png.300604/ |
 | `10036.png` | Mega Blastoise | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/009_2-png.276604/ |
-| `11001.png` | xerneas-neutral | near only | unproven | https://www.smogon.com/forums/attachments/716_2-png.274485/ |
+| `11001.png` | xerneas-neutral | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/716_2-png.274485/ |
 
 ### Noscium (3 files)
 
@@ -943,11 +942,14 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 |---|---|---|---|---|
 | `672.png` | skiddo | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/672-png.276688/ |
 
-### princessofmusic (25 files)
+### princessofmusic (28 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
 | `662.png` | fletchinder | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/662-png.290756/ |
+| `669.png` | flabebe | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/669_1-png.276624/ |
+| `670.png` | floette | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/670_1-png.276644/ |
+| `671.png` | florges | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/671_1-png.276668/ |
 | `703.png` | carbink | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/703-png.273682/ |
 | `707.png` | klefki | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/707-png.284242/ |
 | `730.png` | primarina | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/730-png.102278/ |
@@ -1014,7 +1016,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `alcremie-ribbon.png` | alcremie-ribbon | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/869_7-png.218748/ |
 | `alcremie-star.png` | alcremie-star | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/869_4-png.218742/ |
 
-### RedRooster (6 files)
+### RedRooster (7 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
@@ -1022,6 +1024,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `678.png` | meowstic | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/678m-png.273648/ |
 | `689.png` | barbaracle | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/689-png.293914/ |
 | `711.png` | gourgeist | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/711_1-png.293926/ |
+| `10025.png` | meowstic-female | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/678f-png.273647/ |
 | `10037.png` | Mega Alakazam | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/065_2-png.274413/ |
 | `10047.png` | Mega Heracross | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/214_2-png.300586/ |
 
@@ -1039,6 +1042,12 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `690.png` | skrelp | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/690-png.273663/ |
 | `712.png` | bergmite | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/712-png.273689/ |
 | `10090.png` | Mega Beedrill | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/015_2-png.300574/ |
+
+### Sopita_Yorita (1 files)
+
+| File | Pokémon | Evidence | Verdict | Source |
+|---|---|---|---|---|
+| `949.png` | toedscruel | pack sheet | confirmed | https://eeveeexpo.com/resources/1101/ |
 
 ### SpheX (19 files)
 
@@ -1077,11 +1086,12 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 |---|---|---|---|---|
 | `10048.png` | Mega Houndoom | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/229_2-png.275683/ |
 
-### The Cynical Poet (9 files)
+### The Cynical Poet (10 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
 | `667.png` | litleo | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/667-png.273620/ |
+| `669.png` | flabebe | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/669_1-png.276624/ |
 | `752.png` | araquanid | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/752-png.141996/ |
 | `10065.png` | Mega Sceptile | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/254_2-png.300590/ |
 | `10067.png` | Mega Altaria | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/334_2-png.275690/ |
@@ -1192,14 +1202,10 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 |---|---|---|---|---|
 | `724.png` | decidueye | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/724-png.114744/ |
 
-### (no artist named) (49 files)
+### (no artist named) (42 files)
 
 | File | Pokémon | Evidence | Verdict | Source |
 |---|---|---|---|---|
-| `668.png` | pyroar | none | unproven | https://www.smogon.com/forums/attachments/668m-png.282237/ |
-| `669.png` | flabebe | none | unproven | https://www.smogon.com/forums/attachments/669_1-png.276624/ |
-| `670.png` | floette | none | unproven | https://www.smogon.com/forums/attachments/670_1-png.276644/ |
-| `671.png` | florges | none | unproven | https://www.smogon.com/forums/attachments/671_5-png.276684/ |
 | `676.png` | furfrou | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `733.png` | toucannon | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `743.png` | ribombee | none | unproven | https://eeveeexpo.com/resources/1101/ |
@@ -1230,11 +1236,8 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10022.png` | kyurem-black | none | unproven | https://github.com/PokeAPI/sprites/blob/0dc105d5b12416932f29b594078282ab4be045f5/sprites/pokemon/versions/generation-v/black-white/10022.png |
 | `10023.png` | kyurem-white | none | unproven | https://github.com/PokeAPI/sprites/blob/0dc105d5b12416932f29b594078282ab4be045f5/sprites/pokemon/versions/generation-v/black-white/10023.png |
 | `10024.png` | keldeo-resolute | none | unproven | https://github.com/PokeAPI/sprites/blob/0dc105d5b12416932f29b594078282ab4be045f5/sprites/pokemon/versions/generation-v/black-white/10024.png |
-| `10025.png` | meowstic-female | none | unproven | https://www.smogon.com/forums/attachments/678f-png.273647/ |
 | `10068.png` | Mega Gallade | none | unproven | https://eeveeexpo.com/resources/1101/ |
-| `10301.png` | Mega Zygarde | repository | confirmed |  |
 | `11064.png` | pichu-spiky-eared | none | unproven | https://play.pokemonshowdown.com/sprites/gen5/pichu-spikyeared.png |
-| `11096.png` | furfrou-heart | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `11097.png` | furfrou-star | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `11098.png` | furfrou-diamond | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `11099.png` | furfrou-debutante | none | unproven | https://eeveeexpo.com/resources/1101/ |
@@ -1252,7 +1255,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
-Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.
+Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources. On 2026-10-29 Mega Raichu X went back to PokéAPI's file; see [Shiny sprites added on 2026-10-29](#shiny-sprites-added-on-2026-10-29).
 
 ## kiriaura originals imported on 2026-10-19
 
@@ -1274,3 +1277,83 @@ Five picker-only appearances, each a byte copy of the sprite-lab selection Micha
 ## Cherrim Sunshine Form added on 2026-10-20
 
 Cherrim (Sunshine Form) (11128) is a picker-only battle form. The file is byte-identical to PokéAPI's `sprites/pokemon/versions/generation-v/black-white/421-sunshine.png`, which came in the Black and White import (96c282e, 2020-08-01); the parent commit has no such file, and the bytes are the same at 0dc105d and at the pinned ba40397. It is Game Freak's sprite, so it has no credit and no Acknowledgements entry.
+
+## Shiny sprites added on 2026-10-25
+
+The Favorite Pokémon Picker and the league builder show 1,396 shiny files when their Shiny switch is on: 1,395 in the picker and 1,326 in the league builder. The Pokédex builder already showed five of them through archetypes. Each file has a row in the JSON ledger. The rules are in [How my151 credits sprites](README.md#shiny-sprites).
+
+| Count | Evidence type |
+|---:|---|
+| 693 | Game Freak shiny: exact match to PokéAPI's Black and White shiny; two are frames of its shiny Overdrive animations |
+| 577 | Exact match to the Front shiny attachment of the Smogon sheet row that credits the shiny |
+| 40 | Pixels of the PokéAPI shiny added in the commit whose README line credits Kyle Dove for the Z-A Mega sprites |
+| 10 | Same pixels as the shiny that KingOfThe-X-Roads posted on Sta.sh |
+| 8 | Same pixels as the Generation 9 pack shiny on the sheet row that names the artist |
+| 17 | Pinned source identified; no source names the shiny's artist |
+| 51 | Artist not confirmed; follows its normal sprite |
+
+Under the [credit rule of 2026-10-26](README.md#shiny-sprites), the panel counts 85 of these files on their own. Each is an exact match to a Smogon sheet row that names a "(shiny)" artist who did not draw the normal sprite. The normal sprite's credit covers the other 1,311 files, which the bundles do not count. They include the five Game Freak shinies that the Pokédex builder already showed, so the panel's count of official sprites from PokéAPI goes from 700 to 695.
+
+| Files | Shiny artist |
+|---:|---|
+| 75 | TheAetherPlayer |
+| 3 | AMVictory |
+| 3 | leParagon |
+| 2 | G.E.Z. |
+| 1 | arinoelle |
+| 1 | Mega-Pokebattlerz |
+
+Four artists appear only through shiny files: TheAetherPlayer, AMVictory, arinoelle, and Mega-Pokebattlerz.
+
+## Shiny sprites added on 2026-10-29
+
+Eleven more shiny files have rows in the JSON ledger. `scripts/data/shiny-sprite-placed.json` has a row for each but Mega Raichu X, whose shiny the harvest takes from PokéAPI's own folder. The harvest rebuilds every file but DJ Rotom's and the two Overdrive forms'.
+
+| File | Pokémon | Shiny artist | Evidence |
+|---|---|---|---|
+| `shiny/919.png` | Nymble | Blaquaza | my151's recolour of the normal sprite in the colours of the Smogon sheet row's Front shiny attachment, which lies 6 pixels off the normal sprite's outline |
+| `shiny/1023.png` | Iron Crown | not confirmed | PokéAPI's shiny, moved 2 rows up; it follows the normal sprite |
+| `shiny/10013.png` | Castform (Sunny Form) | not confirmed | the Smogon Sprite Project's shiny from PokéAPI's Black and White folder, moved 6 rows up and 1 column left; no source names an artist |
+| `shiny/10014.png` | Castform (Rainy Form) | not confirmed | the same source, moved 6 rows up and 3 columns left |
+| `shiny/10015.png` | Castform (Snowy Form) | not confirmed | the same source, moved 6 rows up and 1 column left |
+| `shiny/10176.png` | Galarian Darumaka | G.E.Z. | the Smogon sheet row's Front shiny attachment, moved 1 row down |
+| `shiny/10304.png` | Mega Raichu X | Kyle Dove | PokéAPI's shiny, added with the normal sprite in the commit whose README line credits him |
+| `shiny/11064.png` | Spiky-eared Pichu | Game Freak | PokéAPI's shiny, which is the HeartGold and SoulSilver sprite |
+| `shiny/11106.png` | Zekrom (Overdrive) | Game Freak | the normal sprite in Game Freak's shiny palette; every pixel has the official shiny colour at its place in the Black and White animation |
+| `shiny/11108.png` | White Kyurem (Overdrive) | Game Freak | the Generation 9 Resource Pack's shiny still with Game Freak's fire grafted on, as in the normal sprite; every pixel has the official shiny colour at its place |
+| `shiny/11112.png` | DJ Rotom | KingOfThe-X-Roads | the predicted shiny from his own X post, at 1/4 scale, with the same 2 seam pixels recoloured as in the normal sprite |
+
+Each named shiny artist also drew the normal sprite, so the panel counts none of these files on its own.
+
+Mega Raichu X (10304) goes back to PokéAPI's normal and shiny pair (Michael, 2026-10-29: "For now lets go with existing #26 which has a correct normal/shiny pair for Mega Raichu X"). KingOfThe-X-Roads's Sta.sh sprite showed another design. The normal file is byte-identical to the one the app showed before 2026-10-17, so its row is the one kept in `previous-mega-raichu-x-evidence.json`: PokéAPI commit 4bc9d60186 added the pair with the README line that credits Kyle Dove for the Z-A Mega sprites. `shiny/10304.png` has the pixels of that commit's shiny, and Kyle Dove's credit for the normal sprite covers it. KingOfThe-X-Roads's own entry lists 12 sprites, and Kyle Dove's PokéAPI count rises from 42 to 43.
+
+## Normal and shiny pairs replaced on 2026-10-29
+
+Michael picked an artist-made normal and shiny pair for nine forms on 2026-10-29. Each pair replaces the normal sprite and adds its shiny. Furfrou (Heart Trim) keeps its normal sprite and gains Larryturbo's shiny. Each file has a row in the JSON ledger. The row of each replaced normal sprite keeps the old evidence as `previousEvidence`.
+
+A replaced normal sprite follows the rule of 2026-10-12: its ink is centred on the old sprite's ink and stands on the old sprite's bottom edge. A half-pixel centre takes the smaller move. The red Flabébé, Floette, and Florges keep the artist's canvas instead, so each outline equals the blue, orange, white, and yellow forms of its stage. The shiny always moves with its normal sprite. The shift is in rows down and columns right.
+
+| File | Form | Artist | Source | Shift |
+|---|---|---|---|---|
+| `668.png` | Pyroar (male) | Arkeis | Smogon X/Y sheet row '668 Pyroar-male' | 1, 0 |
+| `669.png` | Flabébé (Red Flower) | TheCynicalPoet, princessofmusic (colours) | Smogon X/Y sheet row '669 Flabébé-red' | 0, 0 |
+| `670.png` | Floette (Red Flower) | princessofmusic | Smogon X/Y sheet row '670 Floette-red' | 0, 0 |
+| `671.png` | Florges (Red Flower) | princessofmusic | Smogon X/Y sheet row '671 Florges-red' | 0, 0 |
+| `716.png` | Xerneas (Active Mode) | N-Kin | Smogon X/Y sheet row '716 Xerneas' | 0, 0 |
+| `11001.png` | Xerneas (Neutral Mode) | N-Kin, leParagon | Smogon X/Y sheet row '716 Xerneas-inactive' | 0, 0 |
+| `10025.png` | Meowstic (female) | RedRooster | Smogon X/Y sheet row '678 Meowstic-female' | 2, 2 |
+| `949.png` | Toedscruel | Sopita_Yorita | Generation 9 Resource Pack 3.3.8, `TOEDSCRUEL.png` at 1/2 scale, pack sheet row 'Toedscruel' | -5, 0 |
+| `10301.png` | Mega Zygarde | Caruban | Generation 9 Resource Pack 3.3.8, `ZYGARDE_4.png` at 1/2 scale, pack sheet row 'Mega Zygarde' | 0, 0 |
+| `shiny/11096.png` | Furfrou (Heart Trim) | Larryturbo | His post 8240483 in the X/Y thread, with 25 pixels outside the normal sprite's outline made transparent | 0, 1 |
+
+Each shiny is by the artist of its normal sprite, so the normal sprite's credit covers it. The panel counts none of these shinies on its own.
+
+Toedscruel's credit moves from KingOfThe-X-Roads (PokéAPI README) to Sopita_Yorita. Mega Zygarde's moves from my151's sprite-lab drawing to Caruban; the drawing's lineage stays in its row's `previousEvidence`. Pyroar, the three red flowers, and female Meowstic were PokéAPI files that no source credited. Both Xerneas files were near matches only. Larryturbo's post also proves the Heart Trim normal sprite, which was unproven: the first cell of his normal sheet has its pixels.
+
+The Acknowledgements panel changes. The Smogon Sprite Project counts 692 files instead of 686, with 14 instead of 16 not confirmed. PokéAPI counts 86 instead of 92, and the Generation 9 Resource Pack 18 instead of 17. Arkeis goes from 3 to 4, Larryturbo from 19 to 20, N-Kin from 15 to 17, RedRooster from 6 to 7, The Cynical Poet from 9 to 10, leParagon from 222 to 223, and princessofmusic from 22 to 25. KingOfThe-X-Roads's PokéAPI count goes from 11 to 10. Caruban and Sopita_Yorita join the pack's list with 1 file each. PokéAPI's "Used for" text names 685 Smogon Sprite Project files instead of 681, and 86 PokéAPI-credited files instead of 92.
+
+The harvest checks every pair against its source except Furfrou (Heart Trim)'s. That row is `unchecked`, because the shipped shiny no longer equals Larryturbo's file.
+
+## Shinies held on 2026-10-29
+
+Michael keeps 20 shinies on hand but out of the app, so the JSON ledger has no row for them. Each form shows no shiny. Stereo Rotom (11112) and Spiky-eared Pichu (11064) have no shiny in any game. The other 18 forms are one individual that is never shiny (Michael, 2026-10-29): the six Cosplay Pikachu (10080-10085), the eight Pikachu in a cap (10094-10099, 10148, 10160), Ash-Greninja (10117), Zarude (Dada) (10192), Eternal Floette (10061), and Mega Floette (10296). [The held shinies](../favorite-picker-work/sprites/held-shinies/README.md) keeps each file with its source, its artist, its SHA-256, the ledger row it had while it shipped, and the rules. The harvest skips each held id. The Acknowledgements counts do not change, because the normal sprite's credit covered each of these shinies.

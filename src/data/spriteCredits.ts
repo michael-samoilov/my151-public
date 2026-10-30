@@ -13,6 +13,7 @@ const DATA = attribution as unknown as AttributionFile;
 
 export interface CreditedSprite {
   mon: PickerMon;
+  shiny: boolean;
 }
 
 export interface ArtistCredit {
@@ -23,7 +24,8 @@ export interface ArtistCredit {
 
 const spriteFile = (sprite: string) => sprite.replace(/^.*\/|\.png(\?.*)?$/g, '');
 
-const dexOrder = (a: CreditedSprite, b: CreditedSprite) => a.mon.ownerId - b.mon.ownerId || comparePickerOrder(a.mon, b.mon);
+const dexOrder = (a: CreditedSprite, b: CreditedSprite) =>
+  a.mon.ownerId - b.mon.ownerId || comparePickerOrder(a.mon, b.mon) || Number(a.shiny) - Number(b.shiny);
 
 interface Parsed {
   artists: Map<string, ArtistCredit>;
@@ -35,14 +37,16 @@ function parse(): Parsed {
   const sources = new Set<string>();
   const direct = new Map<string, CreditedSprite[]>();
   for (const [file, mon] of monByFile) {
-    const row = DATA.sprites[file];
-    if (!row) continue;
-    sources.add(row.via);
-    if (row.via !== OWN_UPLOAD) continue;
-    for (const artist of row.artists ?? []) {
-      const list = direct.get(artist) ?? [];
-      direct.set(artist, list);
-      list.push({ mon });
+    for (const [key, shiny] of [[file, false], [`shiny/${file}`, true]] as const) {
+      const row = DATA.sprites[key];
+      if (!row) continue;
+      sources.add(row.via);
+      if (row.via !== OWN_UPLOAD) continue;
+      for (const artist of row.artists ?? []) {
+        const list = direct.get(artist) ?? [];
+        direct.set(artist, list);
+        list.push({ mon, shiny });
+      }
     }
   }
   const artists = new Map<string, ArtistCredit>();

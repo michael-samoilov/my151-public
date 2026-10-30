@@ -44,6 +44,8 @@ export interface LeagueLineShape {
    * the curve put it, and the client is the only place that knows the default.
    */
   bd?: number[];
+  /** Present when the line is shiny. */
+  s?: 1;
 }
 
 /**
@@ -66,8 +68,8 @@ export interface LeagueCardShape {
   pa?: number;
   /** The card's TM move. */
   tm?: number;
-  /** Legendaries on the endgame row, as [seat, pokemonId]. */
-  lg?: [number, number][];
+  /** Legendaries on the endgame row, as [seat, pokemonId], with a third element of 1 when shiny. */
+  lg?: [number, number, 1?][];
   /** Powerups, as [row, seat, formIndex, 0 for mega or 1 for dynamax]. */
   pw?: [number, number, number, number][];
 }
@@ -229,6 +231,7 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
             .filter((r): r is number => r !== null);
           if (bd.length === branch.length) line.bd = bd;
         }
+        if (ln.s === 1) line.s = 1;
         lines.push(line);
       }
     }
@@ -245,12 +248,12 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
     if (tm !== null) card.tm = tm;
 
     if (Array.isArray(c.lg)) {
-      const lg: [number, number][] = [];
+      const lg: [number, number, 1?][] = [];
       for (const pair of c.lg.slice(0, SEATS_PER_CARD)) {
         if (!Array.isArray(pair)) continue;
         const seat = intInRange(pair[0], 1, SEATS_PER_CARD);
         const id = idOrNull(pair[1], MAX_POKEMON_ID);
-        if (seat !== null && id !== null) lg.push([seat, id]);
+        if (seat !== null && id !== null) lg.push(pair[2] === 1 ? [seat, id, 1] : [seat, id]);
       }
       if (lg.length > 0) card.lg = lg;
     }

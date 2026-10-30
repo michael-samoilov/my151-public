@@ -1,5 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { migrateFavoriteFills } from './useFavoritesStore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The store finds window.localStorage when its module loads, so the stand-in comes first.
+const saved = vi.hoisted(() => {
+  const items = new Map<string, string>();
+  const localStorage = {
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: (key: string, value: string) => void items.set(key, value),
+    removeItem: (key: string) => void items.delete(key),
+  };
+  Object.assign(globalThis, { window: { localStorage } });
+  return items;
+});
+
+import { migrateFavoriteFills, useFavoritesStore } from './useFavoritesStore';
 
 describe('favorite picker saved-form migration', () => {
   it('moves an existing Gimmick favorite to the new overall Gimmick pointer', () => {
@@ -45,5 +58,36 @@ describe('favorite picker saved-form migration', () => {
       'favorite|1': 6,
     };
     expect(migrateFavoriteFills(saved)).toEqual(saved);
+  });
+});
+
+describe('favorite picker saves from before shiny picks', () => {
+  beforeEach(() => useFavoritesStore.setState(useFavoritesStore.getInitialState(), true));
+
+  async function load(save: object) {
+    saved.set('favorite-picker', JSON.stringify(save));
+    await useFavoritesStore.persist.rehydrate();
+    return useFavoritesStore;
+  }
+
+  it('loads a current save with its picks and no shiny picks, so a tap cannot read a missing map', async () => {
+    const store = await load({ state: { fills: { 'fire|1': 6, 'favorite|1': 6 } }, version: 4 });
+    expect(store.getState().fills).toEqual({ 'fire|1': 6, 'favorite|1': 6 });
+    expect(store.getState().shiny).toEqual({});
+    store.getState().place('water', 1, 131, true);
+    expect(store.getState().shiny).toEqual({ 'water|1': 131 });
+  });
+
+  it('migrates an older save and still starts with no shiny picks', async () => {
+    const store = await load({ state: { fills: { 'gimmick|favorite': 6, 'gimmick|1': 6 } }, version: 3 });
+    expect(store.getState().fills).toEqual({ 'gimmick|1': 6, 'gimmick|gimmick': 6 });
+    expect(store.getState().shiny).toEqual({});
+  });
+
+  it('keeps shiny picks across a reload, and drops one whose cell gets another Pokémon', async () => {
+    const store = await load({ state: { fills: { 'fire|1': 6, 'grass|1': 3 }, shiny: { 'fire|1': 6, 'grass|1': 3 } }, version: 4 });
+    expect(store.getState().shiny).toEqual({ 'fire|1': 6, 'grass|1': 3 });
+    store.getState().place('fire', 1, 4);
+    expect(JSON.parse(saved.get('favorite-picker')!).state.shiny).toEqual({ 'grass|1': 3 });
   });
 });

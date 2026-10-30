@@ -1,3 +1,4 @@
+import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { cn } from '@/lib/utils';
 
 interface FilterChipItem {
@@ -29,10 +30,10 @@ export function FilterChipList({
             className={cn(
               'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
               isActive
-                ? 'text-white border-transparent'
+                ? `${HOVER_LAYER} text-white border-transparent`
                 : 'bg-secondary text-secondary-foreground border-border hover:border-foreground/40'
             )}
-            style={isActive ? { backgroundColor: item.color } : undefined}
+            style={isActive ? { backgroundColor: item.color, ...fillVar(item.color) } : undefined}
           >
             {label(item)}
           </button>

@@ -1,5 +1,9 @@
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { PokeballBg } from '@/components/shared/PokeballBg';
+import { TILE_ACTION_BUTTON_CLASS } from '@/components/shared/PokemonTile';
+import { ShinyDisc } from '@/components/shiny/ShinyMarks';
+import type { ShinyMark } from '@/components/shiny/shinyMarks';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { useNamesVersion, useT } from '@/i18n';
 import { labelOf } from './spriteLabel';
@@ -22,6 +26,7 @@ import { kindFor } from '../model/eligibility';
 import { prefetchCell, usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
+import { isShinyCell, pickerShinySprite } from '../model/shiny';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 import { AxisBadge, GenerationBadge } from './WordBadge';
@@ -104,19 +109,31 @@ type Preview = {
   pane: HTMLElement | null;
 };
 
+const NO_SHINY_PICKS: Readonly<Record<string, number>> = {};
+
+/** The edits a filled cell's hover controls make. The admin chart passes none and shows no controls. */
+type CellEdits = {
+  clear: (type: TypeAxisId, gen: GenAxisId) => void;
+  place: (type: TypeAxisId, gen: GenAxisId, id: number, shiny: boolean) => void;
+};
+
 export function FavoritesGrid({
   fills,
+  shiny = NO_SHINY_PICKS,
   resolve,
   selected,
   onSelect,
+  edits,
   desktop,
   pane,
   fitFrame = false,
 }: {
   fills: Record<string, number>;
+  shiny?: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
+  edits?: CellEdits;
   desktop: boolean;
   pane?: ReactNode;
   fitFrame?: boolean;
@@ -133,9 +150,11 @@ export function FavoritesGrid({
           key={String(gen)}
           gen={gen}
           fills={fills}
+          shiny={shiny}
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
+          edits={desktop ? edits : undefined}
           desktop={desktop}
         />
       ))}
@@ -669,16 +688,20 @@ function useZoomFrame(
 function GenRow({
   gen,
   fills,
+  shiny,
   resolve,
   selected,
   onSelect,
+  edits,
   desktop,
 }: {
   gen: GenAxisId;
   fills: Record<string, number>;
+  shiny: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
+  edits?: CellEdits;
   desktop: boolean;
 }) {
   const banded = gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1;
@@ -692,9 +715,11 @@ function GenRow({
           gen={gen}
           banded={banded}
           fills={fills}
+          shiny={shiny}
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
+          edits={edits}
           desktop={desktop}
         />
       ))}
@@ -778,24 +803,31 @@ function BodyCell({
   gen,
   banded,
   fills,
+  shiny,
   resolve,
   selected,
   onSelect,
+  edits,
   desktop,
 }: {
   type: TypeAxisId;
   gen: GenAxisId;
   banded: boolean;
   fills: Record<string, number>;
+  shiny: Readonly<Record<string, number>>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
+  edits?: CellEdits;
   desktop: boolean;
 }) {
   const kind = kindFor(type, gen);
   const dwell = useRef(0);
+  const cellRef = useRef<HTMLButtonElement>(null);
   const id = fills[cellKey(type, gen)];
   const mon = id == null ? undefined : resolve(id);
+  const shinyHere = mon != null && isShinyCell(fills, shiny, cellKey(type, gen));
+  const t = useT();
   const isSel = selected?.type === type && selected?.gen === gen;
   const tint = isTypeName(type) ? TYPE_COLORS[type] : undefined;
   const locked = kind === 'disabled' || kind === 'null';
@@ -803,6 +835,7 @@ function BodyCell({
 
   const cell = (
     <button
+      ref={cellRef}
       type="button"
       disabled={locked}
       onClick={(event) => onSelect(type, gen, event.detail === 0)}
@@ -813,7 +846,7 @@ function BodyCell({
       onPointerLeave={() => window.clearTimeout(dwell.current)}
       onPointerDown={locked ? undefined : () => prefetchCell(type, gen)}
       onFocus={locked ? undefined : () => prefetchCell(type, gen)}
-      aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}`}
+      aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}${shinyHere ? ` · ${t('shiny.label')}` : ''}`}
       aria-expanded={locked ? undefined : isSel}
       aria-controls={isSel ? 'favorites-selector' : undefined}
       aria-haspopup={locked ? undefined : 'dialog'}
@@ -837,7 +870,7 @@ function BodyCell({
     >
       {banded && !locked ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {mon ? (
-        <Filled mon={mon} desktop={desktop} />
+        <Filled mon={mon} shiny={shinyHere} desktop={desktop} />
       ) : locked ? null : (
         <span
           data-testid="favorites-empty-ball"
@@ -859,7 +892,78 @@ function BodyCell({
       ) : null}
     </button>
   );
-  return mon && !locked ? <NameTooltip mon={mon}>{cell}</NameTooltip> : cell;
+  if (!mon || locked) return cell;
+  const named = <NameTooltip mon={mon}>{cell}</NameTooltip>;
+  if (!edits) return named;
+  // A pointer cell takes its look from the cells it points at, and its sheet chooses between two looks, so it has no shiny control of its own.
+  const mark: ShinyMark | null = kind === 'pointer' ? null
+    : pickerShinySprite(mon.id) === null ? 'none' : shinyHere ? 'on' : 'off';
+  return (
+    <HoverControls
+      name={labelOf(mon)}
+      mark={mark}
+      onShiny={(on) => edits.place(type, gen, mon.id, on)}
+      onRemove={(keyboard) => {
+        edits.clear(type, gen);
+        // Clearing remounts the cell's button, so focus goes back to it after a keyboard remove.
+        if (keyboard) requestAnimationFrame(() => cellRef.current?.focus({ preventScroll: true }));
+      }}
+    >
+      {named}
+    </HoverControls>
+  );
+}
+
+const CONTROL_SHOWN = 'opacity-0 transition-opacity group-hover/cell:opacity-100 group-has-[:focus-visible]/cell:opacity-100';
+// A screen with no hover never shows the controls, so they must not catch its taps either.
+const CONTROL_PRESSABLE = 'cursor-pointer touch-manipulation pointer-events-none group-hover/cell:pointer-events-auto';
+const SHINY_CORNER = cn(TILE_ACTION_BUTTON_CLASS, 'right-auto left-[calc(var(--tile-sprite)*0.05)]');
+
+/**
+ * Wraps a filled cell with the shiny and remove controls that a mouse over it shows, sized like
+ * the Dex tile's remove button. A span, not a div: the zoom and picker specs read the grid's div
+ * children as its headers.
+ */
+function HoverControls({ children, name, mark, onShiny, onRemove }: {
+  children: ReactElement;
+  name: string;
+  mark: ShinyMark | null;
+  onShiny: (on: boolean) => void;
+  onRemove: (keyboard: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <span className="group/cell relative grid min-h-0 min-w-0" style={{ ['--tile-sprite' as string]: 'var(--cell)' }}>
+      {children}
+      {mark === 'none' ? (
+        <span role="img" aria-label={t('shiny.none')} data-shiny-mark={mark} className={cn(SHINY_CORNER, CONTROL_SHOWN, 'pointer-events-none')}>
+          <ShinyDisc mark={mark} />
+        </span>
+      ) : mark ? (
+        <button
+          type="button"
+          aria-label={t('league.cell.shiny', { name })}
+          aria-pressed={mark === 'on'}
+          data-shiny-mark={mark}
+          data-cell-control="shiny"
+          onClick={() => onShiny(mark === 'off')}
+          className={cn(SHINY_CORNER, CONTROL_SHOWN, CONTROL_PRESSABLE)}
+        >
+          <ShinyDisc mark={mark} />
+        </button>
+      ) : null}
+      {/* No translateZ(0), unlike the Dex tile: a compositing layer per filled cell changes how the open selector's edges paint. */}
+      <button
+        type="button"
+        aria-label={t('builder.remove', { name })}
+        data-cell-control="remove"
+        onClick={(event) => onRemove(event.detail === 0)}
+        className={cn(TILE_ACTION_BUTTON_CLASS, 'tile-remove-target', CONTROL_SHOWN, CONTROL_PRESSABLE)}
+      >
+        <RedXIcon className="h-full w-full" />
+      </button>
+    </span>
+  );
 }
 
 function ChartMinimap({
@@ -924,10 +1028,10 @@ function ChartMinimap({
   );
 }
 
-function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
+function Filled({ mon, shiny, desktop }: { mon: PickerMon; shiny: boolean; desktop: boolean }) {
   const pokemon = { types: mon.types } as Pokemon;
   const size = gridSpriteSizePercent(mon.sprite);
-  const src = usePickerSprite(mon.sprite, true);
+  const src = usePickerSprite((shiny ? pickerShinySprite(mon.id) : null) ?? mon.sprite, true);
   // The ball behind the sprite skips layout off screen during a zoom. The
   // sprite stays outside it, because skipping clips overflow.
   return (

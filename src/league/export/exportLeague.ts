@@ -24,7 +24,7 @@ import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape'
 import { localeUppercase, pokemonLabel, t } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
-import { deriveRow, signatureMember } from '../model/engine';
+import { deriveRow, signatureMember, type CardCell } from '../model/engine';
 import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { NO_TYPE_STAR_RADIUS, cardShades, type CardShades } from '../theme';
@@ -63,7 +63,7 @@ import {
   wrapLines,
   wrapTracked,
 } from './paint';
-import { pokemonSpriteUrl } from '@/lib/spriteUrl';
+import { leagueSpriteUrl } from '../leagueSprite';
 import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 const FG = '#0a0a0a';
@@ -89,26 +89,19 @@ export function showcasePair(card: GymCard): { ace: number | null; partner: numb
   return { ace, partner: card.partnerId ?? null };
 }
 
-interface ExportCell {
-  seat: number;
-  pokemonId: number | null;
+function showcaseShiny(card: GymCard): { ace: boolean; partner: boolean } {
+  const seat = card.signatureSeat;
+  return { ace: seat !== null && card.lines[seat - 1]?.shiny === true, partner: card.partnerShiny === true };
+}
+
+interface ExportCell extends CardCell {
   form: PowerupForm | null;
 }
 
 export function exportRow(card: GymCard, row: number): ExportCell[] {
   const cells = deriveRow(card.lines, row, row === L.BOSS_ROW ? legendsOf(card) : []);
   const powerups = powerupsAt(card, row);
-  return cells.map((c) => ({
-    seat: c.seat,
-    pokemonId: c.pokemonId,
-    form: formAt(powerups, row, c.seat, c.pokemonId),
-  }));
-}
-
-function spriteUrl(pokemonId: number | null, form: PowerupForm | null): string | null {
-  if (form) return pokemonSpriteUrl(form.id);
-  if (pokemonId === null) return null;
-  return getPokemonById(pokemonId)?.sprite ?? pokemonSpriteUrl(pokemonId);
+  return cells.map((c) => ({ ...c, form: formAt(powerups, row, c.seat, c.pokemonId) }));
 }
 
 function ballColours(pokemonId: number): [string, string] {
@@ -144,13 +137,13 @@ async function loadAll(urls: Iterable<string>): Promise<Images> {
 function cardImageUrls(card: GymCard): string[] {
   const urls: string[] = [];
   const { ace, partner } = showcasePair(card);
-  for (const id of [ace, partner]) {
-    const url = spriteUrl(id, null);
+  const shiny = showcaseShiny(card);
+  for (const url of [leagueSpriteUrl(ace, null, shiny.ace), leagueSpriteUrl(partner, null, shiny.partner)]) {
     if (url) urls.push(url);
   }
   for (let row = 1; row <= L.ROW_COUNT; row++) {
     for (const cell of exportRow(card, row)) {
-      const url = spriteUrl(cell.pokemonId, cell.form);
+      const url = leagueSpriteUrl(cell.pokemonId, cell.form, cell.shiny);
       if (url) urls.push(url);
     }
   }
@@ -182,7 +175,7 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
     if (card.lines.length === 0) return;
     for (const row of homeRowsForCard(index, view, layout)) {
       for (const cell of exportRow(card, row)) {
-        const url = spriteUrl(cell.pokemonId, cell.form);
+        const url = leagueSpriteUrl(cell.pokemonId, cell.form, cell.shiny);
         if (url) urls.push(url);
       }
     }
@@ -257,6 +250,7 @@ function drawHeading(
 function drawShowcaseArt(
   ctx: CanvasRenderingContext2D,
   pokemonId: number,
+  shiny: boolean,
   images: Images,
   cx: number,
   cy: number,
@@ -268,7 +262,7 @@ function drawShowcaseArt(
     drawPokeballBg(ctx, primary, secondary, sprite / 1.2, cx, cy);
   }
   if (layer !== 'ball') {
-    const img = images.get(spriteUrl(pokemonId, null) ?? '');
+    const img = images.get(leagueSpriteUrl(pokemonId, null, shiny) ?? '');
     if (img) drawSprite(ctx, img, cx, cy, sprite);
   }
 }
@@ -418,6 +412,7 @@ function drawShowcase(
   const x = ox + box.left;
   const y = oy + box.top;
   const { ace, partner } = showcasePair(card);
+  const shiny = showcaseShiny(card);
   const filled = ace !== null || partner !== null;
   const solo = (ace === null) !== (partner === null) || (ace !== null && ace === partner);
 
@@ -450,7 +445,7 @@ function drawShowcase(
       const top = y + (box.height - clusterH) / 2;
       const cx = x + box.width / 2;
       const spriteCy = top + headH + sprite / 2;
-      drawShowcaseArt(ctx, id, images, cx, spriteCy, sprite, 'both');
+      drawShowcaseArt(ctx, id, ace !== null ? shiny.ace : shiny.partner, images, cx, spriteCy, sprite, 'both');
       const face = headFace(ctx, lines.map((text) => ({ text, room: box.width - 2 * L.SHOWCASE_PAD })));
       drawHeading(ctx, lines, cx, top, shades.band, face);
       ctx.save();
@@ -509,12 +504,12 @@ function drawShowcase(
   );
 
   const halves = [
-    { id: ace, square: aceSq },
-    { id: partner, square: partnerSq },
+    { id: ace, shiny: shiny.ace, square: aceSq },
+    { id: partner, shiny: shiny.partner, square: partnerSq },
   ];
   for (const { id, square } of halves) {
     if (id === null) continue;
-    drawShowcaseArt(ctx, id, images, square.x + square.w / 2, square.y + square.h / 2, square.w, 'ball');
+    drawShowcaseArt(ctx, id, false, images, square.x + square.w / 2, square.y + square.h / 2, square.w, 'ball');
   }
   strokeSeam(
     ctx,
@@ -523,10 +518,10 @@ function drawShowcase(
     panel,
     shades.dash,
   );
-  for (const { id, square } of halves) {
+  for (const { id, shiny: shown, square } of halves) {
     const cx = square.x + square.w / 2;
     const cy = square.y + square.h / 2;
-    if (id !== null) drawShowcaseArt(ctx, id, images, cx, cy, square.w, 'sprite');
+    if (id !== null) drawShowcaseArt(ctx, id, shown, images, cx, cy, square.w, 'sprite');
     else drawEmptyBall(ctx, RING_OF_SPRITE * square.w, cx, cy);
   }
   fillCaption(ctx, [...aceLines, ...partnerLines]);
@@ -937,7 +932,7 @@ function drawGymCard(
       const cy = y + L.ROW / 2;
       const w = L.COL - 2 * L.INX;
       const h = L.ROW - 2 * L.INY;
-      const url = spriteUrl(cell.pokemonId, cell.form);
+      const url = leagueSpriteUrl(cell.pokemonId, cell.form, cell.shiny);
       const img = url ? images.get(url) : undefined;
       ctx.save();
       if (img) {
@@ -979,7 +974,7 @@ function drawHomeTeamSprites(
   cells.forEach((c, i) => {
     const cx = seatsX + (lead + i + 0.5) * seatCol;
     const cy = y + L.ROW2 / 2;
-    const url = spriteUrl(c.pokemonId, c.form);
+    const url = leagueSpriteUrl(c.pokemonId, c.form, c.shiny);
     const img = url ? images.get(url) : undefined;
     if (img) drawSprite(ctx, img, cx, cy, 96);
     else drawEmptyBall(ctx, 18 * L.K2, cx, cy);
