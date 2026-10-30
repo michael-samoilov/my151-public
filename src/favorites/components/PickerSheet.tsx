@@ -233,8 +233,7 @@ export function PickerSheet({
       className={cn(PILL_CLASS, headerTight && 'justify-center', showIcons ? `${HOVER_LAYER} border-[#a3a3a3] bg-secondary text-secondary-foreground [--fill:var(--color-secondary)]` : PILL_OFF)}
       style={pillStyle({ badgePx: TITLE_BADGE_PX, iconOnly: headerTight })}
     >
-      {/* Turned 180°: the open eye is unchanged, and the crossed-out eye's gap moves below the slash, as in the Shiny glyph. */}
-      {showIcons ? <Eye size={16} className="shrink-0 rotate-180" aria-hidden /> : <EyeOff size={16} className="shrink-0 rotate-180" aria-hidden />}
+      {showIcons ? <Eye size={16} className="shrink-0" aria-hidden /> : <EyeOff size={16} className="shrink-0" aria-hidden />}
       <span className={headerTight ? 'sr-only' : undefined}>{t('favorites.icons')}</span>
     </button>
   );

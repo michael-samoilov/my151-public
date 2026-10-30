@@ -51,7 +51,6 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 import { LeagueRosterNudge } from './LeagueFunnelNudge';
 import { leagueSpriteUrl } from '../leagueSprite';
-import { ShinyStar } from '@/components/shiny/ShinyMarks';
 
 const GREY = '#a3a3a3';
 const BAND_RED = '#dc2626';
@@ -187,9 +186,6 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
                 />
               ) : filled ? (
                 <EmptySlotBall size={18} />
-              ) : null}
-              {p && cell.shiny ? (
-                <ShinyStar className="pointer-events-none absolute left-0 top-0" style={{ width: '0.625rem', height: '0.625rem' }} />
               ) : null}
             </span>
           );

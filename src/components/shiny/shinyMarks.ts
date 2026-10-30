@@ -1,13 +1,13 @@
 /**
- * The Shiny glyph, in Lucide's 24-unit box: a big four-point star at the top right and a small one at
- * the bottom left, both with a narrow waist. When on, the stars are solid yellow. When off, they are a
- * gray outline, and Lucide's slash (`m2 2 20 20`, as in EyeOff) takes the place of the big star's
- * lower-left edge.
+ * The Shiny glyph, in Lucide's 24-unit box: a big four-point star at the bottom left and a small one at
+ * the top right, as the newer games draw the shiny sparkle, both with a narrow waist. When on, the stars
+ * are solid yellow. When off, they are a gray outline, and Lucide's slash (`m2 2 20 20`, as in EyeOff)
+ * takes the place of the big star's upper-right edge, which lies on the slash.
  */
 export const SHINY_GLYPH = {
-  big: 'M15.3 2.1Q15.96 8.04 21.9 8.7Q15.96 9.36 15.3 15.3Q14.64 9.36 8.7 8.7Q14.64 8.04 15.3 2.1Z',
-  small: 'M6.2 13.6Q6.62 17.38 10.4 17.8Q6.62 18.22 6.2 22Q5.78 18.22 2 17.8Q5.78 17.38 6.2 13.6Z',
-  bigOpen: 'M8.7 8.7Q14.64 8.04 15.3 2.1Q15.96 8.04 21.9 8.7Q15.96 9.36 15.3 15.3',
+  big: 'M8.7 21.9Q8.04 15.96 2.1 15.3Q8.04 14.64 8.7 8.7Q9.36 14.64 15.3 15.3Q9.36 15.96 8.7 21.9Z',
+  small: 'M17.8 10.4Q17.38 6.62 13.6 6.2Q17.38 5.78 17.8 2Q18.22 5.78 22 6.2Q18.22 6.62 17.8 10.4Z',
+  bigOpen: 'M15.3 15.3Q9.36 15.96 8.7 21.9Q8.04 15.96 2.1 15.3Q8.04 14.64 8.7 8.7',
   slash: 'm2 2 20 20',
 } as const;
 

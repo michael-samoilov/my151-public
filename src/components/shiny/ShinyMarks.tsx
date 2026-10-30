@@ -53,7 +53,7 @@ export function NoShinyMark({ size, left, top }: { size: string; left: string; t
   );
 }
 
-/** The Shiny glyph when off: gray, with Lucide's slash in place of the big star's lower-left edge. */
+/** The Shiny glyph when off: gray, with Lucide's slash in place of the big star's upper-right edge. */
 export function NoShinyGlyph({ className, style, strokeWidth = 2 }: { className?: string; style?: CSSProperties; strokeWidth?: number }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
@@ -70,7 +70,7 @@ const RING = 2.4;
 
 /**
  * The gym card's shiny button: the Shiny glyph in a disc the size of the card's reset and remove
- * discs. On, gold stars in a ring of the same gold; off, gray stars in a thin gray ring; with
+ * discs. On, gold stars in a gold ring; off, gray stars in a gray ring of the same width; with
  * no shiny art, the crossed-out sparkle the browsers show. One svg holds the disc and the glyph, so
  * the two rasterise together under the card's zoom.
  */
@@ -79,7 +79,7 @@ export function ShinyDisc({ mark }: { mark: ShinyMark }) {
     <svg viewBox="-7 -7 38 38" className="block aspect-square w-full" aria-hidden="true">
       {mark === 'on' ? (
         <>
-          <circle cx={12} cy={12} r={19 - (1.5 * RING) / 2} fill="#ffffff" strokeWidth={1.5 * RING} stroke={SHINY_ON.color} />
+          <circle cx={12} cy={12} r={19 - RING / 2} fill="#ffffff" strokeWidth={RING} stroke={SHINY_ON.color} />
           <OnStars />
         </>
       ) : (

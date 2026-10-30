@@ -21,6 +21,12 @@ interface Screen {
 
 const read = (file: string) => fs.readFileSync(path.join(REPO_ROOT, file), 'utf8');
 const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixture.json') };
+/** The league fixture with its first card's first two lines shiny, so the home and the card show shiny marks. */
+const LEAGUE_SHINY = (() => {
+  const league = JSON.parse(LEAGUE['league-builder']);
+  for (const line of league.state.cards[0].lines.slice(0, 2)) line.shiny = true;
+  return { 'league-builder': JSON.stringify(league) };
+})();
 const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
 const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
 const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
@@ -156,6 +162,8 @@ export const SCREENS: Screen[] = [
   { id: 'league', path: '/custom-gym-leader' },
   { id: 'league-home', path: '/custom-gym-leader', seed: LEAGUE },
   { id: 'league-card', path: '/custom-gym-leader', seed: LEAGUE, act: click('[data-testid="league-slot-0"]') },
+  { id: 'league-home-shiny', path: '/custom-gym-leader', seed: LEAGUE_SHINY },
+  { id: 'league-card-shiny', path: '/custom-gym-leader', seed: LEAGUE_SHINY, act: click('[data-testid="league-slot-0"]') },
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
   {
     id: 'league-browser-es', path: '/custom-gym-leader?lang=es',
