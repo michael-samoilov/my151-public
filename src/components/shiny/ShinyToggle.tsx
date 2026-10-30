@@ -40,7 +40,7 @@ export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }:
       data-testid={testId}
       aria-pressed={on}
       onClick={onToggle}
-      className={cn(PILL_CLASS, 'relative', iconOnly && 'justify-center', on ? `${HOVER_LAYER} border-transparent text-secondary-foreground` : PILL_OFF)}
+      className={cn(PILL_CLASS, iconOnly && 'justify-center', on ? `${HOVER_LAYER} border-transparent text-secondary-foreground` : PILL_OFF)}
       style={{ ...pillStyle({ badgePx, iconOnly }), ...(on ? { background: SHINY_ON.pillFill, ...fillVar(SHINY_ON.pillFill) } : null) }}
     >
       {on ? <Ring stroke={SHINY_ON.color} badgePx={badgePx} /> : null}
