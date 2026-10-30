@@ -1,11 +1,13 @@
 (() => {
-  const RUNS_KEY = 'p151-trace-runs';
+  const HUB = location.pathname === '/';
+  const RUNS_KEY = HUB ? 'p151-trace-runs' : `p151-trace-runs:${location.pathname}`;
   const KEPT_RUNS = 5;
   const SPRITE_CACHE = 'p151-sprites-v3';
   const CARDS = ['dex', 'league', 'favorites'];
   const HUB_IMAGES = 'img[data-card-scene], [data-artwork] img';
   const GIVE_UP_MS = 15000;
   const TAIL_MS = 2000;
+  const isSprite = (src) => /\/sprites\//.test(src) || src.startsWith('blob:');
   const html = document.documentElement;
   const worker = navigator.serviceWorker;
 
@@ -114,6 +116,24 @@
   // skips the layout that getClientRects forces.
   const visible = (node) => Boolean(node) && getComputedStyle(node).visibility === 'visible' && node.getClientRects().length > 0;
 
+  // Sprites inside the viewport, and how many of them are drawn. Logged on change.
+  const sprites = { shown: 0, drawn: 0, changedAt: 0 };
+  function scanSprites() {
+    let shown = 0;
+    let drawn = 0;
+    document.querySelectorAll('img').forEach((img) => {
+      if (!isSprite(img.currentSrc || img.src)) return;
+      const box = img.getBoundingClientRect();
+      if (box.width === 0 || box.bottom < 0 || box.top > innerHeight || box.right < 0 || box.left > innerWidth) return;
+      shown++;
+      if (img.complete && img.naturalWidth > 0) drawn++;
+    });
+    if (shown !== sprites.shown || drawn !== sprites.drawn) {
+      Object.assign(sprites, { shown, drawn, changedAt: performance.now() });
+      log('sprites on screen', { shown, drawn });
+    }
+  }
+
   function frame(timestamp) {
     if (!recording) return;
     if (!frames++) log('first frame');
@@ -135,6 +155,7 @@
         }
       });
     }
+    if (!HUB && document.readyState !== 'loading') scanSprites();
     check();
     requestAnimationFrame(frame);
   }
@@ -144,13 +165,24 @@
   const giveUp = setTimeout(() => finish('timed out'), GIVE_UP_MS);
   function check() {
     if (tail || !recording) return;
-    const revealed = !html.classList.contains('p151-hub-images-pending') && !html.classList.contains('p151-wait');
-    const counted = CARDS.every((card) => seen[card] || !html.classList.contains(`p151-saved-${card}`));
-    if (revealed && loaded && counted) {
+    if (HUB ? hubShown() : spritesSettled()) {
       log('finish condition met');
       clearTimeout(giveUp);
       tail = setTimeout(() => finish('done'), TAIL_MS);
     }
+  }
+
+  function hubShown() {
+    const revealed = !html.classList.contains('p151-hub-images-pending') && !html.classList.contains('p151-wait');
+    const counted = CARDS.every((card) => seen[card] || !html.classList.contains(`p151-saved-${card}`));
+    return revealed && loaded && counted;
+  }
+  // Every sprite on screen drawn, and no change for 1 s. A page that shows no
+  // sprites ends 5 s after it starts.
+  function spritesSettled() {
+    const now = performance.now();
+    const drawn = sprites.shown > 0 && sprites.drawn === sprites.shown && now - sprites.changedAt > 1000;
+    return loaded && (drawn || (sprites.shown === 0 && now > 5000));
   }
 
   const round = (value) => (typeof value === 'number' ? Math.round(value) : value);
@@ -172,7 +204,7 @@
     const entryStarts = entry ? entries.filter((resource) => resource.name === entry.src).map((resource) => resource.startTime) : [];
     const snapshot = {
       navigation: pick(performance.getEntriesByType('navigation')[0], NAVIGATION_KEYS),
-      resources: entries.map((resource) => ({ name: file(resource.name), ...pick(resource, RESOURCE_KEYS) })),
+      resources: entries.map((resource) => ({ name: file(resource.name), sprite: isSprite(resource.name), ...pick(resource, RESOURCE_KEYS) })),
       appModule: entry ? { file: file(entry.src), startTime: entryStarts.length ? Math.round(Math.min(...entryStarts)) : null } : null,
       device: {
         userAgent: navigator.userAgent,
@@ -260,6 +292,21 @@
     return art === null || wait === null ? null : Math.max(art, wait);
   }
 
+  // The first sprite request. After idle, its time includes opening the
+  // service worker's sprite cache.
+  function firstSprite(tr) {
+    return tr.snapshot.resources.filter((resource) => resource.sprite)
+      .reduce((first, resource) => (first && first.startTime <= resource.startTime ? first : resource), null);
+  }
+  // When every sprite on screen was last fully drawn.
+  function screenDrawn(tr) {
+    let at = null;
+    tr.events.forEach((event) => {
+      if (event.what === 'sprites on screen' && event.detail.shown > 0 && event.detail.drawn === event.detail.shown) at = event.t;
+    });
+    return at;
+  }
+
   const MILESTONES = [
     { name: 'request start', at: (tr) => navigation(tr, 'requestStart') },
     { name: 'first HTML byte', at: (tr) => navigation(tr, 'responseStart') },
@@ -267,21 +314,28 @@
     { name: 'trace script loaded', at: (tr) => startOf(tr).t },
     { name: 'first frame', at: (tr) => firstAt(tr, 'first frame') },
     { name: 'first paint', at: (tr) => firstAt(tr, 'paint') },
-    { name: 'font ready', at: (tr) => removedAt(tr, 'p151-hub-font-pending') },
+    { name: 'font ready', hub: true, at: (tr) => removedAt(tr, 'p151-hub-font-pending') },
     { name: 'DOM ready', at: (tr) => firstAt(tr, 'DOMContentLoaded') },
-    ...CARDS.map((card) => ({ name: `${card} art ready`, at: (tr) => artReady(tr, card) })),
-    { name: 'artwork revealed', at: revealedAt },
-    { name: 'cards visible', at: (tr) => firstAt(tr, 'cards visible') },
+    ...CARDS.map((card) => ({ name: `${card} art ready`, hub: true, at: (tr) => artReady(tr, card) })),
+    { name: 'artwork revealed', hub: true, at: revealedAt },
+    { name: 'cards visible', hub: true, at: (tr) => firstAt(tr, 'cards visible') },
     { name: 'app module requested', at: (tr) => (tr.snapshot.appModule ? tr.snapshot.appModule.startTime : null) },
     { name: 'load event', at: (tr) => firstAt(tr, 'load') },
-    { name: 'hydration done', at: (tr) => firstAt(tr, 'class -', is('p151-hub-hydrating')) },
-    ...CARDS.map((card) => ({ name: `${card} count`, at: (tr) => firstAt(tr, 'count visible', (detail) => detail.card === card) })),
+    { name: 'hydration done', hub: true, at: (tr) => firstAt(tr, 'class -', is('p151-hub-hydrating')) },
+    ...CARDS.map((card) => ({ name: `${card} count`, hub: true, at: (tr) => firstAt(tr, 'count visible', (detail) => detail.card === card) })),
+    { name: 'first sprite requested', sprites: true, at: (tr) => firstSprite(tr)?.startTime ?? null },
+    { name: 'first sprite fetch took', sprites: true, at: (tr) => { const first = firstSprite(tr); return first ? first.responseEnd - first.startTime : null; } },
+    { name: 'first sprite drawn', sprites: true, at: (tr) => firstAt(tr, 'sprites on screen', (detail) => detail.drawn > 0) },
+    { name: 'sprites on screen drawn', sprites: true, at: screenDrawn },
+    { name: 'sprites on screen', sprites: true, at: (tr) => sprites.shown },
     { name: 'LCP', at: (tr) => lastAt(tr, 'lcp') },
   ];
 
+  const ROWS = MILESTONES.filter((row) => (HUB ? !row.sprites : !row.hub));
+
   function summarize(tr) {
     const summary = {};
-    MILESTONES.forEach(({ name, at }) => {
+    ROWS.forEach(({ name, at }) => {
       try { summary[name] = at(tr); } catch { summary[name] = null; }
     });
     return summary;
@@ -362,7 +416,7 @@
     };
     row('ms from nav start', runs.map((_, index) => `#${index + 1}`), true);
     Object.keys(runs[0].facts).forEach((fact) => row(fact, runs.map((run) => show(run.facts && run.facts[fact]))));
-    MILESTONES.forEach(({ name }) => row(name, runs.map((run) => show(run.milestones && run.milestones[name]))));
+    ROWS.forEach(({ name }) => row(name, runs.map((run) => show(run.milestones && run.milestones[name]))));
     wrap.appendChild(grid);
     return wrap;
   }
@@ -386,9 +440,9 @@
     const panel = el('div', PANEL_CSS);
     panel.id = 'p151-trace';
     const bar = el('div', 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;position:sticky;top:0;z-index:1;background:#fff;padding:8px 0 6px');
-    const status = el('div', 'display:block;margin:0 0 4px', `Hub load trace, ${trace.outcome}. #1 is this load.`);
+    const status = el('div', 'display:block;margin:0 0 4px', `${HUB ? 'Hub' : location.pathname} load trace, ${trace.outcome}. #1 is this load.`);
     const legend = el('div', 'display:block;margin:0');
-    ['≤ = before the trace script ran', 'fb = artwork fallback'].forEach((line) => legend.appendChild(el('div', LINE_CSS, line)));
+    if (HUB) ['≤ = before the trace script ran', 'fb = artwork fallback'].forEach((line) => legend.appendChild(el('div', LINE_CSS, line)));
     let grid = table(runs);
     let copyBox = null;
 
