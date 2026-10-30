@@ -1,7 +1,7 @@
 (() => {
   const RUNS_KEY = 'p151-trace-runs';
   const KEPT_RUNS = 5;
-  const SPRITE_CACHE = 'p151-sprites-v2';
+  const SPRITE_CACHE = 'p151-sprites-v3';
   const CARDS = ['dex', 'league', 'favorites'];
   const HUB_IMAGES = 'img[data-card-scene], [data-artwork] img';
   const GIVE_UP_MS = 15000;
@@ -211,6 +211,7 @@
           }
           snapshot.spriteCache.entries = (await cache.keys()).length;
         }
+        snapshot.spriteCache.names = (await caches.keys()).join(',');
       }
     } catch (error) {
       snapshot.spriteCache = { error: String(error) };
