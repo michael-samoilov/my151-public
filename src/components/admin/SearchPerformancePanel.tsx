@@ -294,7 +294,7 @@ function KpiToggle({
       data-kpi={kpi.key}
       aria-pressed={on}
       onClick={onToggle}
-      className={cn('rounded-lg p-2.5 text-left transition-colors', !on && 'hover:bg-muted/60')}
+      className={cn('rounded-lg p-2.5 text-left transition-colors max-md:flex max-md:flex-col', !on && 'hover:bg-muted/60')}
       style={on ? fill : undefined}
     >
       <Kpi

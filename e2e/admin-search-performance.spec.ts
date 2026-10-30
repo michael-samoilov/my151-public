@@ -49,5 +49,23 @@ test.describe('admin search performance', () => {
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
+
+  test('each change from the previous period stays on one line inside its tile', { tag: '@viewport' }, async ({ page }) => {
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search' }).click();
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
+    const tiles = searchPanel(page).locator('[data-kpi]');
+    await expect(tiles).toHaveCount(4);
+    const chips = await tiles.evaluateAll((els) => els.map((tile) => {
+      const chip = tile.querySelector('.rounded.bg-muted') as HTMLElement;
+      const box = chip.getBoundingClientRect(), outer = tile.getBoundingClientRect();
+      const style = getComputedStyle(chip);
+      return {
+        kpi: tile.getAttribute('data-kpi'),
+        lines: Math.round((box.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / parseFloat(style.lineHeight)),
+        inside: box.left >= outer.left && box.right <= outer.right,
+      };
+    }));
+    for (const chip of chips) expect(chip, JSON.stringify(chip)).toMatchObject({ lines: 1, inside: true });
+  });
 });
 
