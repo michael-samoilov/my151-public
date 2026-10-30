@@ -3,6 +3,7 @@ import { restrictionIds, useFavoriteBrowserStore } from '@/components/browser/br
 import { readFavoritePickerIds } from '@/components/browser/favoritePickerBridge';
 import { filterPokemon, groupEvolutionLines, type EvolutionGroup } from '@/hooks/usePokemonData';
 import { warmSprites } from '@/lib/spriteWarmup';
+import { whenIdle } from '@/lib/whenIdle';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { leaguePokemonDataSource as dataSource } from './data/catalog';
 import { useLeagueBrowserStore } from './store/browserBridge';
@@ -44,6 +45,15 @@ export function usePickerPreload(cardIndex: number): void {
   const myDexFilter = useLeagueBrowserStore((s) => s.myDexFilter);
   const sections = usePokedexStore((s) => s.sections);
   useEffect(() => {
-    if (open) warmSprites(pickerPageSprites(cardIndex), true);
+    if (!open) return;
+    // React runs this effect inside the tap that opened the card, so the
+    // filtering waits for idle time instead of delaying that tap's frame.
+    let live = true;
+    whenIdle(() => {
+      if (live) warmSprites(pickerPageSprites(cardIndex), true);
+    });
+    return () => {
+      live = false;
+    };
   }, [open, cardIndex, type, favoritesFilter, myDexFilter, sections]);
 }
