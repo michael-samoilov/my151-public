@@ -94,7 +94,7 @@ export default function FavoritesExportOverlay({ fills, shiny, onClose, onReview
       const blob = await (await fetch(url)).blob();
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
-      sendFavoriteExportBeacon(snapshot, mode, showDetailedStats);
+      sendFavoriteExportBeacon(snapshot, shiny, mode, showDetailedStats);
       onClose();
     } catch { setErrorKeys(previous => ({ ...previous, [key]: true })); }
     finally { setSaving(false); }

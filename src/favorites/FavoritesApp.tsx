@@ -202,7 +202,7 @@ function FavoritesContent({ sel, setSel }: {
             if (view === 'analytics') setAnalyticsMounted(true);
             setCurrentView(view);
           }}
-          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills); }} />
+          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills, shiny); }} />
         <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
