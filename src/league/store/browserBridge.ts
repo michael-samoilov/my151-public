@@ -5,6 +5,7 @@ import { getAllPokemon, getEvolutionLine, branchEndingAt } from '../data/catalog
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { t } from '@/i18n';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { placedIds, type LegendPick } from '../model/engine';
 import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { legendAt, useLeagueStore, type GymCard } from './useLeagueStore';
@@ -284,7 +285,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       }),
     setEvoLineSizeFilter: (evoLineSizeFilter) => set({ evoLineSizeFilter }),
     setMyDexFilter: (on) => set({ myDexFilter: on }),
-    setShinyView: (on) => set({ shinyView: on }),
+    setShinyView: (on) => {
+      // Only the browser's Shiny switch calls this, so it counts that switch turned on.
+      if (on) sendEventBeacon('league-shiny-on', { once: true });
+      set({ shinyView: on });
+    },
     setScopeFilter: (on) =>
       set((s) => {
         if (on) {

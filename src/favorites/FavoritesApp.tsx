@@ -21,6 +21,7 @@ import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useCompletionNudge } from './hooks/useCompletionNudge';
 import { filledCount, useAnalyticsUnlock } from './hooks/useAnalyticsUnlock';
 import { AnalyticsNudge } from './components/AnalyticsNudge';
@@ -166,8 +167,14 @@ function FavoritesContent({ sel, setSel }: {
       showIcons={showIcons}
       shinyView={shinyView}
       sortOrder={sortOrder}
-      onToggleIcons={() => setShowIcons((value) => !value)}
-      onToggleShiny={() => setShinyView((value) => !value)}
+      onToggleIcons={() => {
+        if (!showIcons) sendEventBeacon('favorites-icons-on', { once: true });
+        setShowIcons(!showIcons);
+      }}
+      onToggleShiny={() => {
+        if (!shinyView) sendEventBeacon('favorites-shiny-on', { once: true });
+        setShinyView(!shinyView);
+      }}
       onClose={() => {
         if (sel.keyboard) requestAnimationFrame(() => {
           document.querySelector<HTMLButtonElement>(`[data-testid="favorites-cell-${sel.type}-${sel.gen}"]`)?.focus({ preventScroll: true });
