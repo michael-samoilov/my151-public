@@ -307,17 +307,17 @@ export function usePickerSprite(sprite: string, keep = false): string {
   return src;
 }
 
-// The cache that public/sw.js serves sprites from.
-const SERVICE_WORKER_CACHE = 'p151-sprites-v3';
 const kept = new Set<string>();
 
+// public/sw.js stores the sprite, so the next visit draws it with no request.
+// The active worker takes it even before it controls this page.
 function keepForNextVisit(sprite: string) {
   objectUrl(sprite);
   const blob = blobs.get(sprite);
-  if (!blob || kept.has(sprite) || typeof caches === 'undefined' || !('serviceWorker' in navigator)) return;
+  if (!blob || kept.has(sprite) || !('serviceWorker' in navigator)) return;
   kept.add(sprite);
   const url = new URL(sprite, location.href).href;
-  caches.open(SERVICE_WORKER_CACHE)
-    .then((cache) => cache.put(url, new Response(blob, { headers: { 'Content-Type': 'image/png' } })))
+  navigator.serviceWorker.ready
+    .then((registration) => registration.active?.postMessage({ keep: url, blob }))
     .catch(() => {});
 }

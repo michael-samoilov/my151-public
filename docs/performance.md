@@ -348,3 +348,25 @@ it on each hub load as the sprite cache's `hasMs`.
 Not yet measured: the field effect. Speed Insights stored no data from October
 26 at about 08:00 UTC, while visits continued. The pages that show sprites
 still read the worker cache; it starts empty and holds sprites only.
+
+## Sprite storage in IndexedDB, October 31
+
+After idle, the iPhone's first sprite page waited about 0.5 s before any sprite
+request started: the `?trace` panel on the picker showed every sprite and type
+icon waiting until 1,182 ms, while the page's code went out at 30–50 ms, then
+113 sprites arrived within 100 ms. The worker's Cache Storage held 1,068
+entries and grows toward the 2,900 files under `public/sprites`.
+
+WebKitGTK, cold browser start, first sprite read, each kind alone in its own
+profile, 3,000 sprites: Cache Storage one entry per sprite 117–130 ms;
+IndexedDB one record per sprite 10–18 ms; 20 bundled Cache Storage entries
+5–6 ms. Cache Storage grew with the count (7–11, 36–50, 117–130 ms at 100,
+1,000 and 3,000); IndexedDB stayed at 4–20 ms. The owner's iPhone was about
+12 times slower than this machine for the same cache.
+
+The worker now keeps each sprite in IndexedDB (`p151-sprites`), as raw bytes
+with their type, because WebKit does not store a Blob from a worker. Any
+storage error falls back to the network. The picker hands its kept sprites to
+the worker by message. Bundles would open slightly faster but need a build
+step and download whole groups. Every Cache Storage cache goes on update, so
+sprites download once more.

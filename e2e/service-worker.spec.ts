@@ -11,27 +11,39 @@ for (const path of ['/', '/pokedex-builder', '/favorite-pokemon-picker', '/custo
   });
 }
 
-// The worker caches sprites only. Built files stay with the HTTP cache, and an
-// older worker's cache goes on update: WebKit reopens a large worker cache on
-// the first request after the app has been idle, before it answers any image.
-test('the service worker leaves built files to the HTTP cache and drops the old cache', async ({ page }, testInfo) => {
+// The worker keeps sprites in IndexedDB and leaves built files to the HTTP
+// cache. WebKit reopens Cache Storage on the first request after the app has
+// been idle, at a cost that grows with every entry, so an older worker's caches
+// go on update and nothing is cached there again.
+test('the service worker keeps sprites in IndexedDB, and nothing in Cache Storage', async ({ page }, testInfo) => {
   await page.goto('/robots.txt');
   await page.evaluate(async () => {
-    const old = await caches.open('p151-sprites-v2');
-    await old.put('/assets/an-old-deploy.js', new Response('old'));
+    const old = await caches.open('p151-sprites-v3');
+    await old.put('/sprites/pokemon/25.png', new Response('old'));
   });
-  await page.goto('/?notme');
+  await page.goto('/favorite-pokemon-picker?notme');
   await expect.poll(
     () => page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.active?.state ?? null),
     { timeout: 15_000 },
   ).toBe('activated');
   await page.reload();
   await page.reload();
-  await expect(page.locator('#root h1')).toBeVisible();
-  const found = await page.evaluate(async () => Promise.all((await caches.keys()).map(async (name) => ({
-    name,
-    builtFiles: (await (await caches.open(name)).keys()).filter((request) => new URL(request.url).pathname.startsWith('/assets/')).length,
-  }))));
-  await testInfo.attach('caches.json', { body: JSON.stringify(found, null, 1), contentType: 'application/json' });
-  expect(found.filter((cache) => cache.name === 'p151-sprites-v2' || cache.builtFiles > 0)).toEqual([]);
+  await expect(page.locator('img[src*="/sprites/"]').first()).toBeVisible();
+  const stored = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('p151-sprites');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const keys = !db.objectStoreNames.contains('sprites') ? [] : await new Promise<IDBValidKey[]>((resolve, reject) => {
+      const request = db.transaction('sprites').objectStore('sprites').getAllKeys();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    return { caches: await caches.keys(), paths: keys.map((key) => new URL(String(key)).pathname) };
+  });
+  await testInfo.attach('sprite-storage.json', { body: JSON.stringify(stored, null, 1), contentType: 'application/json' });
+  expect(stored.caches).toEqual([]);
+  expect(stored.paths.length).toBeGreaterThan(0);
+  expect(stored.paths.filter((path) => !path.startsWith('/sprites/') && path !== '/favicon.svg' && path !== '/icons.svg')).toEqual([]);
 });
