@@ -50,22 +50,31 @@ test.describe('admin search performance', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 
-  test('each change from the previous period stays on one line inside its tile', { tag: '@viewport' }, async ({ page }) => {
+  test('each change from the previous period sits beside its figure, as tall as it, unless it cannot fit', { tag: '@viewport' }, async ({ page }) => {
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search' }).click();
     await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
     const tiles = searchPanel(page).locator('[data-kpi]');
     await expect(tiles).toHaveCount(4);
     const chips = await tiles.evaluateAll((els) => els.map((tile) => {
       const chip = tile.querySelector('.rounded.bg-muted') as HTMLElement;
-      const box = chip.getBoundingClientRect(), outer = tile.getBoundingClientRect();
-      const style = getComputedStyle(chip);
+      const figure = chip.previousElementSibling as HTMLElement;
+      const c = chip.getBoundingClientRect(), f = figure.getBoundingClientRect(), t = tile.getBoundingClientRect();
+      const line = parseFloat(getComputedStyle(chip).lineHeight);
       return {
         kpi: tile.getAttribute('data-kpi'),
-        lines: Math.round((box.height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / parseFloat(style.lineHeight)),
-        inside: box.left >= outer.left && box.right <= outer.right,
+        parts: chip.children.length,
+        partsOnOneLine: [...chip.children].every((part) => part.getBoundingClientRect().height < line * 1.5),
+        inside: c.left >= t.left && c.right <= t.right,
+        beside: c.left >= f.right,
+        sameSpan: Math.abs(c.top - f.top) <= 1 && Math.abs(c.bottom - f.bottom) <= 1,
       };
     }));
-    for (const chip of chips) expect(chip, JSON.stringify(chip)).toMatchObject({ lines: 1, inside: true });
+    for (const chip of chips) expect(chip, JSON.stringify(chip)).toMatchObject({ partsOnOneLine: true, inside: true });
+    // The count changes stack their two parts.
+    expect(chips.filter((chip) => chip.kpi === 'clicks' || chip.kpi === 'impressions').map((chip) => chip.parts)).toEqual([2, 2]);
+    // Only the narrowest phones lack room beside the figure.
+    if (page.viewportSize()!.width >= 360) {
+      for (const chip of chips) expect(chip, JSON.stringify(chip)).toMatchObject({ beside: true, sameSpan: true });
+    }
   });
 });
-

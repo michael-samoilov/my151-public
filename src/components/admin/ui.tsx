@@ -110,7 +110,7 @@ export function Kpi({
 }) {
   return (
     <div className="flex min-w-[6.5rem] flex-col">
-      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+      <div className="flex flex-wrap items-stretch gap-x-1.5 gap-y-1">
         <span className={cn('font-bold tabular-nums leading-none', emphasis ? 'text-4xl' : 'text-2xl')}>
           {value}
         </span>
@@ -122,10 +122,11 @@ export function Kpi({
   );
 }
 
-export function Delta({ children }: { children: React.ReactNode }) {
+/** A change from the previous period beside a figure. Its parts stack, and it spans the figure's height. */
+export function Delta({ parts }: { parts: readonly string[] }) {
   return (
-    <span className="whitespace-nowrap rounded bg-muted px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums text-muted-foreground">
-      {children}
+    <span className="flex flex-col justify-center rounded bg-muted px-1.5 text-[0.65rem] font-bold leading-[1.1] tabular-nums text-muted-foreground">
+      {parts.map((part, i) => <span key={i} className="whitespace-nowrap">{part}</span>)}
     </span>
   );
 }

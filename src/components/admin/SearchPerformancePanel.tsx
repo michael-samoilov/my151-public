@@ -73,11 +73,11 @@ function statusDot(status: SearchProviderStatus): string {
   return 'bg-muted-foreground/50';
 }
 
-function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' | 'impressions'): string {
-  if (!comparison) return '—';
+function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' | 'impressions'): string[] {
+  if (!comparison) return ['—'];
   const absolute = comparison.delta[metric];
   const relative = comparison.delta[`${metric}Pct`];
-  return relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`;
+  return relative == null ? [signed(absolute)] : [signed(absolute), signedPercent(relative)];
 }
 
 type SearchKpiKey = 'clicks' | 'impressions' | 'ctr' | 'position';
@@ -94,7 +94,8 @@ interface SearchKpi {
   pick: (metric: SearchMetric) => number | null;
   format: (value: number) => string;
   axis: (value: number) => string;
-  delta: (comparison: SearchRangeComparison | null) => string;
+  /** The change from the previous period, one part per line. */
+  delta: (comparison: SearchRangeComparison | null) => string[];
 }
 
 const SEARCH_KPIS: SearchKpi[] = [
@@ -129,7 +130,7 @@ const SEARCH_KPIS: SearchKpi[] = [
     pick: (m) => m.ctr,
     format: percent,
     axis: (value) => `${+(value * 100).toFixed(1)}%`,
-    delta: (c) => (c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
+    delta: (c) => [c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'],
   },
   {
     key: 'position',
@@ -142,7 +143,7 @@ const SEARCH_KPIS: SearchKpi[] = [
     format: position,
     axis: (value) => String(+value.toFixed(1)),
     delta: (c) =>
-      c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
+      [c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—'],
   },
 ];
 
@@ -301,7 +302,7 @@ function KpiToggle({
         emphasis={kpi.emphasis}
         value={metric ? shown(kpi, kpi.pick(metric)) : '—'}
         label={kpi.label}
-        delta={<Delta>{kpi.delta(comparison)}</Delta>}
+        delta={<Delta parts={kpi.delta(comparison)} />}
       />
     </button>
   );
