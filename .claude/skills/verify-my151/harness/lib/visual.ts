@@ -30,6 +30,10 @@ const LEAGUE_SHINY = (() => {
 const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
 const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
 const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
+/** Gen I's favorite is Tentacruel, which Water / Gen I holds shiny and Poison / Gen I holds normal. */
+const FAVORITES_SHINY_PAIR = {
+  'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'poison|1': 73 }, shiny: { 'water|1': 73 } }, version: 4 }),
+};
 const BLANK_LEAGUE = {
   'league-builder': JSON.stringify({
     state: {
@@ -96,6 +100,14 @@ const hoverGridCell = (cell: string) => async (page: Page) => {
   const box = (await page.getByTestId(`favorites-cell-${cell}`).boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
   await page.getByTestId('favorites-name-tooltip').waitFor({ state: 'visible', timeout: 10_000 });
+};
+/** Scrolls a grid cell into view, then waits for the minimap that the scroll shows to fade. */
+const showGridCell = (cell: string) => async (page: Page) => {
+  await page.getByTestId(`favorites-cell-${cell}`).scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => {
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    return !map || getComputedStyle(map).opacity === '0';
+  }, undefined, { timeout: 10_000 });
 };
 /**
  * Moves the pointer to the top-left corner on a phone. A full-page capture drops touch emulation, so
@@ -220,6 +232,14 @@ export const SCREENS: Screen[] = [
     act: async (page) => {
       await openPickerCell('fire-5')(page);
       await click('[data-testid="favorites-shiny-toggle"]')(page);
+      await parkPointerOnPhone(page);
+    },
+  },
+  { id: 'favorites-shiny-pair', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_SHINY_PAIR, act: showGridCell('favorite-1') },
+  {
+    id: 'favorites-selector-shiny-pair', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_SHINY_PAIR,
+    act: async (page) => {
+      await openPickerCell('favorite-1')(page);
       await parkPointerOnPhone(page);
     },
   },
