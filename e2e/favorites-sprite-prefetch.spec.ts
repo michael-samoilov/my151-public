@@ -137,7 +137,21 @@ test('a returning visitor’s picks draw from the service worker, with no reques
   await pick.click();
   const sprite = page.getByTestId('favorites-cell-water-1').locator('img[alt]:not([alt=""])');
   await expect(sprite).toHaveAttribute('alt', name!);
-  await expect.poll(() => page.evaluate(async () => (await caches.keys()).length)).toBeGreaterThan(0);
+  // The service worker keeps sprites in IndexedDB (public/sw.js).
+  await expect.poll(() => page.evaluate(async () => {
+    if (!(await indexedDB.databases()).some((db) => db.name === 'p151-sprites')) return 0;
+    return new Promise<number>((resolve) => {
+      const request = indexedDB.open('p151-sprites');
+      request.onsuccess = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('sprites')) { db.close(); resolve(0); return; }
+        const count = db.transaction('sprites').objectStore('sprites').count();
+        count.onsuccess = () => { db.close(); resolve(count.result); };
+        count.onerror = () => { db.close(); resolve(0); };
+      };
+      request.onerror = () => resolve(0);
+    });
+  })).toBeGreaterThan(0);
   await page.waitForTimeout(500);
 
   const requests = countRequests(context);

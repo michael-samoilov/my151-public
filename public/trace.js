@@ -2,7 +2,7 @@
   const HUB = location.pathname === '/';
   const RUNS_KEY = HUB ? 'p151-trace-runs' : `p151-trace-runs:${location.pathname}`;
   const KEPT_RUNS = 5;
-  const SPRITE_CACHE = 'p151-sprites-v3';
+  const SPRITE_DB = 'p151-sprites';
   const CARDS = ['dex', 'league', 'favorites'];
   const HUB_IMAGES = 'img[data-card-scene], [data-artwork] img';
   const GIVE_UP_MS = 15000;
@@ -214,7 +214,7 @@
         hardwareConcurrency: navigator.hardwareConcurrency,
       },
       storage: null,
-      spriteCache: null,
+      spriteStore: null,
     };
     try {
       if (navigator.storage && navigator.storage.estimate) {
@@ -224,29 +224,32 @@
     } catch (error) {
       snapshot.storage = { error: String(error) };
     }
-    // Last, so the cache reads cannot compete with the load they describe.
-    // caches.has first, because caches.open would create a missing cache.
+    // Last, so the storage reads cannot compete with the load they describe.
+    // The sprite database is opened only when it exists: opening a missing
+    // one would create it without the store the service worker expects.
     try {
-      if (self.caches) {
-        let since = performance.now();
-        const exists = await caches.has(SPRITE_CACHE);
-        snapshot.spriteCache = { exists, hasMs: elapsed(since) };
-        if (exists) {
-          since = performance.now();
-          const cache = await caches.open(SPRITE_CACHE);
-          snapshot.spriteCache.openMs = elapsed(since);
-          const url = Array.from(document.querySelectorAll(HUB_IMAGES)).map((img) => img.currentSrc).find((src) => src && !src.startsWith('data:'));
-          if (url) {
-            since = performance.now();
-            const hit = await cache.match(url);
-            Object.assign(snapshot.spriteCache, { matchMs: elapsed(since), matchFile: file(url), hit: Boolean(hit) });
-          }
-          snapshot.spriteCache.entries = (await cache.keys()).length;
-        }
-        snapshot.spriteCache.names = (await caches.keys()).join(',');
+      const since = performance.now();
+      const listed = indexedDB.databases ? (await indexedDB.databases()).some((db) => db.name === SPRITE_DB) : false;
+      snapshot.spriteStore = { exists: listed };
+      if (listed) {
+        const db = await new Promise((resolve, reject) => {
+          const request = indexedDB.open(SPRITE_DB);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        snapshot.spriteStore.openMs = elapsed(since);
+        snapshot.spriteStore.records = db.objectStoreNames.contains('sprites')
+          ? await new Promise((resolve, reject) => {
+            const request = db.transaction('sprites').objectStore('sprites').count();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          })
+          : 'no store';
+        db.close();
       }
+      if (self.caches) snapshot.spriteStore.caches = (await caches.keys()).join(',') || 'none';
     } catch (error) {
-      snapshot.spriteCache = { error: String(error) };
+      snapshot.spriteStore = { error: String(error) };
     }
     return snapshot;
   }
@@ -422,14 +425,14 @@
   }
 
   function facts() {
-    const { navigation: nav, device, storage, spriteCache } = trace.snapshot;
+    const { navigation: nav, device, storage, spriteStore } = trace.snapshot;
     const lines = [
       `device ${device.userAgent}`,
       `screen ${device.innerWidth}x${device.innerHeight} @${device.devicePixelRatio}x, ${show(device.hardwareConcurrency)} cores`,
       [`html ${show(nav.nextHopProtocol)}`, nav.transferSize === undefined ? '' : kb(nav.transferSize), `workerStart ${show(nav.workerStart)}`,
         nav.activationStart === undefined ? '' : `activationStart ${nav.activationStart}`].filter(Boolean).join(' '),
       `storage ${!storage ? '-' : storage.error || `${mb(storage.usage)} of ${mb(storage.quota)}`}`,
-      `sprite cache ${!spriteCache ? 'unavailable' : spriteCache.error || describe(spriteCache)}`,
+      `sprite store ${!spriteStore ? 'unavailable' : spriteStore.error || describe(spriteStore)}`,
     ];
     const block = el('div', 'display:block;margin:6px 0 0');
     lines.forEach((line) => block.appendChild(el('div', LINE_CSS, line)));
