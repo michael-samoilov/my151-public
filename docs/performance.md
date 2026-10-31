@@ -370,3 +370,14 @@ storage error falls back to the network. The picker hands its kept sprites to
 the worker by message. Bundles would open slightly faster but need a build
 step and download whole groups. Every Cache Storage cache goes on update, so
 sprites download once more.
+
+The owner's iPhone confirmed the fix after a long idle, on October 31, with
+Chrome on iOS and the `?trace` panel on the picker. The first sprite request
+started at 282 ms and took 183 ms; all 113 sprites on screen were drawn at
+501 ms. The last idle run on Cache Storage, on October 30, started the first
+request at 651 ms, took 532 ms, and drew the last sprite at 1,331 ms. The store
+held 1,037 records, opened in 2 ms, and no cache was left. No sprite came over
+the network. The fastest earlier runs took 138 ms (IndexedDB) and 150 ms (Cache
+Storage) for the first request, so idle now adds about 40 ms instead of about
+380 ms. The rest is likely the worker's own time per request, which every run
+pays.
