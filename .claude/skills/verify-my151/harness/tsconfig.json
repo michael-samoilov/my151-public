@@ -1,6 +1,7 @@
 {
   "extends": "../../../../tsconfig.node.json",
   "compilerOptions": {
+    "incremental": false,
     "tsBuildInfoFile": null,
     /* evalJson bodies and Playwright callbacks run in the page. */
     "lib": ["ES2023", "DOM", "DOM.Iterable"],

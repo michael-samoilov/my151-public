@@ -5,7 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { atomicJson, fingerprint, makeReceipt, validateReceipt } from './artifact';
-import { RunJournal } from './execution';
+import { eslintCacheArgs } from './cache';
+import { RunJournal, settleLanes } from './execution';
 import { discoveryCounts, type Discovery } from './discovery';
 import { changedPaths, parseOptions, select } from './policy';
 
@@ -32,19 +33,26 @@ async function main() {
   const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId };
   try {
     if (selection.effectiveMode !== 'docs') {
-      await journal.stage('lint', 'npm', ['run', 'lint']);
-      await journal.stage('unit', 'npm', ['test']);
-      for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
-        await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
-      }
-      await journal.stage('sprite-credits', 'npm', ['run', 'credits:check-sprites']);
-      await journal.stage('sprite-ink', process.execPath, ['scripts/build-favorite-sprite-ink.mjs', '--check']);
-      await journal.stage('verify-harness-types', process.execPath, ['node_modules/typescript/bin/tsc', '-p', '.claude/skills/verify-my151/harness']);
-      await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);
-      await journal.stage('build', 'npm', ['run', 'build', '--', '--manifest', '--outDir', join(directory, 'dist'), '--emptyOutDir']);
-      makeReceipt(root, directory, runId, source);
-      await journal.stage('bundle-budget', process.execPath, ['scripts/check-bundle-budget.mjs', '--dist', join(directory, 'dist')]);
-      validateReceipt(root, directory, runId);
+      // These lanes read the source and write only their own outputs, so they run at the same time.
+      await settleLanes([
+        () => journal.stage('lint', 'npm', ['run', 'lint', '--', ...eslintCacheArgs(root)]),
+        () => journal.stage('unit', 'npm', ['test']),
+        async () => {
+          for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
+            await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
+          }
+          await journal.stage('sprite-credits', 'npm', ['run', 'credits:check-sprites']);
+          await journal.stage('sprite-ink', process.execPath, ['scripts/build-favorite-sprite-ink.mjs', '--check']);
+          await journal.stage('verify-harness-types', process.execPath, ['node_modules/typescript/bin/tsc', '-p', '.claude/skills/verify-my151/harness']);
+          await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);
+        },
+        async () => {
+          await journal.stage('build', 'npm', ['run', 'build', '--', '--manifest', '--outDir', join(directory, 'dist'), '--emptyOutDir']);
+          makeReceipt(root, directory, runId, source);
+          await journal.stage('bundle-budget', process.execPath, ['scripts/check-bundle-budget.mjs', '--dist', join(directory, 'dist')]);
+          validateReceipt(root, directory, runId);
+        },
+      ]);
       if (process.env.PLAYWRIGHT_BASE_URL) {
         atomicJson(join(directory, 'external-preview.json'), { url: process.env.PLAYWRIGHT_BASE_URL, sourceIdentity: 'unproven', note: 'Browser evidence is external; the local build receipt cannot identify the remote source.' });
       }

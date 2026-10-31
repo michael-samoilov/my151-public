@@ -14,8 +14,9 @@
     "og-image": "node scripts/generate-og-image.mjs",
     "indexnow": "NODE_USE_ENV_PROXY=1 node scripts/indexnow.mjs",
     "search:connect-google": "node scripts/connect-google-search-console.mjs",
+    "prebuild": "node --import tsx scripts/ci/typecheck-state.ts",
     "build": "npm run i18n:verify && tsc -b && vite build",
-    "build:vercel": "npm run build && tsx scripts/keep-previous-assets.ts dist",
+    "build:vercel": "tsc -b --clean && npm run build && tsx scripts/keep-previous-assets.ts dist",
     "lint": "eslint . --suppressions-location eslint-suppressions.json",
     "preview": "vite preview",
     "doctor": "npx react-doctor@latest",
@@ -40,7 +41,8 @@
     "ci": "node --import tsx scripts/ci/run.ts affected",
     "ci:fast": "node --import tsx scripts/ci/run.ts fast",
     "ci:affected": "node --import tsx scripts/ci/run.ts affected",
-    "ci:full": "node --import tsx scripts/ci/run.ts full"
+    "ci:full": "node --import tsx scripts/ci/run.ts full",
+    "ci:pre-push": "node --import tsx scripts/ci/pre-push.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
