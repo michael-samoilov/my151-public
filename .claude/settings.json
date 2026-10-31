@@ -34,6 +34,17 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-push-checks.mjs\"",
+            "timeout": 300,
+            "statusMessage": "Running lint and the type check before the push"
+          }
+        ]
       }
     ]
   }

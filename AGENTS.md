@@ -124,3 +124,4 @@ Maintain the suite this way:
 - Tag a Playwright test or describe `@viewport` when its result depends on the viewport or device. Untagged tests run only in the `desktop` project. `scripts/check-viewport-tags.mjs` enforces the tag on tests that skip `desktop`.
 - `scripts/check-test-rules.mjs` fails on a committed proof test, and on a new unit test outside `api/`, `scripts/`, or saved-data code unless its first 5 lines hold `// keeps: <bug E2E misses>`.
 - Run tests by the fast/affected/full policy in `CLAUDE.md`, "Build Verification". Keep all cheap API and migration gates in every code mode.
+- Run `npm run ci:pre-push` (lint and the type check, about 2 seconds when warm) before every `git push`. In Claude Code, a hook runs it and blocks a failing push.
