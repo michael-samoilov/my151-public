@@ -6,6 +6,11 @@ interface ChartQuartile {
   axisValue?: number;
 }
 
+// Ticks every 25% so each tick meets a p25, p50 or p75 guide.
+export function percentileAxis(color: string) {
+  return {type: 'value' as const, min: 0, max: 100, interval: 25, splitLine: {show: false}, axisLabel: {color, fontSize: 9, formatter: '{value}%'}};
+}
+
 export function quartileGuideSeries(quartiles: ChartQuartile[], xMin: number, xMax: number, color: string, format: (value: number) => string, background = '#fff') {
   const ctx = document.createElement('canvas').getContext('2d');
   if (ctx) ctx.font = '9px sans-serif';

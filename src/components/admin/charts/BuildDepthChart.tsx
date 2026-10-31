@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import {quartileGuideSeries} from './quartileGuides';
+import {percentileAxis, quartileGuideSeries} from './quartileGuides';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
 
 interface Curve {
@@ -53,13 +53,7 @@ export function BuildDepthChart({
           splitLine: { show: false },
           axisLabel: { color: faint, fontSize: 9 },
         },
-        yAxis: {
-          type: 'value',
-          min: 0,
-          max: 100,
-          splitLine: { show: false },
-          axisLabel: { color: faint, fontSize: 9, formatter: '{value}%' },
-        },
+        yAxis: percentileAxis(faint),
         series: [
           {
             type: 'line',

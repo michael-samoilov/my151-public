@@ -1,6 +1,6 @@
 import {useCallback, useMemo} from 'react';
 import type {CustomSeriesRenderItemAPI} from 'echarts';
-import {quartileGuideSeries} from './quartileGuides';
+import {percentileAxis, quartileGuideSeries} from './quartileGuides';
 import {cssVar, useECharts, type EChartsOption} from './useECharts';
 
 const format = (v: number) => v.toLocaleString(undefined, {maximumFractionDigits: 1});
@@ -66,7 +66,7 @@ export function RecordedDistributionChart({values, minutes, series}: {values: nu
       grid:{left:40,right:16,top:20,bottom:26},
       tooltip:{show:false},
       xAxis:{type:'value',min:0,max:xMax,axisLabel:{show:false},axisTick:{show:false},splitLine:{show:false},axisLine:{lineStyle:{color:grid}}},
-      yAxis:{type:'value',min:0,max:100,interval:25,axisLabel:{color:faint,fontSize:9,formatter:'{value}%'},splitLine:{show:false}},
+      yAxis:percentileAxis(faint),
       series:[
         ...(curves ? curves.filter(s=>s.sorted.length).map(s=>({name:s.name,type:'line' as const,data:[...s.points,[xMax,0]],smooth:false,symbol:'none',lineStyle:{color:s.color,width:2}})) : [{type:'line' as const,data:[...points,[xMax,0]],smooth:false,symbol:'none',lineStyle:{color:ink,width:2},areaStyle:{color:ink,opacity:0.04}}]),
         quartileGuideSeries((curves ? [] : quartiles).map(({q,value})=>({percentile:q,value,axisValue:Math.log1p(value)})),0,xMax,faint,display,card),
