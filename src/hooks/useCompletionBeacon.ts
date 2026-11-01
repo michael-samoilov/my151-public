@@ -64,6 +64,18 @@ export function takePendingEvents(): string[] {
   }
 }
 
+/** Puts events back after a send the server did not store, so the next beacon carries them. */
+export function returnPendingEvents(events: string[] | undefined) {
+  if (!events?.length) return;
+  try {
+    const cur = JSON.parse(localStorage.getItem(PENDING_EVENTS_KEY) || '[]') as string[];
+    const merged = [...events, ...cur.filter((e) => !events.includes(e))];
+    localStorage.setItem(PENDING_EVENTS_KEY, JSON.stringify(merged.slice(-20)));
+  } catch {
+    return;
+  }
+}
+
 function postBeacon(
   ids: number[],
   kind: BeaconKind,
@@ -101,8 +113,12 @@ function postBeacon(
     headers: { 'Content-Type': 'application/json' },
     body: payload,
     keepalive: true,
-  }).then(async response=>{if(response.ok){const data=await response.json();acknowledgeMinuteActivity('dex',data.activityAck);}}).catch(() => {
-  });
+  }).then(async response=>{
+    if(!response.ok){returnPendingEvents(events);return;}
+    const data=await response.json();
+    if(data.contended)returnPendingEvents(events);
+    acknowledgeMinuteActivity('dex',data.activityAck);
+  }).catch(() => returnPendingEvents(events));
 }
 
 export function useCompletionBeacon() {

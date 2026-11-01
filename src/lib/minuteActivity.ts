@@ -6,6 +6,7 @@ const KEY='p151-minute-history-v1',MAX_BYTES=48_000,MAX_PAYLOAD_BYTES=12_000,MAX
 type State={pending:MinuteActivityBatch[];open:MinuteActivityBucket[];incomplete?:true;pauseUntil:number};
 const states:Record<MinuteActivityTool,State>={dex:{pending:[],open:[],pauseUntil:0},league:{pending:[],open:[],pauseUntil:0},favorites:{pending:[],open:[],pauseUntil:0}};
 let loaded=false;
+const sent:Record<MinuteActivityTool,string[]>={dex:[],league:[],favorites:[]};
 let persistTimer:ReturnType<typeof setTimeout>|undefined;
 const tab=crypto.randomUUID();
 const allowed=()=>!DEMO_MODE&&!PREVIEW_DEPLOY&&!isOptedOut();
@@ -72,6 +73,7 @@ export function minuteActivityPayload(tool:MinuteActivityTool):MinuteActivityPay
   if(batches.length===4||JSON.stringify({v:1,batches:[...batches,batch]}).length>MAX_PAYLOAD_BYTES)break;
   batches.push(batch);
  }
+ sent[tool]=batches.map(b=>b.id);
  return batches.length?{v:1,batches}:undefined;
 }
 export function acknowledgeMinuteActivity(tool:MinuteActivityTool,value:unknown){
@@ -80,6 +82,8 @@ export function acknowledgeMinuteActivity(tool:MinuteActivityTool,value:unknown)
  const ack=value as MinuteActivityAck,state=states[tool];
  if(!Array.isArray(ack.accepted)||!['recorded','paused','disabled','invalid'].includes(ack.status))return;
  state.pending=state.pending.filter(b=>!ack.accepted.includes(b.id));
+ // The server never stores a batch it called invalid, so sending it again would repeat forever.
+ if(ack.status==='invalid'){const before=state.pending.length;state.pending=state.pending.filter(b=>!sent[tool].includes(b.id));if(state.pending.length<before)state.incomplete=true;}
  if(ack.status==='paused'){state.pauseUntil=Number.isFinite(ack.retryAt)?Math.max(Date.now(),ack.retryAt!):Date.now()+60*60_000;state.incomplete=true;}
  if(ack.status==='disabled'){state.pauseUntil=Date.now()+60*60_000;state.incomplete=true;}
  persist();

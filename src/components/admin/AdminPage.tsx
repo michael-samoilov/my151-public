@@ -1718,6 +1718,7 @@ export function AdminPage() {
   }, [data]);
 
   const signOut = useCallback(() => {
+    latestLoad += 1;
     try {
       if (!demo) localStorage.removeItem(TOKEN_KEY);
     } catch {
