@@ -362,6 +362,8 @@ export const enUi = {
   'feedback.category.idea': 'Idea',
   'feedback.category.other': 'Other',
   'feedback.category.translation': 'Translation',
+  'feedback.charsLeft_one': '{count} character left',
+  'feedback.charsLeft_other': '{count} characters left',
   'feedback.context.browser': 'browser: {ua}',
   'feedback.context.browserLanguages': 'browser languages: {languages}',
   'feedback.context.favoritePicks_one': '{count} pick',

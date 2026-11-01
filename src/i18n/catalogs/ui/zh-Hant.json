@@ -526,6 +526,7 @@
   "feedback.category.idea": "建議",
   "feedback.category.other": "其他",
   "feedback.category.translation": "翻譯",
+  "feedback.charsLeft_other": "還可輸入 {count} 個字",
   "feedback.context.browser": "瀏覽器：{ua}",
   "feedback.context.browserLanguages": "瀏覽器語言：{languages}",
   "feedback.context.favoritePicks_other": "{count}項選擇",

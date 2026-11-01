@@ -17,6 +17,8 @@ import {
   type FeedbackToolContext,
 } from '@/lib/feedbackContext';
 import type { NoArgKey, TFn, TnFn } from '@/i18n';
+import { FEEDBACK_FIELD_MAX_CHARS, FEEDBACK_MIN_CHARS } from '@/lib/feedbackLimits';
+import { CharsLeft } from './CharsLeft';
 
 type ChipIcon = ComponentType<{ className?: string; style?: CSSProperties; strokeWidth?: number }>;
 const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: number }[] = [
@@ -26,8 +28,6 @@ const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: 
   { id: 'other', key: 'feedback.category.other', Icon: MessageCircle, scale: 0.94 },
 ];
 
-const MIN_MESSAGE = 4;
-const MAX_MESSAGE = 1000;
 
 function contextLines(context: FeedbackContext, t: TFn, tn: TnFn): string[] {
   const lines = [
@@ -114,7 +114,7 @@ function FeedbackForm({
   );
   if (sent) return status;
 
-  const tooShort = message.trim().length < MIN_MESSAGE;
+  const tooShort = message.trim().length < FEEDBACK_MIN_CHARS;
 
   return (
     <>
@@ -169,7 +169,7 @@ function FeedbackForm({
           autoFocus
           required
           rows={4}
-          maxLength={MAX_MESSAGE}
+          maxLength={FEEDBACK_FIELD_MAX_CHARS}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t('feedback.message.placeholder')}
@@ -199,6 +199,7 @@ function FeedbackForm({
             tight ? '-mt-0.5' : '-mt-2'
           }`}
         />
+        <CharsLeft length={message.length} max={FEEDBACK_FIELD_MAX_CHARS} />
 
         <input
           type="text"

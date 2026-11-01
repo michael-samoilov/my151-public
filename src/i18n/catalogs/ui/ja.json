@@ -526,6 +526,7 @@
   "feedback.category.idea": "提案",
   "feedback.category.other": "その他",
   "feedback.category.translation": "誤訳",
+  "feedback.charsLeft_other": "残り{count}文字",
   "feedback.context.browser": "ブラウザー：{ua}",
   "feedback.context.browserLanguages": "ブラウザーの言語：{languages}",
   "feedback.context.favoritePicks_other": "選択{count}件",

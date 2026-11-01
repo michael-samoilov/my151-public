@@ -526,6 +526,7 @@
   "feedback.category.idea": "제안",
   "feedback.category.other": "기타",
   "feedback.category.translation": "번역",
+  "feedback.charsLeft_other": "{count}자 남음",
   "feedback.context.browser": "브라우저: {ua}",
   "feedback.context.browserLanguages": "브라우저 언어: {languages}",
   "feedback.context.favoritePicks_other": "선택 {count}개",

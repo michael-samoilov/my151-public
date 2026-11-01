@@ -44,6 +44,7 @@ import feedback from '../api/feedback';
 import crash from '../api/crash';
 import event from '../api/event';
 import { getClientIp } from '../api/_shared';
+import { FEEDBACK_MESSAGE_MAX_CHARS } from '../src/lib/feedbackLimits';
 import { recordToolExport } from '../api/_exportStats';
 
 type Handler = typeof feedback;
@@ -100,7 +101,7 @@ describe('local adversarial API limits and validation', () => {
   it('rejects malformed field types and oversized feedback before writes', async () => {
     for (const [name, body] of [
       ['empty object', {}], ['empty message', { ...validFeedback, message: '' }],
-      ['long message', { ...validFeedback, message: 'x'.repeat(1001) }],
+      ['long message', { ...validFeedback, message: 'x'.repeat(FEEDBACK_MESSAGE_MAX_CHARS + 1) }],
       ['negative dwell', { ...validFeedback, dwellMs: -10 }],
       ['object message', { ...validFeedback, message: { role: 'admin' } }],
       ['JSON text passed unparsed', '{"category":'],

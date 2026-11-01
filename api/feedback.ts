@@ -4,11 +4,10 @@ import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
 import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
+import { FEEDBACK_MESSAGE_MAX_CHARS, FEEDBACK_MIN_CHARS } from '../src/lib/feedbackLimits.js';
 
 const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
-const MIN_MESSAGE = 4;
-const MAX_MESSAGE = 1000;
 /** Serialized context cap. Rejected rather than truncated — a silently clipped
  *  context is worse than none, because it reads as complete. */
 export const MAX_CONTEXT_CODE_UNITS = 4096;
@@ -115,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!category) return res.status(400).json({ error: 'invalid category' });
 
     const message = typeof body.message === 'string' ? body.message.trim() : '';
-    if (message.length < MIN_MESSAGE || message.length > MAX_MESSAGE) {
+    if (message.length < FEEDBACK_MIN_CHARS || message.length > FEEDBACK_MESSAGE_MAX_CHARS) {
       return res.status(400).json({ error: 'invalid message' });
     }
     if (urlCount(message) >= 3) return res.status(400).json({ error: 'invalid message' });
