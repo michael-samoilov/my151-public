@@ -81,6 +81,8 @@ const rendered = (page: Page) => page.locator('[data-user-preview]').count();
 
 const scrollTo = (page: Page, cid: string) => scrollToRow(page, label(cid));
 
+const scrollToOldest = (page: Page) => scrollToRow(page, label(cidAt(N - 1)), { fromEnd: true });
+
 test.describe('Newest browsers index @viewport', () => {
   test('reaches the oldest of 1,200 browsers by scrolling, holding only the rows near the viewport', async ({ page }, testInfo) => {
     await stub(page);
@@ -88,7 +90,7 @@ test.describe('Newest browsers index @viewport', () => {
     await expect(page.getByRole('link', { name: label(cidAt(0)), exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /Load more/ })).toHaveCount(0);
     const atTop = await rendered(page);
-    const last = await scrollTo(page, cidAt(N - 1));
+    const last = await scrollToOldest(page);
     const atBottom = await rendered(page);
     expect(atTop).toBeLessThanOrEqual(MAX_ROWS);
     expect(atBottom).toBeLessThanOrEqual(MAX_ROWS);
@@ -156,7 +158,7 @@ test('desktop table columns hold still while rows of other widths scroll in', as
   const top = await columns();
   await scrollTo(page, cidAt(600));
   const middle = await columns();
-  await scrollTo(page, cidAt(N - 1));
+  await scrollToOldest(page);
   const bottom = await columns();
   expect(middle).toEqual(top);
   expect(bottom).toEqual(top);
@@ -189,7 +191,7 @@ test('country and tool filters reach browsers far below the first screen', async
 test('archive reaches the oldest browser and its country-split record', async ({ page }, testInfo) => {
   await stub(page);
   await openTab(page, 'Dex');
-  const oldest = await scrollTo(page, cidAt(N - 1));
+  const oldest = await scrollToOldest(page);
   await oldest.getByRole('button', { name: 'Archive user' }).click();
   await expect(page.getByRole('link', { name: label(cidAt(N - 1)), exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Archive filter' }).click();
@@ -207,7 +209,7 @@ test('opening a row loads that browser, and a country-split row loads its own re
   expect(asked).toContain(`cid=${cidAt(N - 1)}&country=JP`);
   await page.getByRole('button', { name: '‹ Back' }).click();
 
-  const oldest = await scrollTo(page, cidAt(N - 1));
+  const oldest = await scrollToOldest(page);
   await oldest.click();
   await expect(page.getByRole('group', { name: "This browser's tools" }).first()).toBeVisible();
   expect(asked).toContain(`cid=${cidAt(N - 1)}`);
