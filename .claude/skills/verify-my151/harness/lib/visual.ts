@@ -196,7 +196,7 @@ export const SCREENS: Screen[] = [
     id: 'league-browser-card-switch', path: '/custom-gym-leader?lang=en', seed: LEAGUE_OPEN_SEATS,
     act: async (page) => {
       await click('[data-testid="league-slot-0"]')(page);
-      await click('[data-testid="card-cell-1-4"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
       await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
       if ((page.viewportSize()?.width ?? 1280) < 1024) return;
       await click('[data-testid="league-slot-1"]')(page);
