@@ -4,10 +4,11 @@ import { Search, Send, UserRound } from 'lucide-react';
 import { SiBluesky, SiDiscord, SiReddit, SiTumblr, SiX } from 'react-icons/si';
 import { Button } from '@/components/ui/button';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
-import { useT, type NoArgKey } from '@/i18n';
+import { useT, useTn, type NoArgKey } from '@/i18n';
 import { sendFeedback, collectFeedbackContext } from '@/lib/feedbackContext';
 import { FEEDBACK_FIELD_MAX_CHARS, SURVEY_SOURCE_MAX_CHARS } from '@/lib/feedbackLimits';
 import { CharsLeft } from '@/components/feedback/CharsLeft';
+import { sendFailureMessage, type FeedbackSendFailure } from '@/components/feedback/sendFailure';
 import {
   exportSurveyFeedbackRoute,
   type ExportSurveyTool,
@@ -58,12 +59,13 @@ export function LeagueExportSurvey({
   onDone: () => void;
 }) {
   const t = useT();
+  const tn = useTn();
   const [heard, setHeard] = useState<Set<string>>(() => new Set());
   const [heardOther, setHeardOther] = useState('');
   const [ideas, setIdeas] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<FeedbackSendFailure | null>(null);
   const otherInputRef = useRef<HTMLInputElement>(null);
   const otherRowRef = useRef<HTMLDivElement>(null);
   const tight = useSheetKeyboard();
@@ -112,7 +114,7 @@ export function LeagueExportSurvey({
 
   const submit = async () => {
     setSending(true);
-    setFailed(false);
+    setFailure(null);
     try {
       const elapsed = Date.now() - openedAt;
       if (elapsed < 2000) {
@@ -131,17 +133,17 @@ export function LeagueExportSurvey({
         `heard: ${heardLabels.join(', ') || '—'}`,
         `ideas: ${ideas.trim() || '—'}`,
       ].join('\n');
-      const ok = await sendFeedback({
+      const result = await sendFeedback({
         category: 'idea',
         message: body,
         context,
         dwellMs: Math.max(Date.now() - openedAt, 2000),
       });
-      if (ok) {
+      if (result.ok) {
         setSent(true);
         window.setTimeout(onDone, 1200);
       } else {
-        setFailed(true);
+        setFailure(result);
       }
     } finally {
       setSending(false);
@@ -234,9 +236,9 @@ export function LeagueExportSurvey({
       </p>
 
       <div className="mt-auto flex flex-col gap-2 pt-2">
-        {failed && (
+        {failure && (
           <p role="alert" className="text-xs text-destructive">
-            {t('feedback.failed')}
+            {sendFailureMessage(failure, t, tn)}
           </p>
         )}
         <Button type="button" disabled={sending} onClick={() => void submit()}>

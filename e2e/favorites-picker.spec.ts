@@ -34,7 +34,7 @@ async function takenState(page: Page, ids: number[]) {
     const pick = page.getByTestId(`favorites-pick-${id}`);
     await expect(pick).toBeVisible();
     out[id] = await pick.evaluate((el) => ({
-      faded: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).opacity) < 0.5,
+      faded: ((sprite) => Number(sprite.opacity) < 0.5 || sprite.filter !== 'none')(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!)),
       marks: [...(el.closest('[data-selector-tile]') ?? el).querySelectorAll('[data-testid="favorites-used-mark"]')].map(
         (mark) => `${mark.getAttribute('data-source')}:${mark.getAttribute('data-value') ?? ''}`,
       ),

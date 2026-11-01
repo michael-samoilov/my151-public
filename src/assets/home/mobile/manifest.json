@@ -1,11 +1,11 @@
 {
   "version": 1,
   "status": "PASS",
-  "baseCommit": "a085e680b4350a02fc8d4fb3fea02a59516bf915",
+  "baseCommit": "86f9652dc301634e33ff6fd684788f0ccfa3c37f",
   "inputs": [
     {
       "path": "src/components/home/HomePage.tsx",
-      "sha256": "778663c445439a1d4ae5eb87f6664005a78a3aa60b1424929879ec649b1fb240"
+      "sha256": "8a85fc93676a154614c5c811f799270533027bacd8d80aacfeed8bd48eebfffb"
     },
     {
       "path": "src/home/artwork.tsx",
@@ -1168,8 +1168,8 @@
     }
   ],
   "provenance": {
-    "sourceCommit": "a085e680b4350a02fc8d4fb3fea02a59516bf915",
-    "sourceDirty": " M src/components/home/HomePage.tsx\n",
+    "sourceCommit": "86f9652dc301634e33ff6fd684788f0ccfa3c37f",
+    "sourceDirty": " M src/components/home/HomePage.tsx\n M src/i18n/catalogs/ui/de.json\n",
     "browserVersion": "153.0.8010.12",
     "pillowVersions": [
       "12.3.0"
@@ -1188,7 +1188,7 @@
       480
     ],
     "dpr": 3,
-    "startedAt": "2026-11-01T19:49:06.905Z",
-    "finishedAt": "2026-11-01T19:49:52.111Z"
+    "startedAt": "2026-11-01T20:38:33.037Z",
+    "finishedAt": "2026-11-01T20:39:12.071Z"
   }
 }

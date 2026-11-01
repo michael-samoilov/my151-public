@@ -475,9 +475,11 @@ export function HomePage() {
               </h1>
               {/* On desktop the intro's x-height top meets the title's. This div is 1rem,
                   so its 1ex is the x-height per rem, and the factors are the intro and
-                  title sizes in rem. */}
+                  title sizes in rem. At xl the intro's line height is half of the title's
+                  1.08 * 2.1rem line plus that same x-height offset, so a three-line intro
+                  ends on the baseline of a two-line title. */}
               <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2 md:translate-y-[calc((1_-_1.75)*1ex)] xl:translate-y-[calc((1_-_2.1)*1ex)]">
-                <p className="m-0 text-[0.78rem] md:text-[1rem] leading-relaxed text-muted-foreground text-pretty">
+                <p className="m-0 text-[0.78rem] md:text-[1rem] leading-relaxed xl:leading-[calc((2.268rem_+_1.1ex)/2)] text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
               </div>

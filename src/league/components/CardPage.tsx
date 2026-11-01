@@ -129,7 +129,8 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
             type="button"
             onClick={() => setTypePickerOpen(false)}
             aria-label={t('league.close')}
-            className="cursor-pointer text-muted-foreground hover:text-foreground"
+            // Grows up and right to the sheet edge, and stops above the type grid.
+            className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-top-4 before:-right-4 before:-bottom-2 before:-left-3.5 before:content-['']"
           >
             <X size={16} />
           </button>
@@ -180,7 +181,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
           type="button"
           onClick={closeCardPage}
           aria-label={t('league.card.back', { slot: slotLabel(cardIndex) })}
-          className="cursor-pointer text-muted-foreground hover:text-foreground"
+          className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-inset-y-3 before:-left-3 before:-right-1 before:content-['']"
         >
           <ChevronLeft size={20} />
         </button>

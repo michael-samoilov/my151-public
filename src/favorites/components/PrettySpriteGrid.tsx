@@ -22,6 +22,8 @@ import { NoShinyMark } from '@/components/shiny/ShinyMarks';
 import { NO_SHINY } from '@/components/shiny/shinyMarks';
 
 const ROW_GAP_PX = 4;
+/** Matches 35% opacity over white but stays opaque, so the selection ring under the sprite stays hidden. */
+const FADED_SPRITE = { filter: 'contrast(0.212) brightness(1.65)' } as const;
 
 /** One tile of a selector: a Pokémon, and whether the tile shows it shiny. */
 export interface SelectorOption {
@@ -224,8 +226,8 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={clearing ? 'relative z-10 opacity-35' : 'relative z-10'}
-        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, ...(noShiny ? NO_SHINY.sprite : null) }}
+        className="relative z-10"
+        style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, ...(noShiny ? NO_SHINY.sprite : null), ...(clearing ? FADED_SPRITE : null) }}
         decoding="sync"
         draggable={false}
       />

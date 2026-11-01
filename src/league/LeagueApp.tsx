@@ -299,6 +299,7 @@ export function LeagueApp() {
         {browserOpen && !isDesktop && (
           <BottomSheet
             onClose={closeBrowser}
+            instant
             size="full"
             topGap={49}
             closeLabel={sheetHeading.plain}
