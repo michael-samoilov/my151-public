@@ -14,7 +14,7 @@ import {
   PROGRESS_MAX_WAIT_MS,
   type BeaconDebouncer,
 } from '@/lib/beaconScheduler';
-import { sendEventBeacon, takePendingEvents } from '@/hooks/useCompletionBeacon';
+import { returnPendingEvents, sendEventBeacon, takePendingEvents } from '@/hooks/useCompletionBeacon';
 import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
 import {
   exportBeaconPlan,
@@ -71,12 +71,19 @@ function postLeagueBeacon(
     keepalive: true,
   })
     .then(async (res) => {
-      if (!res.ok) return null;
-      const data = (await res.json()) as { highlight?: ExportHighlight;activityAck?:unknown };
+      if (!res.ok) {
+        returnPendingEvents(events);
+        return null;
+      }
+      const data = (await res.json()) as { highlight?: ExportHighlight; activityAck?: unknown; contended?: boolean };
+      if (data.contended) returnPendingEvents(events);
       acknowledgeMinuteActivity('league',data.activityAck);
       return data.highlight ?? null;
     })
-    .catch(() => null);
+    .catch(() => {
+      returnPendingEvents(events);
+      return null;
+    });
 }
 
 export function useLeagueBeacon() {

@@ -27,6 +27,12 @@ const LEAGUE_SHINY = (() => {
   for (const line of league.state.cards[0].lines.slice(0, 2)) line.shiny = true;
   return { 'league-builder': JSON.stringify(league) };
 })();
+/** The league fixture with three open seats on its first two cards, so a card switch can keep an add picker open. */
+const LEAGUE_OPEN_SEATS = (() => {
+  const league = JSON.parse(LEAGUE['league-builder']);
+  for (const card of league.state.cards.slice(0, 2)) card.lines = card.lines.slice(0, 3);
+  return { 'league-builder': JSON.stringify(league) };
+})();
 const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
 const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
 const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
@@ -183,6 +189,18 @@ export const SCREENS: Screen[] = [
       await click('[data-testid="league-slot-1"]')(page);
       await click('[data-testid="card-cell-5-4"]')(page);
       await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+    },
+  },
+  {
+    // Desktop keeps the card list beside the picker, so a second card can take focus with the picker open.
+    id: 'league-browser-card-switch', path: '/custom-gym-leader?lang=en', seed: LEAGUE_OPEN_SEATS,
+    act: async (page) => {
+      await click('[data-testid="league-slot-0"]')(page);
+      await click('[data-testid="card-cell-5-4"]')(page);
+      await page.getByTestId('browser-shiny-toggle').waitFor({ timeout: 30_000 });
+      if ((page.viewportSize()?.width ?? 1280) < 1024) return;
+      await click('[data-testid="league-slot-1"]')(page);
+      await page.locator('[data-testid="verify-evo-card"] img[src*="/sprites/pokemon/"]').first().waitFor({ timeout: 30_000 });
     },
   },
   {

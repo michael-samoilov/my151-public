@@ -322,3 +322,19 @@ export function openLeagueBrowser(
   useLeagueUi.getState().openBrowser(purpose, targetSeat, replacingId);
   useLeagueBrowserStore.getState().openFor(card);
 }
+
+/**
+ * A card switch while the picker is open keeps the picker on the focused card.
+ * Replace and legend picks name one seat of the old card, and a full card has
+ * no seat for a new line, so those close; every other pick reopens for the new card.
+ */
+useLeagueUi.subscribe((ui, prev) => {
+  if (!ui.browserOpen || ui.openCard === null || ui.openCard === prev.openCard) return;
+  const lines = useLeagueStore.getState().cards[ui.openCard]?.lines ?? [];
+  const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
+  if (ui.browserPurpose === 'replace' || ui.browserPurpose === 'legend' || (ui.browserPurpose === 'lines' && cardFull)) {
+    ui.closeBrowser();
+    return;
+  }
+  useLeagueBrowserStore.getState().openFor(ui.openCard);
+});
