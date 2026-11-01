@@ -311,7 +311,7 @@ function App() {
 
       <FeedbackHost route={currentView} />
 
-      <MilestoneCelebration onNavigate={handleViewChange} />
+      <MilestoneCelebration view={currentView} onNavigate={handleViewChange} />
 
       <MilestoneTunePanel />
     </TooltipProvider>

@@ -39,8 +39,8 @@ const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
 const PANEL_ASPECT = '166 / 79.167';
 const RADIUS = `min(${U(14)}, 14px)`;
-const TITLE = `min(${U(9.1)}, 19px)`;
-const BLURB = `min(${U(7.6)}, 15.6px)`;
+const TITLE = `min(${U(9.1)}, var(--card-title-cap))`;
+const BLURB = `min(${U(7.6)}, var(--card-text-cap))`;
 const BLEED = U(34);
 
 const EXPORT_RADIUS = 0.02;
@@ -476,8 +476,8 @@ export function HomePage() {
               {/* On desktop the intro's x-height top meets the title's. This div is 1rem,
                   so its 1ex is the x-height per rem, and the factors are the intro and
                   title sizes in rem. */}
-              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2 md:translate-y-[calc((0.78_-_1.75)*1ex)] xl:translate-y-[calc((0.78_-_2.1)*1ex)]">
-                <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
+              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2 md:translate-y-[calc((1_-_1.75)*1ex)] xl:translate-y-[calc((1_-_2.1)*1ex)]">
+                <p className="m-0 text-[0.78rem] md:text-[1rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
               </div>
@@ -486,7 +486,7 @@ export function HomePage() {
             <div className="hub-spacer min-h-6 flex-1" />
 
             <div
-              className="hub-grid grid grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              className="hub-grid grid grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92] [--card-title-cap:19px] [--card-text-cap:15.6px] md:[--card-title-cap:24px] md:[--card-text-cap:20px]"
               style={gridStyle}
             >
               {tools.map((tool, i) => (
