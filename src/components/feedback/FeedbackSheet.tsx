@@ -19,6 +19,7 @@ import {
 import type { NoArgKey, TFn, TnFn } from '@/i18n';
 import { FEEDBACK_FIELD_MAX_CHARS, FEEDBACK_MIN_CHARS } from '@/lib/feedbackLimits';
 import { CharsLeft } from './CharsLeft';
+import { sendFailureMessage, type FeedbackSendFailure } from './sendFailure';
 
 type ChipIcon = ComponentType<{ className?: string; style?: CSSProperties; strokeWidth?: number }>;
 const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: number }[] = [
@@ -85,6 +86,7 @@ function FeedbackForm({
   const [message, setMessage] = useState('');
   const [website, setWebsite] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  const [failure, setFailure] = useState<FeedbackSendFailure | null>(null);
   const openedAt = useRef(0);
   useEffect(() => {
     openedAt.current = Date.now();
@@ -127,14 +129,15 @@ function FeedbackForm({
           e.preventDefault();
           if (tooShort || state === 'sending') return;
           setState('sending');
-          const ok = await sendFeedback({
+          const result = await sendFeedback({
             category,
             message: message.trim(),
             context,
             website,
             dwellMs: Date.now() - openedAt.current,
           });
-          setState(ok ? 'sent' : 'failed');
+          if (!result.ok) setFailure(result);
+          setState(result.ok ? 'sent' : 'failed');
         }}
       >
         <div className="flex flex-wrap gap-1.5">
@@ -222,9 +225,9 @@ function FeedbackForm({
           <p className="mt-1.5">{t('feedback.context.note')}</p>
         </details>
 
-        {state === 'failed' && (
+        {state === 'failed' && failure && (
           <p role="alert" className="text-xs text-destructive">
-            {t('feedback.failed')}
+            {sendFailureMessage(failure, t, tn)}
           </p>
         )}
 
