@@ -126,7 +126,8 @@ Manual drive (a Playwright script, local build):
 2. Click `[data-testid="favorites-cell-water-1"]`, then
    `[data-testid="favorites-pick-9"]`. Expect `fills["water|1"]` to be `9`.
 3. Reopen `water-1`. Expect `[data-testid="favorites-clear"]` inside
-   `favorites-pick-9`, and the sprite's opacity below 0.5.
+   `favorites-pick-9`. The sprite is faded by a CSS filter at opacity 1, so
+   the selection ring under it stays hidden.
 4. Zoom with ctrl+wheel over the frame, or with CDP two-finger touch events on
    a touch context. Expect `data-zoom` above 1.
 5. Scroll the frame to its far corner. Expect the last cell inside the frame
