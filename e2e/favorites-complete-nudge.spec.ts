@@ -15,7 +15,7 @@ const popup = (page: Page) => page.getByRole('status').filter({ hasText: TITLE }
 const nudges = (beacons: Record<string, unknown>[]) => beacons.filter((b) => b.kind === 'nudge-shown');
 
 test.describe('Picker completion popup @viewport', () => {
-  test('completing the grid points a popup at Export once, and its beacon carries the full board', async ({ page }, testInfo) => {
+  test('completing the grid shows a tip under the toolbar that points at Export once, and its beacon carries the full board', async ({ page }, testInfo) => {
     const beacons = await open(page, favoritesBoard(true));
     await expect(page.getByTestId('favorites-completion')).toHaveText('256/257');
     const picked = await pickLastCell(page);
@@ -24,19 +24,22 @@ test.describe('Picker completion popup @viewport', () => {
     await popup(page).evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
     const geometry = await page.evaluate((title) => {
       const button = document.querySelector('[data-testid="favorites-export-open"]')!.getBoundingClientRect();
+      const header = document.querySelector('[data-testid="favorites-header"]')!.getBoundingClientRect();
       const card = [...document.querySelectorAll('[role="status"]')].find((el) => el.textContent?.includes(title))!;
       const box = card.getBoundingClientRect();
-      const arrow = card.querySelector('.rotate-45')!.getBoundingClientRect();
+      const notch = card.querySelector('.rotate-45')!.getBoundingClientRect();
       return {
         viewport: innerWidth,
-        arrowOffset: Math.round((arrow.left + arrow.width / 2 - (button.left + button.width / 2)) * 100) / 100,
-        gapBelowButton: Math.round(box.top - button.bottom),
+        notchOffset: Math.round((notch.left + notch.width / 2 - (button.left + button.width / 2)) * 100) / 100,
+        belowToolbar: Math.round(box.top - header.bottom),
+        dotOnExport: document.querySelector('[data-testid="favorites-export-open"] [data-tip-dot]') !== null,
         left: Math.round(box.left),
         right: Math.round(box.right),
       };
     }, TITLE);
-    expect(Math.abs(geometry.arrowOffset)).toBeLessThanOrEqual(1);
-    expect(geometry.gapBelowButton).toBe(10);
+    expect(Math.abs(geometry.notchOffset)).toBeLessThanOrEqual(1);
+    expect(geometry.belowToolbar).toBeGreaterThanOrEqual(0);
+    expect(geometry.dotOnExport).toBe(true);
     expect(geometry.left).toBeGreaterThanOrEqual(8);
     expect(geometry.right).toBeLessThanOrEqual(geometry.viewport - 8);
     await expect.poll(() => nudges(beacons).length).toBe(1);

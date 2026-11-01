@@ -84,17 +84,16 @@ league suites, then `favorites`. The league suites:
 - `gym-card-export`: the card export preview, and ace, TM, and badge fit.
 - `league-export-team`: the league export starts at the team that the summary
   tab shows (see `league-export.md`).
-- `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
-  `data-league-nudge` is `card` for a full trainer card, `league` for eight
-  gym leaders with a card still empty, `complete` for every card filled, and
-  `full` for six lines on all 14 cards. `full` arrives with the confetti,
-  once the summary is on screen and the picker is shut. Beside an open card
-  on desktop it floats under the league Export button.
-  The roster popups never cover a summary row: `data-nudge-placement`
-  is `beside` where the pane has room right of the summary (a desktop) and
-  `below` elsewhere, where the popup joins the page flow and the fit shrinks
-  the summary to make room. The league Export button carries
-  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw
+- `league-funnel`: the export tips (`[data-testid="tip-card"]`). Its
+  `data-tip-card` is `league-card` for a full trainer card, `league-gyms` for
+  eight gym leaders with a card still empty, `league-complete` for every card
+  filled, and `league-full` for six lines on all 14 cards. `league-full`
+  arrives with the confetti, once the summary is on screen and the picker is
+  shut. Each tip sits in the page flow under the toolbar of the pane whose
+  Export button it points at, so it never covers a summary row, and the fit
+  shrinks the summary to make room. The Export button it points at carries a
+  red dot (`[data-tip-dot]`) and no pulse. The dot stays after the tip closes
+  and goes when that Export opens. It also loads a full v3 save that saw
   the eight-gym popup and checks the store: version 4 or later, `complete`
   celebrated, and no popup. The store persists at version 6
   (`LEAGUE_PERSIST_VERSION` in `src/league/store/seedLeague.ts`).

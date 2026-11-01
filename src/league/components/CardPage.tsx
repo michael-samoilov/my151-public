@@ -24,6 +24,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
 import { CardHelpButton } from './CardHelp';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
+import { LeagueTipSlot } from './LeagueFunnelNudge';
 import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
 import { confirmOnEnter } from './confirmOnEnter';
@@ -283,6 +284,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
           <CardActions cardIndex={cardIndex} />
         </div>
       )}
+      {withBar && <LeagueTipSlot pane="card" />}
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={fitStyle(fit, rendering)}>
           <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />

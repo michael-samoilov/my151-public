@@ -12,6 +12,7 @@ import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { isFavoritesNoticeWindow, isLeaguePromoSeen, markLeaguePromoSeen } from '@/lib/launchFlags';
+import { TipDot } from '@/components/milestone/TipDot';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -138,8 +139,10 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
               onClick={() => onViewChange('analytics')}
               className={tabTriggerClass(currentView === 'analytics')}
               data-nav="analytics"
+              data-tip-target="dex-analytics"
               data-state={currentView === 'analytics' ? 'active' : 'inactive'}
             >
+              <TipDot target="dex-analytics" />
               <BarChart3 className="h-4 w-4" />
               <span className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
             </Button>
@@ -181,8 +184,10 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
             onClick={() => onViewChange('view')}
             className={tabTriggerClass(currentView === 'view')}
             data-nav="view"
+            data-tip-target="dex-view"
             data-state={currentView === 'view' ? 'active' : 'inactive'}
           >
+            <TipDot target="dex-view" />
             <Camera className="h-4 w-4" />
             <span className={tabLabelClass(currentView === 'view')}>{t('nav.view')}</span>
           </Button>

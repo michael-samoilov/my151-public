@@ -1,50 +1,13 @@
-function visibleArea(
-  r: { left: number; right: number; top: number; bottom: number },
-  vw: number,
-  vh: number,
-): number {
-  const w = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
-  const h = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
-  return w * h;
-}
-
-function isOnScreenAnchor(
-  r: { left: number; right: number; top: number; bottom: number },
-  vw: number,
-  vh: number,
-): boolean {
-  return visibleArea(r, vw, vh) > 0 && r.left >= 0 && r.top >= 0;
-}
-
-export function pickVisibleAnchor(nodes: readonly Element[], vw: number, vh: number): Element | null {
-  let best: Element | null = null;
-  let bestArea = 0;
-  for (const el of nodes) {
-    const rect = el.getBoundingClientRect();
-    if (!isOnScreenAnchor(rect, vw, vh)) continue;
-    const area = visibleArea(rect, vw, vh);
-    if (area > bestArea) {
-      bestArea = area;
-      best = el;
-    }
-  }
-  return best;
-}
-
 /**
- * Bring a toolbar Export button on-screen without panning the mobile
- * two-pane track. `scrollIntoView({ inline: "nearest" })` treats that
- * 200%-wide track as a horizontal scroller, which slides the card pane
- * in and parks Export over the league name.
+ * Bring a tip slot and the toolbar above it on-screen without panning the mobile
+ * two-pane track. Each mobile pane scrolls, toolbar included, and the slot sits
+ * directly under that toolbar, so the pane goes back to its top. A
+ * `scrollIntoView({ inline: "nearest" })` would treat the 200%-wide track as a
+ * horizontal scroller, slide the card pane in, and park Export over the league name.
  */
-export function revealToolbarButton(el: Element): void {
-  const pane = el.closest('[data-lg-viewport]');
-  if (pane instanceof HTMLElement) {
-    const pr = pane.getBoundingClientRect();
-    const er = el.getBoundingClientRect();
-    if (er.top < pr.top) pane.scrollTop += er.top - pr.top - 8;
-    else if (er.bottom > pr.bottom) pane.scrollTop += er.bottom - pr.bottom + 8;
-  }
+export function revealTipSlot(slot: Element): void {
+  const pane = slot.closest('[data-lg-viewport]');
+  if (pane instanceof HTMLElement && pane.scrollTop > 0) pane.scrollTop = 0;
   const track = document.querySelector('.p151-pane-track');
   const scroller = track?.parentElement;
   if (scroller) scroller.scrollLeft = 0;

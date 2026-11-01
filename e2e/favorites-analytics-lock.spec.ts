@@ -45,7 +45,7 @@ test('Analytics stays locked below 25 favorites, and the 25th unlocks it with th
   await page.getByTestId('favorites-cell-water-1').click();
   await page.getByTestId('favorites-pick-7').click();
   await expect(nudge(page)).toBeVisible();
-  await expect(nudge(page)).toContainText('Your favorites have enough shape to analyze.');
+  await expect(nudge(page)).toContainText('Open Analytics');
   await expect(tab(page)).not.toHaveAttribute('data-locked');
   const popup = await nudge(page).innerText();
   await nudge(page).getByRole('button', { name: 'Open Analytics' }).click();

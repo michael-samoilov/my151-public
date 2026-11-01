@@ -1,32 +1,29 @@
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { useT } from '@/i18n';
+import { useEffect, useState } from 'react';
+import { TipCard } from './TipCard';
+import type { TipTarget } from './tipDots';
 
-const AUTO_DISMISS_MS = 10000;
-const CARD_W = 244;
 const REVEAL_DELAY_MS = 260;
 
+/** A body-only tip that a finished step arms, and that opening its target fulfills. */
 export function FollowUpHint({
+  id,
   armed,
   dismiss,
   fulfilled,
-  anchorRef,
+  target,
   title,
   body,
   onShown,
 }: {
+  id: string;
   armed: boolean;
   dismiss: () => void;
   fulfilled: boolean;
-  anchorRef: RefObject<HTMLElement | null>;
+  target: TipTarget;
   title: string;
   body: string;
   onShown?: () => void;
 }) {
-  const t = useT();
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
-
   useEffect(() => {
     if (fulfilled) dismiss();
   }, [fulfilled, dismiss]);
@@ -40,59 +37,12 @@ export function FollowUpHint({
       setArmedReady(false);
     };
   }, [armed]);
-  const ready = armed && armedReady;
 
-  useLayoutEffect(() => {
-    if (!armed) return;
-    const el = anchorRef.current;
-    if (!el) return;
-    const update = () => setAnchor(el.getBoundingClientRect());
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [armed, anchorRef]);
-
-  useEffect(() => {
-    if (!armed || !ready) return;
-    const t = setTimeout(dismiss, AUTO_DISMISS_MS);
-    return () => clearTimeout(t);
-  }, [armed, ready, dismiss]);
-
-  const visible = armed && ready && anchor !== null && !fulfilled;
+  const visible = armed && armedReady && !fulfilled;
   useEffect(() => {
     if (visible) onShown?.();
   }, [visible, onShown]);
 
-  if (!visible || !anchor) return null;
-
-  const centerX = anchor.left + anchor.width / 2;
-  const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
-  const arrowLeft = Math.max(14, Math.min(centerX - left, CARD_W - 14));
-  const top = anchor.bottom + 10;
-
-  return createPortal(
-    <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
-      <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
-        <div
-          className="absolute z-10 rotate-45 bg-popover border-l border-t"
-          style={{ width: 12, height: 12, left: arrowLeft - 6, top: -7 }}
-        />
-        <button
-          type="button"
-          aria-label={t('common.dismiss')}
-          onClick={dismiss}
-          className="absolute right-1.5 top-1.5 p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-        <div className="text-sm font-bold pr-5">{title}</div>
-        <p className="mt-1 text-xs text-muted-foreground text-pretty">{body}</p>
-      </div>
-    </div>,
-    document.body,
-  );
+  if (!visible) return null;
+  return <TipCard id={id} target={target} title={title} body={body} onDismiss={dismiss} />;
 }

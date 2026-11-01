@@ -38,6 +38,7 @@ import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeaco
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
@@ -236,6 +237,9 @@ function App() {
     }
   }, [setMobileBrowserOpen]);
 
+  useTipVisit('dex-analytics', currentView === 'analytics');
+  useTipVisit('dex-view', currentView === 'view');
+
   const sectionName = activeSection ? sectionLabel(activeSection) : null;
 
   return (
@@ -246,6 +250,7 @@ function App() {
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
         <main id={MAIN_ID} tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none">
+        <MilestoneCelebration view={currentView} onNavigate={handleViewChange} />
         <ErrorBoundary where="pokedex-builder">
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
@@ -309,8 +314,6 @@ function App() {
       {practiceRender && <PickerPracticeRender onDone={endPracticeRender} />}
 
       <FeedbackHost route={currentView} />
-
-      <MilestoneCelebration view={currentView} onNavigate={handleViewChange} />
 
       <MilestoneTunePanel />
     </TooltipProvider>

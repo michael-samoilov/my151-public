@@ -5,20 +5,21 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
 import { fireCompletionConfetti, preloadCompletionConfetti } from './completionConfetti';
-import { NudgeCard } from './NudgeCard';
+import { TipCard } from './TipCard';
+import type { TipTarget } from './tipDots';
 import { useOverlayOpen } from './useOverlayOpen';
 
 interface Nudge {
   nav: Extract<AppView, 'analytics' | 'view'>;
+  target: TipTarget;
   titleKey: NoArgKey;
-  bodyKey: NoArgKey;
   ctaKey: NoArgKey;
 }
 
 const NUDGES: Record<number, Nudge> = {
-  25: { nav: 'analytics', titleKey: 'nudge.25.title', bodyKey: 'nudge.25.body', ctaKey: 'nudge.25.cta' },
-  100: { nav: 'view', titleKey: 'nudge.100.title', bodyKey: 'nudge.100.body', ctaKey: 'nudge.100.cta' },
-  151: { nav: 'view', titleKey: 'nudge.151.title', bodyKey: 'nudge.151.body', ctaKey: 'nudge.151.cta' },
+  25: { nav: 'analytics', target: 'dex-analytics', titleKey: 'nudge.25.title', ctaKey: 'nudge.25.cta' },
+  100: { nav: 'view', target: 'dex-view', titleKey: 'nudge.100.title', ctaKey: 'nudge.100.cta' },
+  151: { nav: 'view', target: 'dex-view', titleKey: 'nudge.151.title', ctaKey: 'nudge.151.cta' },
 };
 
 const REVEAL_DELAY_MOBILE_MS = 950;
@@ -33,6 +34,12 @@ export function MilestoneCelebration({ view, onNavigate }: { view: AppView; onNa
   const nudge = celebration != null ? NUDGES[celebration] : null;
 
   const confettiFor = useRef<number | null>(null);
+
+  // Opening the tab the tip points at is what the tip asked for.
+  const visited = nudge != null && view === nudge.nav;
+  useEffect(() => {
+    if (visited) dismiss();
+  }, [visited, dismiss]);
 
   const onBuildPage = nudge != null && view === 'builder' && (isDesktop || !mobileBrowserOpen);
   const covered = useOverlayOpen(onBuildPage);
@@ -77,12 +84,13 @@ export function MilestoneCelebration({ view, onNavigate }: { view: AppView; onNa
 
   if (!nudge || !ready) return null;
   return (
-    <NudgeCard
-      anchor={`[data-nav="${nudge.nav}"]`}
+    <TipCard
+      key={celebration}
+      id={`dex-${celebration}`}
+      target={nudge.target}
       title={t(nudge.titleKey)}
-      body={t(nudge.bodyKey)}
-      cta={t(nudge.ctaKey)}
-      onCta={handleCta}
+      action={t(nudge.ctaKey)}
+      onAction={handleCta}
       onDismiss={dismiss}
     />
   );

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { isRosterNudge, nextLeagueNudge } from '../model/funnelNudges';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
@@ -15,6 +16,17 @@ export function useLeagueFunnelNudges() {
   const armNudge = useLeagueUi((s) => s.armNudge);
   const dismissNudge = useLeagueUi((s) => s.dismissNudge);
   const isDesktop = useIsDesktop();
+  const exportsCard = useLeagueUi((s) => s.exportCardIndex !== null);
+  const leagueExportOpen = exportOpen && !exportsCard;
+  const cardExportOpen = exportOpen && exportsCard;
+  useTipVisit('league-export', leagueExportOpen);
+  useTipVisit('league-card-export', cardExportOpen);
+
+  // Opening the Export a tip points at is what the tip asked for.
+  const visited = activeNudge === 'card' ? cardExportOpen : activeNudge !== null && leagueExportOpen;
+  useEffect(() => {
+    if (visited) dismissNudge();
+  }, [visited, dismissNudge]);
 
   useEffect(() => {
     if (activeNudge === 'card' && openCard === null) {

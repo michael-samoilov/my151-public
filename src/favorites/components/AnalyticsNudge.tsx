@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useT } from '@/i18n';
-import { NudgeCard } from '@/components/milestone/NudgeCard';
+import { TipCard } from '@/components/milestone/TipCard';
 import { useOverlayOpen } from '@/components/milestone/useOverlayOpen';
 
 const REVEAL_DELAY_MOBILE_MS = 950;
@@ -27,12 +27,12 @@ export function AnalyticsNudge({ armed, canShow, desktop, onOpen, onDismiss }: {
   }, [show, desktop]);
   if (!show || !ready) return null;
   return (
-    <NudgeCard
-      anchor="#favorites-tab-analytics"
+    <TipCard
+      id="favorites-25"
+      target="favorites-analytics"
       title={t('nudge.25.title')}
-      body={t('favorites.nudge.25.body')}
-      cta={t('nudge.25.cta')}
-      onCta={onOpen}
+      action={t('nudge.25.cta')}
+      onAction={onOpen}
       onDismiss={onDismiss}
     />
   );

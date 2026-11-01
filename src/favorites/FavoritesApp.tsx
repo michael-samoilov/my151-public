@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { fireCompletionConfetti, preloadCompletionConfetti } from '@/components/milestone/completionConfetti';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -105,7 +106,6 @@ function FavoritesContent({ sel, setSel }: {
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
-  const exportRef = useRef<HTMLButtonElement>(null);
   const completionNudge = useCompletionNudge();
   const analytics = useAnalyticsUnlock();
   const filled = useMemo(() => filledCount(fills), [fills]);
@@ -115,6 +115,13 @@ function FavoritesContent({ sel, setSel }: {
   }, [completionNudge.armed]);
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
+  useTipVisit('favorites-analytics', currentView === 'analytics');
+  useTipVisit('favorites-export', exportOpen);
+  // Opening Analytics is what the unlock tip asked for.
+  const dismissAnalyticsTip = analytics.dismiss;
+  useEffect(() => {
+    if (currentView === 'analytics') dismissAnalyticsTip();
+  }, [currentView, dismissAnalyticsTip]);
 
   useEffect(() => {
     document.title = `${t('favorites.title')} | my151`;
@@ -204,7 +211,7 @@ function FavoritesContent({ sel, setSel }: {
             loses its landmark role, so the panels are plain elements. */}
         <main id={MAIN_ID} tabIndex={-1} className="flex shrink-0 flex-col focus:outline-none">
         <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
-          currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
+          currentView={currentView} exportOpen={exportOpen}
           onViewChange={(view) => {
             if (view === 'analytics' && !analytics.unlocked) return;
             setSel(null);
@@ -214,6 +221,23 @@ function FavoritesContent({ sel, setSel }: {
           onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills, shiny); }} />
         <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
+          <AnalyticsNudge armed={analytics.armed} canShow={currentView === 'picker' && !exportOpen && (desktop || sel === null)} desktop={desktop}
+            onDismiss={analytics.dismiss}
+            onOpen={() => {
+              setSel(null);
+              setAnalyticsMounted(true);
+              setCurrentView('analytics');
+            }} />
+          <FollowUpHint
+            id="favorites-complete"
+            armed={completionNudge.armed}
+            dismiss={completionNudge.dismiss}
+            fulfilled={exportOpen}
+            target="favorites-export"
+            title={t('favorites.nudge.complete.title')}
+            body={t('favorites.nudge.complete.body')}
+            onShown={completionShown}
+          />
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
           <div className="flex min-h-0 flex-1">
             <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
@@ -241,23 +265,6 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      <AnalyticsNudge armed={analytics.armed} canShow={currentView === 'picker' && !exportOpen && (desktop || sel === null)} desktop={desktop}
-        onDismiss={analytics.dismiss}
-        onOpen={() => {
-          setSel(null);
-          setAnalyticsMounted(true);
-          setCurrentView('analytics');
-          analytics.dismiss();
-        }} />
-      <FollowUpHint
-        armed={completionNudge.armed}
-        dismiss={completionNudge.dismiss}
-        fulfilled={exportOpen}
-        anchorRef={exportRef}
-        title={t('favorites.nudge.complete.title')}
-        body={t('favorites.nudge.complete.body')}
-        onShown={completionShown}
-      />
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} shiny={shiny} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />

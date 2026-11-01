@@ -19,6 +19,8 @@ import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { TipDot } from '@/components/milestone/TipDot';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -648,11 +650,11 @@ export function ViewPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
-  const exportBtnRef = useRef<HTMLButtonElement>(null);
   const statsHintArmed = usePokedexStore((s) => s.statsHintArmed);
   const dismissStatsHint = usePokedexStore((s) => s.dismissStatsHint);
   const exportHintArmed = usePokedexStore((s) => s.exportHintArmed);
   const dismissExportHint = usePokedexStore((s) => s.dismissExportHint);
+  useTipVisit('dex-export', exportOpen);
 
   const hasCustom = customOrder !== null;
 
@@ -849,18 +851,38 @@ export function ViewPage() {
               )}
             </HeaderActionButton>
             <HeaderActionButton type="button"
-              ref={exportBtnRef}
               onClick={openExport}
               disabled={count === 0}
               data-dex-export
+              data-tip-target="dex-export"
               aria-label={t('export.title')}
               className="text-primary hover:bg-primary hover:text-primary-foreground disabled:hover:bg-card disabled:hover:text-primary"
             >
+              <TipDot target="dex-export" />
               <Download className="w-4 h-4" />
             </HeaderActionButton>
           </>,
           toolbarSlot,
         )}
+
+        <FollowUpHint
+          id="dex-stats"
+          armed={statsHintArmed && toolbarSlot !== null}
+          dismiss={dismissStatsHint}
+          fulfilled={exportOpen}
+          target="dex-export"
+          title={t('view.hint.stats.title')}
+          body={t('view.hint.stats.body')}
+        />
+        <FollowUpHint
+          id="dex-export"
+          armed={exportHintArmed && toolbarSlot !== null}
+          dismiss={dismissExportHint}
+          fulfilled={exportOpen}
+          target="dex-export"
+          title={t('view.hint.export.title')}
+          body={t('view.hint.export.body')}
+        />
 
         <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-2">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
@@ -1045,22 +1067,6 @@ export function ViewPage() {
 
       {exportOpen && <DexExportOverlay onClose={() => setExportOpen(false)} />}
 
-      <FollowUpHint
-        armed={statsHintArmed}
-        dismiss={dismissStatsHint}
-        fulfilled={exportOpen}
-        anchorRef={exportBtnRef}
-        title={t('view.hint.stats.title')}
-        body={t('view.hint.stats.body')}
-      />
-      <FollowUpHint
-        armed={exportHintArmed}
-        dismiss={dismissExportHint}
-        fulfilled={exportOpen}
-        anchorRef={exportBtnRef}
-        title={t('view.hint.export.title')}
-        body={t('view.hint.export.body')}
-      />
     </div>
   );
 }

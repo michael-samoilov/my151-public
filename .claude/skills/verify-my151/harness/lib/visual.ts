@@ -65,6 +65,41 @@ const DEX = {
   }),
 };
 
+/** The dex fixture before its 25 celebration, so the page opens on the Analytics tip. */
+const DEX_TIP = (() => {
+  const dex = JSON.parse(DEX['personal-151-pokedex-v3']);
+  dex.state.milestoneMax = 24;
+  dex.state.milestoneCelebrated = [];
+  return { 'personal-151-pokedex-v3': JSON.stringify(dex) };
+})();
+/** 24 favorites, one short of the Analytics unlock. */
+const FAVORITES_24 = (() => {
+  const types = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying',
+    'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+  const fills = Object.fromEntries(Object.entries(FILLS as Record<string, number>)
+    .filter(([k]) => /^[a-z]+\|[12]$/.test(k) && types.includes(k.split('|')[0]) && k !== 'water|1').slice(0, 24));
+  return { 'favorite-picker': JSON.stringify({ state: { fills }, version: 3 }) };
+})();
+/** Eight gym leaders with a card still empty, never celebrated, so the page opens on the gym-leaders tip. */
+const LEAGUE_EIGHT_GYMS = {
+  'league-builder': JSON.stringify({
+    state: {
+      name: '',
+      cards: Array.from({ length: 14 }, (_, i) => ({
+        type: null, theme: '', signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null,
+        lines: i < 8 ? [{ branch: [i + 1], boundaries: [1], boundaryMode: 'auto' }] : [],
+      })),
+      celebratedNudges: [],
+    },
+    version: 3,
+  }),
+};
+/** Waits for a tip by its title. Both the floating nudge and the tip card are `role="status"`. */
+const waitTip = (title: string) => async (page: Page) => {
+  await page.getByRole('status').filter({ hasText: title }).first().waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(400);
+};
+
 const click = (selector: string) => async (page: Page) => { await page.locator(selector).first().click(); };
 const openTools = async (page: Page) => { await page.locator('button[aria-expanded]').filter({ hasText: /tools/i }).first().click(); };
 const openPickerCell = (cell: string) => async (page: Page) => {
@@ -177,7 +212,9 @@ export const SCREENS: Screen[] = [
       await page.locator('[data-dex-export-confirm]:not([disabled])').waitFor({ timeout: 60_000 });
     },
   },
+  { id: 'builder-tip-analytics', path: '/pokedex-builder?lang=en', seed: DEX_TIP, act: waitTip('Analytics unlocked') },
   { id: 'league', path: '/custom-gym-leader' },
+  { id: 'league-tip-gyms', path: '/custom-gym-leader?lang=en', seed: LEAGUE_EIGHT_GYMS, act: waitTip('Gym leaders complete') },
   { id: 'league-home', path: '/custom-gym-leader', seed: LEAGUE },
   { id: 'league-card', path: '/custom-gym-leader', seed: LEAGUE, act: click('[data-testid="league-slot-0"]') },
   { id: 'league-home-shiny', path: '/custom-gym-leader', seed: LEAGUE_SHINY },
@@ -226,6 +263,14 @@ export const SCREENS: Screen[] = [
   { id: 'league-ace-aegislash', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('aegislash') },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  {
+    id: 'favorites-tip-analytics', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_24,
+    act: async (page) => {
+      await click('[data-testid="favorites-cell-water-1"]')(page);
+      await click('[data-testid="favorites-pick-7"]')(page);
+      await waitTip('Analytics unlocked')(page);
+    },
+  },
   { id: 'favorites-filled-hover', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: hoverGridCell('fire-1') },
   {
     id: 'builder-search-empty', path: '/pokedex-builder', seed: DEX,

@@ -107,10 +107,6 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
-      const note = el.nextElementSibling;
-      if (note instanceof HTMLElement && note.hasAttribute('data-fit-reserve')) {
-        avail -= note.offsetHeight;
-      }
       const host = el.parentElement;
       let room = widthRef.current;
       if (host) {
@@ -227,7 +223,12 @@ export function useFitScale(
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     if (el.parentElement) ro.observe(el.parentElement);
-    if (viewport instanceof HTMLElement) ro.observe(viewport);
+    if (viewport instanceof HTMLElement) {
+      ro.observe(viewport);
+      // A tip opening above the block inside the same scroller moves the block down
+      // without resizing anything observed here.
+      viewport.querySelectorAll('[data-tip-slot]').forEach((slot) => ro.observe(slot));
+    }
     window.addEventListener('resize', compute);
     return () => {
       ro.disconnect();
