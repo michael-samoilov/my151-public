@@ -128,7 +128,8 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
             type="button"
             onClick={() => setTypePickerOpen(false)}
             aria-label={t('league.close')}
-            className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-inset-3.5 before:content-['']"
+            // Grows up and right to the sheet edge, and stops above the type grid.
+            className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-top-4 before:-right-4 before:-bottom-2 before:-left-3.5 before:content-['']"
           >
             <X size={16} />
           </button>
