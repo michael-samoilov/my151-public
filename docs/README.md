@@ -24,6 +24,9 @@ It does not replace the rules or decisions in those records.
 | Favorite Picker standing decisions and work history | Favorite Picker handoff (not published) |
 | Reliability work history | Reliability handoff, 2026-09-30 (not published) |
 | Ideas without active implementation | [Backlog](backlog.md) |
+| Unscheduled feature requests | Feature backlog in the working notes (not published) |
+| Running task list | To-do list in the working notes (not published) |
+| Search standing decisions and status | SEO handoff, SEO plan, and SEO reference (not published) |
 
 Handoffs contain dated snapshots and standing product decisions.
 Later dated updates supersede older release statements.
@@ -37,6 +40,8 @@ The production branch and linked release records establish shipped state.
 The [archive index](evidence/archive/README.md) records historical artifacts removed from the working tree and how to retrieve them.
 Existing folders under `evidence/`, `favorite-picker-work/`, and `design/` retain their local explanations.
 They are historical records unless a current guide or test explicitly uses them.
+[`notes/`](notes/) holds working notes: the to-do list, the feature backlog, an interface polish exploration, and the milestone bar layout.
+[`readme/`](readme/) holds the screenshots that the [project overview](../README.md) shows.
 
 Verification results apply to their recorded source, inputs, engines, and dates.
 Screenshots do not establish API behavior, and a laboratory timing does not establish real-user performance.
