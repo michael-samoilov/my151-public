@@ -1328,7 +1328,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       {!asking && (() => {
         if (pendingAdds === 0 && pendingRemovals === 0) return null;
         return (
-          <div className="absolute left-1/2 -translate-x-1/2 z-40 transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
+          <div className="absolute left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
             <button type="button"
               onClick={handleSubmitStaged}
               className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"

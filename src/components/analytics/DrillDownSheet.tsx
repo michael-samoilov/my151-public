@@ -194,7 +194,7 @@ function CardPanel({
       </div>
 
       {removalCount > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)]">
           <button type="button"
             onClick={onConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
@@ -659,7 +659,7 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
       </div>
 
       {removalStagedIds.length > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)]">
           <button type="button"
             onClick={handleConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"

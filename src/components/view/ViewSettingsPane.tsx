@@ -271,7 +271,7 @@ export function ViewSettingsPane({
       </div>
 
       {hasPendingChanges && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)]">
           <button type="button"
             onClick={handleApply}
             className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
