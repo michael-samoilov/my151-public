@@ -864,7 +864,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             {searchQuery && (
               <button type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:inset-x-0 before:-inset-y-0.5 before:content-['']"
                 aria-label={t('browser.search.clear')}
               >
                 <X className="w-4 h-4" />
@@ -1161,7 +1161,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">{sheetTitle(openSheet)}</span>
-            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+            <button type="button" onClick={() => setOpenSheet(null)} className="relative text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:-inset-3.5 before:content-['']" aria-label={t('browser.close')}>
               <X size={16} aria-hidden />
             </button>
           </div>
@@ -1394,7 +1394,7 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
           <span className="text-sm font-semibold">
             {sheetTitle(openSheet as Exclude<FilterSheet, null>)}
           </span>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+          <button type="button" onClick={onClose} className="relative text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:-inset-3.5 before:content-['']" aria-label={t('browser.close')}>
             <X size={16} aria-hidden />
           </button>
         </div>
@@ -1510,7 +1510,7 @@ function FilterChip({
       style={{ ...fillVar(style?.backgroundColor ?? 'var(--color-foreground)'), ...style }}
     >
       <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
-      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer" aria-label={t('browser.chip.remove')}>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="relative hover:opacity-70 cursor-pointer before:absolute before:-inset-y-3 before:-left-1 before:-right-2.5 before:content-['']" aria-label={t('browser.chip.remove')}>
         <X size={10} aria-hidden />
       </button>
     </span>

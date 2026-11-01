@@ -79,6 +79,7 @@ function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
   style?: React.CSSProperties;
   testId?: string;
 }) {
+  const t = useT();
   return (
     <span
       className={cn('inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium', className)}
@@ -93,7 +94,8 @@ function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
           e.stopPropagation();
           onDismiss();
         }}
-        className="cursor-pointer hover:opacity-70"
+        aria-label={t('browser.chip.remove')}
+        className="relative cursor-pointer hover:opacity-70 before:absolute before:-inset-y-3 before:-left-1 before:-right-2.5 before:content-['']"
       >
         <X size={10} />
       </button>
@@ -344,7 +346,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
               type="button"
               onClick={() => setOpenSheet(null)}
               aria-label={t('league.close')}
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
+              className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-inset-3.5 before:content-['']"
             >
               <X size={16} />
             </button>
