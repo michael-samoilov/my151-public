@@ -77,18 +77,30 @@ interface FeedbackSubmission {
   dwellMs: number;
 }
 
-export async function sendFeedback(body: FeedbackSubmission): Promise<boolean> {
+export type FeedbackSendResult =
+  | { ok: true }
+  | { ok: false; reason: 'offline' | 'server' | 'rejected' }
+  | { ok: false; reason: 'busy'; retryMinutes: number };
+
+export async function sendFeedback(body: FeedbackSubmission): Promise<FeedbackSendResult> {
   const cid = isOptedOut() ? null : getClientId();
+  let res: Response;
   try {
-    const res = await fetch('/api/feedback', {
+    res = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...body, ...(cid ? { cid } : {}), auto: AUTOMATED || undefined }),
     });
-    return res.ok;
   } catch {
-    return false;
+    return { ok: false, reason: 'offline' };
   }
+  if (res.ok) return { ok: true };
+  if (res.status === 429) {
+    // The hourly cap for everyone sends no Retry-After.
+    const seconds = Number(res.headers.get('Retry-After')) || 3600;
+    return { ok: false, reason: 'busy', retryMinutes: Math.max(1, Math.ceil(seconds / 60)) };
+  }
+  return { ok: false, reason: res.status >= 500 ? 'server' : 'rejected' };
 }
 
 const reportedCrashes = new Set<string>();

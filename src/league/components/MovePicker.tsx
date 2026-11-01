@@ -79,6 +79,7 @@ function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
   style?: React.CSSProperties;
   testId?: string;
 }) {
+  const t = useT();
   return (
     <span
       className={cn('inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium', className)}
@@ -93,7 +94,8 @@ function FilterChip({ label, onDismiss, onClick, className, style, testId }: {
           e.stopPropagation();
           onDismiss();
         }}
-        className="cursor-pointer hover:opacity-70"
+        aria-label={t('browser.chip.remove')}
+        className="relative cursor-pointer hover:opacity-70 before:absolute before:-inset-y-3 before:-left-1 before:-right-2.5 before:content-['']"
       >
         <X size={10} />
       </button>
@@ -249,6 +251,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('league.tm.search')}
             aria-label={t('league.tm.search')}
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
             className="pl-9"
           />
         </div>
@@ -344,7 +349,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
               type="button"
               onClick={() => setOpenSheet(null)}
               aria-label={t('league.close')}
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
+              className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-inset-3.5 before:content-['']"
             >
               <X size={16} />
             </button>
@@ -459,6 +464,7 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
     return (
       <BottomSheet
         onClose={close}
+        instant
         size="full"
         topGap={49}
         closeLabel={t('league.tm.titlePlain', { slot })}

@@ -59,6 +59,7 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
   return (
     <BottomSheet
       onClose={onClose}
+      instant
       size="full"
       topGap={topGap}
       closeLabel={sectionName ? t('builder.addingToLabel', { section: sectionName }) : t('builder.browse')}

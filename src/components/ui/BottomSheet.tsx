@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { SheetKeyboardContext } from './sheetKeyboard';
 import { SheetCloseGuardContext, type SheetCloseGuard, type SheetCloseVia } from './sheetCloseGuard';
 import { isFlick } from './flick';
+import './sheetMotion.css';
 
 const DISMISS_THRESHOLD = 120;
 
@@ -27,6 +28,8 @@ interface BottomSheetProps {
   exportChrome?: boolean;
   capHeightPx?: number;
   fitContent?: boolean;
+  /** Skips the entrance, for pickers that open many times a session. */
+  instant?: boolean;
   children: React.ReactNode;
 }
 
@@ -60,22 +63,26 @@ export function BottomSheet({
   exportChrome = false,
   capHeightPx,
   fitContent = false,
+  instant = false,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
+  const [leaving, setLeaving] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const dragStartAt = useRef(0);
   const isDragging = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const closeGuard = useRef<SheetCloseGuard | null>(null);
   const setCloseGuard = useCallback((guard: SheetCloseGuard | null) => {
     closeGuard.current = guard;
   }, []);
   const requestClose = useCallback((via: SheetCloseVia) => {
+    if (leaving) return true;
     if (closeGuard.current?.(via)) return false;
     onClose();
     return true;
-  }, [onClose]);
+  }, [leaving, onClose]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;
@@ -95,11 +102,39 @@ export function BottomSheet({
 
   const handleTouchEnd = useCallback(() => {
     const flicked = isFlick(dragY, performance.now() - dragStartAt.current);
-    const closed = (dragY > DISMISS_THRESHOLD || flicked) && requestClose('swipe');
-    if (!closed) setDragY(0);
     dragStartY.current = null;
     isDragging.current = false;
-  }, [dragY, requestClose]);
+    if (!(dragY > DISMISS_THRESHOLD || flicked) || closeGuard.current?.('swipe')) {
+      setDragY(0);
+    } else if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onClose();
+    } else {
+      setLeaving(true);
+    }
+  }, [dragY, onClose]);
+
+  // A released swipe finishes its slide before the sheet unmounts.
+  // `transitionend` can be skipped (a hidden tab, an interrupted transition),
+  // so a timer closes the sheet regardless.
+  useEffect(() => {
+    if (!leaving) return;
+    const el = dialogRef.current;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onClose();
+    };
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === el && e.propertyName === 'transform') finish();
+    };
+    el?.addEventListener('transitionend', onEnd);
+    const timer = setTimeout(finish, 250);
+    return () => {
+      el?.removeEventListener('transitionend', onEnd);
+      clearTimeout(timer);
+    };
+  }, [leaving, onClose]);
 
   const handleTap = useCallback(() => {
     if (isDragging.current) return;
@@ -373,16 +408,22 @@ export function BottomSheet({
     >
       {showScrim && (
         <div
-          className="pointer-events-auto absolute inset-0 bg-black/50"
+          className={`pointer-events-auto absolute inset-0 bg-black/50${instant ? '' : ' scrim-fade-in'}`}
           onClick={() => requestClose('scrim')}
-          style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
+          style={{
+            opacity: leaving ? 0 : Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)),
+            transition: leaving ? 'opacity 200ms cubic-bezier(0.23, 1, 0.32, 1)' : undefined,
+          }}
         />
       )}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-label={dialogLabel ?? closeLabel}
         data-export-chrome={exportChrome ? '' : undefined}
-        className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
+        className={`relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto${
+          instant ? '' : ' sheet-rise-in'
+        }`}
         data-sheet-keyboard={keyboardOpen ? '' : undefined}
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
@@ -405,8 +446,10 @@ export function BottomSheet({
               : viewport
                 ? `${Math.max(0, viewport.height - gap)}px`
                 : `calc(100dvh - ${gap}px)`,
-          transform: `translateY(${dragY}px)`,
-          transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
+          transform: leaving ? 'translateY(100%)' : `translateY(${dragY}px)`,
+          transition: leaving
+            ? 'transform 200ms cubic-bezier(0.23, 1, 0.32, 1)'
+            : dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
         <div className="relative shrink-0" data-testid="bottom-sheet-header-frame">

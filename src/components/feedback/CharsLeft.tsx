@@ -7,7 +7,7 @@ export function CharsLeft({ length, max, className }: { length: number; max: num
   const left = max - length;
   if (left > max / 10) return null;
   return (
-    <p aria-live="polite" className={cn('text-xs tabular-nums', left === 0 ? 'text-destructive' : 'text-muted-foreground', className)}>
+    <p aria-live="polite" className={cn('text-xs tabular-nums text-destructive', className)}>
       {tn('feedback.charsLeft', left)}
     </p>
   );

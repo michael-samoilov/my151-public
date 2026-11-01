@@ -25,6 +25,7 @@ import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetClo
 import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { SearchRow } from './SearchRow';
+import '@/components/ui/sheetMotion.css';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -859,12 +860,16 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
+              // Phone autocorrect turns Pokémon names into dictionary words.
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
               className="pl-9 pr-9"
             />
             {searchQuery && (
               <button type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:inset-x-0 before:-inset-y-0.5 before:content-['']"
                 aria-label={t('browser.search.clear')}
               >
                 <X className="w-4 h-4" />
@@ -1161,7 +1166,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">{sheetTitle(openSheet)}</span>
-            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+            <button type="button" onClick={() => setOpenSheet(null)} className="relative text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:-inset-3.5 before:content-['']" aria-label={t('browser.close')}>
               <X size={16} aria-hidden />
             </button>
           </div>
@@ -1328,10 +1333,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       {!asking && (() => {
         if (pendingAdds === 0 && pendingRemovals === 0) return null;
         return (
-          <div className="absolute left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
+          <div className="absolute left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] transition-[bottom] duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
             <button type="button"
               onClick={handleSubmitStaged}
-              className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
+              className="sheet-ask-in bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
             >
               {pendingAdds > 0 && pendingRemovals > 0 ? (
                 <>
@@ -1389,12 +1394,12 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-50 pointer-events-none">
-      <div ref={sheetRef} className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
+      <div ref={sheetRef} className="sheet-rise-in pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
             {sheetTitle(openSheet as Exclude<FilterSheet, null>)}
           </span>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+          <button type="button" onClick={onClose} className="relative text-muted-foreground hover:text-foreground cursor-pointer before:absolute before:-inset-3.5 before:content-['']" aria-label={t('browser.close')}>
             <X size={16} aria-hidden />
           </button>
         </div>
@@ -1510,7 +1515,7 @@ function FilterChip({
       style={{ ...fillVar(style?.backgroundColor ?? 'var(--color-foreground)'), ...style }}
     >
       <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
-      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer" aria-label={t('browser.chip.remove')}>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="relative hover:opacity-70 cursor-pointer before:absolute before:-inset-y-3 before:-left-1 before:-right-2.5 before:content-['']" aria-label={t('browser.chip.remove')}>
         <X size={10} aria-hidden />
       </button>
     </span>
