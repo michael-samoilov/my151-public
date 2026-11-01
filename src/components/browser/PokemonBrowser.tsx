@@ -25,6 +25,7 @@ import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetClo
 import { fillVar, HOVER_LAYER } from '@/components/ui/hoverLayer';
 import { ShinyToggle } from '@/components/shiny/ShinyToggle';
 import { SearchRow } from './SearchRow';
+import '@/components/ui/sheetMotion.css';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -859,11 +860,11 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
-              className="pl-9 pr-9"
               // Phone autocorrect turns Pokémon names into dictionary words.
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}
+              className="pl-9 pr-9"
             />
             {searchQuery && (
               <button type="button"
@@ -1332,10 +1333,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       {!asking && (() => {
         if (pendingAdds === 0 && pendingRemovals === 0) return null;
         return (
-          <div className="absolute left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
+          <div className="absolute left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] transition-[bottom] duration-[280ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
             <button type="button"
               onClick={handleSubmitStaged}
-              className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
+              className="sheet-ask-in bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
             >
               {pendingAdds > 0 && pendingRemovals > 0 ? (
                 <>
@@ -1393,7 +1394,7 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
 
   return (
     <div className="absolute inset-x-0 bottom-0 z-50 pointer-events-none">
-      <div ref={sheetRef} className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
+      <div ref={sheetRef} className="sheet-rise-in pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
             {sheetTitle(openSheet as Exclude<FilterSheet, null>)}

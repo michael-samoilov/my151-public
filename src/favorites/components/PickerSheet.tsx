@@ -277,6 +277,7 @@ export function PickerSheet({
   return (
     <BottomSheet
       onClose={onClose}
+      instant
       onHeaderClick={packing ? backFromPack : undefined}
       headerLabel={packing ? t('favorites.packing.back') : undefined}
       title={mobileTitle}

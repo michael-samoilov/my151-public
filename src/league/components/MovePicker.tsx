@@ -464,6 +464,7 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
     return (
       <BottomSheet
         onClose={close}
+        instant
         size="full"
         topGap={49}
         closeLabel={t('league.tm.titlePlain', { slot })}
