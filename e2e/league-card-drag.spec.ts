@@ -46,11 +46,10 @@ test.describe('a card cell owns the touch it starts', () => {
         .filter((el) => el.querySelector('img'))
         .map((el) => getComputedStyle(el).touchAction));
     expect(actions.length, 'the seeded card has lines to drag').toBeGreaterThan(20);
-    // `pan-y` is what let the pane scroll under a drag. `none` would be worse
-    // still: it takes the browser's pinch-zoom with it, and the cells are most
-    // of the card.
+    // `pan-y` is what let the pane scroll under a drag, and the browser's
+    // pinch-zoom let a zoomed page pan under it. The card zooms itself.
     for (const a of new Set(actions)) {
-      expect(a, 'a filled cell must not hand the browser a pan').toBe('pinch-zoom');
+      expect(a, 'a filled cell must not hand the browser a pan').toBe('none');
     }
   });
 
@@ -67,7 +66,7 @@ test.describe('a card cell owns the touch it starts', () => {
         .map((el) => getComputedStyle(el).touchAction));
     expect(actions.length, 'a blank card is all empty cells').toBeGreaterThan(20);
     for (const a of new Set(actions)) {
-      expect(a, 'an empty cell keeps the page scrollable').toBe('pan-y pinch-zoom');
+      expect(a, 'an empty cell keeps the card scrollable').toBe('pan-x pan-y');
     }
   });
 
@@ -269,13 +268,13 @@ test.describe('a carried column keeps what it carries', () => {
   });
 });
 
-test.describe('a pinch belongs to the browser', () => {
-  // Blink fires no `touchcancel` when it takes a pinch. It keeps sending the
-  // moves, uncancelable, so a sensor that waits for one follows the first
-  // finger through the whole zoom and lands it as a drag. The second finger
-  // comes either before the hold is up or after it has lifted the column.
+test.describe('a pinch belongs to the card', () => {
+  // No `touchcancel` comes when a second finger lands, so a sensor that waits
+  // for one follows the first finger through the whole zoom and lands it as a
+  // drag. The second finger comes either before the hold is up or after it
+  // has lifted the column.
   for (const lag of [40, 320]) {
-    test(`a pinch on two lines zooms the page and leaves the card as it was (second finger after ${lag} ms)`, async ({ page }, testInfo) => {
+    test(`a pinch on two lines zooms the card and leaves its lines as they were (second finger after ${lag} ms)`, async ({ page }, testInfo) => {
       await openCard(page);
       const lines = () =>
         page.evaluate(() => JSON.parse(window.localStorage.getItem('league-builder')!).state.cards[0].lines);
@@ -303,13 +302,15 @@ test.describe('a pinch belongs to the browser', () => {
       await page.waitForTimeout(400);
 
       const scale = await page.evaluate(() => window.visualViewport?.scale ?? 1);
+      const cardZoom = Number(await page.getAttribute('[data-testid="card-zoom-frame"]', 'data-card-zoom'));
       const after = await lines();
       await testInfo.attach('pinch.json', {
-        body: JSON.stringify({ lag, scale: +scale.toFixed(2), unchanged: JSON.stringify(after) === JSON.stringify(before) }, null, 2),
+        body: JSON.stringify({ lag, scale: +scale.toFixed(2), cardZoom, unchanged: JSON.stringify(after) === JSON.stringify(before) }, null, 2),
         contentType: 'application/json',
       });
       expect(after, 'the pinch left every line where it was').toEqual(before);
-      expect(scale, 'the browser zoomed the page').toBeGreaterThan(1.3);
+      expect(scale, 'the page did not zoom').toBe(1);
+      expect(cardZoom, 'the card zoomed').toBeGreaterThan(1.3);
     });
   }
 });

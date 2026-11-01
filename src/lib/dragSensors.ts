@@ -53,11 +53,11 @@ export function useDragSensors() {
  * inside it began at the cell it started from. `HoldOrMoveTouchSensor`
  * begins on the hold for a still press and on movement for a moving one,
  * never stands down for movement, and the cell asks for
- * `touch-action: pinch-zoom` so there is no pan for the browser to start.
+ * `touch-action: none` so there is no pan for the browser to start.
  *
- * A pinch still reaches the browser. `pinch-zoom` leaves the two-finger
- * gesture to it, and the sensor stands down the moment a second finger lands.
- * So the one gesture that takes the finger back is the one that should.
+ * A pinch still zooms: the card zooms itself (`useCardZoom`), and the sensor
+ * stands down the moment a second finger lands. So the one gesture that takes
+ * the finger back is the one that should.
  */
 export function useGridDragSensors() {
   const mouse = useSensor(MouseSensor, {

@@ -4,6 +4,8 @@ async function pinchBlockers(page: Page) {
   return page.evaluate(() => {
     const bad: Array<{ id: string; touchAction: string; area: number }> = [];
     for (const el of document.querySelectorAll<HTMLElement>('*')) {
+      // The gym card takes a pinch and zooms itself.
+      if (el.closest('[data-testid="card-zoom-frame"]')) continue;
       const ta = getComputedStyle(el).touchAction;
       if (ta === 'auto' || ta === 'manipulation' || ta.includes('pinch-zoom')) continue;
       const r = el.getBoundingClientRect();
@@ -32,6 +34,7 @@ test.describe('pinch to zoom', { tag: '@viewport' }, () => {
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(600);
+    expect(await page.locator('[data-testid="card-zoom-frame"]').count(), 'the card zooms itself').toBe(1);
     expect(await pinchBlockers(page)).toEqual([]);
   });
 

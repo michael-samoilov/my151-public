@@ -387,14 +387,14 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
           // let the page scroll under the very gesture that is supposed to
           // move a line up a row, so a drag begun with a moving finger
           // scrolled the card away instead; dropping the pan leaves that
-          // touch to the drag, which is what a filled cell is for. `none`
-          // would go too far and take the browser's pinch with it, and the
-          // cells are most of the card.
+          // touch to the drag, which is what a filled cell is for. The
+          // browser's pinch goes too: on a page it had zoomed, a drag panned
+          // the page instead. The card zooms itself (`useCardZoom`).
           //
           // An empty cell has no drag to offer — it opens a picker on a tap —
           // so it hands the pan back rather than swallowing it. See
           // `useGridDragSensors`.
-          touchAction: datum.filled ? 'pinch-zoom' : 'pan-y pinch-zoom',
+          touchAction: datum.filled ? 'none' : 'pan-x pan-y',
           ...(held
             ? {
                 transform: `translateY(-${CELL_LIFT_REM}rem)`,
