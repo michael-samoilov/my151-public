@@ -17,10 +17,9 @@ export function BuildDepthChart({
   ariaLabel: string;
 }) {
   const { pts, startCount, endCount, xMin, xMax, quartiles, scrubLabel, build } = useMemo(() => {
-    const xMin = curve.n > 0 && (curve.survival.find(p => p.t === 1)?.s ?? 1) < 1 ? 0 : 1;
-    const pts = curve.survival
-      .filter((p) => p.t >= xMin)
-      .map((p) => [p.t, Math.round(p.s * 1000) / 10] as [number, number]);
+    // Not 1, even when everyone has 1: a quartile at 1 would draw its guide on the y-axis.
+    const xMin = 0;
+    const pts = curve.survival.map((p) => [p.t, Math.round(p.s * 1000) / 10] as [number, number]);
     const startCount = pts.length ? Math.round((pts[0][1] / 100) * curve.n) : 0;
     const endCount = pts.length ? Math.round((pts[pts.length - 1][1] / 100) * curve.n) : 0;
     const xMax = pts.length ? pts[pts.length - 1][0] : 1;
@@ -82,7 +81,7 @@ export function BuildDepthChart({
   }, [curve, xLabel]);
   const ref = useECharts(build, { scrub: { count: pts.length, label: scrubLabel } });
 
-  if (pts.length < 2) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+  if (pts.length < 3) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   return (
     <div
       ref={ref}
