@@ -95,10 +95,6 @@ export function sanitizeContext(raw: unknown): Record<string, unknown> {
   return out;
 }
 
-function urlCount(text: string): number {
-  return (text.match(/https?:\/\//gi) ?? []).length;
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -117,7 +113,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (message.length < FEEDBACK_MIN_CHARS || message.length > FEEDBACK_MESSAGE_MAX_CHARS) {
       return res.status(400).json({ error: 'invalid message' });
     }
-    if (urlCount(message) >= 3) return res.status(400).json({ error: 'invalid message' });
 
     const dwellMs = typeof body.dwellMs === 'number' ? body.dwellMs : 0;
     if (dwellMs < MIN_DWELL_MS) return res.status(400).json({ error: 'too fast' });
