@@ -7,7 +7,6 @@ import { useHomeSheetLift } from './useHomeSheetLift';
 import { SLOT_COUNT } from '@/league/model/constants';
 import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useXHeightAlignment } from './useXHeightAlignment';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -442,7 +441,6 @@ export function HomePage() {
   const desktopCols = tools.length;
   const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   const isDesktop = useIsDesktop();
-  const { titleRef, descriptionRef, offset: descriptionOffset } = useXHeightAlignment(isDesktop);
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
   const reserves = reserveByRow(tools, isDesktop ? desktopCols : 2);
 
@@ -470,17 +468,16 @@ export function HomePage() {
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
-                ref={titleRef}
                 className="m-0 font-extrabold tracking-tight text-pretty [word-break:auto-phrase] text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
               </h1>
-              <div
-                className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2"
-                style={isDesktop ? { transform: `translateY(${descriptionOffset}px)` } : undefined}
-              >
-                <p ref={descriptionRef} className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
+              {/* On desktop the intro's x-height top meets the title's. This div is 1rem,
+                  so its 1ex is the x-height per rem, and the factors are the intro and
+                  title sizes in rem. */}
+              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2 md:translate-y-[calc((0.78_-_1.75)*1ex)] xl:translate-y-[calc((0.78_-_2.1)*1ex)]">
+                <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
               </div>
