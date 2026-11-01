@@ -249,7 +249,7 @@ function App() {
         <ErrorBoundary where="pokedex-builder">
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
-            'h-full transition-[margin] duration-300 ease-out',
+            'h-full',
             'md:w-1/2',
             activeSection ? 'md:mr-auto' : 'md:mx-auto',
           )}>

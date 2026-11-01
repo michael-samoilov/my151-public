@@ -7,6 +7,7 @@ import { ShapeIconCircle } from '@/components/shared/ShapeIcon';
 import { shapeLabel, typeLabel, useT, useTn } from '@/i18n';
 import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { isFlick } from '@/components/ui/flick';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 const PEEK_STRIP = 5;
@@ -194,7 +195,7 @@ function CardPanel({
       </div>
 
       {removalCount > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)]">
           <button type="button"
             onClick={onConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
@@ -215,6 +216,7 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
   const dragStartY = useRef<number | null>(null);
   const dragStartX = useRef<number | null>(null);
+  const dragStartAt = useRef(0);
   const isDragging = useRef(false);
   const dragAxis = useRef<'none' | 'vertical' | 'horizontal'>('none');
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -318,6 +320,7 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     if (isAnimating) return;
     dragStartY.current = e.touches[0].clientY;
     dragStartX.current = e.touches[0].clientX;
+    dragStartAt.current = performance.now();
     isDragging.current = false;
     dragAxis.current = 'none';
   }, [isAnimating]);
@@ -374,11 +377,12 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
         setSwipeX(0);
       }
     } else if (dragAxis.current === 'vertical') {
+      const dismissed = dragY > DISMISS_THRESHOLD || isFlick(dragY, performance.now() - dragStartAt.current);
       if (peek) {
         if (dragY < -EXPAND_THRESHOLD) expandDrillDown();
-        else if (dragY > DISMISS_THRESHOLD) closeDrillDown();
+        else if (dismissed) closeDrillDown();
       } else {
-        if (dragY > DISMISS_THRESHOLD) closeDrillDown();
+        if (dismissed) closeDrillDown();
       }
       setDragY(0);
     }
@@ -659,7 +663,7 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
       </div>
 
       {removalStagedIds.length > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)]">
           <button type="button"
             onClick={handleConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"

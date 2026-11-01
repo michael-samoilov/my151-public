@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SheetKeyboardContext } from './sheetKeyboard';
 import { SheetCloseGuardContext, type SheetCloseGuard, type SheetCloseVia } from './sheetCloseGuard';
+import { isFlick } from './flick';
 
 const DISMISS_THRESHOLD = 120;
 
@@ -63,6 +64,7 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef<number | null>(null);
+  const dragStartAt = useRef(0);
   const isDragging = useRef(false);
 
   const closeGuard = useRef<SheetCloseGuard | null>(null);
@@ -77,6 +79,7 @@ export function BottomSheet({
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;
+    dragStartAt.current = performance.now();
     isDragging.current = false;
   }, []);
 
@@ -91,7 +94,8 @@ export function BottomSheet({
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    const closed = dragY > DISMISS_THRESHOLD && requestClose('swipe');
+    const flicked = isFlick(dragY, performance.now() - dragStartAt.current);
+    const closed = (dragY > DISMISS_THRESHOLD || flicked) && requestClose('swipe');
     if (!closed) setDragY(0);
     dragStartY.current = null;
     isDragging.current = false;

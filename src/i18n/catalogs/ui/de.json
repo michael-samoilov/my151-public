@@ -536,6 +536,8 @@
   "feedback.category.idea": "Idee",
   "feedback.category.other": "Anderes",
   "feedback.category.translation": "Übersetzung",
+  "feedback.charsLeft_one": "Noch {count} Zeichen",
+  "feedback.charsLeft_other": "Noch {count} Zeichen",
   "feedback.context.browser": "Browser: {ua}",
   "feedback.context.browserLanguages": "Browsersprachen: {languages}",
   "feedback.context.favoritePicks_one": "{count} Auswahl",

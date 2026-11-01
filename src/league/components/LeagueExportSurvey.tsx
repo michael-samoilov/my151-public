@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendFeedback, collectFeedbackContext } from '@/lib/feedbackContext';
+import { FEEDBACK_FIELD_MAX_CHARS, SURVEY_SOURCE_MAX_CHARS } from '@/lib/feedbackLimits';
+import { CharsLeft } from '@/components/feedback/CharsLeft';
 import {
   exportSurveyFeedbackRoute,
   type ExportSurveyTool,
@@ -61,6 +63,7 @@ export function LeagueExportSurvey({
   const [ideas, setIdeas] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failed, setFailed] = useState(false);
   const otherInputRef = useRef<HTMLInputElement>(null);
   const otherRowRef = useRef<HTMLDivElement>(null);
   const tight = useSheetKeyboard();
@@ -109,6 +112,7 @@ export function LeagueExportSurvey({
 
   const submit = async () => {
     setSending(true);
+    setFailed(false);
     try {
       const elapsed = Date.now() - openedAt;
       if (elapsed < 2000) {
@@ -136,6 +140,8 @@ export function LeagueExportSurvey({
       if (ok) {
         setSent(true);
         window.setTimeout(onDone, 1200);
+      } else {
+        setFailed(true);
       }
     } finally {
       setSending(false);
@@ -181,12 +187,14 @@ export function LeagueExportSurvey({
               otherRowRef.current?.scrollIntoView({ block: 'center', inline: 'nearest' });
             }}
             onPointerDown={selectOther}
+            maxLength={SURVEY_SOURCE_MAX_CHARS}
             placeholder={t('exportSurvey.heard.where')}
             aria-label={t('exportSurvey.heard.whereLabel')}
             data-export-other-input
             className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-base outline-none md:text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
+        <CharsLeft length={heardOther.length} max={SURVEY_SOURCE_MAX_CHARS} />
         <div className="grid grid-cols-2 gap-1">
           {HEARD.filter((h) => h.id !== 'other').map(({ id, label, key, Icon }) => {
             const on = heard.has(id);
@@ -213,10 +221,12 @@ export function LeagueExportSurvey({
         <textarea
           value={ideas}
           onChange={(e) => setIdeas(e.target.value)}
+          maxLength={FEEDBACK_FIELD_MAX_CHARS}
           rows={3}
           placeholder={t('exportSurvey.ideas.placeholder')}
           className="flex w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
+        <CharsLeft length={ideas.length} max={FEEDBACK_FIELD_MAX_CHARS} />
       </label>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
@@ -224,6 +234,11 @@ export function LeagueExportSurvey({
       </p>
 
       <div className="mt-auto flex flex-col gap-2 pt-2">
+        {failed && (
+          <p role="alert" className="text-xs text-destructive">
+            {t('feedback.failed')}
+          </p>
+        )}
         <Button type="button" disabled={sending} onClick={() => void submit()}>
           {t(sending ? 'feedback.sending' : 'exportSurvey.send')}
         </Button>
