@@ -417,7 +417,7 @@ export const enUi = {
   'home.league.leagueAlt': 'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
   'home.league.saved': '{progress} trainers saved in this browser',
   'home.league.title': 'League & Gym Leader Maker',
-  'home.next.blurb': 'Share an idea or feedback,\nwe read everything that comes in!',
+  'home.next.blurb': 'Share an idea or feedback,\nI read everything that comes in!',
   'home.next.title': 'What would you like to see next?',
   'intro.body': 'Curate your regional Pokédex, analyze detailed stats, then export as an image to save a copy and share.',
   'intro.dismiss': 'Dismiss intro',
