@@ -6,6 +6,7 @@ import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
 import { fireCompletionConfetti, preloadCompletionConfetti } from './completionConfetti';
 import { NudgeCard } from './NudgeCard';
+import { useOverlayOpen } from './useOverlayOpen';
 
 interface Nudge {
   nav: Extract<AppView, 'analytics' | 'view'>;
@@ -23,7 +24,7 @@ const NUDGES: Record<number, Nudge> = {
 const REVEAL_DELAY_MOBILE_MS = 950;
 const REVEAL_DELAY_DESKTOP_MS = 640;
 
-export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppView) => void }) {
+export function MilestoneCelebration({ view, onNavigate }: { view: AppView; onNavigate: (view: AppView) => void }) {
   const t = useT();
   const celebration = usePokedexStore((s) => s.milestoneCelebration);
   const dismiss = usePokedexStore((s) => s.dismissMilestoneCelebration);
@@ -33,7 +34,9 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
 
   const confettiFor = useRef<number | null>(null);
 
-  const canShow = nudge != null && (isDesktop || !mobileBrowserOpen);
+  const onBuildPage = nudge != null && view === 'builder' && (isDesktop || !mobileBrowserOpen);
+  const covered = useOverlayOpen(onBuildPage);
+  const canShow = onBuildPage && !covered;
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!canShow) return;
