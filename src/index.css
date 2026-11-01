@@ -467,6 +467,10 @@ img[data-failed] {
   --panel-ar: 166 / var(--panel-h);
   --panel-inset: 12.550cqw;
   --shot-nudge: calc(min(8.434cqw, 14px) + 1.05cqw + 2px);
+  /* Each card is a size container. When the grid stretches a card to its
+     row, Chrome lays the card out twice per frame and restyles its subtree
+     both times. The card box is invisible, so its height does not matter. */
+  align-items: start;
 }
 .hub-stage {
   position: absolute;
