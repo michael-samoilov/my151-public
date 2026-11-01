@@ -78,7 +78,7 @@ export function LanguagePicker() {
         aria-expanded={open}
         aria-label={t('lang.change')}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 h-9 px-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+        className="relative before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] flex items-center gap-1 h-9 px-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
         <Globe className="w-4 h-4" {...pathScale(1.04)} />
       </button>

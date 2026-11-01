@@ -180,7 +180,7 @@ export function ExportPreviewShell({
       <aside
         role="dialog"
         aria-label={paneTitle}
-        className="fixed inset-y-0 right-0 flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl"
+        className="pane-slide-in fixed inset-y-0 right-0 flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl"
         style={{ zIndex: PANE_Z }}
         data-export-overlay
         data-export-chrome

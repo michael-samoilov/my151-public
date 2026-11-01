@@ -161,7 +161,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
       }}
       aria-expanded={open}
       data-testid="tools-menu"
-      className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="relative before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-[''] flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       {t('tools.title')}
       <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />

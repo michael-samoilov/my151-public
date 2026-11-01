@@ -1,0 +1,17 @@
+/* Kept out of `src/index.css`, which is an input of the baked home artwork:
+   any edit there means rebaking it (scripts/home-artwork).
+
+   `translate` rather than `transform`, so the entrance composes with the
+   bottom sheet's inline drag transform instead of overriding it. */
+@keyframes sheet-rise-in {
+  from { translate: 0 100%; }
+}
+@keyframes pane-slide-in {
+  from { translate: 100% 0; }
+}
+.sheet-rise-in { animation: sheet-rise-in 280ms cubic-bezier(0.32, 0.72, 0, 1); }
+.pane-slide-in { animation: pane-slide-in 280ms cubic-bezier(0.32, 0.72, 0, 1); }
+.scrim-fade-in { animation: p151-view-fade 280ms cubic-bezier(0.32, 0.72, 0, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-rise-in, .pane-slide-in { animation: p151-view-fade 180ms ease-out; }
+}
