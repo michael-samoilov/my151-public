@@ -611,6 +611,7 @@ export function ViewPage() {
     const pending = dexFlipPending.current;
     if (!pending || !isDesktop) return;
     dexFlipPending.current = null;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     cancelAnimationFrame(dexFlipRaf.current);
     dexFlipRaf.current = requestAnimationFrame(() => {
       const el = dexCardRef.current;
@@ -630,7 +631,7 @@ export function ViewPage() {
         if (!e2) return;
         e2.style.transition = pending.entering
           ? 'transform 280ms ease-out'
-          : 'transform 220ms ease-in';
+          : 'transform 220ms ease-out';
         e2.style.transform = 'translate(0px, 0px) scale(1, 1)';
         const clear = (ev: TransitionEvent) => {
           if (ev.propertyName !== 'transform') return;
@@ -1001,7 +1002,7 @@ export function ViewPage() {
                         transform: statsRevealed ? 'translateX(0)' : 'translateX(1rem)',
                         transition: statsRevealed
                           ? 'opacity 280ms ease-out, transform 280ms ease-out'
-                          : 'opacity 180ms ease-in, transform 180ms ease-in',
+                          : 'opacity 180ms ease-out, transform 180ms ease-out',
                       }
                     : null),
                 }}

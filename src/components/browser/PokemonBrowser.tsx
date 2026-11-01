@@ -691,7 +691,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                 <button type="button"
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="flex items-center justify-center rounded-full cursor-pointer transition-opacity duration-150 ease-out hover:ring-[3px] hover:ring-foreground/25 active:scale-[0.96]"
+                  className="flex items-center justify-center rounded-full cursor-pointer transition-[opacity,scale] duration-150 ease-out hover:ring-[3px] hover:ring-foreground/25 active:scale-[0.96]"
                   style={{
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}

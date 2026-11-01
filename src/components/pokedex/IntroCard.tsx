@@ -312,7 +312,7 @@ function ShowcaseStaircase() {
   );
 }
 
-const COLLAPSE_MS = 450;
+const COLLAPSE_MS = 300;
 
 export function IntroCard({ totalPlaced }: { totalPlaced: number }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -375,7 +375,7 @@ export function IntroCard({ totalPlaced }: { totalPlaced: number }) {
   return (
     <div
       ref={rootRef}
-      className="grid transition-[grid-template-rows,opacity] ease-in-out"
+      className="grid transition-[grid-template-rows,opacity] ease-out motion-reduce:transition-none"
       style={{
         gridTemplateRows: phase === 'collapsing' ? '0fr' : '1fr',
         opacity: phase === 'collapsing' ? 0 : 1,
