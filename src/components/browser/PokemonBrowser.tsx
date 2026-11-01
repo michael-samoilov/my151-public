@@ -860,6 +860,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
               className="pl-9 pr-9"
+              // Phone autocorrect turns Pokémon names into dictionary words.
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
             />
             {searchQuery && (
               <button type="button"
