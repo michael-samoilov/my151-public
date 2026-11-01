@@ -241,7 +241,7 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      <AnalyticsNudge armed={analytics.armed} canShow={desktop || sel === null} desktop={desktop}
+      <AnalyticsNudge armed={analytics.armed} canShow={currentView === 'picker' && !exportOpen && (desktop || sel === null)} desktop={desktop}
         onDismiss={analytics.dismiss}
         onOpen={() => {
           setSel(null);

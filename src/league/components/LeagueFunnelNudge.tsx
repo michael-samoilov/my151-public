@@ -6,6 +6,7 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { isRosterNudge, leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
 import { pickVisibleAnchor, revealToolbarButton } from '../model/nudgeAnchor';
+import { useOverlayOpen } from '@/components/milestone/useOverlayOpen';
 import { useLeagueUi } from '../store/useLeagueUi';
 import type { Fit } from '../useFitScale';
 
@@ -72,7 +73,8 @@ function useNudge(owns: (id: LeagueNudgeId) => boolean) {
       setArmed(false);
     };
   }, [id]);
-  const ready = id != null && armed && !browserOpen && !exportOpen;
+  const covered = useOverlayOpen(id != null && !browserOpen && !exportOpen);
+  const ready = id != null && armed && !browserOpen && !exportOpen && !covered;
 
   useEffect(() => {
     if (id) sendEventBeacon(leagueNudgeEvent(id, 'shown'), { once: true });
