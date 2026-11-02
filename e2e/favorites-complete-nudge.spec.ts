@@ -27,16 +27,19 @@ test.describe('Picker completion popup @viewport', () => {
       const card = [...document.querySelectorAll('[role="status"]')].find((el) => el.textContent?.includes(title))!;
       const box = card.getBoundingClientRect();
       const arrow = card.querySelector('.rotate-45')!.getBoundingClientRect();
+      const dotOnExport = document.querySelector('[data-testid="favorites-export-open"] [data-tip-dot]') !== null;
       return {
         viewport: innerWidth,
         arrowOffset: Math.round((arrow.left + arrow.width / 2 - (button.left + button.width / 2)) * 100) / 100,
         gapBelowButton: Math.round(box.top - button.bottom),
+        dotOnExport,
         left: Math.round(box.left),
         right: Math.round(box.right),
       };
     }, TITLE);
     expect(Math.abs(geometry.arrowOffset)).toBeLessThanOrEqual(1);
     expect(geometry.gapBelowButton).toBe(10);
+    expect(geometry.dotOnExport).toBe(true);
     expect(geometry.left).toBeGreaterThanOrEqual(8);
     expect(geometry.right).toBeLessThanOrEqual(geometry.viewport - 8);
     await expect.poll(() => nudges(beacons).length).toBe(1);

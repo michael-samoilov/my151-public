@@ -98,8 +98,6 @@ interface PokedexState {
   milestoneCelebration: number | null;
   locale: Locale | null;
   localeNoticeSeen: boolean;
-  statsHintArmed: boolean;
-  exportHintArmed: boolean;
 
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
   removeBranch: (sectionId: string, pokemonId: number) => void;
@@ -139,10 +137,6 @@ interface PokedexState {
   setViewShowStats: (value: boolean) => void;
   recordPlacedCount: (count: number) => void;
   dismissMilestoneCelebration: () => void;
-  armStatsHint: () => void;
-  dismissStatsHint: () => void;
-  armExportHint: () => void;
-  dismissExportHint: () => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -182,8 +176,6 @@ export const usePokedexStore = create<PokedexState>()(
       milestoneMax: INITIAL_COUNT,
       milestoneCelebrated: milestonesAtOrBelow(INITIAL_COUNT),
       milestoneCelebration: null,
-      statsHintArmed: false,
-      exportHintArmed: false,
       locale: null,
       localeNoticeSeen: false,
 
@@ -428,10 +420,6 @@ export const usePokedexStore = create<PokedexState>()(
         }),
 
       dismissMilestoneCelebration: () => set({ milestoneCelebration: null }),
-      armStatsHint: () => set({ statsHintArmed: true }),
-      dismissStatsHint: () => set({ statsHintArmed: false }),
-      armExportHint: () => set({ exportHintArmed: true }),
-      dismissExportHint: () => set({ exportHintArmed: false }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

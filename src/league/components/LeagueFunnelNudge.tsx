@@ -1,46 +1,26 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { isRosterNudge, leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
-import { pickVisibleAnchor, revealToolbarButton } from '../model/nudgeAnchor';
+import { revealToolbarButton } from '../model/nudgeAnchor';
+import { FloatingTip, TipCard } from '@/components/milestone/TipCard';
 import { useOverlayOpen } from '@/components/milestone/useOverlayOpen';
 import { useLeagueUi } from '../store/useLeagueUi';
 import type { Fit } from '../useFitScale';
 
 interface NudgeCopy {
+  tip: string;
   titleKey: NoArgKey;
-  bodyKey: NoArgKey;
   ctaKey: NoArgKey;
 }
 
 const COPY: Record<LeagueNudgeId, NudgeCopy> = {
-  card: {
-    titleKey: 'nudge.card.title',
-    bodyKey: 'nudge.card.body',
-    ctaKey: 'nudge.card.cta',
-  },
-  league: {
-    titleKey: 'nudge.gyms.title',
-    bodyKey: 'nudge.gyms.body',
-    ctaKey: 'nudge.gyms.cta',
-  },
-  complete: {
-    titleKey: 'nudge.complete.title',
-    bodyKey: 'nudge.complete.body',
-    ctaKey: 'nudge.gyms.cta',
-  },
-  full: {
-    titleKey: 'nudge.full.title',
-    bodyKey: 'nudge.complete.body',
-    ctaKey: 'nudge.gyms.cta',
-  },
+  card: { tip: 'league-card', titleKey: 'nudge.card.title', ctaKey: 'nudge.card.cta' },
+  league: { tip: 'league-gyms', titleKey: 'nudge.gyms.title', ctaKey: 'nudge.gyms.cta' },
+  complete: { tip: 'league-complete', titleKey: 'nudge.complete.title', ctaKey: 'nudge.gyms.cta' },
+  full: { tip: 'league-full', titleKey: 'nudge.full.title', ctaKey: 'nudge.gyms.cta' },
 };
-
-const AUTO_DISMISS_MS = 10000;
-const CARD_W = 264;
 export const REVEAL_DELAY_MS = 360;
 
 /**
@@ -92,136 +72,47 @@ function useNudge(owns: (id: LeagueNudgeId) => boolean) {
     [id, openCard, lastCard, openLeagueExport, dismissNudge],
   );
 
-  useEffect(() => {
-    if (!ready) return;
-    const timer = setTimeout(() => finish('dismiss'), AUTO_DISMISS_MS);
-    return () => clearTimeout(timer);
-  }, [ready, finish]);
-
-  return { id, armed, ready, finish };
+  return { id, ready, finish };
 }
 
-function NudgeArrow({ left, below }: { left: number; below: boolean }) {
+function NudgeTip({ id, finish, anchor, notch, className }: {
+  id: LeagueNudgeId;
+  finish: (action: 'cta' | 'dismiss') => void;
+  anchor: Element | null;
+  notch: number | null;
+  className?: string;
+}) {
+  const t = useT();
   return (
-    <div
-      data-nudge-arrow
-      className={
-        below
-          ? 'absolute z-10 rotate-45 bg-popover border-l border-t'
-          : 'absolute z-10 rotate-45 bg-popover border-r border-b'
-      }
-      style={{ width: 12, height: 12, left: left - 6, ...(below ? { top: -7 } : { bottom: -7 }) }}
+    <TipCard
+      id={COPY[id].tip}
+      target={id === 'card' ? 'league-card-export' : 'league-export'}
+      title={t(COPY[id].titleKey)}
+      action={t(COPY[id].ctaKey)}
+      onAction={() => finish('cta')}
+      onDismiss={() => finish('dismiss')}
+      anchor={anchor}
+      notch={notch}
+      className={className}
     />
   );
 }
 
-function NudgeContent({ id, finish, inline = false }: {
-  id: LeagueNudgeId;
-  finish: (action: 'cta' | 'dismiss') => void;
-  inline?: boolean;
-}) {
-  const t = useT();
-  const copy = COPY[id];
-  const title = <div className="text-sm font-bold pr-5">{t(copy.titleKey)}</div>;
-  const body = <p className="mt-1 text-xs text-muted-foreground text-pretty">{t(copy.bodyKey)}</p>;
-  const cta = 'rounded-md bg-primary text-primary-foreground text-xs font-semibold py-1.5 hover:bg-primary/90 transition-colors cursor-pointer';
-  return (
-    <>
-      <button
-        type="button"
-        aria-label={t('common.dismiss')}
-        onClick={() => finish('dismiss')}
-        className="absolute right-1.5 top-1.5 p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
-      {title}
-      {inline ? (
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">{body}</div>
-          <button type="button" onClick={() => finish('cta')} className={`${cta} mt-1 shrink-0 whitespace-nowrap px-3`}>
-            {t(copy.ctaKey)}
-          </button>
-        </div>
-      ) : (
-        <>
-          {body}
-          <button type="button" onClick={() => finish('cta')} className={`${cta} mt-2.5 w-full`}>
-            {t(copy.ctaKey)}
-          </button>
-        </>
-      )}
-    </>
-  );
-}
-
-const POPUP_CLASS = 'relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in';
-
 export function LeagueFunnelNudge() {
-  const { id, armed, ready, finish } = useNudge(useFloats());
-  const [anchor, setAnchor] = useState<{ id: LeagueNudgeId; rect: DOMRect } | null>(null);
-
-  useLayoutEffect(() => {
-    if (!id || !armed) return;
-    let cancelled = false;
-    let raf = 0;
-    let frames = 0;
-    const selector = id === 'card' ? '[data-league-export="card"]' : '[data-league-export="league"]';
-    const capture = () => {
-      if (cancelled) return;
-      const nodes = [...document.querySelectorAll(selector)];
-      const el =
-        pickVisibleAnchor(nodes, window.innerWidth, window.innerHeight) ??
-        (frames > 40 ? nodes[0] ?? null : null);
-      if (!el) {
-        frames += 1;
-        if (frames > 40 && nodes.length === 0) return;
-        raf = requestAnimationFrame(capture);
-        return;
-      }
-      revealToolbarButton(el);
-      setAnchor({ id, rect: el.getBoundingClientRect() });
-    };
-    capture();
-    const track = document.querySelector('.p151-pane-track');
-    track?.addEventListener('transitionend', capture);
-    window.addEventListener('resize', capture);
-    window.addEventListener('scroll', capture, true);
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      track?.removeEventListener('transitionend', capture);
-      window.removeEventListener('resize', capture);
-      window.removeEventListener('scroll', capture, true);
-    };
-  }, [id, armed]);
-
-  if (!anchor || anchor.id !== id || !ready || !id) return null;
-
-  const box = anchor.rect;
-  const centerX = box.left + box.width / 2;
-  const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
-  const arrowLeft = Math.max(14, Math.min(centerX - left, CARD_W - 14));
-  const estimatedH = 148;
-  const below = box.bottom + 10 + estimatedH <= window.innerHeight - 8;
-  const top = below
-    ? Math.max(8, box.bottom + 10)
-    : Math.max(8, box.top - estimatedH - 10);
-
-  return createPortal(
-    <div
-      className="fixed z-[220]"
-      style={{ left, top, width: CARD_W }}
-      role="status"
-      data-testid="league-nudge"
-      data-league-nudge={id}
-    >
-      <div className={POPUP_CLASS}>
-        <NudgeArrow left={arrowLeft} below={below} />
-        <NudgeContent id={id} finish={finish} />
-      </div>
-    </div>,
-    document.body,
+  const { id, ready, finish } = useNudge(useFloats());
+  const t = useT();
+  if (!ready || !id) return null;
+  return (
+    <FloatingTip
+      key={id}
+      id={COPY[id].tip}
+      target={id === 'card' ? 'league-card-export' : 'league-export'}
+      title={t(COPY[id].titleKey)}
+      action={t(COPY[id].ctaKey)}
+      onAction={() => finish('cta')}
+      onDismiss={() => finish('dismiss')}
+      onAnchor={revealToolbarButton}
+    />
   );
 }
 
@@ -232,12 +123,12 @@ const ARROW_INSET = 14;
 
 type Placement =
   | { kind: 'below' }
-  | { kind: 'beside'; left: number; top: number; width: number; arrowLeft: number | null };
+  | { kind: 'beside'; left: number; top: number; room: number; arrowX: number | null };
 
 function samePlacement(a: Placement | null, b: Placement): boolean {
   if (a === null || a.kind !== b.kind) return false;
   if (a.kind === 'below' || b.kind === 'below') return true;
-  return a.left === b.left && a.top === b.top && a.width === b.width && a.arrowLeft === b.arrowLeft;
+  return a.left === b.left && a.top === b.top && a.room === b.room && a.arrowX === b.arrowX;
 }
 
 export function LeagueRosterNudge({ fit }: { fit: Fit }) {
@@ -245,6 +136,7 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
   const { id, ready, finish } = useNudge((nudge) => isRosterNudge(nudge) && !floats(nudge));
   const slotRef = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<Placement | null>(null);
+  const [exportButton, setExportButton] = useState<Element | null>(null);
 
   useLayoutEffect(() => {
     const slot = slotRef.current;
@@ -262,17 +154,15 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
         const s = summary.getBoundingClientRect();
         const o = slot.getBoundingClientRect();
         const left = s.right + BESIDE_GAP;
-        const width = Math.min(CARD_W, paneRight - left);
-        const button = document.querySelector('[data-league-export="league"]')?.getBoundingClientRect();
-        const arrowX = button ? button.left + button.width / 2 - left : -1;
-        const pointable = button !== undefined && button.bottom <= s.top
-          && arrowX >= ARROW_INSET && arrowX <= width - ARROW_INSET;
+        const exportEl = document.querySelector('[data-league-export="league"]');
+        setExportButton(exportEl);
+        const button = exportEl?.getBoundingClientRect();
         next = {
           kind: 'beside',
           left: left - o.left,
           top: s.top - o.top,
-          width,
-          arrowLeft: pointable ? arrowX : null,
+          room: paneRight - left,
+          arrowX: button && button.bottom <= s.top ? button.left + button.width / 2 - left : null,
         };
       }
       setPlace((cur) => (samePlacement(cur, next) ? cur : next));
@@ -282,7 +172,18 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
     return () => window.removeEventListener('resize', measure);
   }, [ready, fit.scale, fit.width, fit.budgetRem]);
 
+  // The card sizes to its title, so a long one keeps one line. Its notch points at
+  // Export only when Export sits above the card and inside its width.
+  const tipRef = useRef<HTMLDivElement>(null);
+  const [tipWidth, setTipWidth] = useState(0);
   const beside = place?.kind === 'beside' ? place : null;
+  useLayoutEffect(() => {
+    const card = tipRef.current?.firstElementChild;
+    if (beside && card instanceof HTMLElement) setTipWidth(card.offsetWidth);
+  }, [beside, id]);
+  const notch = beside && beside.arrowX !== null && beside.arrowX >= ARROW_INSET && beside.arrowX <= tipWidth - ARROW_INSET
+    ? beside.arrowX
+    : null;
   return (
     <div
       ref={slotRef}
@@ -292,17 +193,18 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
     >
       {ready && id !== null && place !== null && fit.width > 0 && (
         <div
-          role="status"
-          data-testid="league-nudge"
-          data-league-nudge={id}
+          ref={tipRef}
           data-nudge-placement={place.kind}
           className={beside ? 'absolute z-10' : 'pt-2'}
-          style={beside ? { left: beside.left, top: beside.top, width: beside.width } : undefined}
+          style={beside ? { left: beside.left, top: beside.top, width: 'max-content', maxWidth: beside.room } : undefined}
         >
-          <div className={POPUP_CLASS}>
-            {beside && beside.arrowLeft !== null && <NudgeArrow left={beside.arrowLeft} below />}
-            <NudgeContent id={id} finish={finish} inline={!beside} />
-          </div>
+          <NudgeTip
+            id={id}
+            finish={finish}
+            anchor={exportButton}
+            notch={notch}
+            className={beside ? 'w-max max-w-full' : 'w-full'}
+          />
         </div>
       )}
     </div>

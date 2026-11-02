@@ -18,7 +18,8 @@ import { DexExportOverlay } from '@/components/export/DexExportOverlay';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { TipDot } from '@/components/milestone/TipDot';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -648,11 +649,8 @@ export function ViewPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
-  const exportBtnRef = useRef<HTMLButtonElement>(null);
-  const statsHintArmed = usePokedexStore((s) => s.statsHintArmed);
-  const dismissStatsHint = usePokedexStore((s) => s.dismissStatsHint);
-  const exportHintArmed = usePokedexStore((s) => s.exportHintArmed);
-  const dismissExportHint = usePokedexStore((s) => s.dismissExportHint);
+  useTipVisit('dex-view-settings', settingsOpen);
+  useTipVisit('dex-export', exportOpen);
 
   const hasCustom = customOrder !== null;
 
@@ -837,9 +835,11 @@ export function ViewPage() {
             <HeaderActionButton type="button"
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
+              data-tip-target="dex-view-settings"
               className="text-muted-foreground hover:text-foreground hover:bg-muted"
               aria-label={t('view.settings')}
             >
+              <TipDot target="dex-view-settings" />
               <Settings className="w-4 h-4" />
               {hasCustom && (
                 <span
@@ -849,13 +849,14 @@ export function ViewPage() {
               )}
             </HeaderActionButton>
             <HeaderActionButton type="button"
-              ref={exportBtnRef}
               onClick={openExport}
               disabled={count === 0}
               data-dex-export
+              data-tip-target="dex-export"
               aria-label={t('export.title')}
               className="text-primary hover:bg-primary hover:text-primary-foreground disabled:hover:bg-card disabled:hover:text-primary"
             >
+              <TipDot target="dex-export" />
               <Download className="w-4 h-4" />
             </HeaderActionButton>
           </>,
@@ -1045,22 +1046,6 @@ export function ViewPage() {
 
       {exportOpen && <DexExportOverlay onClose={() => setExportOpen(false)} />}
 
-      <FollowUpHint
-        armed={statsHintArmed}
-        dismiss={dismissStatsHint}
-        fulfilled={exportOpen}
-        anchorRef={exportBtnRef}
-        title={t('view.hint.stats.title')}
-        body={t('view.hint.stats.body')}
-      />
-      <FollowUpHint
-        armed={exportHintArmed}
-        dismiss={dismissExportHint}
-        fulfilled={exportOpen}
-        anchorRef={exportBtnRef}
-        title={t('view.hint.export.title')}
-        body={t('view.hint.export.body')}
-      />
     </div>
   );
 }

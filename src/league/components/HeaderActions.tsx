@@ -2,11 +2,9 @@ import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Download } from 'lucide-react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useT, type NoArgKey } from '@/i18n';
-import { cn } from '@/lib/utils';
-import { isRosterNudge } from '../model/funnelNudges';
+import { TipDot } from '@/components/milestone/TipDot';
 import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
-import { REVEAL_DELAY_MS } from './LeagueFunnelNudge';
 
 const VIEWS: { value: LeagueView; label: NoArgKey }[] = [
   { value: 'challenge', label: 'league.view.story' },
@@ -37,10 +35,8 @@ export function LeagueViewToggle() {
 
 export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
   const openLeagueExport = useLeagueUi((s) => s.openLeagueExport);
-  const pulse = useLeagueUi(
-    (s) => cardIndex === undefined && isRosterNudge(s.activeNudge) && !s.exportOpen && !s.browserOpen,
-  );
   const t = useT();
+  const tip = cardIndex === undefined ? 'league-export' : 'league-card-export';
 
   return (
     <HeaderActionButton
@@ -48,13 +44,10 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
       onClick={() => openLeagueExport(cardIndex)}
       aria-label={cardIndex === undefined ? t('league.export.league') : t('league.export.card')}
       data-league-export={cardIndex === undefined ? 'league' : 'card'}
-      data-nudge-pulse={pulse || undefined}
-      className={cn(
-        'text-primary hover:bg-primary hover:text-primary-foreground',
-        pulse && 'league-export-pulse',
-      )}
-      style={pulse ? { animationDelay: `${REVEAL_DELAY_MS}ms` } : undefined}
+      data-tip-target={tip}
+      className="text-primary hover:bg-primary hover:text-primary-foreground"
     >
+      <TipDot target={tip} />
       <Download className="h-4 w-4" />
     </HeaderActionButton>
   );

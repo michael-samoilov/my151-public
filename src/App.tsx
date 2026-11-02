@@ -38,6 +38,7 @@ import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeaco
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
@@ -236,6 +237,9 @@ function App() {
       usePokedexStore.getState().setActiveSection(null);
     }
   }, [setMobileBrowserOpen]);
+
+  useTipVisit('dex-analytics', currentView === 'analytics');
+  useTipVisit('dex-view', currentView === 'view');
 
   const sectionName = activeSection ? sectionLabel(activeSection) : null;
 

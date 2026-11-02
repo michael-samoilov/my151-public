@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { useTipVisit } from '@/components/milestone/tipDots';
 import { fireCompletionConfetti, preloadCompletionConfetti } from '@/components/milestone/completionConfetti';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -105,7 +106,6 @@ function FavoritesContent({ sel, setSel }: {
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
-  const exportRef = useRef<HTMLButtonElement>(null);
   const completionNudge = useCompletionNudge();
   const analytics = useAnalyticsUnlock();
   const filled = useMemo(() => filledCount(fills), [fills]);
@@ -115,6 +115,13 @@ function FavoritesContent({ sel, setSel }: {
   }, [completionNudge.armed]);
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
+  useTipVisit('favorites-analytics', currentView === 'analytics');
+  useTipVisit('favorites-export', exportOpen);
+  // Opening Analytics is what the unlock tip asked for.
+  const dismissAnalyticsTip = analytics.dismiss;
+  useEffect(() => {
+    if (currentView === 'analytics') dismissAnalyticsTip();
+  }, [currentView, dismissAnalyticsTip]);
 
   useEffect(() => {
     document.title = `${t('favorites.title')} | my151`;
@@ -204,7 +211,7 @@ function FavoritesContent({ sel, setSel }: {
             loses its landmark role, so the panels are plain elements. */}
         <main id={MAIN_ID} tabIndex={-1} className="flex shrink-0 flex-col focus:outline-none">
         <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
-          currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
+          currentView={currentView} exportOpen={exportOpen}
           onViewChange={(view) => {
             if (view === 'analytics' && !analytics.unlocked) return;
             setSel(null);
@@ -247,13 +254,13 @@ function FavoritesContent({ sel, setSel }: {
           setSel(null);
           setAnalyticsMounted(true);
           setCurrentView('analytics');
-          analytics.dismiss();
         }} />
       <FollowUpHint
+        id="favorites-complete"
         armed={completionNudge.armed}
         dismiss={completionNudge.dismiss}
         fulfilled={exportOpen}
-        anchorRef={exportRef}
+        target="favorites-export"
         title={t('favorites.nudge.complete.title')}
         body={t('favorites.nudge.complete.body')}
         onShown={completionShown}
