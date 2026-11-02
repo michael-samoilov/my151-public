@@ -36,7 +36,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await requireAdmin(req, res))) return;
 
   res.setHeader('Cache-Control', 'no-store');
-  // A preview builds its own snapshot, so it never shows or overwrites the live site's cache.
   const shared = !isReadOnlyDeployment(req);
   let cached: [Daily | null, Hourly | null] = [null, null];
   try {

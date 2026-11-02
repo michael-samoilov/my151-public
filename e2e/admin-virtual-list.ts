@@ -1,9 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-/**
- * Scrolls the virtual list until the row is rendered. Each step waits for the list to
- * render, so a long walk is slow under parallel load: start at the end for a row near it.
- */
 export async function scrollToRow(page: Page, name: string, { fromEnd = false } = {}): Promise<Locator> {
   const row = page.getByRole('link', { name, exact: true });
   await page.evaluate(async ({ label, fromEnd }) => {

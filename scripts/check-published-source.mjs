@@ -1,28 +1,4 @@
 #!/usr/bin/env node
-/**
- * Fails when the source my151 publishes for a license drifts from the files
- * the app builds from.
- *
- * Some licenses, such as MPL-2.0, ask that each file holding the licensed
- * code be available as source to the people who get the app. That code lives
- * in files of its own, with none of my151's code in them, and the site serves
- * a copy of each as public/licenses/source/<project>/<file>.txt.
- * scripts/published-source.json lists the copies, one project per key:
- *
- *   "<project>": {
- *     "license": "MPL-2.0",
- *     "notice": "<text each source file must start with, or omit>",
- *     "files": { "public/licenses/source/<project>/<file>.txt": "<source path>" }
- *   }
- *
- * The check fails when a copy differs from its source or is missing, when a
- * file under public/licenses/source/ is not listed, when a source folder holds
- * a file that is not listed (so it would ship unpublished), or when a source
- * file does not start with its project's notice.
- *
- *   node scripts/check-published-source.mjs           # check
- *   node scripts/check-published-source.mjs --write   # copy the sources over
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

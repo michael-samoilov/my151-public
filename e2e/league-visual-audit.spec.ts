@@ -2,43 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { auditLayout } from './support/layoutAudit';
 import { INK, discMark, phaseSweep, pillEnds } from './support/pixels';
 
-/**
- * The gym card's small controls and badges, checked as painted.
- *
- * Two faults reached a phone that every DOM check was blind to: two reset
- * discs on one card whose arrows sat differently inside them, and a type
- * badge whose right end was cut flat. Both were rasterisation, not layout —
- * the boxes were where they should be and the pixels were not. So this spec
- * reads the bitmap, and it asks four things of it that never need a
- * baseline:
- *
- * 1. Every control is a circle, on screen.
- * 2. A mark sits near the middle of its disc.
- * 3. A mark stays put in its disc as the disc slides across a pixel. One
- *    control is moved through eight sub-pixel positions and its mark read
- *    at each; a glyph that rasterises the same at every position holds
- *    still, one that does not wanders. This is where the reset's arrow was
- *    found to move by up to a device pixel at scale 3 -- and, on a bare
- *    page with nothing else in play, so was every other one-sided glyph
- *    tried in its place, straight lines included, while the symmetric cross
- *    held to 0.003px. An asymmetric stroke's antialiasing shifts its
- *    apparent centre with its fractional origin; a symmetric one's cancels.
- *    That is Chrome, not the card, and this test measures it rather than
- *    proves it away: at scale 1 nothing wanders, and that is where it runs.
- * 4. A pill is round at both ends, and nothing in the TM or badge box is cut
- *    by a clipping ancestor.
- *
- * The sweep runs only at an integer device scale. At the mobile project's
- * 2.625 an element capture is resampled, and every control on the card --
- * the symmetric red cross included -- reads a pixel of wander that is the
- * capture's, not the paint's. Measured: the same cross reads 0.003px on a
- * bare page at scales 1, 2 and 3, and 0.6px on the card at 2.625.
- *
- * One dense card, seeded directly, so every kind of control is on screen at
- * once: red crosses on the slots and the cells, blue resets on three edited
- * lines, both powerup discs, and one type badge. The crosses over sprites
- * are the hard case for the measurement, and are kept on purpose.
- */
+// platform: Chrome resamples an element capture at a fractional device scale and shifts asymmetric glyph antialiasing, so the sweep runs at scale 1.
 
 async function denseCard(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -74,6 +38,8 @@ async function denseCard(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
   await page.waitForTimeout(900);
 }
+
+const MAX_MARK_OFFSET_PER_DISC_RADIUS = 0.15;
 
 const CONTROLS = {
   shiny: 'button[data-shiny-mark]',
@@ -129,14 +95,9 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
         const label = await buttons.nth(i).getAttribute('aria-label');
         const m = await discMark(page, buttons.nth(i).locator('svg'), disc, mark);
         expect(m.offset, `${label}: a mark was found in the disc`).not.toBeNull();
-        // Within a seventh of the radius. A glyph with a head on one side
-        // is allowed its fixed bias, and at scale 1 a seven-pixel disc's
-        // extent is read to one antialiased pixel, which is a seventh of
-        // it; a mark two pixels off is not. Soft, so every disc's number
-        // is reported.
         const off = Math.hypot(m.offset!.box.dx, m.offset!.box.dy);
         expect.soft(off, `${label}: mark ${off.toFixed(2)}px from the disc's centre, radius ${m.disc.r}px`)
-          .toBeLessThanOrEqual(m.disc.r * 0.15);
+          .toBeLessThanOrEqual(m.disc.r * MAX_MARK_OFFSET_PER_DISC_RADIUS);
       }
     });
 
@@ -159,17 +120,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
   });
 });
 
-/**
- * The pill's own describe, because it is measured densely.
- *
- * On screen the pill is about 40px wide, so its corner radius is 4px. At one
- * device pixel per CSS pixel the whole ramp is three or four columns, and a
- * pixel of drift — the card is fitted to its pane, so any change in the
- * chrome rescales it — moves that count without changing the shape. The
- * mobile project already samples at 2.6x and reads the pill correctly; this
- * fixes the density for every project instead of leaving it to the device.
- * The thresholds are the ones the test has always used, in CSS pixels.
- */
 const PILL_DSF = 4;
 
 test.describe('the card paints its TM pill', { tag: '@viewport' }, () => {

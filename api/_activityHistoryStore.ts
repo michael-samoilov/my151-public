@@ -41,8 +41,6 @@ for i=2,#KEYS do
  else result[1]='invalid' end
 end
 return result`;
-/** The ack stored batches get, without storing them. A browser whose beacons
- *  are not saved clears its queue exactly as a counted visitor's does. */
 export function acknowledgeUnstored(raw:unknown,receivedAt:number):MinuteActivityAck|undefined {
  if(raw===undefined)return undefined;
  const payload=parseMinuteActivity(raw,receivedAt);
@@ -79,7 +77,6 @@ export async function readMinuteActivityBudget(now:number,options:ActivityHistor
  const usedUnits=num('units'),bytes=num('bytes'),paused=String(raw?.paused)==='1'||usedUnits+72>config.limitUnits||bytes>=config.limitBytes;
  return {month:config.month,status:!config.enabled?'disabled':paused?'paused':'collecting',usedUnits,limitUnits:config.limitUnits,bytes,limitBytes:config.limitBytes,acceptedBuckets:num('buckets'),...(paused||!config.enabled?{pausedUntil:config.retryAt}:{})};
 }
-/** Explicit history reads only. Return complete HSCAN pages; never resume at mutable page offsets. */
 export async function loadMinuteActivityHistory(from:number,to:number,options:ActivityHistoryOptions={}) {
  if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||to<from||to-from>31*DAY)throw new RangeError('History range must be at most 31 days');
  const db=await database(options),batches:StoredMinuteActivityBatch[]=[];

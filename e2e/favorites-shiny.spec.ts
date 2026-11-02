@@ -13,10 +13,8 @@ async function seed(page: Page, state: object) {
 }
 
 const hexRgb = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
-/** The shiny star's fill runs between these two colors. */
 const STAR_FILL = SHINY_STAR.fill.stops.map(([, color]) => hexRgb(color));
 
-/** Counts the export preview's pixels in a box that lie on the shiny star's fill gradient. */
 async function exportStarPixels(page: Page, [x, y, width, height]: [number, number, number, number]) {
   return page.locator('[data-export-preview-layer] img[src^="blob:"]').evaluate(async (el, { box, fill: [from, to] }) => {
     const img = el as HTMLImageElement;
@@ -36,7 +34,6 @@ async function exportStarPixels(page: Page, [x, y, width, height]: [number, numb
   }, { box: [x, y, width, height], fill: STAR_FILL });
 }
 
-/** Reads a PNG from the export preview and returns the RGBA at each point. */
 async function exportPixels(page: Page, points: Record<string, [number, number]>) {
   return page.locator('[data-export-preview-layer] img[src^="blob:"]').evaluate(async (el, wanted) => {
     const img = el as HTMLImageElement;
@@ -115,7 +112,6 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
 
   await page.getByTestId('favorites-export-open').click();
   await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
-  // Fire / Gen I is the cell at (276, 236), 120 px square. The star sits at its top-right.
   const { body } = await exportPixels(page, { body: [328, 316] });
   const full = { body, star: await exportStarPixels(page, [336, 236, 60, 60]) };
   const shinyBody = await page.evaluate(async () => {
@@ -126,7 +122,6 @@ test('a pick made with Shiny on is shiny in the sheet, the chart, its pointers, 
   });
   await page.locator('[data-favorites-export-mode=simplified]').click();
   await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
-  // The Gen I favorite tile is 128 px wide at (54, 104); the star sits at its top-right.
   const simplified = { star: await exportStarPixels(page, [118, 104, 64, 64]) };
   await testInfo.attach('shiny-export-pixels.json', {
     body: JSON.stringify({ full, shinyBody, simplified }, null, 2),
@@ -221,7 +216,6 @@ test('the sheet header keeps the title badges at full height and drops the pill 
   expect(header.badge.height).toBeCloseTo(22, 1);
   expect(header.shiny.height).toBeCloseTo(header.badge.height, 1);
   expect(header.icons.height).toBeCloseTo(header.badge.height, 1);
-  // A 320 px phone has no room for the labels; wider screens show them.
   const labelled = testInfo.project.name !== 'narrow';
   for (const width of header.labels) expect(width > 1).toBe(labelled);
   expect(header.title.right).toBeLessThanOrEqual(header.shiny.left);

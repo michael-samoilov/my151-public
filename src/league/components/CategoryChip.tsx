@@ -1,5 +1,6 @@
 import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { moveCategorySpriteUrl } from '@/lib/spriteUrl';
 import { CATEGORY_COLORS, CATEGORY_LABEL, type Move } from '../moves';
 
 export function CategoryChip({ category, className }: {
@@ -17,7 +18,7 @@ export function CategoryChip({ category, className }: {
       style={{ background: CATEGORY_COLORS[category] }}
       title={label}
     >
-      <img src={`/sprites/moves/${category}.png`} alt={label} width={50} height={40} className="h-auto w-[62%]" />
+      <img src={moveCategorySpriteUrl(category)} alt={label} width={50} height={40} className="h-auto w-[62%]" />
     </span>
   );
 }

@@ -1,8 +1,3 @@
-/**
- * Rules over the resolved graph. Each problem names the file and the field to fix. The resolver
- * already rejected dangling links, cycles, and missing verdicts; this file proves the claims the
- * data makes: coordinates are unique, verdict reasons are true, the ledger is stable, state twins agree.
- */
 import { TOOLS } from '../../src/ontology/model';
 import type { ResolvedForm } from '../../src/ontology/model';
 import type { AppIdLedger, Problem } from './authored';
@@ -11,18 +6,14 @@ import { AUDIT_REPORTS, disagreementsOf, linkedForms, rowKey, type AuditKind, ty
 import { mechanicallyEqual, type Ontology } from './resolve';
 
 export interface CheckEnvironment {
-  /** The ledger on production, or null when production has none yet. */
   readonly productionLedger: AppIdLedger | null;
-  /** Production's src/data/pokemon.json rows: a Dex number must keep naming the same form. */
   readonly productionDexNames: ReadonlyMap<number, string>;
-  /** The committed audit reports, or null where a report file is missing. */
   readonly auditReports: { readonly [K in AuditKind]: AuditReport | null };
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const LEDGER = 'data/ontology/ids/app-ids.json';
 const AUDIT = 'npm run ontology:audit';
-/** The facts PokeAPI supplies per form, which a form must state, inherit from a checked source, or mark unsourced. */
 const POKEAPI_FORM_FACTS = ['abilities', 'heightDm', 'weightHg'] as const;
 const STAT_CHANGING_STEPS = new Set<ResolvedForm['states'][number]['kind']>(['mega', 'primal', 'ultra-burst', 'eternamax']);
 
@@ -64,8 +55,6 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
           problem(form, 'state-twin-differs', pathOf(form), `"${form.id}" and "${other.id}" are the same ${step.kind} step entered from forms that differ only in looks, but their types, base stats, or egg groups differ`);
         }
       }
-      // Castform's weather forms and Terastal Ogerpon change types and keep their stats, so "changes
-      // types" cannot prove a forgotten stat line. These four steps always change stats.
       if (STAT_CHANGING_STEPS.has(step.kind) && same(form.facts.baseStats, entryForm.facts.baseStats)) {
         problem(form, 'state-stats-missing', `${pathOf(form)}.baseStats`, `"${form.id}" is a ${step.kind} step but has "${entryForm.id}"'s base stats; a ${step.kind} step always changes stats, so state baseStats`);
       }
@@ -136,8 +125,6 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
   };
   const union = (a: string, b: string) => familyOf.set(find(a), find(b));
   for (const form of forms.values()) for (const edge of form.evolvesFrom) union(forms.get(edge.from)!.species, form.species);
-  // A chain may group species that no evolution links (Phione and Manaphy share chain 243), so the
-  // rule is one way: species that an evolution links share a chain number.
   const rootChains = new Map<string, number>();
   for (const entry of species.values()) {
     const root = find(entry.id);

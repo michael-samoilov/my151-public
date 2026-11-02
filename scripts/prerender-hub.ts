@@ -48,27 +48,15 @@ interface BootInputs {
   RETURNING_KEYS: readonly string[];
 }
 
-/**
- * The root font-size before the app mounts: the same layout-viewport width and
- * formula as `src/lib/layoutFontSize.ts`. It runs right after the inline
- * stylesheet. Reading `visualViewport.width` forces layout, and Firefox paints
- * a page as soon as its layout starts: read before the stylesheet, it showed
- * the hub unstyled for about 600 ms on every load.
- */
+// platform: Reading visualViewport.width forces layout and Firefox paints once layout starts, so this runs after the inline stylesheet.
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
 
-/**
- * Writes the boot script's saved counts into the prerendered progress lines.
- * It runs where the parser meets it, before the end marker lets the hub paint,
- * so the first paint already shows them. HomePage hydrates from the same
- * counts. A null count is one the app may correct, so its line waits for the app.
- */
 const COUNTS_SCRIPT =
   "(function(){var c=window.p151HubCounts;if(c)for(var k in c){var p=document.querySelector('[data-card-progress=\"'+k+'\"]'),n=p&&p.querySelector('[data-progress-count] .text-primary');if(!n||c[k]==null)continue;n.textContent=String(c[k]);if(c[k]>0)p.removeAttribute('data-empty')}})()";
 
 export function splitImagePreloads(markup: string): { preloads: string[]; markup: string } {
-  // Explicit React preloads put href before as; automatic preloads do not.
+  // platform: Explicit React preloads put href before as; automatic preloads do not.
   const imagePreload = /<link\b(?=[^>]*\srel="preload")(?=[^>]*\sas="image")[^>]*\/>/g;
   return { preloads: markup.match(imagePreload) ?? [], markup: markup.replace(imagePreload, '') };
 }
@@ -105,8 +93,6 @@ loaded();painted()
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
-  // `?trace` loads the hub load timeline, public/trace.js. It blocks the
-  // parser on purpose, so its observers exist before the body parses.
   return `(function(){
 if(new URLSearchParams(location.search).has('trace'))document.write('<script src="/trace.js"><\\/script>');
 var d=document.documentElement;
@@ -155,7 +141,7 @@ export function prerenderHub(): Plugin {
       const htmlFile = path.join(outDir, 'index.html');
       if (!fs.existsSync(htmlFile)) return;
       if (process.env.MY151_HOME_ARTWORK_CAPTURE !== '1') copyHomeArtwork(config.root, outDir);
-      // Inside the project, so the server bundle resolves react from node_modules.
+      // platform: Node resolves react from node_modules only when the server bundle sits inside the project.
       const ssrDir = path.join(config.root, 'node_modules/.cache/my151-prerender', path.basename(outDir));
       try {
         await build({
@@ -185,15 +171,8 @@ export function prerenderHub(): Plugin {
         let html = fs.readFileSync(htmlFile, 'utf8');
         const root = '<div id="root"></div>';
         if (!html.includes(root)) throw new Error(`prerender-hub: index.html has no empty ${root}`);
-        // The marker after the markup ends the hub. A browser with the
-        // stylesheet already cached would paint the hub while its HTML is still
-        // arriving, and the hub centres its content, so the rest would move what
-        // was painted. `blocking="render"` holds the first paint until the
-        // marker is parsed (Chromium); the `:has()` rule hides the hub until
-        // then in other browsers.
-        // React puts the screenshots' preloads at the start of the markup. They
-        // go first in the head instead, so the browser starts the images
-        // before it has read the styles.
+        // platform: Only Chromium holds the first paint for `blocking="render"` until the end marker, so a `:has()` rule hides the hub elsewhere.
+        // platform: React puts the screenshot preloads at the start of the markup, so they move to the head ahead of the styles.
         const { preloads, markup: body } = splitImagePreloads(markup);
         const poses = inputs.HOME_ARTWORK;
         const imagePreloads = preloads.map(tag => poses.length && !tag.includes(' media=')
@@ -217,9 +196,7 @@ export function prerenderHub(): Plugin {
           '<style>[data-card-scene]{display:none;position:absolute;pointer-events:none;max-width:none}html[data-home-scene="mobile"] [data-artwork]{display:none!important}html[data-home-scene="mobile"][data-home-slot="0"] [data-card-scene][data-scene-slot="0"],html[data-home-scene="mobile"][data-home-slot="1"] [data-card-scene][data-scene-slot="1"]{display:block}'+['dex','league','favorites'].map(key=>`[data-card-scene="${key}"]{left:var(--scene-${key}-left);top:var(--scene-${key}-top);width:var(--scene-${key}-width);height:var(--scene-${key}-height)}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
         ].join('\n    ');
-        // Before any stylesheet, because an inline script after one waits for
-        // it. After the title and share tags, because link previews read only
-        // the first 32 KB or so, and the inline font alone is about 40 KB.
+        // platform: An inline script after a stylesheet waits for it, and link previews read only about the first 32 KB.
         const firstStyle = html.indexOf('<style');
         if (firstStyle === -1 || firstStyle > html.indexOf('</head>')) throw new Error('prerender-hub: index.html has no <style> in its head');
         html = `${html.slice(0, firstStyle)}${head}\n    ${html.slice(firstStyle)}`;

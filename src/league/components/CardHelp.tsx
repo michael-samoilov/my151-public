@@ -10,8 +10,7 @@ import { raw, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { ArceusCrestIcon } from './ArceusCrestIcon';
 
-// align-middle centres the disc on Inter's x-height. Its cap height sits
-// 0.09em higher, so the lift centres it on the capitals and the text box.
+// platform: Inter's cap height sits 0.09em above the x-height centre that `align-middle` uses, so the disc lifts to centre on the capitals.
 function ResetDisc() {
   return (
     <span
@@ -148,8 +147,6 @@ function CardHelpDialog({ anchor, onClose }: { anchor: HTMLElement; onClose: () 
     );
   }
 
-  // Portalled: the card pane is its own stacking context (`relative z-20`), so
-  // a popup left inside it could not rise above the league pane beside it.
   return createPortal(
     <>
       <div className="fixed inset-0 z-[140]" onClick={onClose} aria-hidden />

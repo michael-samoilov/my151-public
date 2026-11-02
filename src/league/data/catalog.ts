@@ -1,46 +1,28 @@
 import { getAllPokemon as getDexPokemon, type PokemonDataSource } from '@/hooks/usePokemonData';
-import { pokemonShape } from '@/data/pokemonShape';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 import type { Pokemon } from '@/types/pokemon';
-import formsData from './alternateForms.json';
-import type { AlternatePickerForm } from '@/favorites/model/alternateForms';
+import league from '@/data/generated/league.json';
 import favoriteBrowserIds from '@/components/browser/favoriteBrowserIds.json';
-import { ADDITIONAL_EVOLUTION_EDGES, FORM_PARENT_IDS, STANDALONE_FORM_IDS } from './formPolicy';
+import { STANDALONE_FORM_IDS } from './formPolicy';
 
-type FormMetadata = Partial<Pick<Pokemon,
-  'stats' | 'bst' | 'shape' | 'color' | 'captureRate' | 'growthRate' | 'eggGroups'>>;
-export const LEAGUE_ALTERNATE_FORMS = formsData as Array<AlternatePickerForm & { metadata?: FormMetadata }>;
-const pokemon = getDexPokemon().map(mon => ({
-  ...mon,
-  evolvesFrom: Object.hasOwn(FORM_PARENT_IDS, mon.id) ? FORM_PARENT_IDS[mon.id] : mon.evolvesFrom,
-}));
+type LeagueFields = Partial<Omit<Pokemon, 'id' | 'name' | 'sprite' | 'archetypes'>>;
+type LeagueForm = LeagueFields & { id: number; owner: number; name: string; spriteStem?: string };
+const generated = league as unknown as {
+  dexOverrides: Record<string, LeagueFields>;
+  forms: LeagueForm[];
+  extraEvolutions: [number, number][];
+};
+
+export const LEAGUE_ALTERNATE_FORMS: readonly LeagueForm[] = generated.forms;
+const pokemon: Pokemon[] = getDexPokemon().map(mon => ({ ...mon, ...generated.dexOverrides[mon.id] }));
 const byId = new Map(pokemon.map(mon => [mon.id, mon]));
 const owners = new Map<number, number>();
 
-for (const form of LEAGUE_ALTERNATE_FORMS) {
-  const owner = byId.get(form.ownerId)!;
-  const standalone = STANDALONE_FORM_IDS.has(form.id);
-  const parent = standalone ? null
-    : Object.hasOwn(FORM_PARENT_IDS, form.id) ? FORM_PARENT_IDS[form.id] : owner.evolvesFrom;
-  const overrides = form.metadata ?? {};
-  const mon: Pokemon = {
-    ...owner,
-    ...overrides,
-    id: form.id,
-    name: form.name,
-    types: form.types,
-    generation: form.generation ?? owner.generation,
-    sprite: pokemonSpriteUrl(form.id),
-    shape: pokemonShape(form.id, overrides.shape ?? owner.shape),
-    evolvesFrom: parent,
-    evolutionStage: parent === null ? 1 : owner.evolutionStage,
-    evolutionLevel: parent === null ? null : owner.evolutionLevel,
-    bst: overrides.bst ?? (overrides.stats
-      ? Object.values(overrides.stats).reduce((total, stat) => total + stat, 0) : owner.bst),
-  };
+for (const { owner, spriteStem, ...form } of LEAGUE_ALTERNATE_FORMS) {
+  const mon: Pokemon = { ...byId.get(owner)!, ...form, sprite: pokemonSpriteUrl(spriteStem ?? form.id) };
   pokemon.push(mon);
   byId.set(mon.id, mon);
-  owners.set(mon.id, owner.id);
+  owners.set(mon.id, owner);
 }
 
 const children = new Map<number, Pokemon[]>();
@@ -50,7 +32,7 @@ for (const mon of pokemon) {
   children.set(mon.evolvesFrom, [...(children.get(mon.evolvesFrom) ?? []), mon]);
   parents.set(mon.id, [byId.get(mon.evolvesFrom)!]);
 }
-for (const [parentId, childId] of ADDITIONAL_EVOLUTION_EDGES) {
+for (const [parentId, childId] of generated.extraEvolutions) {
   const parent = byId.get(parentId)!;
   const child = byId.get(childId)!;
   children.set(parentId, [...(children.get(parentId) ?? []), child]);

@@ -95,8 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(exportTool ? { exportTool } : {}),
       ...(skipFields ? { reason: skipFields.reason } : {}),
     });
-    // A pipeline runs its commands in order, in one request: each key exists
-    // before its EXPIRE, and RPUSH lands before LTRIM.
+    // platform: An Upstash pipeline runs its commands in order in one request, so each key exists before its EXPIRE and RPUSH precedes LTRIM.
     const writes = redis
       .pipeline()
       .hincrby(FUNNEL_KEY, body.event, 1)

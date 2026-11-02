@@ -1,8 +1,6 @@
 
 
-// The dataset directly, not through `usePokemonData` — that module pulls in
-// the i18n catalogs, which are loaded with `import.meta.glob` and so only
-// resolve inside Vite.
+// platform: The i18n catalogs load with `import.meta.glob`, which resolves only inside Vite, so this reads the dataset directly.
 import pokemonData from '../src/data/pokemon.json' with { type: 'json' };
 import { LEVEL_CURVE, ROW_COUNT, TEAM_SIZES, joinRow } from '../src/league/model/constants';
 import {

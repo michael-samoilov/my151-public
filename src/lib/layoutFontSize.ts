@@ -35,10 +35,7 @@ export function installLayoutFontSize() {
   if (typeof window === 'undefined') return;
   apply();
   window.addEventListener('resize', apply);
-  // NB: intentionally no visualViewport listeners — those fire every frame
-  // of a pinch and would reflow the root font-size mid-gesture. The layout
-  // viewport (resize + ResizeObserver below) is invariant under pinch, so
-  // the font-size stays frozen and the browser magnifies it uniformly.
+  // platform: visualViewport events fire on every pinch frame, and the layout viewport does not change under a pinch.
   const watchDpr = () => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mq.addEventListener('change', () => { apply(); watchDpr(); }, { once: true });

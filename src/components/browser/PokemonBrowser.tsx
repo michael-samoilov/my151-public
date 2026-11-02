@@ -50,7 +50,6 @@ const GAME_MECHANICS_ORDER = ['evolution-item', 'branched-evo', 'cross-gen-evo',
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 const SEARCH_RENDER_LIMIT = 150;
-// The count changes on most keystrokes. A screen reader hears it once typing pauses.
 const COUNT_ANNOUNCE_DELAY_MS = 500;
 
 export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false, dataSource }: {
@@ -60,19 +59,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   deferRows?: boolean;
 } = {}) {
   const searchQuery = useBrowserStore((s) => s.searchQuery);
-  /**
-   * The text as it stood when an IME began composing, or null when nothing is
-   * being composed.
-   *
-   * An IME fires an `input` event for every intermediate state, so composing
-   * フシギダネ ran eleven searches — `f`, `ふ`, `ふs`, `ふし`, `ふしg`, `ふしぎ`,
-   * and so on. Only the first and the last match anything, so a Japanese user
-   * watched "no results" for nine keystrokes while typing a name that exists.
-   * That reads as a broken search rather than a slow one.
-   *
-   * Holding the pre-composition text keeps the previous results on screen until
-   * the word is committed, and searches once instead of eleven times.
-   */
+  // platform: An IME fires an input event for each intermediate state, so the search holds the pre-composition text until compositionend.
   const [composingFrom, setComposingFrom] = useState<string | null>(null);
   const searchInput = composingFrom ?? searchQuery;
   const setSearchQuery = useBrowserStore((s) => s.setSearchQuery);
@@ -345,8 +332,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
   const scopedToLines = !!(scopeFilterLines && (scopeFilter || restrictIds));
 
-  // The subgroup labels come from the active catalog. `t` changes with it, so
-  // a language switch relabels them.
   const gridInputs = useMemo((): GridInputs => {
     void t;
     return { groups, gridCategoryDef, gridArchetypeDef, dataSource: deferredOptions.dataSource, scopeFilter, restrictIds, scopeFilterLabel, scopeFilterLines, myDexFilter, myDexSections, standaloneTiles };
@@ -424,7 +409,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     return () => clearTimeout(timer);
   }, [shownCount]);
   const countLabel = tn('browser.results', shownCount);
-  // The league's row, the one with the Shiny switch, shows the count only once a search or filter narrows the list.
   const countHidden = !!setShinyView && !isSearching && !hasActiveFilters;
   const placeholder = t(setShinyView ? 'browser.search.placeholderShort' : 'browser.search.placeholder');
 
@@ -654,11 +638,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           {(tight) => (<>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            {/* `value` stays bound to `searchQuery` and keeps updating through
-              * composition. Suppressing the state update instead would leave the
-              * controlled value stale, and the next unrelated re-render would
-              * overwrite the IME's buffer mid-word. Only `composingFrom` decides
-              * what gets *searched*. */}
+            {/* platform: A stale controlled value lets React overwrite the IME buffer mid-word, so value keeps tracking searchQuery during composition. */}
             <Input
               value={searchQuery}
               onCompositionStart={() => setComposingFrom(searchQuery)}
@@ -666,7 +646,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
-              // Phone autocorrect turns Pokémon names into dictionary words.
+              // platform: Phone autocorrect turns Pokémon names into dictionary words.
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}
@@ -694,7 +674,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             {tn('browser.results', announcedCount)}
           </span>
           {setShinyView && (
-            // The divider is as tall as the filter rows' dividers below (a filter pill plus py-1), centered in this taller row.
             <span className={cn('shrink-0 self-center flex items-center', !countHidden && 'h-[calc(1.75rem+2px)] pl-2 border-l border-border')}>
               <ShinyToggle on={shinyView} onToggle={() => setShinyView(!shinyView)} iconOnly={tight} testId="browser-shiny-toggle" />
             </span>
@@ -1229,7 +1208,6 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
       data-filter-chip={sheet}
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
-        // A translucent fill has no colour of its own to deepen, so the hover deepens an 8% tint.
         active
           ? `${HOVER_LAYER} border-primary text-primary bg-primary/5 [--fill:color-mix(in_srgb,var(--color-primary)_8%,var(--color-background))]`
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'

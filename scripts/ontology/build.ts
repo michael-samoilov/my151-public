@@ -1,14 +1,6 @@
-/**
- * The ontology build and check.
- *
- *   npm run ontology:check   load, resolve, check, and compare every generated file; writes nothing
- *   npm run ontology:build   the same, then write the generated files
- *
- * Generated files: src/data/pokemon.json (the Dex catalog) and data/ontology/reports/tool-verdicts.json.
- */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOLS } from '../../src/ontology/model';
 import type { AppIdLedger, Problem } from './authored';
@@ -17,6 +9,7 @@ import { formatJson, readJson } from './json';
 import { loadOntology } from './load';
 import { AUDIT_REPORTS, type AuditReport } from './pokeapi/compare';
 import { dexJson } from './projections/dex';
+import { leagueJson } from './projections/league';
 import { resolveOntology, type Ontology } from './resolve';
 
 const PRODUCTION = 'origin/claude/pokedex-region-builder-AviYF';
@@ -66,6 +59,7 @@ export function buildOntology(root: string): Built {
     ontology: resolution.ontology,
     files: [
       { path: 'src/data/pokemon.json', content: dexJson(resolution.ontology) },
+      { path: 'src/data/generated/league.json', content: leagueJson(resolution.ontology) },
       { path: 'data/ontology/reports/tool-verdicts.json', content: verdictReport(resolution.ontology) },
     ],
   };
@@ -94,7 +88,10 @@ function main(): void {
       current = null;
     }
     if (current === file.content) continue;
-    if (write) writeFileSync(path, file.content);
+    if (write) {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, file.content);
+    }
     else stale.push(file.path);
   }
   const forms = built.ontology.forms.size;
@@ -106,7 +103,7 @@ function main(): void {
     );
     process.exit(1);
   }
-  console.log(`ontology ${write ? 'build' : 'check'}: ${built.ontology.species.size} species, ${forms} forms; ${built.files.map((file) => file.path).join(' and ')} ${write ? 'written' : 'match'}.`);
+  console.log(`ontology ${write ? 'build' : 'check'}: ${built.ontology.species.size} species, ${forms} forms; ${built.files.map((file) => file.path).join(', ')} ${write ? 'written' : 'match'}.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

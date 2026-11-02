@@ -127,9 +127,7 @@ test.describe('a Retina desktop', () => {
     const cdp = await context.newCDPSession(page);
     const moveTo = async (deviceScaleFactor: number) => {
       await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 790, deviceScaleFactor, mobile: false });
-      // Emulation changes the ratio without the notice a real move between
-      // monitors sends (the resolution media query's change event), so send
-      // the resize the app listens for as well.
+      // platform: Device-scale emulation sends no resolution media query change event, so the test also dispatches the resize the app listens for.
       await page.evaluate(() => window.dispatchEvent(new Event('resize')));
       await settle(page);
       return summary(page);
@@ -201,9 +199,6 @@ test.describe('a Retina desktop with a gym card open', () => {
   test.use({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 });
 
   test('draws every card sprite at whole device pixels, with the hint lines only where they fit', async ({ page }, info) => {
-    // 1440x790 is a 13-inch MacBook Air window: there the card grows past
-    // its pane to reach 1x, where snapping down alone stayed soft, and the
-    // hint lines give way.
     const steps = await cardSprites(page, [[1920, 1080], [1440, 900], [1440, 812], [1440, 790]]);
     await info.attach('card-sprites.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
     expectWholeAndInPane(steps);

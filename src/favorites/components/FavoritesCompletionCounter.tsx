@@ -7,9 +7,7 @@ export function FavoritesCompletionCounter({ fills, label }: {
 }) {
   const { filled, total } = useMemo(() => buildFavoritesSnapshot(fills).completion, [fills]);
   return (
-    // `aria-label` on a plain span is not read by every screen reader, so the
-    // spoken phrase is hidden text and the visible "12/257" is hidden from them.
-    // The test id names the visible count, which tests and verify-my151 read.
+    // platform: Some screen readers ignore `aria-label` on a plain span, so the spoken phrase is hidden text and the visible count is `aria-hidden`.
     <span className="shrink-0 whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
       <span data-testid="favorites-completion" aria-hidden="true">
         <span className="font-extrabold text-primary">{filled}</span>

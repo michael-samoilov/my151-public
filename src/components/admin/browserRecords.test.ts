@@ -2,11 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordRedisCommands } from '@/lib/recordRedisCommands';
 import type { BrowserRecords } from './browserRecords';
 
-// `/api/submissions?cid=` loads one browser for the admin page. Upstash bills
-// per command, so the test pins the bill: one read per store, 4 in all.
-// api/submit.ts keys a second person on a shared browser `<cid>::<country>`;
-// the report's country must find that Dex record in the same one read.
-
 vi.hoisted(() => {
   process.env.UPSTASH_REDIS_REST_URL = 'https://redis.test';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';

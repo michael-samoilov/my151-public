@@ -9,7 +9,6 @@ const HOLD_SLOP_PX = 10;
 
 interface PokemonNameTooltipProps {
   label: PokemonLabel | (() => PokemonLabel);
-  /** A second, muted line under the name, such as the game a form comes from. */
   detail?: () => string | null;
   children: ReactElement;
   enabled?: boolean;
@@ -17,15 +16,7 @@ interface PokemonNameTooltipProps {
   testId?: string;
 }
 
-/**
- * Shows a Pokémon's name while a mouse rests on its tile, or while a finger
- * holds it. Radix ignores touch pointers, so the hold opens the tip itself.
- * Leaving the tile or lifting the finger closes it at once, so the tip never
- * sits over a tile the pointer moves on to.
- *
- * The shared tooltip uses the light popover colors, so this one sets dark
- * colors itself. It sits above the desktop popover and the phone sheet.
- */
+// platform: Radix Tooltip ignores touch pointers, so a finger hold opens the tip itself.
 export function PokemonNameTooltip({ enabled = true, ...props }: PokemonNameTooltipProps) {
   return enabled ? <ActiveNameTooltip {...props} /> : props.children;
 }
@@ -110,7 +101,6 @@ function Name({ label: source, detail: detailOf, testId }: {
   const label = typeof source === 'function' ? source() : source;
   const detail = detailOf?.() ?? null;
   const cjk = /^(ja|zh-)/.test(getLocale());
-  // The tooltip keeps 1rem from each screen edge, the same gutter its max width leaves.
   return <TooltipContent
     data-testid={testId}
     aria-label={detail ? `${label.full}${cjk ? '（' : ' ('}${detail}${cjk ? '）' : ')'}` : label.full}

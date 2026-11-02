@@ -10,8 +10,8 @@
         "src/components/admin/AdminPage.tsx"
       ],
       "text": {
-        "baseline": 191344,
-        "ceiling": 200912
+        "baseline": 186613,
+        "ceiling": 195944
       },
       "images": {
         "baseline": 739180,
@@ -42,8 +42,8 @@
         "src/components/analytics/AnalyticsDashboard.tsx"
       ],
       "text": {
-        "baseline": 243391,
-        "ceiling": 255561
+        "baseline": 232652,
+        "ceiling": 244285
       },
       "images": {
         "baseline": 136062,
@@ -57,8 +57,8 @@
         "src/league/data/names/en.json"
       ],
       "text": {
-        "baseline": 290168,
-        "ceiling": 304677
+        "baseline": 276241,
+        "ceiling": 290054
       },
       "images": {
         "baseline": 0,

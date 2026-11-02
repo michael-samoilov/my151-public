@@ -10,13 +10,8 @@ import { pickerOpenState, useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 
-// About five phone screens of tiles. Every single-type page (the largest is
-// 176) still loads in full.
-const PRELOAD_LIMIT = 180;
+const FIVE_PHONE_SCREENS = 180;
 
-// The start of the page an empty cell's picker opens to, in the order the
-// picker draws it. The picker's other purposes show a subset of it, or the
-// card's own Pokémon, which the card already draws.
 function pickerPageSprites(cardIndex: number): string[] {
   const state = pickerOpenState(cardIndex, 'lines', useLeagueBrowserStore.getState(), 1);
   const { favoritesFilter, favoriteIds } = useFavoriteBrowserStore.getState();
@@ -31,12 +26,9 @@ function pickerPageSprites(cardIndex: number): string[] {
       for (const member of group.members) sprites.add(model.spriteOverrides?.[member.id] ?? member.sprite);
     }
   }
-  return [...sprites].slice(0, PRELOAD_LIMIT);
+  return [...sprites].slice(0, FIVE_PHONE_SCREENS);
 }
 
-// A picker tile whose sprite is not in the browser yet opens blank, and stays
-// blank for as long as the fetch takes. The phone keeps the last card mounted
-// after it closes, so only an open card warms its picker.
 export function usePickerPreload(cardIndex: number): void {
   const open = useLeagueUi((s) => s.openCard === cardIndex);
   const type = useLeagueStore((s) => s.cards[cardIndex]?.type);
@@ -45,18 +37,15 @@ export function usePickerPreload(cardIndex: number): void {
   const sections = usePokedexStore((s) => s.sections);
   useEffect(() => {
     if (!open) return;
-    // React runs this effect inside the tap that opened the card, so the
-    // filtering waits for idle time instead of delaying that tap's frame.
+    // platform: React runs this effect inside the tap that opened the card, so the filtering waits for idle time.
     let live = true;
-    // A page the picker no longer opens to stops loading, so it does not hold
-    // up the next one.
-    let drop = () => {};
+    let dropStalePage = () => {};
     whenIdle(() => {
-      if (live) drop = warmSprites(pickerPageSprites(cardIndex), true);
+      if (live) dropStalePage = warmSprites(pickerPageSprites(cardIndex), true);
     });
     return () => {
       live = false;
-      drop();
+      dropStalePage();
     };
   }, [open, cardIndex, type, favoritesFilter, myDexFilter, sections]);
 }

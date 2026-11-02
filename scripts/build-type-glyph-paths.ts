@@ -60,7 +60,7 @@ function absoluteSegments(d: string, where: string): Segment[] {
       x = ox + num(); y = oy + num();
       startX = x; startY = y;
       out.push(['M', x, y]);
-      // Further pairs after a move are lines.
+      // platform: SVG path data reads further coordinate pairs after a move as lines.
       command = rel ? 'l' : 'L';
     } else if (upper === 'L') {
       x = ox + num(); y = oy + num();
@@ -157,8 +157,7 @@ function relativePath(segments: Segment[]): string {
   let last = '';
   let x = 0, y = 0, startX = 0, startY = 0;
   const emit = (letter: string, values: number[]) => {
-    // A repeated line or curve needs no letter; a repeated move does,
-    // because pairs after a move are lines.
+    // platform: SVG path data repeats a line or curve letter implicitly, but pairs after a move are lines.
     const lettered = letter !== last || letter === 'm' || letter === 'z';
     if (lettered) out += letter;
     values.forEach((v, k) => {
@@ -182,7 +181,6 @@ function relativePath(segments: Segment[]): string {
   return out;
 }
 
-/** Each type's glyph shapes, as path data in the centered 100-unit frame. */
 export function typeGlyphPaths(): Record<string, string[]> {
   return Object.fromEntries(Object.entries(TYPE_ICONS).map(([type, { glyph }]) => {
     const svg = readFileSync(resolve('public', `.${glyph}`), 'utf8');

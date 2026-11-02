@@ -1,13 +1,7 @@
 import { t } from '@/i18n';
 import { slotKind } from './model/constants';
 
-/**
- * A league slot's name in the active locale: "Gym 3", "Elite Four 2".
- *
- * Kept out of `model/constants`, which scripts import outside Vite, where the
- * catalogs do not load. It reads the locale when it is called, so a component
- * that shows one subscribes to the locale itself.
- */
+// platform: The catalogs load only inside Vite, and scripts import `model/constants` outside it, so this function stays out of that module.
 export function slotLabel(slotIndex: number): string {
   const kind = slotKind(slotIndex);
   if (kind === 'gym') return t('league.slotName.gym', { n: slotIndex + 1 });

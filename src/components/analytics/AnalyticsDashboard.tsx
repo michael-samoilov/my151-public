@@ -20,6 +20,8 @@ import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { StageDistributionChart } from './StageDistributionChart';
+import { ChartTitle } from '@/components/shared/ChartTitle';
+import { CHIP_OFF, CHIP_ON, SEGMENT_GROUP, SEGMENT_OFF } from './chipClasses';
 
 
 function alignHistograms(
@@ -401,6 +403,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     };
   }, [selectedTypeChart, isNationalSelected, newPokemonOnly, sections]);
 
+  const meanLabels = { yours: t('favorites.stats.meanYours'), options: t('analytics.meanNational'), exact: t('favorites.stats.meanExact') };
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -445,7 +448,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold mb-1">{t('analytics.type.heading')}</h3>
+          <ChartTitle as="h3" className="mb-2" text={t('analytics.type.heading')} />
 
           <div className="space-y-1.5 mb-3">
           <div className="flex items-stretch border-x border-border">
@@ -454,8 +457,8 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
                 onClick={() => setSelectedTypeChart('national')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'national'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? CHIP_ON
+                    : CHIP_OFF
                 }`}
               >
                 {t('analytics.dex.nationalShort')}
@@ -464,8 +467,8 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
                 onClick={() => setSelectedTypeChart('yours')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'yours'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? CHIP_ON
+                    : CHIP_OFF
                 }`}
               >
                 {t('analytics.dex.yours')}
@@ -478,8 +481,8 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
                   onClick={() => setSelectedTypeChart(dex.id)}
                   className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                     selectedTypeChart === dex.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      ? CHIP_ON
+                      : CHIP_OFF
                   }`}
                 >
                   {regionName(dex.id)}
@@ -488,26 +491,26 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1 -my-1 px-0.5 -mx-0.5">
             <button type="button"
               onClick={() => setExcludeSpecial(!excludeSpecial)}
               className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 excludeSpecial
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? CHIP_ON
+                  : CHIP_OFF
               }`}
             >
               {t('analytics.excludeSpecial')}
             </button>
 
             {selectedDex && !isNationalSelected && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
-              <div className="inline-flex rounded-full bg-muted overflow-hidden">
+              <div className={`inline-flex rounded-full overflow-hidden ${SEGMENT_GROUP}`}>
                 <button type="button"
                   onClick={() => setNewPokemonOnly(true)}
                   className={`px-1.5 py-0.5 rounded-l-full text-xs font-medium whitespace-nowrap transition-colors ${
                     newPokemonOnly
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted/80'
+                      ? CHIP_ON
+                      : SEGMENT_OFF
                   }`}
                 >
                   {t('analytics.genOnly', { gen: selectedDex.generation })}
@@ -516,8 +519,8 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
                   onClick={() => setNewPokemonOnly(false)}
                   className={`px-1.5 py-0.5 rounded-r-full text-xs font-medium whitespace-nowrap transition-colors ${
                     !newPokemonOnly
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted/80'
+                      ? CHIP_ON
+                      : SEGMENT_OFF
                   }`}
                 >
                   {t('analytics.regionalDex')}
@@ -598,7 +601,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold mb-1">{t('analytics.gen.heading')}</h3>
+          <ChartTitle as="h3" className="mb-2" text={t('analytics.gen.heading')} />
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
                 alignBaselines hideLabelText iconFillsRow
@@ -616,7 +619,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold mb-1">{t('analytics.shape.heading')}</h3>
+          <ChartTitle as="h3" className="mb-2" text={t('analytics.shape.heading')} />
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
                 alignBaselines hideLabelText iconFillsRow
@@ -634,10 +637,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold mb-1">{t('analytics.evoLevel.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.avgCompare', { yours: analytics.evolutionStats.avgLevel || t('analytics.notAvailable'), national: analytics.evolutionStats.nationalAvgLevel })}
-          </p>
+          <ChartTitle as="h3" className="mb-2" text={t('analytics.evoLevel.heading')} />
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
@@ -656,6 +656,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
               xTicks={evoHist.xTicks}
               yDomain={evoHist.yDomain}
               yTicks={evoHist.yTicks}
+              meanRail={evoHist.merged.some(d => d.yoursPct > 0) ? { yours: analytics.evolutionStats.avgLevel, options: analytics.evolutionStats.nationalAvgLevel, labels: meanLabels } : undefined}
               onBarClick={(binCenter) => {
                 const binStart = binCenter - evoHist.binSize / 2;
                 handleDrillToggle({ kind: 'evoLevel', binStart, binEnd: binStart + evoHist.binSize }, evoLevelSiblings);
@@ -666,10 +667,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
         </section>
 
         <section>
-          <h3 className="text-lg font-semibold mb-1">{t('analytics.bst.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.avgCompare', { yours: analytics.bstStats.avg, national: analytics.nationalAvgBst })}
-          </p>
+          <ChartTitle as="h3" className="mb-2" text={t('analytics.bst.heading')} />
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
@@ -689,6 +687,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
               minorXTicks={bstHist.xTicks.slice(0, -1).map((t, i) => (t + bstHist.xTicks[i + 1]) / 2)}
               yDomain={bstHist.yDomain}
               yTicks={bstHist.yTicks}
+              meanRail={bstHist.merged.some(d => d.yoursPct > 0) ? { yours: analytics.bstStats.avg, options: analytics.nationalAvgBst, labels: meanLabels } : undefined}
               onBarClick={(binCenter) => {
                 const binStart = binCenter - bstHist.binSize / 2;
                 handleDrillToggle({ kind: 'bst', binStart, binEnd: binStart + bstHist.binSize }, bstSiblings);

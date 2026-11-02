@@ -35,6 +35,7 @@
       "id": "darmanitan-zen",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "zen-mode" },
         "from": ["darmanitan"]
       },
       "types": ["fire", "psychic"],
@@ -67,6 +68,7 @@
       "id": "darmanitan-galar-zen",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "zen-mode" },
         "from": ["darmanitan-galar"]
       },
       "types": ["ice", "fire"],

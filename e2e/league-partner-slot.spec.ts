@@ -347,8 +347,7 @@ test.describe('the ace and partner slot', () => {
             art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
             runs: [...lines(root.querySelector('[data-slot-head]')!), ...lines(name)],
             namePx: parseFloat(getComputedStyle(name).fontSize),
-            // Range geometry includes clipped screen-reader text. Check each
-            // visible text node against its own truncating ancestors instead.
+            // platform: Range geometry includes clipped screen-reader text, so each visible text node is checked against its truncating ancestors.
             clipped: (() => {
               const range = document.createRange();
               const walker = document.createTreeWalker(name, NodeFilter.SHOW_TEXT);

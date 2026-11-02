@@ -61,8 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redis.llen(FEEDBACK_KEY),
     ]);
 
-    // The SDK parses JSON strings back into objects when it can, so entries
-    // arrive as either — same situation parseRecord handles for clients.
+    // platform: The Upstash SDK parses JSON strings back into objects when it can, so an entry arrives as either.
     const items = rows.map((row) => {
       if (typeof row !== 'string') return row;
       try {

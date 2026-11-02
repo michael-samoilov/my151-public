@@ -1,21 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * The first-visit intro card sits at the top of the build scroller. Placing the
- * first Pokémon folds it away — and when that placement targets a section
- * below the fold, the fold happens *above* the viewport. Chrome and Firefox
- * absorb that with CSS scroll anchoring; Safari has never implemented it, so on
- * iOS the whole page used to jump up by the card's height and the section the
- * user had just filled left the screen.
- *
- * Playwright drives Chromium, which anchors. To exercise the Safari path the
- * spec stands in for Safari on both counts the app can observe: the anchoring
- * behaviour is switched off, and `CSS.supports('overflow-anchor')` reports
- * false, which is how `IntroCard` decides to make the correction itself.
- *
- * Mobile only: at md and up the browser is a side panel and adds instantly, a
- * different flow. Keyed on width, matching bottom-sheet.spec.ts.
- */
+// platform: Safari has no CSS scroll anchoring, so IntroCard corrects the scroll itself where CSS.supports('overflow-anchor') is false.
 test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'mobile sheet flow only');
 
@@ -82,8 +67,7 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
-    // Chromium anchors on its own. If IntroCard also compensated, the section
-    // would land ~374px *lower* than it started.
+    // platform: Chromium anchors the scroll on its own here.
     expect(Math.abs(after! - before!)).toBeLessThanOrEqual(2);
   });
 
@@ -156,8 +140,7 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
-    // Chromium's own anchor lands inside the shrinking card here and scrolls
-    // the wrong way (measured 394px). IntroCard has to take over.
+    // platform: Chromium's own scroll anchor lands inside the shrinking card here and scrolls the wrong way.
     expect(after!).toBeGreaterThan(0);
     expect(scrollTop).toBe(0);
     expect(Math.abs(after! - listPadding!)).toBeLessThanOrEqual(2);

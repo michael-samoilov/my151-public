@@ -1,30 +1,4 @@
 #!/usr/bin/env node
-/**
- * Sprites are served `immutable` for a year and the service worker keeps them
- * forever, so a sprite replaced under the same name never reaches a browser
- * that already holds it. Zacian and Zamazenta showed their Crowned art for both
- * forms that way.
- *
- * Fails when a file under public/sprites differs from production without a
- * `src/data/spriteRevisions.json` entry for its current content, and when an
- * entry no longer matches its file. `src/lib/spriteUrl.ts` sends the entry as
- * `?v=`, which every cache treats as a new file.
- *
- * Also fails when a Pokémon sprite was added or replaced since production
- * without a row in `src/data/spriteAttribution.json`, which names the artists
- * the Acknowledgements panel credits for it, and when a row names a sprite
- * that does not exist.
- *
- * A replaced file needs neither when `scripts/sprite-reencodes.json` lists its
- * current content and it decodes to the same pixels as the base file:
- * scripts/optimize-sprites.py wrote it as a lossless re-encode, so no browser can
- * show stale art. The optimizer records every file it shrinks against the base it
- * was given, which can be a commit with new art, so the entry alone proves
- * nothing. An entry that no longer matches its file fails, so a later art change
- * needs a revision.
- *
- * Usage: node scripts/check-sprite-revisions.mjs [base-ref]
- */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';

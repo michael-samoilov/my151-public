@@ -14,7 +14,6 @@ interface NameCatalog {
   formSource: Record<string, NameProvenance>;
   formMark: Record<string, string>;
   formCompact?: Record<string, string>;
-  /** Other names a form is known by, for search only: a Pokopia character's name. */
   formAlias?: Record<string, string>;
   formSearchIndex?: Record<string, string>;
   affix?: string[];

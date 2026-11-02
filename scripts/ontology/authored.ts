@@ -1,31 +1,18 @@
-/**
- * The JSON shapes a person or the importer writes under data/ontology/. On disk every id is a plain
- * string; scripts/ontology/load.ts brands it after it has checked the reference.
- */
 import type { DataSourceId, DecisionId, FormId, GameId, RegionId, SpeciesId, SpriteStem, VarietyAxisId, VarietyValueId } from '../../src/ontology/ids';
 import type { FactKey, FormFacts, FormState, GenderRatio, LegendaryClass, LocalizedText, Sex, ToolId, ToolInclusion, Variety } from '../../src/ontology/model';
 import type { ExternalIds, PokeapiExtract } from './pokeapi/source';
 
-/**
- * The source a form cites for a fact it inherits because nothing describes the form: the value is
- * the base form's by the inheritance rule, and nobody has checked it. Only a form the pinned
- * PokeAPI snapshot does not know, or a fact that snapshot lacks, may cite it.
- */
 export const INHERITED_UNSOURCED = 'inherited:unsourced';
 
 export interface Sourced<K extends string> {
-  /** Where this record came from. Defaults to the file's source. */
   readonly source?: DataSourceId;
-  /** A field whose value came from another source than the record, or INHERITED_UNSOURCED for an unchecked inherited fact. */
   readonly sourceOf?: { readonly [F in K]?: DataSourceId };
 }
 
-/** One file per species: data/ontology/species/<dex4>-<species>.json. forms[0] is the default form. */
 export interface SpeciesFile {
   readonly source: DataSourceId;
   readonly species: SpeciesEntry;
   readonly forms: readonly [DefaultFormEntry, ...FormEntry[]];
-  /** Evolutions into this species, so a species file is self-contained. The first edge into a form is its primary edge. */
   readonly evolutions: readonly EvolutionEntry[];
 }
 
@@ -42,9 +29,7 @@ export interface SpeciesEntry extends Sourced<SpeciesFactKey> {
   readonly genus: LocalizedText;
   readonly legendaryClass: LegendaryClass;
   readonly tags: readonly string[];
-  /** The axes this species' forms vary on, with the values in display order. */
   readonly varietyAxes: readonly { readonly axis: VarietyAxisId; readonly values: readonly VarietyValueId[] }[];
-  /** A tool shows another form's sprite for the default form, such as Wishiwashi School in the Dex. */
   readonly standIn: { readonly [T in ToolId]?: FormId };
 }
 
@@ -61,23 +46,18 @@ export interface CoordinatesEntry {
   readonly fusion?: SpeciesId;
 }
 
-/** The facts a default form must state. Obtain and shiny default to "standard" and "available". */
 export type CoreFact = Exclude<FactKey, 'obtain' | 'shiny'>;
 
-/** The default form states every core fact. It is in every tool unless it says otherwise. */
 export type DefaultFormEntry = FormEntryBase & CoordinatesEntry & Pick<FormFacts, CoreFact> &
   Partial<Pick<FormFacts, 'obtain' | 'shiny'>> & { readonly state?: never; readonly tools?: ToolInclusion };
 
-/** A permanent non-default form: coordinates, sparse facts, explicit tool verdicts. Inherits from forms[0]. */
 export type PermanentFormEntry = FormEntryBase & CoordinatesEntry & Partial<FormFacts> &
   { readonly state?: never; readonly tools: ToolInclusion };
 
 export type StateEntry = FormState & {
-  /** The forms of this species that enter the state. 'any' means every permanent form. */
   readonly from: readonly [FormId, ...FormId[]] | 'any';
 };
 
-/** A temporary form: one state step and the forms that enter it. It inherits from from[0], or from forms[0] when from is 'any'. */
 export type StateFormEntry = FormEntryBase & { readonly [K in keyof CoordinatesEntry]?: never } & Partial<FormFacts> &
   { readonly state: StateEntry; readonly tools: ToolInclusion };
 
@@ -86,7 +66,6 @@ export type FormEntry = PermanentFormEntry | StateFormEntry;
 export interface EvolutionEntry extends Sourced<'methods'> {
   readonly from: FormId;
   readonly to: FormId;
-  /** Empty when today's data records no method. Later phases import methods from PokeAPI. */
   readonly methods: readonly EvolutionMethod[];
 }
 
@@ -96,10 +75,8 @@ export interface EvolutionMethod {
   readonly conditions: readonly { readonly kind: 'level'; readonly level: number }[];
 }
 
-/** ids/app-ids.json. Append-only. Rows are sorted by number, so two branches that mint one number conflict in git. */
 export interface AppIdLedger {
   readonly rows: readonly (readonly [number, FormId])[];
-  /** Numbers no live form uses that must never be assigned again. */
   readonly retired: readonly { readonly id: number; readonly meant: string; readonly why: string }[];
 }
 
@@ -120,27 +97,18 @@ export interface DecisionEntry {
 
 export type DataSourceEntry =
   | { readonly id: DataSourceId; readonly kind: 'legacy-file'; readonly ref: string }
-  /** PokeAPI's CSV tables at one commit, read through the extract file; see scripts/ontology/pokeapi/extract.ts. */
   | { readonly id: DataSourceId; readonly kind: 'pokeapi-csv'; readonly repository: string; readonly commit: string; readonly extract: string }
   | { readonly id: DataSourceId; readonly kind: 'inheritance'; readonly note: string }
-  /** A fact a person stated, such as Michael reading it from the games. The quote is what the cited facts rest on. */
   | { readonly id: DataSourceId; readonly kind: 'statement'; readonly by: string; readonly date: string; readonly quote: string; readonly where: string };
 
-/** legacy/picker.json: what today's Favorite Picker records hold that the ontology does not derive. */
 export interface LegacyPicker {
-  /** Picker numbers that differ from the AppId. The saved-data migration of phase 2 reads this. */
   readonly ids: { readonly [form: string]: number };
-  /** The Picker's `name` string where it is not the form id: power-up labels and Urshifu. */
   readonly names: { readonly [form: string]: string };
-  /** The Picker's `ownerId` where no rule gives it. */
   readonly owners: { readonly [form: string]: FormId };
 }
 
-/** legacy/dex.json: what src/data/pokemon.json holds that the ontology does not derive. */
 export interface LegacyDex {
-  /** Where each non-default form's row sits: after the named row. Alcremie's sweets follow Alcremie; most regional forms follow the last species. */
   readonly formOrder: readonly { readonly form: FormId; readonly after: FormId }[];
-  /** A species whose Dex stand-in is served from a second copy of the stand-in form's sprite file. */
   readonly standInSprites: { readonly [species: string]: string };
 }
 
@@ -153,7 +121,6 @@ export interface AuthoredOntology {
   readonly vocab: { readonly [kind in 'types' | 'colors' | 'shapes' | 'eggGroups' | 'growthRates' | 'speciesTags' | 'abilities']: readonly string[] };
   readonly decisions: readonly DecisionEntry[];
   readonly sources: readonly DataSourceEntry[];
-  /** The pinned PokeAPI snapshot named by the pokeapi-csv source. */
   readonly pokeapi: PokeapiExtract;
   readonly legacy: {
     readonly picker: LegacyPicker;

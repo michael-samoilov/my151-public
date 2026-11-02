@@ -34,7 +34,6 @@ function sampleSeries(provider: 'google' | 'bing'): SearchSeriesPoint[] {
   });
 }
 
-/** Two days after the Google series that Search Console has not finalized. */
 const sampleFresh: SearchSeriesPoint[] = [
   { start: '2026-09-22', clicks: 9, impressions: 47, ctr: 9 / 47, position: 6.1 },
   { start: '2026-09-23', clicks: 6, impressions: 33, ctr: 6 / 33, position: 6.4 },

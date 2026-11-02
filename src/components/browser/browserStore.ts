@@ -74,12 +74,10 @@ function restrictionIds({
   return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
 }
 
-/** A data source with its own ids reads favorites from the picker's saved fills, not from the store. */
 export function browserFavoriteIds(stored: Set<number>, dataSource?: PokemonDataSource): Set<number> {
   return dataSource?.favoritePickerId ? readFavoritePickerIds(dataSource.favoritePickerId) : stored;
 }
 
-/** The filter a browser in this state runs, before any search text. */
 export function browserFilterOptions(state: FilterInputs, dataSource?: PokemonDataSource): PokemonFilterOptions {
   return {
     dataSource,

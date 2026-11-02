@@ -1,11 +1,3 @@
-/**
- * Writes the type icon lines of THIRD_PARTY_NOTICES.md from the icon build's
- * own `selections.json`, so the notice names exactly the types each source
- * drew. The lines sit between `<!-- type-icons:<source> -->` markers.
- *
- * Run: npx tsx scripts/type-icons/notices.ts [--write]
- * Without --write it exits 1 when the file is stale.
- */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -18,7 +10,6 @@ interface Selection { source: string; mirroredHalf: string | null }
 const list = (names: string[]) => new Intl.ListFormat('en', { type: 'conjunction' }).format(names);
 const title = (type: string) => type[0].toUpperCase() + type.slice(1);
 
-/** Each marked line, by source, in the games' type order. */
 export function typeIconLines(selections: Record<string, Selection>): Record<string, string> {
   const of = (source: string) => Object.entries(selections).filter(([, s]) => s.source === source);
   const party = of('partywhale');
@@ -29,7 +20,6 @@ export function typeIconLines(selections: Record<string, Selection>): Record<str
   };
 }
 
-/** The notices file with its marked lines rewritten. */
 export function renderNotices(notices: string, selections: Record<string, Selection>): string {
   let out = notices;
   for (const [source, line] of Object.entries(typeIconLines(selections))) {

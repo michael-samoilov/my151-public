@@ -21,11 +21,6 @@ function pump() {
   }
 }
 
-/**
- * Loads and decodes images, at most `MAX_LOADING` at a time, and keeps them so
- * an `<img>` that later shows one paints it at once. `first` puts these ahead
- * of the images already waiting.
- */
 export function preloadImages(urls: readonly string[], first = false): void {
   if (typeof Image === 'undefined') return;
   const fresh = [...new Set(urls)].filter((url) => !decoded.has(url) && !loading.has(url));
@@ -39,13 +34,8 @@ export function preloadImages(urls: readonly string[], first = false): void {
   pump();
 }
 
-/**
- * At most this long before `usePreloadImages` starts. A phone that has just opened a picker sheet
- * gives no idle time for about 3 s, longer than a person takes to press Shiny.
- */
 const PRELOAD_WAIT_MS = 300;
 
-/** Preloads `urls` once the page is idle or `PRELOAD_WAIT_MS` has passed, behind any images already queued. */
 export function usePreloadImages(urls: readonly string[]): void {
   useEffect(() => {
     if (urls.length === 0) return;

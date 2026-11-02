@@ -4,11 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Fails when committed tooling opens the live site in a browser without
-// keeping out of its analytics. AGENTS.md, "Visits to the live site".
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LIVE_URL = /https?:\/\/(www\.)?my151\.app\b/i;
-// A line that opens a page at a live-site address.
 const OPENS_LIVE = new RegExp(`(\\.goto\\(|\\bnavigate\\(|WebDriver:Navigate).*${LIVE_URL.source}`, 'i');
 const SAFE = /notme|protectLiveSite/;
 const CODE = /\.(tsx?|jsx?|mjs|cjs|py|sh)$/;

@@ -24,8 +24,7 @@ async function openSheet(page: Page, locale: string) {
   await expect(page.getByRole('dialog')).toBeVisible();
 }
 
-/** Report the keyboard the way iOS does: a shorter visual viewport, and a scale
- *  that is fractionally off 1 rather than exactly 1. */
+// platform: iOS reports a raised keyboard as a shorter visual viewport with a scale fractionally off 1.
 async function raiseKeyboard(page: Page, visible: number | null) {
   if (visible === null) return;
   await page.evaluate((v) => {
@@ -105,15 +104,7 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('scrolling the field does not drag the page under the sheet', async ({ page }) => {
-    // Reported from a real phone: dragging inside the field to read back what
-    // you had typed scrolled nothing, then pulled the whole sheet off the
-    // bottom of the screen. A textarea is a scroll container, so once its own
-    // scroll ends iOS hands the rest of the gesture to the nearest ancestor
-    // that can take it — the document, which the sheet is positioned against.
-    //
-    // Chromium will not reproduce the chaining, but the property that stops it
-    // is exactly testable, the same way the 16px font-size check stands in for
-    // a zoom this engine never performs.
+    // platform: iOS chains a textarea's ended scroll to the document; Chromium does not, so the test checks the property that stops it.
     await openSheet(page, 'en');
     await raiseKeyboard(page, 338);
     const behaviour = await page

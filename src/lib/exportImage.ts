@@ -42,12 +42,8 @@ export const DEX_EXPORT_FRAME_RED = '#DC2626';
 const SPRITE = TILE;
 const BG = '#ffffff';
 const ROTATION = -30 * (Math.PI / 180);
-const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
-// iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
-// backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
-// toBlob never fires its callback — the export spinner hangs forever. The
-// with-stats export at SCALE=2 (~2000×2000 ≈ 4M px) is well under it, but the
-// area stays capped as a guard. Margin under the hard limit.
+const SCALE = DEX_EXPORT_SCALE;
+// platform: Every iOS browser caps a canvas backing store near 16.7M px; past it, canvas calls do nothing and toBlob never calls back.
 const MAX_CANVAS_AREA = 16_000_000;
 
 let _nationalTypeFreq: Map<string, number> | null = null;
@@ -249,7 +245,7 @@ export async function generateExportImage(
 
   const sections = options.sections ?? null;
 
-  // Canvas text metrics for title fitting / stats wrapping need the real font.
+  // platform: Canvas text measurement uses a fallback font until the web font loads, and a canvas never starts that load.
   if (typeof document !== 'undefined' && document.fonts?.ready) {
     await document.fonts.ready.catch(() => undefined);
   }
@@ -292,8 +288,6 @@ export async function generateExportImage(
   const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
   const framedH = h + 2 * DEX_EXPORT_FRAME + DEX_EXPORT_HEADER;
 
-  // Cap the backing store to the iOS canvas-area limit. Every export today stays
-  // under it at SCALE, so the sprites keep their whole 1× scale.
   const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (framedW * framedH)));
 
   const canvas = document.createElement('canvas');

@@ -130,8 +130,6 @@ interface LeagueUser extends RecordingFields {
   maxCards: number;
   maxSeats: number;
   latest: LeagueRecord['latest'];
-  /** The structure of their current league. Absent until they send a beacon
-   *  from a build that carries it — nothing backfills an older record. */
   latestCards?: LeagueRecord['latestCards'];
   exportsCard: number;
   exportsLeague: number;
@@ -148,13 +146,10 @@ interface LeagueUser extends RecordingFields {
   device?: string;
   os?: string;
   browser?: string;
-  /** Coarse acquisition source (external referrer host), forward-only. */
   firstReferrer?: string;
   hasDex: boolean;
   archived?: boolean;
-  /** Absent when this browser has no dex record to be ordered against. */
   order?: ToolOrder;
-  /** Signed days from the first dex beacon to the first league one. */
   gapDays?: number;
 }
 
@@ -206,11 +201,8 @@ interface Journeys {
   dexFirst: number;
   leagueFirst: number;
   sameDay: number;
-  /** Days between the two first beacons, ignoring direction. */
   medianGapDays: number;
   p75GapDays: number;
-  /** Per UTC week: how many browsers each tool gained, and how many of them
-   *  opened the other tool within 7 days of that first beacon. */
   weekly: {
     week: number;
     newDex: number;
@@ -277,7 +269,6 @@ export interface DashboardSource {
   funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
   favoriteClients?: Record<string, unknown> | null;
-  /** Funnel events of archived browsers, `<day>|<event>` (api/_funnelExclusions.ts). */
   funnelExcluded?: Record<string, unknown> | null;
 }
 
@@ -290,30 +281,20 @@ function counts(hash: Record<string, unknown> | null): Record<string, number> {
   return out;
 }
 
-/** Time measured from retained history, rather than a complete lifetime total. */
 export interface BrowserTime {
   sessions: number;
   totalMs: number;
-  /** Some tool history is missing, or older foreground intervals were retired. */
   partial?: true;
 }
 
 export interface ToolStat {
-  /** Progress: Pokémon in the Dex, Gyms with a line, or filled Picker cells. */
   count: number;
   exported?: true;
-  /** Every session the tool counted, and their summed time. */
   sessions: number;
   totalMs: number;
-  /** Absent when foreground attention has never been recorded. */
   active?: BrowserTime;
 }
 
-/**
- * One record on a Newest browsers list: what its row shows and filters on.
- * The who fields and the time are the list record's own; the tools are every
- * tool of its browser. A tool the browser never used is absent.
- */
 export interface BrowserRow {
   cid: string;
   lastTs: number;
@@ -327,21 +308,16 @@ export interface BrowserRow {
   locale?: string;
   switched?: string;
   archived: boolean;
-  /** First seen in the tool this row lists. */
   firstTs: number;
-  /** No tool record has an engaged day: a bounce, not counted as a user. */
   bounced?: true;
-  /** Leads that this browser is automated, for the owner to review. */
   suspect?: SuspectReason[];
   dex?: ToolStat;
   league?: ToolStat;
   picker?: ToolStat;
-  /** The browser as a whole: sessions merged across tools, time counted once. */
   total: { sessions: number; totalMs: number };
   activeTotal?: BrowserTime;
 }
 
-/** Every record of each tool, newest-active first. */
 export interface BrowserIndex {
   dex: BrowserRow[];
   league: BrowserRow[];
@@ -360,9 +336,6 @@ type PickerTool = SessionRecord & Sessions & Parameters<typeof pickerEngagedDays
 
 type Timed = { attention?: AttentionRecording; firstTs: number; spans: readonly Span[] };
 
-// Input time, plus the session length of sessions before input timing: before
-// the tool's recording began and before INPUT_TIMING_SINCE. Either addition,
-// a tool with no recording, or retired segments marks the time partial.
 function foregroundTime(tools: readonly Timed[]): BrowserTime | undefined {
   const intervals = tools.flatMap(({ attention: a, spans }) => {
     const before = Math.min(a?.coverageFrom ?? Infinity, INPUT_TIMING_SINCE);
@@ -587,22 +560,11 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
   return {all: slice('all'), dex: slice('dex'), league: slice('league'), favorites: slice('favorites')};
 }
 
-/**
- * The `/api/submissions` payload.
- *
- * `range` picks the browsers each card counts. Most cards count the browsers
- * active in the range. Cross-tool cards keep both tools' records of those
- * browsers. The funnels and the referrer flow count the browsers first seen
- * in the range, and the funnels open on the window's day counters. The
- * activity series and the browser index keep every browser.
- */
 export function buildDashboard(source: DashboardSource, { range }: { range: DashboardRange }, now: number) {
   const allRecords: ClientRecord[] = Object.values(source.clients ?? {})
     .map(parseRecord)
     .filter((r): r is ClientRecord => r !== null);
   const archivedSet = asArchivedSet(source.archived);
-  // Each record carries the UTC days it counts as an active user. A record
-  // with none is a bounce (api/_visitorQuality.ts).
   const dexVisits = withoutArchived(allRecords, archivedSet).map((r) => ({ ...r, engagedDays: dexEngagedDays(r) }));
   const records = dexVisits.filter(isActiveUser);
 
@@ -630,7 +592,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const dexIn = within(records, active);
   const leagueIn = within(leagueRecords, active);
   const favoriteIn = within(favoriteRecords, active);
-  // The picker funnel starts at "opened", so its first step keeps bounces.
   const favoriteNew = within(favoriteVisits, (r) => firstSeenSince(r, start));
   const visited = (r: SessionRecord) => activeSince({ ...r, engagedDays: undefined }, start);
   const bounced = (list: SessionRecord[]) => list.filter((r) => visited(r) && !(isActiveUser(r) && active(r))).length;
@@ -921,11 +882,6 @@ interface BrowserSource {
   exportSurveySkips: unknown;
 }
 
-/**
- * One browser's Dex, League, and Picker records, shaped as the dashboard
- * shapes them, so the admin can open a browser that is not on a loaded page.
- * A store the browser never used is null.
- */
 export function buildBrowser(cid: string, source: BrowserSource) {
   const skipMap = parseExportSurveySkipMap(
     source.exportSurveySkips == null ? null : { [cid]: source.exportSurveySkips },

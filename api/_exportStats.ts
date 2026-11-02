@@ -71,8 +71,7 @@ export async function recordToolExport(
   }
   try {
     const unique = [...new Set(pokemonIds.filter((id) => Number.isInteger(id) && id > 0 && id < 100_000))];
-    // One SMISMEMBER and one SADD for the whole export, not one per Pokémon:
-    // Upstash bills every command, pipelined or not.
+    // platform: Upstash bills every command, pipelined or not, so the export sends one SMISMEMBER and one SADD.
     const [ordinal, flags] = await Promise.all([
       redis.hincrby(EXPORT_COUNTS_KEY, tool, 1),
       unique.length === 0 ? [] : redis.smismember(EXPORT_SEEN_KEY, unique.map(String)),
@@ -81,7 +80,6 @@ export async function recordToolExport(
     const unseen = unique.filter((_, i) => !seenFlag(flags[i]));
     const fields = unseen.map(String);
     const [first, ...rest] = unique.map(String);
-    // SADD must follow SMISMEMBER, or every Pokémon in this export reads as seen.
     const [raw] = await Promise.all([
       fields.length > 0 ? (redis.hmget(DEX_EVER_FREQ_KEY, fields[0], ...fields.slice(1)) as Promise<unknown>) : null,
       first !== undefined ? redis.sadd(EXPORT_SEEN_KEY, first, ...rest) : null,

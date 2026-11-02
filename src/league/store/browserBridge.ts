@@ -39,21 +39,11 @@ type ShinyRule = (switchOn: boolean) => boolean | 'keep';
 const followSwitch: ShinyRule = (on) => on;
 const onlyWhenOn: ShinyRule = (on) => (on ? true : 'keep');
 
-/**
- * The shiny flag a tap gives, by what was tapped (a new pick, or a Pokémon the
- * card already holds) and why the browser is open. Tapping a held line to
- * replace or duplicate it is how a line changes look.
- */
 const SHINY_FLAG: Record<'pick' | 'held', Record<BrowserPurpose, ShinyRule>> = {
   pick: { lines: followSwitch, replace: followSwitch, signature: followSwitch, partner: followSwitch, legend: followSwitch },
   held: { lines: followSwitch, replace: followSwitch, signature: onlyWhenOn, partner: followSwitch, legend: followSwitch },
 };
 
-/**
- * Whether the Shiny switch starts on, by why the browser opens: on only over a
- * pick that is shiny, because a tap on a held pick with the switch off turns it
- * back to normal.
- */
 const SHINY_AT_OPEN: Record<BrowserPurpose, (card: GymCard, seat: number) => boolean> = {
   lines: () => false,
   replace: (card, seat) => card.lines[seat - 1]?.shiny === true,
@@ -71,10 +61,6 @@ interface BridgeState extends BrowserStoreState {
   typeBeforeScope?: string[] | null;
 }
 
-/**
- * What the browser shows when it opens on a card for a purpose. My dex and the
- * team scope stay as the last open left them, so `kept` passes them in.
- */
 export function pickerOpenState(
   card: number,
   purpose: BrowserPurpose,
@@ -298,7 +284,6 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     setEvoLineSizeFilter: (evoLineSizeFilter) => set({ evoLineSizeFilter }),
     setMyDexFilter: (on) => set({ myDexFilter: on }),
     setShinyView: (on) => {
-      // Only the browser's Shiny switch calls this, so it counts that switch turned on.
       if (on) sendEventBeacon('league-shiny-on', { once: true });
       set({ shinyView: on });
     },
@@ -323,11 +308,6 @@ export function openLeagueBrowser(
   useLeagueBrowserStore.getState().openFor(card);
 }
 
-/**
- * A card switch while the picker is open keeps the picker on the focused card.
- * Replace and legend picks name one seat of the old card, and a full card has
- * no seat for a new line, so those close; every other pick reopens for the new card.
- */
 useLeagueUi.subscribe((ui, prev) => {
   if (!ui.browserOpen || ui.openCard === null || ui.openCard === prev.openCard) return;
   const lines = useLeagueStore.getState().cards[ui.openCard]?.lines ?? [];

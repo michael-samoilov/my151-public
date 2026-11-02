@@ -12,7 +12,7 @@ function readUnlocked(): boolean {
 
 function markUnlocked() {
   try { window.localStorage.setItem(UNLOCK_STORAGE_KEY, '1'); }
-  catch { /* Storage can be unavailable in private browsing. */ }
+  catch { /* platform: Storage access can throw in private browsing. */ }
 }
 
 export function filledCount(fills: Readonly<Record<string, number>>): number {

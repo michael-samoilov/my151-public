@@ -186,6 +186,7 @@ function CardPanel({
                   showShapeBadges={data.showShapeBadges}
                   matchupInfo={data.matchupInfo}
                   matchupType={data.matchupType}
+                  windowed
                 />
               </div>
             </div>
@@ -654,6 +655,7 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
                   showShapeBadges={currentData.showShapeBadges}
                   matchupInfo={currentData.matchupInfo}
                   matchupType={currentData.matchupType}
+                  windowed
                 />
               </div>
             </div>

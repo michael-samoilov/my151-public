@@ -78,7 +78,6 @@ export interface SearchProviderRangeView {
   current: SearchWindowMetric | null;
   comparison: SearchRangeComparison | null;
   series: SearchSeriesPoint[];
-  /** Days after `series` that can still change. The totals leave them out. */
   fresh: SearchSeriesPoint[];
   topQueries: SearchDimensionRow[];
 }

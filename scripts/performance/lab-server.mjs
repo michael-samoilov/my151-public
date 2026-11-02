@@ -11,7 +11,6 @@ import zlib from 'node:zlib';
 export const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const PRODUCTION = 'origin/claude/pokedex-region-builder-AviYF';
 
-/** Builds the working tree (no ref), or `ref` in a temporary worktree. */
 export function build(work, label, ref) {
   const out = path.join(work, `${label}-dist`);
   let cwd = root;
@@ -29,11 +28,7 @@ export function build(work, label, ref) {
   return out;
 }
 
-/**
- * A self-signed certificate for `localhost`, valid for one day. `spki` is the
- * hash of its public key: Chrome's `--ignore-certificate-errors-spki-list`
- * trusts this one key and keeps full checks for every other certificate.
- */
+// platform: Chrome's `--ignore-certificate-errors-spki-list` trusts only the `spki` key hash and fully checks every other certificate.
 export function selfSignedTls(work) {
   const keyFile = path.join(work, 'key.pem');
   const certFile = path.join(work, 'cert.pem');
@@ -50,10 +45,6 @@ const TYPES = {
   '.xml': 'application/xml', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
 };
 
-/**
- * Serves `dist` over HTTP/2 with Brotli and the cache headers in vercel.json,
- * like the Vercel edge. API routes answer `{}`.
- */
 export function serve(dist, tls) {
   const brotli = new Map();
   const server = http2.createSecureServer({ ...tls, allowHTTP1: true }, (req, res) => {
@@ -89,12 +80,7 @@ export function chromiumPath() {
   return ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((bin) => fs.existsSync(bin));
 }
 
-/**
- * One browser run at a time on this machine, lab or Playwright alike: another
- * run steals CPU and skews every timing. Re-runs the calling script under
- * `flock` on the shared lock file when the tool exists (it does not on macOS),
- * and exits with its status.
- */
+// platform: macOS has no `flock`, so the shared browser lock applies only where the tool exists.
 export function holdBrowserLock() {
   const lock = path.join(tmpdir(), 'my151-browser.lock');
   if (process.env.MY151_BROWSER_LOCK || spawnSync('flock', ['--version']).status !== 0) return;
@@ -106,20 +92,18 @@ export function holdBrowserLock() {
   process.exit(run.status ?? 1);
 }
 
+const MIN_MEDIAN_CHANGE = 0.05;
+
 export const median = (values) => {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor((sorted.length - 1) / 2)];
 };
 
-/**
- * A change is marked only when every candidate sample falls outside the range
- * of the base samples, and the medians differ by more than 5%.
- */
 export function compare(base, cand) {
   const mid = median(base);
   const c = median(cand);
   const delta = mid ? (c - mid) / mid : c ? Infinity : 0;
   const separated = Math.min(...cand) > Math.max(...base) || Math.max(...cand) < Math.min(...base);
-  const verdict = separated && Math.abs(delta) > 0.05 ? (delta < 0 ? 'better' : 'worse') : 'same';
+  const verdict = separated && Math.abs(delta) > MIN_MEDIAN_CHANGE ? (delta < 0 ? 'better' : 'worse') : 'same';
   return { base: mid, cand: c, delta, verdict };
 }

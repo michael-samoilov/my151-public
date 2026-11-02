@@ -4,39 +4,19 @@ import { SPRITE_RENDERING_VAR } from './spriteScale';
 
 export interface Fit {
   scale: number;
-  /**
-   * The block's width in its own layout pixels, or 0 before it is measured.
-   *
-   * This is the knob that decides *how* the block shrinks. Left to itself it
-   * fills its parent, and `zoom` sizes a percentage against the *zoomed*
-   * coordinate space — so a block at half scale lays out twice as wide and
-   * renders at the width it always had, losing only height. Widening it by
-   * exactly the squash keeps that; leaving it alone scales both sides.
-   */
+  // platform: CSS `zoom` sizes a percentage width against the zoomed coordinate space, so the block's width is set in its own layout pixels.
   width: number;
   budgetRem: number;
   gutterPx: number;
-  /** Whether the block's `[data-fit-tail]` hint lines show. See `Grow.tail`. */
   tail: boolean;
 }
 
-/**
- * CSS `zoom` rather than a transform, for two reasons. Zoom participates in
- * layout, so the block still takes the room it draws in and the footer below
- * it follows. And a transformed ancestor becomes the containing block for
- * `position: fixed` descendants, which the card's pickers are.
- */
+// platform: CSS `zoom` takes part in layout, and a transformed ancestor becomes the containing block for `position: fixed` pickers, so this uses zoom.
 interface Grow {
   baseWidthRem: number;
   spriteRem: number;
   targetSpritePx: number;
   dpr: number;
-  /**
-   * The block's `[data-fit-tail]` hint lines show only where they fit whole
-   * below the block at its sharp size, so they never cost the sprites their
-   * whole pixels. Hidden, the tail stays in the block at zero height, and its
-   * `scrollHeight` still measures it.
-   */
   tail?: boolean;
 }
 
@@ -45,18 +25,9 @@ interface Compact {
   holds: 'ceiling' | 'floor';
 }
 
-/**
- * Below this (px), the block's measured height and its layout's height are
- * the same: `offsetHeight` rounds to whole px.
- */
-const EXTRA_EPS = 2;
+// platform: `offsetHeight` rounds to whole px, so a smaller gap between measured and layout height is rounding.
+const OFFSET_HEIGHT_ROUNDING_PX = 2;
 
-/**
- * `held` keeps the last fit and measures nothing while it is set. A card
- * zoomed past its fit moves the block's rects with the zoom and with its
- * frame's scroll, and the fit must not follow either. It measures once more
- * when `held` clears.
- */
 export function useFitScale(
   ref: React.RefObject<HTMLDivElement | null>,
   floor = 0.55,
@@ -92,8 +63,7 @@ export function useFitScale(
     if (!el || held) return;
     const viewport = el.closest('[data-lg-viewport]');
     const compute = () => {
-      // Unzoomed layout height — not getBoundingClientRect()/scale. Zoomed
-      // rects re-enter this observer when zoom changes; offsetHeight does not.
+      // platform: Zoomed client rects re-enter this observer when zoom changes and `offsetHeight` does not, so this reads the unzoomed layout height.
       const hints = hasGrow && growTail ? el.querySelector<HTMLElement>('[data-fit-tail]') : null;
       const measured = el.offsetHeight - (hints?.offsetHeight ?? 0);
       const natural = stabilizeMeasure(measured, naturalRef.current);
@@ -105,18 +75,13 @@ export function useFitScale(
       let gapBelow = 0;
       if (viewport instanceof HTMLElement) {
         const vp = viewport.getBoundingClientRect();
-        // clientHeight includes the container's own padding, so its bottom
-        // padding must come out of the budget or the fit overflows by it.
+        // platform: `clientHeight` includes the container's own padding, so its bottom padding comes out of the budget.
         padBottom = parseFloat(getComputedStyle(viewport).paddingBottom) || 0;
         avail = viewport.clientHeight - (rect.top - vp.top + viewport.scrollTop) - padBottom - 2;
         gapBelow = parseFloat(getComputedStyle(el.parentElement ?? el).paddingTop) || 0;
         avail -= gapBelow;
       } else {
         avail = window.innerHeight - rect.top - 8;
-      }
-      const note = el.nextElementSibling;
-      if (note instanceof HTMLElement && note.hasAttribute('data-fit-reserve')) {
-        avail -= note.offsetHeight;
       }
       const host = el.parentElement;
       let room = widthRef.current;
@@ -147,9 +112,9 @@ export function useFitScale(
         const hold = c.holds === 'ceiling' ? ceiling : floor;
         const roomiest = c.heightRem(Infinity) * rootFont;
         const drawn = c.heightRem(budgetRef.current) * rootFont;
-        const extra = measured - drawn < EXTRA_EPS
+        const extra = measured - drawn < OFFSET_HEIGHT_ROUNDING_PX
           ? 0
-          : stabilizeMeasure(measured - drawn, extraRef.current, EXTRA_EPS);
+          : stabilizeMeasure(measured - drawn, extraRef.current, OFFSET_HEIGHT_ROUNDING_PX);
         extraRef.current = extra;
         const free = Math.min(
           ceiling,
@@ -200,8 +165,6 @@ export function useFitScale(
           spritePx: spriteRem * rootFont,
           dpr,
           tail: hints?.scrollHeight ?? 0,
-          // The lines may take the gap kept under the block, down to the
-          // pane's bottom padding, so the pane never scrolls for them.
           tailRoom: liveAvail + 2 + gapBelow,
           prevTail: last.tail,
           prevScale: last.scale,
@@ -225,12 +188,6 @@ export function useFitScale(
       if (next || budgetRef.current !== Infinity) commit(next ?? last, Infinity);
     };
     compute();
-    // The parent as well as the block. Pinning the block's width is what
-    // makes it stop following its parent: it no longer resizes when the pane
-    // does, so an observer on the block alone goes quiet and keeps a width
-    // measured against a pane that has since changed. On a desktop card that
-    // left the card 52px wider than the pane it sits in, hanging over the
-    // edge where nothing could be pressed.
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     if (el.parentElement) ro.observe(el.parentElement);
@@ -257,15 +214,7 @@ export function useFitScale(
   return fit;
 }
 
-/**
- * Divide a container query length by this inside a fitted block.
- *
- * WebKit sizes `cqw` from the container's zoomed width and then zooms the
- * length again. Measured on WebKitGTK 2.52, the harness's iOS lane: inside
- * `zoom: 0.784`, `100cqw` in a 130px container is 102px, and Blink and Gecko
- * make it 130px. The probe sets this to the zoom only where an engine does
- * that, so everywhere else the division is by 1.
- */
+// platform: WebKit sizes `cqw` from the zoomed width and zooms it again, so lengths divide by this, which is 1 on Blink and Gecko.
 export const CQ_ZOOM_VAR = '--cq-zoom';
 
 let cqUnitsZoomed: boolean | undefined;
@@ -284,7 +233,6 @@ function containerUnitsZoomed(): boolean {
   return cqUnitsZoomed;
 }
 
-/** `cardZoom` is the card's own zoom on top of its fit (`useCardZoom`). */
 export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto', cardZoom = 1): React.CSSProperties {
   const zoom = fit.scale * cardZoom;
   return {
@@ -292,7 +240,7 @@ export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto', cardZoom = 
     [CQ_ZOOM_VAR as string]: containerUnitsZoomed() ? zoom : 1,
     width: fit.width || undefined,
     marginInline: 'auto',
-    // The margin sits on the zoomed block, so it is zoomed too.
+    // platform: A margin on a CSS-zoomed block is zoomed too, so the gutter divides by the zoom.
     ...(fit.gutterPx ? { marginBottom: -fit.gutterPx / zoom } : null),
     ...(rendering ? { [SPRITE_RENDERING_VAR]: rendering } : null),
   };

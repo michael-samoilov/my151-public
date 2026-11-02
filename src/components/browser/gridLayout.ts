@@ -31,7 +31,6 @@ export interface GridModel {
   spriteOverrides?: Record<number, string>;
 }
 
-/** The category and archetype whose own layout the grid follows. */
 export function gridDefinitions(options: Pick<PokemonFilterOptions, 'category' | 'archetype'>) {
   const gridCategoryDef = options.category
     ? CATEGORIES.find((c) => c.id === options.category)
@@ -42,7 +41,6 @@ export function gridDefinitions(options: Pick<PokemonFilterOptions, 'category' |
   return { gridCategoryDef, gridArchetypeDef };
 }
 
-/** The filtered lines a browser shows, and the state that sorts them into its grid. */
 export interface GridInputs extends ReturnType<typeof gridDefinitions>, Pick<BrowserStoreState,
   'scopeFilter' | 'restrictIds' | 'scopeFilterLabel' | 'scopeFilterLines' | 'myDexFilter' | 'myDexSections' | 'standaloneTiles'> {
   groups: EvolutionGroup[];
@@ -125,7 +123,6 @@ export function searchResultSubgroups(inputs: GridInputs): BrowserSubgroup[] {
     .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
 }
 
-/** The grid blocks the browser draws for `source`, in draw order. */
 export function gridModels(source: BrowserSubgroup[], isSearching: boolean, inputs: GridInputs): GridModel[] {
   const { groups, gridArchetypeDef, gridCategoryDef, standaloneTiles, dataSource } = inputs;
   const lookupPokemon = dataSource?.getPokemonById ?? getPokemonById;

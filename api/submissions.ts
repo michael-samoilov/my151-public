@@ -44,11 +44,7 @@ function withoutSecrets(v: unknown): unknown {
   return v;
 }
 
-/**
- * Upstash's own usage stats for this database (Developer API, Get Database
- * Stats), read with a read-only Developer API key that lives only in Vercel.
- * Costs no Redis command.
- */
+// platform: Upstash's Developer API reads database usage stats with a read-only key and costs no Redis command.
 export async function upstashUsage(env: NodeJS.ProcessEnv = process.env, get: typeof fetch = fetch) {
   const email = env.UPSTASH_MGMT_EMAIL?.trim();
   const key = env.UPSTASH_MGMT_API_KEY?.trim();

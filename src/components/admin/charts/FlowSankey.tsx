@@ -198,15 +198,7 @@ function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: 
   return offsets;
 }
 
-/**
- * A node's count chip, drawn by a custom series in the same pass as the
- * Sankey, so every frame that shows the bars shows their counts. echarts lays
- * the Sankey out before it renders any series, so the node's layout is ready.
- * Like echarts' Sankey view, a node's `localX` share of the plot width wins
- * over the laid-out x. A right label's chip ends at the bar's right edge, a
- * left label's chip centers on that edge, and a top or bottom label's chip
- * centers on the bar.
- */
+// platform: ECharts lays out the Sankey before any series renders, and a node's localX share overrides its laid-out x.
 function countChip(
   el: HTMLDivElement,
   node: SankeyNode,
@@ -286,21 +278,16 @@ function labelMeasure(fontSize: number): (text: string) => number {
 }
 
 const COMPACT_MIN_FONT_SIZE = 7;
-/** A referrer host wider than this share of the chart ends in "…" instead of squeezing the flows. */
 const REFERRER_LABEL_MAX_SHARE = 0.4;
 const REFERRER_LABEL_SLACK = 4;
 
-/**
- * Referrer hosts sit left of their bars on one line. The left margin grows to the longest host,
- * and on a phone the labels also clear the widest count chip, which is centered on its bar.
- */
 function referrerSourceLabels(nodes: SankeyNode[], links: SankeyLink[], width: number, base: ReturnType<typeof sankeyGeometry>) {
   const sources = nodes.filter((n) => !links.some((l) => l.target === n.name));
   const measure = labelMeasure(base.fontSize);
   const chip = Math.max(0, ...sources.map((n) =>
     measure(String(Math.round(links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0)))))) + 4;
   const distance = base.compact ? Math.max(LABEL_DISTANCE, Math.ceil(chip / 2 - base.nodeWidth / 2) + 3) : LABEL_DISTANCE;
-  // ECharts truncates a few pixels before the box edge, so the box gets that much slack.
+  // platform: ECharts truncates a label a few pixels before the box edge, so the box gets that much slack.
   const labelWidth = Math.min(Math.ceil(Math.max(0, ...sources.map((n) => measure(n.name)))) + REFERRER_LABEL_SLACK, Math.floor(width * REFERRER_LABEL_MAX_SHARE));
   return {
     names: new Set(sources.map((n) => n.name)),

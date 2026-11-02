@@ -10,16 +10,12 @@ const TYPE_BY_ID: Record<number, string> = {
   13: 'electric', 14: 'psychic', 15: 'ice', 16: 'dragon', 17: 'dark', 18: 'fairy',
 };
 const CATEGORY_BY_ID: Record<number, string> = { 1: 'status', 2: 'physical', 3: 'special' };
-// Modern contest names: PokeAPI's "beauty" is displayed Beautiful, "smart" Clever.
+// platform: PokeAPI names the Beautiful contest "beauty" and the Clever contest "smart".
 const CONTEST_BY_ID: Record<number, string> = {
   1: 'cool', 2: 'beautiful', 3: 'cute', 4: 'clever', 5: 'tough',
 };
 
-/**
- * Z-moves are not teachable TMs. The generic ones sit in 622–658, but the
- * signature ones are scattered (695–703, 719, 723–728…). Every Z-move has
- * 1 PP, and the only regular 1-PP move is Sketch — so PP is the filter.
- */
+// platform: Every Z-move has 1 PP and Sketch is the only regular 1-PP move, so PP filters out the scattered Z-move ids.
 const SKETCH_ID = 166;
 
 interface MoveRow {
@@ -34,9 +30,7 @@ interface MoveRow {
 }
 
 function parseCsv(text: string): string[][] {
-  // RFC-4180-ish: quoted fields may hold commas and doubled quotes. Some
-  // localized rows in move_names.csv need this; the id/language columns we
-  // read never do, but the parser has to get past them.
+  // platform: Some localized rows in PokeAPI's move_names.csv quote fields that hold commas and doubled quotes.
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';

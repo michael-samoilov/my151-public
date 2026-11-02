@@ -34,6 +34,7 @@
       "id": "cramorant-gulping",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "gulp-missile" },
         "from": ["cramorant"]
       },
       "sprite": "10182",
@@ -49,6 +50,7 @@
       "id": "cramorant-gorging",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "gulp-missile" },
         "from": ["cramorant"]
       },
       "sprite": "10183",

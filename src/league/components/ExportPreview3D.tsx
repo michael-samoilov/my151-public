@@ -412,8 +412,7 @@ export function ExportPreview3D({
     cardMaxRef.current = cardMax;
   }, [cardMax]);
 
-  // The PNG rounds its corners to 4% of its short edge. A percentage
-  // border-radius would be elliptical on a non-square card, so match in px.
+  // platform: A percentage `border-radius` is elliptical on a non-square box, so the corners match the PNG's 4% of the short edge in px.
   useLayoutEffect(() => {
     const img = imgRef.current;
     const hit = hitRef.current;
@@ -686,7 +685,7 @@ export function ExportPreview3D({
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
-      /* Synthetic test events have no pointer capture. */
+      // platform: `setPointerCapture` throws for synthetic test events, which have no active pointer.
     }
     downRef.current = { t: performance.now(), x: e.clientX, y: e.clientY, dragged: false };
   }, []);

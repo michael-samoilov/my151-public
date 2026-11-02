@@ -4,8 +4,8 @@ import { DAY_MS, dayStart } from './_aggregate.js';
 import { FUNNEL_DAY_TTL_DAYS } from './_range.js';
 import { ARCHIVED_KEY } from './_archive.js';
 import { rebuildFunnelExclusions } from './_funnelExclusions.js';
+import { recountDexPickFreq } from './_recountDexPickFreq.js';
 
-// Moves each existing key's expiry later, never earlier, so a rerun is a no-op.
 const EXTEND_EXPIRY = `
 local now = tonumber(ARGV[#KEYS + 1])
 local n = 0
@@ -20,8 +20,6 @@ end
 return n
 `;
 
-/** Every `funnel:<day>` key the retention window can hold, with the Unix second
- *  it should expire: FUNNEL_DAY_TTL_DAYS after the end of its day. */
 export function funnelRetentionPlan(now: number): { keys: string[]; expireAt: string[] } {
   const today = dayStart(now);
   const keys: string[] = [];
@@ -34,9 +32,6 @@ export function funnelRetentionPlan(now: number): { keys: string[]; expireAt: st
   return { keys, expireAt };
 }
 
-/** Owner-only, idempotent data upkeep. `funnel-retention` gives the daily
- *  funnel counters written under the old 120-day expiry the current one.
- *  `funnel-exclusions` recounts the funnel events of every archived browser. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Only the live site saves data' });
@@ -51,6 +46,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const args = [...expireAt, String(Math.floor(now / 1000))];
       const extended = Number(await redis.eval(EXTEND_EXPIRY, keys, args));
       return res.status(200).json({ ok: true, task, checked: keys.length, extended });
+    }
+    if (task === 'recount-dex-pick-freq') {
+      const apply = (req.body as { apply?: unknown }).apply === true;
+      return res.status(200).json({ ok: true, task, apply, ...(await recountDexPickFreq(apply)) });
     }
     if (task === 'funnel-exclusions') {
       const archived = ((await redis.smembers(ARCHIVED_KEY)) ?? []).map(String);

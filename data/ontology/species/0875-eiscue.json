@@ -35,6 +35,7 @@
       "id": "eiscue-noice",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "ice-face" },
         "from": ["eiscue"]
       },
       "baseStats": { "hp": 75, "atk": 80, "def": 70, "spe": 130, "spa": 65, "spd": 50 },

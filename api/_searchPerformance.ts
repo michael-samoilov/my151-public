@@ -145,7 +145,6 @@ export function parseBingDate(value: unknown): string | null {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
-/** Bing's dated rows, oldest first. Page and query rows carry their key in `Query`. */
 export function bingBucketRows(payload: unknown): SearchBucketRow[] {
   return bingRows(payload)
     .map((row): SearchBucketRow | null => {
@@ -192,7 +191,7 @@ function todayUtcMs(): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
-/** Search Console reads startDate and endDate as Pacific dates. */
+// platform: Search Console reads startDate and endDate as Pacific dates.
 const PACIFIC_DATE = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Los_Angeles',
   year: 'numeric',
@@ -324,7 +323,7 @@ async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   const today = todayUtcMs();
   const day = new Date(today);
   const retainedFrom = utcDate(Date.UTC(day.getUTCFullYear(), day.getUTCMonth() - SEARCH_CONSOLE_MONTHS, day.getUTCDate()));
-  // Today is still a partial day, so the newest day asked for is yesterday in Search Console's time zone.
+  // platform: Search Console's today is a partial day, so the newest day asked for is yesterday in its time zone.
   const days = async (startDate: string, dataState?: 'all') => seriesOf(googleBucketRows(
     await query({ startDate, endDate: PACIFIC_DATE.format(now - DAY_MS), dimensions: ['date'], dataState, rowLimit: 1_000 }),
     'day',
@@ -333,7 +332,7 @@ async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
     days(retainedFrom),
     days(PACIFIC_DATE.format(now - FRESH_FETCH_DAYS * DAY_MS), 'all'),
   ]);
-  // Search Console returns only final days by default, so the last one is where final data ends.
+  // platform: Search Console returns only final days by default, so the last day is where final data ends.
   const dataThrough = series[series.length - 1]?.start ?? utcDate(today - 3 * DAY_MS);
   const fresh = recent.filter((point) => point.start > dataThrough);
   const inWindow = (window: SearchDateRange, dimensions: GoogleDimension[]) =>
@@ -411,7 +410,7 @@ async function fetchBingMethod(method: 'GetRankAndTrafficStats' | 'GetPageStats'
   return fetchJson(url.toString());
 }
 
-/** Bing reports days only. Its page and query rows are filtered to each window by their date. */
+// platform: Bing reports days only, so its page and query rows are filtered to each window by their date.
 async function fetchBingSearchPerformance(): Promise<SearchProviderSnapshot> {
   const apiKey = process.env.BING_WEBMASTER_API_KEY?.trim();
   if (!apiKey) return notConfigured('bing');

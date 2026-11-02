@@ -129,8 +129,7 @@ export function parseFunnelEventList(v: unknown, cap = FUNNEL_EVENT_LIST_CAP): F
   return out;
 }
 
-/** Parse one stored journal entry. The SDK parses JSON strings back into
- *  objects when it can, so entries arrive as either. */
+// platform: The Upstash SDK parses stored JSON strings back into objects when it can, so an entry arrives as either.
 export function parseJournalEntry(raw: unknown): JournalEntry | null {
   let o: unknown = raw;
   if (typeof raw === 'string') {
@@ -262,13 +261,6 @@ export interface JournalEntry {
   reason?: ExportSurveySkipReason;
 }
 
-/**
- * Which record stores a browser ended up in, as a bitmask on the journal
- * response's `membership` map.
- *
- * The join lives on the server because only the server holds the two record
- * hashes; the constants live here because the client reads the result.
- */
 export const HAS_DEX = 1;
 export const HAS_LEAGUE = 2;
 

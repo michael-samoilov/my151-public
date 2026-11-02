@@ -100,9 +100,7 @@ function FeedbackForm({
     return () => clearTimeout(id);
   }, [state, onDone]);
 
-  // Both returns render this node first, so React keeps it when the thanks
-  // replaces the form. Screen readers announce text added to a status region
-  // they already track more reliably than a region inserted with its text.
+  // platform: Screen readers announce text added to a tracked status region more reliably than a new region that arrives with its text.
   const sent = state === 'sent';
   const status = (
     <div role="status" className={sent ? 'px-4 py-8 flex flex-col items-center gap-2 text-center' : undefined}>
@@ -176,28 +174,8 @@ function FeedbackForm({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t('feedback.message.placeholder')}
-          // `overscroll-contain` is what keeps a drag inside the field from
-          // becoming a drag on the page. A textarea is a scroll container, so
-          // once its own scroll reaches an end iOS hands the rest of the gesture
-          // to the nearest ancestor that can take it — which, with a keyboard up,
-          // is the document, and the sheet is positioned against the viewport the
-          // document is now moving under. Reading back what you typed pulled the
-          // sheet off the bottom of the screen.
-          //
-          // The negative top margin walks back the gap the form puts between its
-          // rows, so the field sits close under the label it belongs to rather
-          // than at the column's own rhythm. It has to track that gap rather than
-          // be a constant: a fixed `-mt-2` is larger than the compact `gap-1.5`,
-          // which pulls the field 2px *over* its label. The audit caught exactly
-          // that, which is the shape of every bug on this surface so far — a
-          // number that was right beside the number it was paired with, and wrong
-          // beside the one that replaced it.
-          //
-          // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
-          // page in when a field smaller than 16px takes focus, and the root
-          // font size floors at 16px, so `text-sm` lands at 14. The field is
-          // also autofocused, so the zoom fires on open rather than on tap.
-          // Same rule the shared `Input` component already follows.
+          // platform: At a scroll end, iOS hands a textarea drag to the nearest scrollable ancestor; overscroll-contain stops that.
+          // platform: iOS Safari zooms the page when a field under 16px takes focus, so the field uses text-base below md.
           className={`w-full min-h-14 flex-1 overscroll-contain rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y ${
             tight ? '-mt-0.5' : '-mt-2'
           }`}

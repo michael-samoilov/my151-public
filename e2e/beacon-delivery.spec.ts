@@ -26,19 +26,7 @@ test.describe('beacon delivery', () => {
       },
       [STORE_KEY, SEEDED_STORE, CID] as const,
     );
-    // Freeze virtual time BEFORE navigating. `install()` alone keeps ticking in
-    // real time, which lets the debounce fire behind the assertions — the flush
-    // tests then pass against unfixed code (verified: the pre-fix build passed
-    // them). Pausing after load instead races page startup: on a slow project
-    // the clock has already run past the runner's `Date.now()`, and pauseAt
-    // rejects as "cannot fast-forward to the past". Paused from the start, no
-    // timer can fire until a test advances it, so a delivered beacon can only
-    // have come from an explicit flush.
-    //
-    // Pause a second past the install time, not at it. The installed clock can
-    // tick before `pauseAt` lands, and pausing at the install time itself then
-    // fails the same way (6 of 75 runs under load). No page has loaded yet, so
-    // jumping the second fires no timer.
+    // platform: Playwright's clock.install keeps real time, so pause before navigation, one second past install, or pauseAt rejects a past time.
     const T0 = new Date('2026-08-18T12:00:00Z').getTime();
     await page.clock.install({ time: T0 });
     await page.clock.pauseAt(T0 + 1000);

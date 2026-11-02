@@ -23,12 +23,7 @@ preload.crossOrigin = 'anonymous';
 preload.href = interLatinUrl;
 document.head.prepend(preload);
 
-// iOS Safari zooms the page into any focused input whose font-size is
-// under 16px. Capping maximum-scale suppresses that auto-zoom, while
-// Safari (since iOS 10) ignores the cap for user pinch gestures, so pinch
-// zoom keeps working. iOS-scoped on purpose: Android Chrome honours the
-// cap for pinch — an accessibility loss — and never auto-zooms focused
-// inputs under a width=device-width viewport anyway.
+// platform: iOS Safari zooms into focused inputs under 16px and ignores maximum-scale for pinch. Android honours the cap for pinch, so only iOS gets it.
 const isIos =
   /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

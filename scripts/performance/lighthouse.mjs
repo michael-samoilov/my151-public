@@ -1,44 +1,4 @@
 #!/usr/bin/env node
-/**
- * PageSpeed Insights, run here: Lighthouse on production (or any git ref)
- * against the working tree, with guards that stop a change which only
- * games the score.
- *
- *   node scripts/performance/lighthouse.mjs                    # 3 runs, every page, both profiles
- *   node scripts/performance/lighthouse.mjs --page hub --profile mobile --runs 5
- *   node scripts/performance/lighthouse.mjs --base HEAD~1
- *   node scripts/performance/lighthouse.mjs --no-base          # the issue list for this tree
- *   node scripts/performance/lighthouse.mjs --url https://my151.app   # a deployed site
- *
- * Lighthouse is the engine behind PageSpeed Insights, with the same mobile and
- * desktop presets and the same simulated throttling. This script installs a
- * pinned Lighthouse into the user cache on first use, so the app's own
- * dependencies do not change.
- *
- * Builds are served over HTTP/2 with Brotli, like the Vercel edge (see
- * lab-server.mjs). `--url` loads `<url><path>?notme`, so the runs stay out of
- * the analytics. Through a proxy that speaks HTTP/1.1, the HTTP/2 findings and
- * the network timings of a `--url` run are worse than the site's.
- *
- * Guards. Each one stops a way to raise the score without a faster page:
- *
- * - Speed: FCP, LCP, Speed Index, TBT, and CLS must not get worse. Neither may
- *   the last visual change, so content cannot move later to make the first
- *   paint early.
- * - LCP element: a different largest element means content was hidden, cut,
- *   or replaced. A person decides.
- * - Accessibility, best practices, and SEO: no score drop and no audit that
- *   passed before and fails now. "Serves images with appropriate resolution"
- *   is a best-practices audit, so images cannot get blurrier.
- * - Same page: after load, each page and profile must match the base pixel
- *   for pixel, with the same text and no image shown at a lower resolution.
- *   A difference is a visible change: it goes to Michael before it ships.
- * - INP is not measured here, because Lighthouse loads pages without tapping
- *   them. `lab.mjs` measures it. Run both.
- *
- * Exit status: 0 when every guard passes, 1 when one fails. The last line says
- * whether the change is visible.
- */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -102,7 +62,7 @@ function digest(lhr) {
   const categoryOf = {};
   for (const [id, category] of Object.entries(lhr.categories)) for (const ref of category.auditRefs) categoryOf[ref.id] ??= id;
   const scored = (a) => a.score !== null && ['binary', 'numeric', 'metricSavings'].includes(a.scoreDisplayMode);
-  // Lighthouse 13 reports the LCP element in the LCP breakdown insight.
+  // platform: Lighthouse 13 reports the LCP element in the LCP breakdown insight.
   const lcpNode = audits['lcp-breakdown-insight']?.details?.items?.find((item) => item.type === 'node');
   const observed = audits.metrics?.details?.items?.[0] ?? {};
   return {
@@ -138,14 +98,12 @@ async function snapshot(browser, url, profile) {
     images: [...document.images]
       .filter((img) => img.offsetWidth > 0 && img.complete && img.naturalWidth > 0)
       .map((img) => {
-        // For a `srcset` image, naturalWidth is the width `sizes` declares,
-        // whichever copy loaded. The file's own pixel width is in the
-        // descriptor of the copy that loaded.
+        // platform: For a `srcset` image, naturalWidth is the `sizes` width, so the file's pixel width comes from the loaded descriptor.
         const [, descriptor = ''] = img.srcset.split(',').map((c) => c.trim().split(/\s+/))
           .find(([url]) => new URL(url, location.href).href === img.currentSrc) ?? [];
         const filePixels = descriptor.endsWith('w') ? parseFloat(descriptor)
           : descriptor.endsWith('x') ? img.naturalWidth * parseFloat(descriptor) : img.naturalWidth;
-        // offsetWidth is the layout width, before rotation or scale.
+        // platform: offsetWidth is the layout width, before rotation or scale.
         return { name: img.alt || img.currentSrc.split('/').pop(), sharpness: filePixels / (img.offsetWidth * devicePixelRatio) };
       }),
   }));
@@ -206,8 +164,7 @@ holdBrowserLock();
   fs.mkdirSync(out);
   const servers = [];
   const tls = URL_TARGET ? null : selfSignedTls(work);
-  // Trust the lab's own certificate, and only it. A certificate error would
-  // also stop the service worker, which Lighthouse reports as a console error.
+  // platform: A certificate error stops the service worker, which Lighthouse reports as a console error, so the lab key is trusted.
   const trust = tls ? [`--ignore-certificate-errors-spki-list=${tls.spki}`] : [];
   const chrome = await lh.launch({ chromePath: chromiumPath(), chromeFlags: ['--headless=new', '--no-sandbox', ...trust] });
   const browser = await chromium.launch({ executablePath: chromiumPath(), args: trust });

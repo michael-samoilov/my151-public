@@ -1,66 +1,3 @@
-/**
- * Harvests the shiny sprites that the Favorite Pokémon Picker and the league
- * builder show when their Shiny switch is on, and writes the sorted names of
- * the sprite files that have one to src/data/shinySprites.json.
- *
- * A source's shiny is taken only when it passes two checks against our normal
- * sprite:
- *
- * - Same art: the source's normal sprite, placed on our canvas, shows the same
- *   pixels as ours.
- * - Same outline: the shiny, placed the same way, has our normal's alpha mask,
- *   pixel for pixel. A shiny drawn from another design fails here even when the
- *   source's normal matches, as Terapagos Stellar (10277) did.
- *
- * The sources, tried in this order:
- *
- * 1. PokéAPI `sprites/pokemon/shiny/<id>.png`.
- * 2. For a picker form drawn from PokéAPI's Black and White folder (its
- *    `spritePath`, or a slug in `blackWhiteSlugs` in
- *    scripts/data/shiny-sprite-sources.json), that folder's shiny file.
- * 3. The art found by hand in scripts/data/shiny-sprite-placed.json, with the
- *    integer downscale and offset that put it on our canvas, its credits, and
- *    the SHA-256 of both source files and of the shiny we ship. A row whose
- *    shiny sits elsewhere on the source canvas than its normal gives the
- *    shiny its own `shinyOffset`.
- *
- * A row with `recolour` ships our normal sprite in the shiny's colours, for an
- * artist's shiny drawn a few pixels off our outline. Each colour of our normal
- * takes the shiny colour that most often lies over it; the run rejects the row
- * when the shiny lies over no pixel of some colour.
- *
- * Every PokéAPI URL reads one pinned commit (POKEAPI_COMMIT).
- *
- * A run converges on the same files whatever an earlier run left: it writes a
- * missing or changed shiny, and deletes one that no longer passes along with
- * its scripts/sprite-reencodes.json entry. It never touches the shiny files
- * that were on production before the harvest (PROTECTED); it only reports one
- * whose outline differs. It prints the files it rejected with their count of
- * mismatched pixels, and the files with no shiny.
- *
- * A row whose source the run cannot read again keeps its file unchecked, and
- * the run says why: a Sta.sh page or a frame of an animated GIF, which this
- * script cannot decode; a source whose bytes no longer have the recorded
- * SHA-256; the archive below, when it is not in the cache; or the row's own
- * `unchecked` reason, for a shiny that my151 changed after it left its source.
- * The run reports an unchecked file whose own SHA-256 differs from its row.
- *
- * `held` in scripts/data/shiny-sprite-sources.json names the shinies that
- * Michael keeps out of the app, each with its reason. The run never ships
- * one: it deletes a held file it finds and reports the held list. The kept
- * copies and their records are in docs/favorite-picker-work/sprites/held-shinies/.
- *
- * After a run that adds files, commit them and shrink them as the normal
- * sprites were:
- * `python3 scripts/optimize-sprites.py HEAD public/sprites/pokemon/shiny`.
- *
- * `--cache <dir>` reads downloads from `<dir>/cache/<key>` and saves new ones
- * there, so a rerun needs no network. The key is the first 20 hex digits of
- * the URL's SHA-1. A source inside the Generation 9 Resource Pack archive is
- * read from `<dir>/gen9pack/x/<path in the archive>`.
- *
- * Usage: npx tsx scripts/fetch-shiny-sprites.ts [--cache <dir>]
- */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -99,7 +36,6 @@ interface Source {
   sha256?: Digests;
 }
 interface Digests { normal: string; shiny: string; placed: string }
-/** Why a run kept a shiny without checking it against its source. */
 interface Unread { unread: string }
 interface Catalogs { picker: Set<string>; slugs: Map<string, string>; league: Set<string> }
 type Verdict =
@@ -153,7 +89,6 @@ function sourcesFor(file: string, catalogs: Catalogs): Source[] {
 
 const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
-/** The file's bytes, null when the source has no such file, or why the run cannot read it. */
 async function load(ref: string, recorded?: string): Promise<Buffer | null | Unread> {
   const bytes = await download(ref);
   if (bytes instanceof Buffer && recorded && sha256(bytes) !== recorded) return { unread: `${ref} changed since its row was written` };
@@ -188,7 +123,6 @@ async function download(ref: string): Promise<Buffer | null | Unread> {
   }
 }
 
-/** The source downscaled by `scale` and shifted by `offset` ([down, right]) onto a canvas the size of `like`. */
 function place(art: Raster, { scale, offset: [dy, dx] }: Source, like: Raster): Raster {
   const { width, height } = like;
   if (scale === 1 && dy === 0 && dx === 0 && art.width === width && art.height === height) return art;
@@ -204,11 +138,6 @@ function place(art: Raster, { scale, offset: [dy, dx] }: Source, like: Raster): 
   return { width, height, data };
 }
 
-/**
- * `normal` with each colour replaced by the colour that `shiny` most often
- * shows over it, ties to the lower RGB value. Null when the shiny covers no
- * pixel of some colour.
- */
 function recolour(normal: Raster, shiny: Raster): Raster | null {
   const rgb = (data: Uint8Array, i: number) => (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
   const votes = new Map<number, Map<number, number>>();

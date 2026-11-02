@@ -28,7 +28,7 @@ let packSet: PackSet | null | undefined;
 function packs(): PackSet | null {
   if (packSet !== undefined) return packSet;
   packSet = null;
-  // Undefined outside Vite, such as in a Node script.
+  // platform: `__PICKER_SPRITE_PACKS__` is a Vite define, so it is undefined outside Vite, such as in a Node script.
   const manifest = typeof __PICKER_SPRITE_PACKS__ === 'undefined' ? null : __PICKER_SPRITE_PACKS__;
   if (!manifest || typeof fetch === 'undefined' || typeof URL.createObjectURL !== 'function') return null;
   const groups = bulkGroups();
@@ -86,11 +86,7 @@ function unpack(sprites: string[], buffer: ArrayBuffer): void {
   changed();
 }
 
-/**
- * Bulk packs this browser loaded on an earlier visit, so likely still cached.
- * Only these are looked up in the cache: a lookup that misses prints a
- * network error in the console.
- */
+// platform: An `only-if-cached` fetch that misses prints a network error in the console, so only packs loaded on an earlier visit are looked up.
 const LOADED_KEY = 'personal-151-favorites-packs-v1';
 let loadedBefore: Set<string> | null = null;
 
@@ -107,7 +103,7 @@ function rememberLoaded(pack: BulkPack) {
   loaded.add(pack.url);
   const current = new Set(packs()?.bulk.map((p) => p.url));
   try { localStorage.setItem(LOADED_KEY, JSON.stringify([...loaded].filter((url) => current.has(url)))); }
-  catch { /* Storage can be unavailable in private browsing. */ }
+  catch { /* platform: Storage access can throw in private browsing. */ }
 }
 
 const fetching = new Map<string, { done: Promise<void>; abort: AbortController; urgent: boolean }>();
@@ -131,8 +127,7 @@ function fetchPack(url: string, sprites: string[], urgent: boolean): Promise<voi
 }
 
 async function fromCache(pack: BulkPack): Promise<void> {
-  // A pack already loading is left alone: the browser makes a cache read of
-  // a response still arriving wait for all of it.
+  // platform: A browser makes a cache read of a response that is still arriving wait for all of it, so a loading pack is left alone.
   if ((pack.state !== 'idle' && pack.state !== 'queued') || !loadedPacks().has(pack.url)) return;
   try {
     const response = await fetch(pack.url, { cache: 'only-if-cached', mode: 'same-origin' });
@@ -309,8 +304,7 @@ export function usePickerSprite(sprite: string, keep = false): string {
 
 const kept = new Set<string>();
 
-// public/sw.js stores the sprite, so the next visit draws it with no request.
-// The active worker takes it even before it controls this page.
+// platform: The active service worker (public/sw.js) stores the sprite even before it controls this page, so the next visit needs no request.
 function keepForNextVisit(sprite: string) {
   objectUrl(sprite);
   const blob = blobs.get(sprite);

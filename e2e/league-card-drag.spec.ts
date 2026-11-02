@@ -1,21 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague, seededLeague } from './support/leagueSeed';
 
-/**
- * A touch that lands on a card cell belongs to the drag, and to nothing else.
- *
- * The card is a grid whose whole purpose is dragging a line up, down and
- * across, and it sits in a pane that scrolls. Two things used to take that
- * gesture away. The cell asked for `touch-action: pan-y`, so the browser
- * panned the pane under the very drag meant to move a line up a row. And
- * dnd-kit's layout-shift compensation read the held cell's own lift as the
- * page having shifted, and scrolled the pane by the same amount — so every
- * press and hold jumped the card three pixels before the drag had begun.
- *
- * Both are measured here rather than reasoned about: the first from the
- * computed style, the second by watching the pane's `scrollTop` across a real
- * press.
- */
+// platform: dnd-kit's layout-shift compensation reads a held cell's lift as a page shift, and touch-action pan-y lets the pane pan under a drag.
 
 test.use({ viewport: { width: 393, height: 560 }, hasTouch: true, isMobile: true });
 
@@ -46,8 +32,6 @@ test.describe('a card cell owns the touch it starts', () => {
         .filter((el) => el.querySelector('img'))
         .map((el) => getComputedStyle(el).touchAction));
     expect(actions.length, 'the seeded card has lines to drag').toBeGreaterThan(20);
-    // `pan-y` is what let the pane scroll under a drag, and the browser's
-    // pinch-zoom let a zoomed page pan under it. The card zooms itself.
     for (const a of new Set(actions)) {
       expect(a, 'a filled cell must not hand the browser a pan').toBe('none');
     }
@@ -269,10 +253,7 @@ test.describe('a carried column keeps what it carries', () => {
 });
 
 test.describe('a pinch belongs to the card', () => {
-  // No `touchcancel` comes when a second finger lands, so a sensor that waits
-  // for one follows the first finger through the whole zoom and lands it as a
-  // drag. The second finger comes either before the hold is up or after it
-  // has lifted the column.
+  // platform: No touchcancel fires when a second finger lands, so a sensor that waits for one turns the pinch into a drag.
   for (const lag of [40, 320]) {
     test(`a pinch on two lines zooms the card and leaves its lines as they were (second finger after ${lag} ms)`, async ({ page }, testInfo) => {
       await openCard(page);
@@ -280,8 +261,7 @@ test.describe('a pinch belongs to the card', () => {
         page.evaluate(() => JSON.parse(window.localStorage.getItem('league-builder')!).state.cards[0].lines);
       const before = await lines();
 
-      // Two neighbours mid-card. Near the screen's edge the browser clamps a
-      // synthetic pinch short of its spread, wherever it lands.
+      // platform: Near the screen's edge, the browser clamps a synthetic pinch short of its spread.
       const a = (await page.locator('[data-testid="card-cell-8-4"]').boundingBox())!;
       const b = (await page.locator('[data-testid="card-cell-8-3"]').boundingBox())!;
       const y = a.y + a.height / 2;

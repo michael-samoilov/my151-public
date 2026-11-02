@@ -1,12 +1,3 @@
-/**
- * The export preview's own tilt helpers: the idle orbit, the pose for a tilt,
- * the wake threshold, and hit tests.
- *
- * hover-tilt's code (https://github.com/simeydotme/hover-tilt) lives in
- * ./hover-tilt/, apart from this file, because its MPL-2.0 notice covers each
- * file that holds it. Keep it there: see THIRD_PARTY_NOTICES.md.
- */
-
 import type { HoverTiltAxes, HoverTiltBox, HoverTiltPose } from './hover-tilt/hoverTilt';
 
 export const POINTER_WAKE_PX = 12;
