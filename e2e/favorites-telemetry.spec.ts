@@ -17,7 +17,7 @@ test('records each export dialog, and Full, detailed stats and Simplified only a
  expect(exports.map(r=>r.stats)).toEqual([true,undefined]);
  const shown=requests.filter(r=>r.kind==='export-shown');
  expect(shown).toHaveLength(2);expect(shown[0].snapshot).toEqual(exports[0].snapshot);
- expect(exports[0].snapshot).toEqual({v:1,fills:{'water|1':7,'favorite|1':7}});
+ expect(exports[0].snapshot).toEqual({v:2,fills:{'water|1':7,'favorite|1':7}});
  expect(exports[0].cid).toBe(exports[1].cid);expect(exports[0].id).not.toBe(exports[1].id);
  await testInfo.attach('successful-modes',{body:JSON.stringify([...shown,...exports].map(r=>({kind:r.kind,exportKind:r.exportKind,stats:r.stats,snapshot:r.snapshot})),null,2),contentType:'application/json'});
 });
