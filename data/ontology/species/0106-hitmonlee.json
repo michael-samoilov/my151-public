@@ -5,22 +5,30 @@
     "nationalDex": 106,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Kicking Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "hitmonlee",
       "types": ["fighting"],
+      "abilities": { "first": "limber", "second": "reckless", "hidden": "unburden" },
       "baseStats": { "hp": 50, "atk": 120, "def": 53, "spe": 87, "spa": 35, "spd": 110 },
+      "heightDm": 15,
+      "weightHg": 498,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "red-blue",
       "sprite": "106",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

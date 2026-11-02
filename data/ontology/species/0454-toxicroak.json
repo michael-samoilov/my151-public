@@ -5,22 +5,30 @@
     "nationalDex": 454,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Toxic Mouth Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "toxicroak",
       "types": ["poison", "fighting"],
+      "abilities": { "first": "anticipation", "second": "dry-skin", "hidden": "poison-touch" },
       "baseStats": { "hp": 83, "atk": 106, "def": 65, "spe": 85, "spa": 86, "spd": 65 },
+      "heightDm": 13,
+      "weightHg": 444,
       "color": "blue",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "diamond-pearl",
       "sprite": "454",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 455,
     "captureRate": 200,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Bug Catcher Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "carnivine",
       "types": ["grass"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 74, "atk": 100, "def": 72, "spe": 46, "spa": 90, "spd": 72 },
+      "heightDm": 14,
+      "weightHg": 270,
       "color": "green",
       "shape": "tentacles",
       "eggGroups": ["plant"],
       "debut": "diamond-pearl",
       "sprite": "455",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

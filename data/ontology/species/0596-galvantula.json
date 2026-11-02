@@ -5,22 +5,30 @@
     "nationalDex": 596,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "EleSpider Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "galvantula",
       "types": ["bug", "electric"],
+      "abilities": { "first": "compound-eyes", "second": "unnerve", "hidden": "swarm" },
       "baseStats": { "hp": 70, "atk": 77, "def": 60, "spe": 108, "spa": 97, "spd": 60 },
+      "heightDm": 8,
+      "weightHg": 143,
       "color": "yellow",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "black-white",
       "sprite": "596",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

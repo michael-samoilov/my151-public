@@ -5,22 +5,30 @@
     "nationalDex": 821,
     "captureRate": 255,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Tiny Bird Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "rookidee",
       "types": ["flying"],
+      "abilities": { "first": "keen-eye", "second": "unnerve", "hidden": "big-pecks" },
       "baseStats": { "hp": 38, "atk": 47, "def": 35, "spe": 57, "spa": 33, "spd": 35 },
+      "heightDm": 2,
+      "weightHg": 18,
       "color": "blue",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "sword-shield",
       "sprite": "821",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 799,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Junkivore Pokémon" },
     "legendaryClass": "ultra-beast",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "guzzlord",
       "types": ["dark", "dragon"],
+      "abilities": { "first": "beast-boost" },
       "baseStats": { "hp": 223, "atk": 101, "def": 53, "spe": 43, "spa": 97, "spd": 53 },
+      "heightDm": 55,
+      "weightHg": 8880,
       "color": "black",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "799",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

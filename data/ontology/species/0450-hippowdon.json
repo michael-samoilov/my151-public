@@ -5,28 +5,37 @@
     "nationalDex": 450,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Heavyweight Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "hippowdon",
       "sex": "male",
       "types": ["ground"],
+      "abilities": { "first": "sand-stream", "hidden": "sand-force" },
       "baseStats": { "hp": 108, "atk": 112, "def": 118, "spe": 47, "spa": 68, "spd": 72 },
+      "heightDm": 20,
+      "weightHg": 3000,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "450",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "hippowdon-female",
       "sex": "female",
       "sprite": "11068",
+      "externalIds": { "pokeapiPokemon": "hippowdon" },
       "tools": {
         "picker": "in",
         "dex": { "out": "look-only" },

@@ -5,22 +5,30 @@
     "nationalDex": 1025,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 0,
+    "genus": { "en": "Subjugation Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pecharunt",
       "types": ["poison", "ghost"],
+      "abilities": { "first": "poison-puppeteer" },
       "baseStats": { "hp": 88, "atk": 88, "def": 160, "spe": 88, "spa": 88, "spd": 88 },
+      "heightDm": 3,
+      "weightHg": 3,
       "color": "purple",
       "shape": "ball",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1025",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

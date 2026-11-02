@@ -5,22 +5,30 @@
     "nationalDex": 224,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Jet Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "octillery",
       "types": ["water"],
+      "abilities": { "first": "suction-cups", "second": "sniper", "hidden": "moody" },
       "baseStats": { "hp": 75, "atk": 105, "def": 75, "spe": 45, "spa": 105, "spd": 75 },
+      "heightDm": 9,
+      "weightHg": 285,
       "color": "red",
       "shape": "tentacles",
       "eggGroups": ["water1", "water2"],
       "debut": "gold-silver",
       "sprite": "224",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

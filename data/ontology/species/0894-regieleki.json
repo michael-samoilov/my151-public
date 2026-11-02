@@ -5,22 +5,30 @@
     "nationalDex": 894,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 35,
+    "genus": { "en": "Electron Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "regieleki",
       "types": ["electric"],
+      "abilities": { "first": "transistor" },
       "baseStats": { "hp": 80, "atk": 100, "def": 50, "spe": 200, "spa": 100, "spd": 50 },
+      "heightDm": 12,
+      "weightHg": 1450,
       "color": "yellow",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "sword-shield",
       "sprite": "894",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 600,
     "captureRate": 60,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Gear Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "klang",
       "types": ["steel"],
+      "abilities": { "first": "plus", "second": "minus", "hidden": "clear-body" },
       "baseStats": { "hp": 60, "atk": 80, "def": 95, "spe": 50, "spa": 70, "spd": 85 },
+      "heightDm": 6,
+      "weightHg": 510,
       "color": "gray",
       "shape": "heads",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "600",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

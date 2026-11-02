@@ -5,6 +5,10 @@
     "nationalDex": 716,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Life Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [
@@ -13,21 +17,25 @@
         "values": ["active", "neutral"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "xerneas",
       "variety": { "forme": "active" },
       "types": ["fairy"],
+      "abilities": { "first": "fairy-aura" },
       "baseStats": { "hp": 126, "atk": 131, "def": 95, "spe": 99, "spa": 131, "spd": 98 },
+      "heightDm": 30,
+      "weightHg": 2150,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "x-y",
       "sprite": "716",
-      "externalIds": { "pokeapiForm": "xerneas-neutral" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "externalIds": { "pokeapiForm": "xerneas-active" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "xerneas-neutral",

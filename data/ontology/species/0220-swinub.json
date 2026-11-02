@@ -5,22 +5,30 @@
     "nationalDex": 220,
     "captureRate": 225,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Pig Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "swinub",
       "types": ["ice", "ground"],
+      "abilities": { "first": "oblivious", "second": "snow-cloak", "hidden": "thick-fat" },
       "baseStats": { "hp": 50, "atk": 50, "def": 40, "spe": 50, "spa": 30, "spd": 30 },
+      "heightDm": 4,
+      "weightHg": 65,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "gold-silver",
       "sprite": "220",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

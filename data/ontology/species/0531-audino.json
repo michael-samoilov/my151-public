@@ -5,22 +5,30 @@
     "nationalDex": 531,
     "captureRate": 255,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Hearing Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "audino",
       "types": ["normal"],
+      "abilities": { "first": "healer", "second": "regenerator", "hidden": "klutz" },
       "baseStats": { "hp": 103, "atk": 60, "def": 86, "spe": 50, "spa": 60, "spd": 86 },
+      "heightDm": 11,
+      "weightHg": 310,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["fairy"],
       "debut": "black-white",
       "sprite": "531",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "audino-mega",
@@ -29,7 +37,10 @@
         "from": ["audino"]
       },
       "types": ["normal", "fairy"],
+      "abilities": { "first": "healer" },
       "baseStats": { "hp": 103, "atk": 60, "def": 126, "spe": 50, "spa": 80, "spd": 126 },
+      "heightDm": 15,
+      "weightHg": 320,
       "color": "white",
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10069",
@@ -39,7 +50,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

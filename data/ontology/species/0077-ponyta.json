@@ -5,32 +5,43 @@
     "nationalDex": 77,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fire Horse Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ponyta",
       "types": ["fire"],
+      "abilities": { "first": "run-away", "second": "flash-fire", "hidden": "flame-body" },
       "baseStats": { "hp": 50, "atk": 85, "def": 55, "spe": 90, "spa": 65, "spd": 65 },
+      "heightDm": 10,
+      "weightHg": 300,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "red-blue",
       "sprite": "77",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "ponyta-galar",
       "region": "galar",
       "types": ["psychic"],
+      "abilities": { "first": "run-away", "second": "pastel-veil", "hidden": "anticipation" },
+      "heightDm": 8,
+      "weightHg": 240,
       "color": "white",
       "debut": "sword-shield",
       "sprite": "10162",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

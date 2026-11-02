@@ -5,22 +5,30 @@
     "nationalDex": 960,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Garden Eel Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "wiglett",
       "types": ["water"],
+      "abilities": { "first": "gooey", "second": "rattled", "hidden": "sand-veil" },
       "baseStats": { "hp": 10, "atk": 55, "def": 25, "spe": 95, "spa": 35, "spd": 25 },
+      "heightDm": 12,
+      "weightHg": 18,
       "color": "white",
       "shape": "blob",
       "eggGroups": ["water3"],
       "debut": "scarlet-violet",
       "sprite": "960",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

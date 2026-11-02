@@ -5,22 +5,30 @@
     "nationalDex": 120,
     "captureRate": 225,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Star Shape Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "staryu",
       "types": ["water"],
+      "abilities": { "first": "illuminate", "second": "natural-cure", "hidden": "analytic" },
       "baseStats": { "hp": 30, "atk": 45, "def": 55, "spe": 85, "spa": 70, "spd": 55 },
+      "heightDm": 8,
+      "weightHg": 345,
       "color": "brown",
       "shape": "blob",
       "eggGroups": ["water3"],
       "debut": "red-blue",
       "sprite": "120",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

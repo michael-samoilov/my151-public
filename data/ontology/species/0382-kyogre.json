@@ -5,22 +5,30 @@
     "nationalDex": 382,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Sea Basin Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "kyogre",
       "types": ["water"],
+      "abilities": { "first": "drizzle" },
       "baseStats": { "hp": 100, "atk": 100, "def": 90, "spe": 90, "spa": 150, "spd": 140 },
+      "heightDm": 45,
+      "weightHg": 3520,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["no-eggs"],
       "debut": "ruby-sapphire",
       "sprite": "382",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "kyogre-primal",
@@ -28,7 +36,10 @@
         "kind": "primal",
         "from": ["kyogre"]
       },
+      "abilities": { "first": "primordial-sea" },
       "baseStats": { "hp": 100, "atk": 150, "def": 90, "spe": 90, "spa": 180, "spd": 160 },
+      "heightDm": 98,
+      "weightHg": 4300,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10077",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

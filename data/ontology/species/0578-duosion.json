@@ -5,22 +5,30 @@
     "nationalDex": 578,
     "captureRate": 100,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mitosis Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "duosion",
       "types": ["psychic"],
+      "abilities": { "first": "overcoat", "second": "magic-guard", "hidden": "regenerator" },
       "baseStats": { "hp": 65, "atk": 40, "def": 50, "spe": 30, "spa": 125, "spd": 60 },
+      "heightDm": 6,
+      "weightHg": 80,
       "color": "green",
       "shape": "ball",
       "eggGroups": ["indeterminate"],
       "debut": "black-white",
       "sprite": "578",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

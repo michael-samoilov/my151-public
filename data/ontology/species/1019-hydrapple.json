@@ -5,22 +5,30 @@
     "nationalDex": 1019,
     "captureRate": 10,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Apple Hydra Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "hydrapple",
       "types": ["grass", "dragon"],
+      "abilities": { "first": "supersweet-syrup", "second": "regenerator", "hidden": "sticky-hold" },
       "baseStats": { "hp": 106, "atk": 80, "def": 110, "spe": 44, "spa": 120, "spd": 80 },
+      "heightDm": 18,
+      "weightHg": 930,
       "color": "green",
       "shape": "heads",
       "eggGroups": ["plant", "dragon"],
       "debut": "scarlet-violet",
       "sprite": "1019",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

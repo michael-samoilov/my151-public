@@ -5,22 +5,30 @@
     "nationalDex": 425,
     "captureRate": 125,
     "growthRate": "fluctuating",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Balloon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "drifloon",
       "types": ["ghost", "flying"],
+      "abilities": { "first": "aftermath", "second": "unburden", "hidden": "flare-boost" },
       "baseStats": { "hp": 90, "atk": 50, "def": 34, "spe": 70, "spa": 60, "spd": 44 },
+      "heightDm": 4,
+      "weightHg": 12,
       "color": "purple",
       "shape": "arms",
       "eggGroups": ["indeterminate"],
       "debut": "diamond-pearl",
       "sprite": "425",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,23 +5,31 @@
     "nationalDex": 412,
     "captureRate": 120,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Bagworm Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "burmy",
       "types": ["bug"],
+      "abilities": { "first": "shed-skin", "hidden": "overcoat" },
       "baseStats": { "hp": 40, "atk": 29, "def": 45, "spe": 36, "spa": 29, "spd": 45 },
+      "heightDm": 2,
+      "weightHg": 34,
       "color": "green",
       "shape": "blob",
       "eggGroups": ["bug"],
       "debut": "diamond-pearl",
       "sprite": "412",
       "externalIds": { "pokeapiForm": "burmy-plant" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,6 +5,10 @@
     "nationalDex": 869,
     "captureRate": 100,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Cream Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -17,32 +21,39 @@
         "values": ["strawberry", "berry", "love", "star", "clover", "flower", "ribbon"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "alcremie",
       "variety": { "cream": "vanilla", "sweet": "strawberry" },
       "types": ["fairy"],
+      "abilities": { "first": "sweet-veil", "hidden": "aroma-veil" },
       "baseStats": { "hp": 65, "atk": 60, "def": 75, "spe": 64, "spa": 110, "spd": 121 },
+      "heightDm": 3,
+      "weightHg": 5,
       "color": "white",
       "shape": "blob",
       "eggGroups": ["fairy", "indeterminate"],
       "debut": "sword-shield",
       "sprite": "alcremie-strawberry",
       "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-strawberry-sweet" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "alcremie-gmax",
       "state": { "kind": "gigantamax", "from": "any" },
+      "heightDm": 300,
+      "weightHg": null,
       "sprite": "10223",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "alcremie-berry",

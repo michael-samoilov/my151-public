@@ -5,22 +5,30 @@
     "nationalDex": 941,
     "captureRate": 90,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Frigatebird Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "kilowattrel",
       "types": ["electric", "flying"],
+      "abilities": { "first": "wind-power", "second": "volt-absorb", "hidden": "competitive" },
       "baseStats": { "hp": 70, "atk": 70, "def": 60, "spe": 125, "spa": 105, "spd": 60 },
+      "heightDm": 14,
+      "weightHg": 386,
       "color": "yellow",
       "shape": "wings",
       "eggGroups": ["water1", "flying"],
       "debut": "scarlet-violet",
       "sprite": "941",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

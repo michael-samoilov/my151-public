@@ -5,22 +5,30 @@
     "nationalDex": 522,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Electrified Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "blitzle",
       "types": ["electric"],
+      "abilities": { "first": "lightning-rod", "second": "motor-drive", "hidden": "sap-sipper" },
       "baseStats": { "hp": 45, "atk": 60, "def": 32, "spe": 76, "spa": 50, "spd": 32 },
+      "heightDm": 8,
+      "weightHg": 298,
       "color": "black",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "522",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

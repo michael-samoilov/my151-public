@@ -5,22 +5,30 @@
     "nationalDex": 658,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Ninja Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "greninja",
       "types": ["water", "dark"],
+      "abilities": { "first": "torrent", "hidden": "protean" },
       "baseStats": { "hp": 72, "atk": 95, "def": 67, "spe": 122, "spa": 103, "spd": 71 },
+      "heightDm": 15,
+      "weightHg": 400,
       "color": "blue",
       "shape": "humanoid",
       "eggGroups": ["water1"],
       "debut": "x-y",
       "sprite": "658",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "greninja-ash",
@@ -28,10 +36,12 @@
         "kind": "battle-mode",
         "from": ["greninja"]
       },
+      "abilities": { "first": "battle-bond" },
       "baseStats": { "hp": 72, "atk": 145, "def": 67, "spe": 132, "spa": 153, "spd": 71 },
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Greninja, one individual, never shiny." },
       "sprite": "10117",
       "tools": {
         "picker": "in",
@@ -39,7 +49,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "pokeapi@bc92d3b6", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "greninja-mega",
@@ -47,6 +57,7 @@
         "kind": "mega",
         "from": ["greninja"]
       },
+      "abilities": { "first": "protean" },
       "baseStats": { "hp": 72, "atk": 125, "def": 77, "spe": 142, "spa": 133, "spd": 81 },
       "debut": "legends-za",
       "sprite": "10294",
@@ -56,7 +67,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

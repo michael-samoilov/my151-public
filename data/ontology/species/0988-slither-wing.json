@@ -5,22 +5,30 @@
     "nationalDex": 988,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "slither-wing",
       "types": ["bug", "fighting"],
+      "abilities": { "first": "protosynthesis" },
       "baseStats": { "hp": 85, "atk": 135, "def": 79, "spe": 81, "spa": 85, "spd": 105 },
+      "heightDm": 32,
+      "weightHg": 920,
       "color": "white",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "988",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

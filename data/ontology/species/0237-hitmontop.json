@@ -5,22 +5,30 @@
     "nationalDex": 237,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Handstand Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "hitmontop",
       "types": ["fighting"],
+      "abilities": { "first": "intimidate", "second": "technician", "hidden": "steadfast" },
       "baseStats": { "hp": 50, "atk": 95, "def": 95, "spe": 70, "spa": 35, "spd": 110 },
+      "heightDm": 14,
+      "weightHg": 480,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["humanshape"],
       "debut": "gold-silver",
       "sprite": "237",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

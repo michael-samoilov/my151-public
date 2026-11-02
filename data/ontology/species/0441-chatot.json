@@ -5,22 +5,30 @@
     "nationalDex": 441,
     "captureRate": 30,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Music Note Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "chatot",
       "types": ["normal", "flying"],
+      "abilities": { "first": "keen-eye", "second": "tangled-feet", "hidden": "big-pecks" },
       "baseStats": { "hp": 76, "atk": 65, "def": 45, "spe": 91, "spa": 92, "spd": 42 },
+      "heightDm": 5,
+      "weightHg": 19,
       "color": "black",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "diamond-pearl",
       "sprite": "441",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

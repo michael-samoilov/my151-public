@@ -5,22 +5,30 @@
     "nationalDex": 359,
     "captureRate": 30,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 35,
+    "genus": { "en": "Disaster Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "absol",
       "types": ["dark"],
+      "abilities": { "first": "pressure", "second": "super-luck", "hidden": "justified" },
       "baseStats": { "hp": 65, "atk": 130, "def": 60, "spe": 75, "spa": 75, "spd": 60 },
+      "heightDm": 12,
+      "weightHg": 470,
       "color": "white",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "359",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "absol-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["absol"]
       },
+      "abilities": { "first": "magic-bounce" },
       "baseStats": { "hp": 65, "atk": 150, "def": 60, "spe": 115, "spa": 115, "spd": 60 },
+      "weightHg": 490,
       "debut": "x-y",
       "sprite": "10057",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "absol-mega-z",
@@ -47,7 +57,9 @@
         "from": ["absol"]
       },
       "types": ["dark", "ghost"],
+      "abilities": { "first": "sharpness" },
       "baseStats": { "hp": 65, "atk": 154, "def": 60, "spe": 151, "spa": 75, "spd": 60 },
+      "weightHg": 490,
       "color": "black",
       "debut": "legends-za",
       "sprite": "10307",
@@ -57,7 +69,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

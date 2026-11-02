@@ -5,6 +5,10 @@
     "nationalDex": 820,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Greedy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,19 +17,23 @@
         "values": ["chef-dente"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "greedent",
       "types": ["normal"],
+      "abilities": { "first": "cheek-pouch", "hidden": "gluttony" },
       "baseStats": { "hp": 120, "atk": 95, "def": 95, "spe": 20, "spa": 55, "spd": 75 },
+      "heightDm": 6,
+      "weightHg": 60,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "sword-shield",
       "sprite": "820",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "greedent-chef-dente",
@@ -39,7 +47,7 @@
         "league": { "out": "spinoff-only" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

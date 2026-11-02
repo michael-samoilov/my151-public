@@ -5,22 +5,30 @@
     "nationalDex": 197,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 35,
+    "baseFriendship": 35,
+    "genus": { "en": "Moonlight Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "umbreon",
       "types": ["dark"],
+      "abilities": { "first": "synchronize", "hidden": "inner-focus" },
       "baseStats": { "hp": 95, "atk": 65, "def": 110, "spe": 65, "spa": 60, "spd": 130 },
+      "heightDm": 10,
+      "weightHg": 270,
       "color": "black",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "gold-silver",
       "sprite": "197",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 927,
     "captureRate": 90,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Dog Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dachsbun",
       "types": ["fairy"],
+      "abilities": { "first": "well-baked-body", "hidden": "aroma-veil" },
       "baseStats": { "hp": 57, "atk": 80, "def": 115, "spe": 95, "spa": 50, "spd": 80 },
+      "heightDm": 5,
+      "weightHg": 149,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground", "mineral"],
       "debut": "scarlet-violet",
       "sprite": "927",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

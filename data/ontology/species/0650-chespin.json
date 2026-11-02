@@ -5,22 +5,30 @@
     "nationalDex": 650,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Spiny Nut Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "chespin",
       "types": ["grass"],
+      "abilities": { "first": "overgrow", "hidden": "bulletproof" },
       "baseStats": { "hp": 56, "atk": 61, "def": 65, "spe": 38, "spa": 48, "spd": 45 },
+      "heightDm": 4,
+      "weightHg": 90,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "x-y",
       "sprite": "650",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

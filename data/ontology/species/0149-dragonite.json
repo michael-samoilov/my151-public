@@ -5,22 +5,30 @@
     "nationalDex": 149,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Dragon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dragonite",
       "types": ["dragon", "flying"],
+      "abilities": { "first": "inner-focus", "hidden": "multiscale" },
       "baseStats": { "hp": 91, "atk": 134, "def": 95, "spe": 80, "spa": 100, "spd": 100 },
+      "heightDm": 22,
+      "weightHg": 2100,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["water1", "dragon"],
       "debut": "red-blue",
       "sprite": "149",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "dragonite-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["dragonite"]
       },
+      "abilities": { "first": "multiscale" },
       "baseStats": { "hp": 91, "atk": 124, "def": 115, "spe": 100, "spa": 145, "spd": 125 },
+      "weightHg": 2900,
       "debut": "legends-za",
       "sprite": "10281",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

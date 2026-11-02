@@ -5,22 +5,30 @@
     "nationalDex": 461,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Sharp Claw Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "weavile",
       "types": ["dark", "ice"],
+      "abilities": { "first": "pressure", "hidden": "pickpocket" },
       "baseStats": { "hp": 70, "atk": 120, "def": 65, "spe": 125, "spa": 45, "spd": 85 },
+      "heightDm": 11,
+      "weightHg": 340,
       "color": "black",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "461",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

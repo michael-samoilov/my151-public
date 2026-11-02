@@ -5,22 +5,30 @@
     "nationalDex": 497,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Regal Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "serperior",
       "types": ["grass"],
+      "abilities": { "first": "overgrow", "hidden": "contrary" },
       "baseStats": { "hp": 75, "atk": 75, "def": 95, "spe": 113, "spa": 75, "spd": 95 },
+      "heightDm": 33,
+      "weightHg": 630,
       "color": "green",
       "shape": "squiggle",
       "eggGroups": ["ground", "plant"],
       "debut": "black-white",
       "sprite": "497",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

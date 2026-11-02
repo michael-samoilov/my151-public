@@ -5,22 +5,30 @@
     "nationalDex": 907,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Grass Cat Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "floragato",
       "types": ["grass"],
+      "abilities": { "first": "overgrow", "hidden": "protean" },
       "baseStats": { "hp": 61, "atk": 80, "def": 63, "spe": 83, "spa": 60, "spd": 63 },
+      "heightDm": 9,
+      "weightHg": 122,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["ground", "plant"],
       "debut": "scarlet-violet",
       "sprite": "907",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

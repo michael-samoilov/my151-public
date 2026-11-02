@@ -5,6 +5,10 @@
     "nationalDex": 893,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Rogue Monkey Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [
@@ -13,24 +17,29 @@
         "values": ["dada"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zarude",
       "types": ["dark", "grass"],
+      "abilities": { "first": "leaf-guard" },
       "baseStats": { "hp": 105, "atk": 120, "def": 105, "spe": 105, "spa": 70, "spd": 95 },
+      "heightDm": 18,
+      "weightHg": 700,
       "color": "black",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "sword-shield",
       "sprite": "893",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "zarude-dada",
       "variety": { "forme": "dada" },
       "obtain": "event-only",
+      "shiny": { "locked": "Dada, one individual, never shiny." },
       "sprite": "10192",
       "tools": {
         "picker": "in",
@@ -38,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

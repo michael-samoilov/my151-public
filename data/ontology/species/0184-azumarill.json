@@ -5,22 +5,30 @@
     "nationalDex": 184,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 10,
+    "baseFriendship": 70,
+    "genus": { "en": "Aqua Rabbit Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "azumarill",
       "types": ["water", "fairy"],
+      "abilities": { "first": "thick-fat", "second": "huge-power", "hidden": "sap-sipper" },
       "baseStats": { "hp": 100, "atk": 50, "def": 80, "spe": 50, "spa": 60, "spd": 80 },
+      "heightDm": 8,
+      "weightHg": 285,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["water1", "fairy"],
       "debut": "gold-silver",
       "sprite": "184",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

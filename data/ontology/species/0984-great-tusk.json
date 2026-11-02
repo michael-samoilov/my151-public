@@ -5,22 +5,30 @@
     "nationalDex": 984,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "great-tusk",
       "types": ["ground", "fighting"],
+      "abilities": { "first": "protosynthesis" },
       "baseStats": { "hp": 115, "atk": 131, "def": 131, "spe": 87, "spa": 53, "spd": 53 },
+      "heightDm": 22,
+      "weightHg": 3200,
       "color": "purple",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "984",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 471,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 35,
+    "baseFriendship": 35,
+    "genus": { "en": "Fresh Snow Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "glaceon",
       "types": ["ice"],
+      "abilities": { "first": "snow-cloak", "hidden": "ice-body" },
       "baseStats": { "hp": 65, "atk": 60, "def": 110, "spe": 65, "spa": 130, "spd": 95 },
+      "heightDm": 8,
+      "weightHg": 259,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "471",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

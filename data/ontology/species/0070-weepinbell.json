@@ -5,22 +5,30 @@
     "nationalDex": 70,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Flycatcher Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "weepinbell",
       "types": ["grass", "poison"],
+      "abilities": { "first": "chlorophyll", "hidden": "gluttony" },
       "baseStats": { "hp": 65, "atk": 90, "def": 50, "spe": 55, "spa": 85, "spd": 45 },
+      "heightDm": 10,
+      "weightHg": 64,
       "color": "green",
       "shape": "blob",
       "eggGroups": ["plant"],
       "debut": "red-blue",
       "sprite": "70",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

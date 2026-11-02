@@ -5,37 +5,48 @@
     "nationalDex": 678,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Constraint Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "meowstic",
       "sex": "male",
       "types": ["psychic"],
+      "abilities": { "first": "keen-eye", "second": "infiltrator", "hidden": "prankster" },
       "baseStats": { "hp": 74, "atk": 48, "def": 76, "spe": 104, "spa": 83, "spd": 81 },
+      "heightDm": 6,
+      "weightHg": 85,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "x-y",
       "sprite": "678",
       "externalIds": { "pokeapiForm": "meowstic-male" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "meowstic-female",
       "sex": "female",
+      "abilities": { "first": "keen-eye", "second": "infiltrator", "hidden": "competitive" },
       "color": "white",
       "sprite": "10025",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "meowstic-mega",
@@ -43,7 +54,10 @@
         "kind": "mega",
         "from": ["meowstic"]
       },
+      "abilities": { "first": "trace" },
       "baseStats": { "hp": 74, "atk": 48, "def": 76, "spe": 124, "spa": 143, "spd": 101 },
+      "heightDm": 8,
+      "weightHg": 101,
       "debut": "legends-za",
       "sprite": "10314",
       "externalIds": { "pokeapiForm": "meowstic-male-mega" },
@@ -53,7 +67,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

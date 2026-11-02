@@ -5,22 +5,30 @@
     "nationalDex": 787,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Land Spirit Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tapu-bulu",
       "types": ["grass", "fairy"],
+      "abilities": { "first": "grassy-surge", "hidden": "telepathy" },
       "baseStats": { "hp": 70, "atk": 130, "def": 115, "spe": 75, "spa": 85, "spd": 95 },
+      "heightDm": 19,
+      "weightHg": 455,
       "color": "red",
       "shape": "arms",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "787",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

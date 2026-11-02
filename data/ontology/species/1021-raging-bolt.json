@@ -5,22 +5,30 @@
     "nationalDex": 1021,
     "captureRate": 10,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "raging-bolt",
       "types": ["electric", "dragon"],
+      "abilities": { "first": "protosynthesis" },
       "baseStats": { "hp": 125, "atk": 73, "def": 91, "spe": 75, "spa": 137, "spd": 89 },
+      "heightDm": 52,
+      "weightHg": 4800,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1021",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

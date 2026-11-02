@@ -5,22 +5,30 @@
     "nationalDex": 1,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Seed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bulbasaur",
       "types": ["grass", "poison"],
+      "abilities": { "first": "overgrow", "hidden": "chlorophyll" },
       "baseStats": { "hp": 45, "atk": 49, "def": 49, "spe": 45, "spa": 65, "spd": 65 },
+      "heightDm": 7,
+      "weightHg": 69,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["monster", "plant"],
       "debut": "red-blue",
       "sprite": "1",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -4,7 +4,7 @@
  * because only the build reads them.
  */
 import type {
-  AppId, ColorId, DecisionId, EggGroupId, FormId, GameId, RegionId, ShapeId, SpeciesId, SpriteStem, TypeId,
+  AbilityId, AppId, ColorId, DecisionId, EggGroupId, FormId, GameId, RegionId, ShapeId, SpeciesId, SpriteStem, TypeId,
   VarietyValueId,
 } from './ids';
 
@@ -14,7 +14,18 @@ export interface BaseStats {
   readonly hp: number; readonly atk: number; readonly def: number;
   readonly spe: number; readonly spa: number; readonly spd: number;
 }
+export interface Abilities {
+  readonly first: AbilityId;
+  readonly second?: AbilityId;
+  readonly hidden?: AbilityId;
+}
+/** Every form has a shiny look unless the games lock it; the reason is quoted on hover. */
+export type Shiny = 'available' | { readonly locked: string };
 export type Variety = { readonly [axis: string]: VarietyValueId };
+/** Text per app locale. English is always present; the i18n catalogs add the other locales later. */
+export interface LocalizedText { readonly en: string; readonly [locale: string]: string }
+export type FemaleEighths = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type GenderRatio = { readonly kind: 'genderless' } | { readonly kind: 'ratio'; readonly femaleEighths: FemaleEighths };
 
 /**
  * Where a permanent form sits within its species. Each facet is independent and has an explicit
@@ -51,15 +62,23 @@ export type Obtain = 'standard' | 'event-only' | 'story-only' | 'spinoff-only' |
 /** Every fact a form owns today. A non-default form states only what differs from its base. */
 export interface FormFacts {
   readonly types: Types;
+  readonly abilities: Abilities;
   readonly baseStats: BaseStats;
+  /** Decimeters, as the games store it. A Gigantamax height is the games' lower bound ("24.0+ m"). */
+  readonly heightDm: number;
+  /** Hectograms, as the games store it. Null where the games show "????.? kg": Gigantamax and Eternamax. */
+  readonly weightHg: number | null;
   readonly color: ColorId;
   readonly shape: ShapeId;
   readonly eggGroups: readonly EggGroupId[];
   readonly debut: GameId;
   readonly obtain: Obtain;
+  readonly shiny: Shiny;
 }
 export type FactKey = keyof FormFacts;
-export const FACT_KEYS = ['types', 'baseStats', 'color', 'shape', 'eggGroups', 'debut', 'obtain'] as const satisfies readonly FactKey[];
+export const FACT_KEYS = ['types', 'abilities', 'baseStats', 'heightDm', 'weightHg', 'color', 'shape', 'eggGroups', 'debut', 'obtain', 'shiny'] as const satisfies readonly FactKey[];
+/** The facts that change how a form plays. A form that matches its default form on all of them differs only in looks or availability. */
+export const MECHANICAL_FACT_KEYS = ['types', 'abilities', 'baseStats', 'heightDm', 'weightHg', 'eggGroups'] as const satisfies readonly FactKey[];
 
 export const TOOLS = ['picker', 'dex', 'league'] as const;
 export type ToolId = (typeof TOOLS)[number];
@@ -133,6 +152,10 @@ export interface ResolvedSpecies {
   readonly generation: number;
   readonly captureRate: number;
   readonly growthRate: string;
+  readonly genderRatio: GenderRatio;
+  readonly hatchCycles: number;
+  readonly baseFriendship: number;
+  readonly genus: LocalizedText;
   readonly legendaryClass: LegendaryClass;
   readonly tags: readonly string[];
   readonly standIn: { readonly [T in ToolId]?: FormId };

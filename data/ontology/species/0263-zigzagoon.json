@@ -5,22 +5,30 @@
     "nationalDex": 263,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Tiny Raccoon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zigzagoon",
       "types": ["normal"],
+      "abilities": { "first": "pickup", "second": "gluttony", "hidden": "quick-feet" },
       "baseStats": { "hp": 38, "atk": 30, "def": 41, "spe": 60, "spa": 30, "spd": 41 },
+      "heightDm": 4,
+      "weightHg": 175,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "263",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "zigzagoon-galar",

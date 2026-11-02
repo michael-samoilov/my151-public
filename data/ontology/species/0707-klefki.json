@@ -5,22 +5,30 @@
     "nationalDex": 707,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Key Ring Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "klefki",
       "types": ["steel", "fairy"],
+      "abilities": { "first": "prankster", "hidden": "magician" },
       "baseStats": { "hp": 57, "atk": 80, "def": 91, "spe": 75, "spa": 80, "spd": 87 },
+      "heightDm": 2,
+      "weightHg": 30,
       "color": "gray",
       "shape": "ball",
       "eggGroups": ["mineral"],
       "debut": "x-y",
       "sprite": "707",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

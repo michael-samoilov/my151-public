@@ -5,22 +5,30 @@
     "nationalDex": 341,
     "captureRate": 205,
     "growthRate": "fluctuating",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Ruffian Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "corphish",
       "types": ["water"],
+      "abilities": { "first": "hyper-cutter", "second": "shell-armor", "hidden": "adaptability" },
       "baseStats": { "hp": 43, "atk": 80, "def": 65, "spe": 35, "spa": 50, "spd": 35 },
+      "heightDm": 6,
+      "weightHg": 115,
       "color": "red",
       "shape": "armor",
       "eggGroups": ["water1", "water3"],
       "debut": "ruby-sapphire",
       "sprite": "341",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

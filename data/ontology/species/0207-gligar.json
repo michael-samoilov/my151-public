@@ -5,22 +5,30 @@
     "nationalDex": 207,
     "captureRate": 60,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fly Scorpion Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gligar",
       "types": ["ground", "flying"],
+      "abilities": { "first": "hyper-cutter", "second": "sand-veil", "hidden": "immunity" },
       "baseStats": { "hp": 65, "atk": 75, "def": 105, "spe": 85, "spa": 35, "spd": 65 },
+      "heightDm": 11,
+      "weightHg": 648,
       "color": "purple",
       "shape": "wings",
       "eggGroups": ["bug"],
       "debut": "gold-silver",
       "sprite": "207",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

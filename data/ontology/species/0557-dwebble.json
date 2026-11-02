@@ -5,22 +5,30 @@
     "nationalDex": 557,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Rock Inn Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dwebble",
       "types": ["bug", "rock"],
+      "abilities": { "first": "sturdy", "second": "shell-armor", "hidden": "weak-armor" },
       "baseStats": { "hp": 50, "atk": 65, "def": 85, "spe": 55, "spa": 35, "spd": 35 },
+      "heightDm": 3,
+      "weightHg": 145,
       "color": "red",
       "shape": "armor",
       "eggGroups": ["bug", "mineral"],
       "debut": "black-white",
       "sprite": "557",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

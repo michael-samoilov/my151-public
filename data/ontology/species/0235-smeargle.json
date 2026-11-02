@@ -5,6 +5,10 @@
     "nationalDex": 235,
     "captureRate": 45,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Painter Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,19 +17,23 @@
         "values": ["smearguru"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "smeargle",
       "types": ["normal"],
+      "abilities": { "first": "own-tempo", "second": "technician", "hidden": "moody" },
       "baseStats": { "hp": 55, "atk": 20, "def": 35, "spe": 75, "spa": 20, "spd": 45 },
+      "heightDm": 12,
+      "weightHg": 580,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "gold-silver",
       "sprite": "235",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "smeargle-smearguru",
@@ -39,7 +47,7 @@
         "league": { "out": "spinoff-only" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

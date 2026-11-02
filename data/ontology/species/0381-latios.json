@@ -5,22 +5,30 @@
     "nationalDex": 381,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 120,
+    "baseFriendship": 90,
+    "genus": { "en": "Eon Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "latios",
       "types": ["dragon", "psychic"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 80, "atk": 90, "def": 80, "spe": 110, "spa": 130, "spd": 110 },
+      "heightDm": 20,
+      "weightHg": 600,
       "color": "blue",
       "shape": "wings",
       "eggGroups": ["no-eggs"],
       "debut": "ruby-sapphire",
       "sprite": "381",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "latios-mega",
@@ -29,6 +37,8 @@
         "from": ["latios"]
       },
       "baseStats": { "hp": 80, "atk": 130, "def": 100, "spe": 110, "spa": 160, "spd": 120 },
+      "heightDm": 23,
+      "weightHg": 700,
       "color": "purple",
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10063",
@@ -38,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

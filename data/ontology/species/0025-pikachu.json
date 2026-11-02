@@ -5,6 +5,10 @@
     "nationalDex": 25,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 10,
+    "baseFriendship": 70,
+    "genus": { "en": "Mouse Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -17,25 +21,30 @@
         "values": ["peakychu"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pikachu",
       "types": ["electric"],
+      "abilities": { "first": "static", "hidden": "lightning-rod" },
       "baseStats": { "hp": 35, "atk": 55, "def": 40, "spe": 90, "spa": 50, "spd": 50 },
+      "heightDm": 4,
+      "weightHg": 60,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground", "fairy"],
       "debut": "red-blue",
       "sprite": "25",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "pikachu-cosplay",
       "variety": { "outfit": "cosplay" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10085",
       "tools": {
         "picker": "in",
@@ -45,13 +54,14 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-rock-star",
       "variety": { "outfit": "rock-star" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10080",
       "tools": {
         "picker": "in",
@@ -61,13 +71,14 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-belle",
       "variety": { "outfit": "belle" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10081",
       "tools": {
         "picker": "in",
@@ -77,13 +88,14 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-pop-star",
       "variety": { "outfit": "pop-star" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10082",
       "tools": {
         "picker": "in",
@@ -93,13 +105,14 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-phd",
       "variety": { "outfit": "phd" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10083",
       "tools": {
         "picker": "in",
@@ -109,13 +122,14 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-libre",
       "variety": { "outfit": "libre" },
       "eggGroups": ["no-eggs"],
       "debut": "omega-ruby-alpha-sapphire",
+      "shiny": { "locked": "The ORAS contest Pikachu, one individual, never shiny." },
       "sprite": "10084",
       "tools": {
         "picker": "in",
@@ -125,7 +139,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-original-cap",
@@ -133,6 +147,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10094",
       "tools": {
         "picker": "in",
@@ -142,7 +157,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-hoenn-cap",
@@ -150,6 +165,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10095",
       "tools": {
         "picker": "in",
@@ -159,7 +175,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-sinnoh-cap",
@@ -167,6 +183,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10096",
       "tools": {
         "picker": "in",
@@ -176,7 +193,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-unova-cap",
@@ -184,6 +201,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10097",
       "tools": {
         "picker": "in",
@@ -193,7 +211,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-kalos-cap",
@@ -201,6 +219,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10098",
       "tools": {
         "picker": "in",
@@ -210,7 +229,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-alola-cap",
@@ -218,6 +237,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10099",
       "tools": {
         "picker": "in",
@@ -227,7 +247,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-partner-cap",
@@ -235,6 +255,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "ultra-sun-ultra-moon",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10148",
       "tools": {
         "picker": "in",
@@ -244,7 +265,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-world-cap",
@@ -252,6 +273,7 @@
       "eggGroups": ["no-eggs"],
       "debut": "sword-shield",
       "obtain": "event-only",
+      "shiny": { "locked": "Ash's Pikachu, one individual, never shiny." },
       "sprite": "10160",
       "tools": {
         "picker": "in",
@@ -261,7 +283,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "shiny": "legacy:scripts/data/shiny-sprite-sources.json", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "pikachu-gmax",
@@ -269,6 +291,8 @@
         "kind": "gigantamax",
         "from": ["pikachu"]
       },
+      "heightDm": 210,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10199",
       "tools": {
@@ -277,7 +301,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "pikachu-peakychu",
@@ -291,7 +315,7 @@
         "league": { "out": "spinoff-only" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

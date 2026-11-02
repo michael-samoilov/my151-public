@@ -5,22 +5,30 @@
     "nationalDex": 370,
     "captureRate": 225,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Rendezvous Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "luvdisc",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "hidden": "hydration" },
       "baseStats": { "hp": 43, "atk": 30, "def": 55, "spe": 97, "spa": 40, "spd": 65 },
+      "heightDm": 6,
+      "weightHg": 87,
       "color": "pink",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "ruby-sapphire",
       "sprite": "370",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

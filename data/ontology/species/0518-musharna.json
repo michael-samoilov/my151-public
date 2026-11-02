@@ -5,22 +5,30 @@
     "nationalDex": 518,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 10,
+    "baseFriendship": 70,
+    "genus": { "en": "Drowsing Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "musharna",
       "types": ["psychic"],
+      "abilities": { "first": "forewarn", "second": "synchronize", "hidden": "telepathy" },
       "baseStats": { "hp": 116, "atk": 55, "def": 85, "spe": 29, "spa": 107, "spd": 95 },
+      "heightDm": 11,
+      "weightHg": 605,
       "color": "pink",
       "shape": "humanoid",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "518",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

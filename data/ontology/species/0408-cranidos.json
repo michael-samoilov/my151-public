@@ -5,22 +5,30 @@
     "nationalDex": 408,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Head Butt Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cranidos",
       "types": ["rock"],
+      "abilities": { "first": "mold-breaker", "hidden": "sheer-force" },
       "baseStats": { "hp": 67, "atk": 125, "def": 40, "spe": 58, "spa": 30, "spd": 30 },
+      "heightDm": 9,
+      "weightHg": 315,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["monster"],
       "debut": "diamond-pearl",
       "sprite": "408",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

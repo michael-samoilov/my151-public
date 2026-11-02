@@ -5,22 +5,30 @@
     "nationalDex": 94,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Shadow Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gengar",
       "types": ["ghost", "poison"],
+      "abilities": { "first": "cursed-body" },
       "baseStats": { "hp": 60, "atk": 65, "def": 60, "spe": 110, "spa": 130, "spd": 75 },
+      "heightDm": 15,
+      "weightHg": 405,
       "color": "purple",
       "shape": "upright",
       "eggGroups": ["indeterminate"],
       "debut": "red-blue",
       "sprite": "94",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "gengar-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["gengar"]
       },
+      "abilities": { "first": "shadow-tag" },
       "baseStats": { "hp": 60, "atk": 65, "def": 80, "spe": 130, "spa": 170, "spd": 95 },
+      "heightDm": 14,
       "debut": "x-y",
       "sprite": "10038",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6" }
     },
     {
       "id": "gengar-gmax",
@@ -45,6 +55,8 @@
         "kind": "gigantamax",
         "from": ["gengar"]
       },
+      "heightDm": 200,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10202",
       "tools": {
@@ -53,7 +65,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

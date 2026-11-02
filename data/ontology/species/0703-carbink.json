@@ -5,22 +5,30 @@
     "nationalDex": 703,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Jewel Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "carbink",
       "types": ["rock", "fairy"],
+      "abilities": { "first": "clear-body", "hidden": "sturdy" },
       "baseStats": { "hp": 50, "atk": 50, "def": 150, "spe": 50, "spa": 50, "spd": 150 },
+      "heightDm": 3,
+      "weightHg": 57,
       "color": "gray",
       "shape": "ball",
       "eggGroups": ["fairy", "mineral"],
       "debut": "x-y",
       "sprite": "703",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

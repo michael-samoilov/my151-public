@@ -5,22 +5,30 @@
     "nationalDex": 464,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Drill Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "rhyperior",
       "types": ["ground", "rock"],
+      "abilities": { "first": "lightning-rod", "second": "solid-rock", "hidden": "reckless" },
       "baseStats": { "hp": 115, "atk": 140, "def": 130, "spe": 40, "spa": 55, "spd": 55 },
+      "heightDm": 24,
+      "weightHg": 2828,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["monster", "ground"],
       "debut": "diamond-pearl",
       "sprite": "464",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

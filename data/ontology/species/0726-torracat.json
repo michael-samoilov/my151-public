@@ -5,22 +5,30 @@
     "nationalDex": 726,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Fire Cat Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "torracat",
       "types": ["fire"],
+      "abilities": { "first": "blaze", "hidden": "intimidate" },
       "baseStats": { "hp": 65, "atk": 85, "def": 50, "spe": 90, "spa": 80, "spd": 50 },
+      "heightDm": 7,
+      "weightHg": 250,
       "color": "red",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "sun-moon",
       "sprite": "726",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

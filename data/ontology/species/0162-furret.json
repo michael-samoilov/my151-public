@@ -5,22 +5,30 @@
     "nationalDex": 162,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Long Body Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "furret",
       "types": ["normal"],
+      "abilities": { "first": "run-away", "second": "keen-eye", "hidden": "frisk" },
       "baseStats": { "hp": 85, "atk": 76, "def": 64, "spe": 90, "spa": 45, "spd": 55 },
+      "heightDm": 18,
+      "weightHg": 325,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "gold-silver",
       "sprite": "162",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

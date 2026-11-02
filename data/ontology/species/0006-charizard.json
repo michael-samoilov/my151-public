@@ -5,22 +5,30 @@
     "nationalDex": 6,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Flame Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "charizard",
       "types": ["fire", "flying"],
+      "abilities": { "first": "blaze", "hidden": "solar-power" },
       "baseStats": { "hp": 78, "atk": 84, "def": 78, "spe": 100, "spa": 109, "spd": 85 },
+      "heightDm": 17,
+      "weightHg": 905,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["monster", "dragon"],
       "debut": "red-blue",
       "sprite": "6",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "charizard-mega-x",
@@ -30,7 +38,9 @@
         "from": ["charizard"]
       },
       "types": ["fire", "dragon"],
+      "abilities": { "first": "tough-claws" },
       "baseStats": { "hp": 78, "atk": 130, "def": 111, "spe": 100, "spa": 130, "spd": 85 },
+      "weightHg": 1105,
       "color": "black",
       "debut": "x-y",
       "sprite": "10034",
@@ -40,7 +50,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "charizard-mega-y",
@@ -49,7 +59,9 @@
         "letter": "y",
         "from": ["charizard"]
       },
+      "abilities": { "first": "drought" },
       "baseStats": { "hp": 78, "atk": 104, "def": 78, "spe": 100, "spa": 159, "spd": 115 },
+      "weightHg": 1005,
       "debut": "x-y",
       "sprite": "10035",
       "tools": {
@@ -58,7 +70,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "charizard-gmax",
@@ -66,6 +78,8 @@
         "kind": "gigantamax",
         "from": ["charizard"]
       },
+      "heightDm": 280,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10196",
       "tools": {
@@ -74,7 +88,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 924,
     "captureRate": 150,
     "growthRate": "fast",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 10,
+    "baseFriendship": 50,
+    "genus": { "en": "Couple Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tandemaus",
       "types": ["normal"],
+      "abilities": { "first": "run-away", "second": "pickup", "hidden": "own-tempo" },
       "baseStats": { "hp": 50, "atk": 50, "def": 45, "spe": 75, "spa": 40, "spd": 45 },
+      "heightDm": 3,
+      "weightHg": 18,
       "color": "white",
       "shape": "heads",
       "eggGroups": ["ground", "fairy"],
       "debut": "scarlet-violet",
       "sprite": "924",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

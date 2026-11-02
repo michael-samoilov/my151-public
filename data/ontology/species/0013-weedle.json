@@ -5,22 +5,30 @@
     "nationalDex": 13,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Hairy Bug Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "weedle",
       "types": ["bug", "poison"],
+      "abilities": { "first": "shield-dust", "hidden": "run-away" },
       "baseStats": { "hp": 40, "atk": 35, "def": 30, "spe": 50, "spa": 20, "spd": 20 },
+      "heightDm": 3,
+      "weightHg": 32,
       "color": "brown",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "red-blue",
       "sprite": "13",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

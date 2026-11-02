@@ -5,32 +5,41 @@
     "nationalDex": 571,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Illusion Fox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zoroark",
       "types": ["dark"],
+      "abilities": { "first": "illusion" },
       "baseStats": { "hp": 60, "atk": 105, "def": 60, "spe": 105, "spa": 120, "spd": 60 },
+      "heightDm": 16,
+      "weightHg": 811,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "571",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "zoroark-hisui",
       "region": "hisui",
       "types": ["normal", "ghost"],
       "baseStats": { "hp": 55, "atk": 100, "def": 60, "spe": 110, "spa": 125, "spd": 60 },
+      "weightHg": 730,
       "debut": "legends-arceus",
       "sprite": "10239",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

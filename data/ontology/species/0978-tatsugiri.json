@@ -5,6 +5,10 @@
     "nationalDex": 978,
     "captureRate": 100,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 35,
+    "baseFriendship": 50,
+    "genus": { "en": "Mimicry Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,21 +17,25 @@
         "values": ["curly", "droopy", "stretchy"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tatsugiri",
       "variety": { "forme": "curly" },
       "types": ["dragon", "water"],
+      "abilities": { "first": "commander", "hidden": "storm-drain" },
       "baseStats": { "hp": 68, "atk": 50, "def": 60, "spe": 82, "spa": 120, "spd": 95 },
+      "heightDm": 3,
+      "weightHg": 80,
       "color": "red",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "scarlet-violet",
       "sprite": "978",
       "externalIds": { "pokeapiForm": "tatsugiri-curly" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "tatsugiri-mega",
@@ -36,6 +44,8 @@
         "from": ["tatsugiri"]
       },
       "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "heightDm": 6,
+      "weightHg": 240,
       "shape": "heads",
       "debut": "legends-za",
       "sprite": "10322",
@@ -46,7 +56,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "tatsugiri-droopy-mega",
@@ -55,6 +65,8 @@
         "from": ["tatsugiri-droopy"]
       },
       "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "heightDm": 6,
+      "weightHg": 240,
       "debut": "legends-za",
       "sprite": "10323",
       "tools": {
@@ -63,7 +75,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "tatsugiri-stretchy-mega",
@@ -72,6 +84,8 @@
         "from": ["tatsugiri-stretchy"]
       },
       "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "heightDm": 6,
+      "weightHg": 240,
       "debut": "legends-za",
       "sprite": "10324",
       "tools": {
@@ -80,7 +94,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "tatsugiri-droopy",

@@ -5,23 +5,31 @@
     "nationalDex": 964,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 50,
+    "genus": { "en": "Dolphin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": { "dex": "palafin-hero" }
+    "standIn": { "dex": "palafin-hero" },
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "palafin",
       "types": ["water"],
+      "abilities": { "first": "zero-to-hero" },
       "baseStats": { "hp": 100, "atk": 70, "def": 72, "spe": 100, "spa": 53, "spd": 62 },
+      "heightDm": 13,
+      "weightHg": 602,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["ground", "water2"],
       "debut": "scarlet-violet",
       "sprite": "964",
       "externalIds": { "pokeapiForm": "palafin-zero" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "palafin-hero",
@@ -30,6 +38,8 @@
         "from": ["palafin"]
       },
       "baseStats": { "hp": 100, "atk": 160, "def": 97, "spe": 100, "spa": 106, "spd": 87 },
+      "heightDm": 18,
+      "weightHg": 974,
       "sprite": "11004",
       "tools": {
         "picker": "in",
@@ -37,7 +47,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

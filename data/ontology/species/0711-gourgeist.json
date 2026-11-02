@@ -5,23 +5,31 @@
     "nationalDex": 711,
     "captureRate": 60,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Pumpkin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gourgeist",
       "types": ["ghost", "grass"],
+      "abilities": { "first": "pickup", "second": "frisk", "hidden": "insomnia" },
       "baseStats": { "hp": 65, "atk": 90, "def": 122, "spe": 84, "spa": 58, "spd": 75 },
+      "heightDm": 9,
+      "weightHg": 125,
       "color": "brown",
       "shape": "blob",
       "eggGroups": ["indeterminate"],
       "debut": "x-y",
       "sprite": "711",
       "externalIds": { "pokeapiForm": "gourgeist-average" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

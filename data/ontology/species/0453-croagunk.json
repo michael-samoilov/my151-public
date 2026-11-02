@@ -5,22 +5,30 @@
     "nationalDex": 453,
     "captureRate": 140,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 10,
+    "baseFriendship": 100,
+    "genus": { "en": "Toxic Mouth Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "croagunk",
       "types": ["poison", "fighting"],
+      "abilities": { "first": "anticipation", "second": "dry-skin", "hidden": "poison-touch" },
       "baseStats": { "hp": 48, "atk": 61, "def": 40, "spe": 50, "spa": 61, "spd": 40 },
+      "heightDm": 7,
+      "weightHg": 230,
       "color": "blue",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "diamond-pearl",
       "sprite": "453",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

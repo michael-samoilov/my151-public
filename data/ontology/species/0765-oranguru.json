@@ -5,22 +5,30 @@
     "nationalDex": 765,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Sage Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "oranguru",
       "types": ["normal", "psychic"],
+      "abilities": { "first": "inner-focus", "second": "telepathy", "hidden": "symbiosis" },
       "baseStats": { "hp": 90, "atk": 60, "def": 80, "spe": 60, "spa": 90, "spd": 110 },
+      "heightDm": 15,
+      "weightHg": 760,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["ground"],
       "debut": "sun-moon",
       "sprite": "765",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 631,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Anteater Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "heatmor",
       "types": ["fire"],
+      "abilities": { "first": "gluttony", "second": "flash-fire", "hidden": "white-smoke" },
       "baseStats": { "hp": 85, "atk": 97, "def": 66, "spe": 65, "spa": 105, "spd": 66 },
+      "heightDm": 14,
+      "weightHg": 580,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "631",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

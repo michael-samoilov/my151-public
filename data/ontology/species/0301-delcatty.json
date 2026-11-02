@@ -5,22 +5,30 @@
     "nationalDex": 301,
     "captureRate": 60,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Prim Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "delcatty",
       "types": ["normal"],
+      "abilities": { "first": "cute-charm", "second": "normalize", "hidden": "wonder-skin" },
       "baseStats": { "hp": 70, "atk": 65, "def": 65, "spe": 90, "spa": 55, "spd": 55 },
+      "heightDm": 11,
+      "weightHg": 326,
       "color": "purple",
       "shape": "quadruped",
       "eggGroups": ["ground", "fairy"],
       "debut": "ruby-sapphire",
       "sprite": "301",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

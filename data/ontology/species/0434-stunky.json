@@ -5,22 +5,30 @@
     "nationalDex": 434,
     "captureRate": 225,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Skunk Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "stunky",
       "types": ["poison", "dark"],
+      "abilities": { "first": "stench", "second": "aftermath", "hidden": "keen-eye" },
       "baseStats": { "hp": 63, "atk": 63, "def": 47, "spe": 74, "spa": 41, "spd": 41 },
+      "heightDm": 4,
+      "weightHg": 192,
       "color": "purple",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "434",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 271,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Jolly Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lombre",
       "types": ["water", "grass"],
+      "abilities": { "first": "swift-swim", "second": "rain-dish", "hidden": "own-tempo" },
       "baseStats": { "hp": 60, "atk": 50, "def": 50, "spe": 50, "spa": 60, "spd": 70 },
+      "heightDm": 12,
+      "weightHg": 325,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["water1", "plant"],
       "debut": "ruby-sapphire",
       "sprite": "271",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

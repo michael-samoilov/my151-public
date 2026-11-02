@@ -5,6 +5,10 @@
     "nationalDex": 745,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Wolf Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,26 +17,32 @@
         "values": ["midday", "midnight", "dusk"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lycanroc",
       "variety": { "forme": "midday" },
       "types": ["rock"],
+      "abilities": { "first": "keen-eye", "second": "sand-rush", "hidden": "steadfast" },
       "baseStats": { "hp": 75, "atk": 115, "def": 65, "spe": 112, "spa": 55, "spd": 65 },
+      "heightDm": 8,
+      "weightHg": 250,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "sun-moon",
       "sprite": "745",
       "externalIds": { "pokeapiForm": "lycanroc-midday" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lycanroc-midnight",
       "variety": { "forme": "midnight" },
+      "abilities": { "first": "keen-eye", "second": "vital-spirit", "hidden": "no-guard" },
       "baseStats": { "hp": 85, "atk": 115, "def": 75, "spe": 82, "spa": 55, "spd": 75 },
+      "heightDm": 11,
       "color": "red",
       "shape": "upright",
       "sprite": "10126",
@@ -44,11 +54,12 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "lycanroc-dusk",
       "variety": { "forme": "dusk" },
+      "abilities": { "first": "tough-claws" },
       "baseStats": { "hp": 75, "atk": 117, "def": 65, "spe": 110, "spa": 55, "spd": 65 },
       "debut": "ultra-sun-ultra-moon",
       "sprite": "10152",
@@ -60,7 +71,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

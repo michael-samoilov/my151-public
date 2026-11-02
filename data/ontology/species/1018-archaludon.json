@@ -5,22 +5,30 @@
     "nationalDex": 1018,
     "captureRate": 10,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 50,
+    "genus": { "en": "Alloy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "archaludon",
       "types": ["steel", "dragon"],
+      "abilities": { "first": "stamina", "second": "sturdy", "hidden": "stalwart" },
       "baseStats": { "hp": 90, "atk": 105, "def": 130, "spe": 85, "spa": 125, "spd": 65 },
+      "heightDm": 20,
+      "weightHg": 600,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["mineral", "dragon"],
       "debut": "scarlet-violet",
       "sprite": "1018",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

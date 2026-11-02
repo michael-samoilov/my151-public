@@ -5,22 +5,30 @@
     "nationalDex": 456,
     "captureRate": 190,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Wing Fish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "finneon",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "second": "storm-drain", "hidden": "water-veil" },
       "baseStats": { "hp": 49, "atk": 49, "def": 56, "spe": 66, "spa": 49, "spd": 61 },
+      "heightDm": 4,
+      "weightHg": 70,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "diamond-pearl",
       "sprite": "456",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

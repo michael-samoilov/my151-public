@@ -5,22 +5,30 @@
     "nationalDex": 563,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Coffin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cofagrigus",
       "types": ["ghost"],
+      "abilities": { "first": "mummy" },
       "baseStats": { "hp": 58, "atk": 50, "def": 145, "spe": 30, "spa": 95, "spd": 105 },
+      "heightDm": 17,
+      "weightHg": 765,
       "color": "yellow",
       "shape": "blob",
       "eggGroups": ["mineral", "indeterminate"],
       "debut": "black-white",
       "sprite": "563",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

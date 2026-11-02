@@ -5,6 +5,10 @@
     "nationalDex": 550,
     "captureRate": 25,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Hostile Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,46 +17,56 @@
         "values": ["red", "blue", "white"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "basculin",
       "variety": { "stripe": "red" },
       "types": ["water"],
+      "abilities": { "first": "reckless", "second": "adaptability", "hidden": "mold-breaker" },
       "baseStats": { "hp": 70, "atk": 92, "def": 65, "spe": 98, "spa": 80, "spd": 55 },
+      "heightDm": 10,
+      "weightHg": 180,
       "color": "green",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "black-white",
       "sprite": "550",
       "externalIds": { "pokeapiForm": "basculin-red-striped" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "basculin-blue-striped",
       "variety": { "stripe": "blue" },
+      "abilities": { "first": "rock-head", "second": "adaptability", "hidden": "mold-breaker" },
       "sprite": "10016",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "basculin-white-striped",
       "variety": { "stripe": "white" },
+      "abilities": { "first": "rattled", "second": "adaptability", "hidden": "mold-breaker" },
       "debut": "legends-arceus",
       "sprite": "10247",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

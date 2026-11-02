@@ -5,22 +5,30 @@
     "nationalDex": 158,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Big Jaw Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "totodile",
       "types": ["water"],
+      "abilities": { "first": "torrent", "hidden": "sheer-force" },
       "baseStats": { "hp": 50, "atk": 65, "def": 64, "spe": 43, "spa": 44, "spd": 48 },
+      "heightDm": 6,
+      "weightHg": 95,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["monster", "water1"],
       "debut": "gold-silver",
       "sprite": "158",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

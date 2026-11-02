@@ -5,32 +5,43 @@
     "nationalDex": 76,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Megaton Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "golem",
       "types": ["rock", "ground"],
+      "abilities": { "first": "rock-head", "second": "sturdy", "hidden": "sand-veil" },
       "baseStats": { "hp": 80, "atk": 120, "def": 130, "spe": 45, "spa": 55, "spd": 65 },
+      "heightDm": 14,
+      "weightHg": 3000,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["mineral"],
       "debut": "red-blue",
       "sprite": "76",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "golem-alola",
       "region": "alola",
       "types": ["rock", "electric"],
+      "abilities": { "first": "magnet-pull", "second": "sturdy", "hidden": "galvanize" },
+      "heightDm": 17,
+      "weightHg": 3160,
       "color": "gray",
       "debut": "sun-moon",
       "sprite": "10111",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 970,
     "captureRate": 25,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 50,
+    "genus": { "en": "Ore Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "glimmora",
       "types": ["rock", "poison"],
+      "abilities": { "first": "toxic-debris", "hidden": "corrosion" },
       "baseStats": { "hp": 83, "atk": 55, "def": 90, "spe": 86, "spa": 130, "spd": 81 },
+      "heightDm": 15,
+      "weightHg": 450,
       "color": "blue",
       "shape": "ball",
       "eggGroups": ["mineral"],
       "debut": "scarlet-violet",
       "sprite": "970",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "glimmora-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["glimmora"]
       },
+      "abilities": { "first": "adaptability" },
       "baseStats": { "hp": 83, "atk": 90, "def": 105, "spe": 101, "spa": 150, "spd": 96 },
+      "heightDm": 28,
+      "weightHg": 770,
       "debut": "legends-za",
       "sprite": "10321",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

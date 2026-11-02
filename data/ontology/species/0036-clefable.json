@@ -5,22 +5,30 @@
     "nationalDex": 36,
     "captureRate": 25,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 10,
+    "baseFriendship": 140,
+    "genus": { "en": "Fairy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "clefable",
       "types": ["fairy"],
+      "abilities": { "first": "cute-charm", "second": "magic-guard", "hidden": "unaware" },
       "baseStats": { "hp": 95, "atk": 70, "def": 73, "spe": 60, "spa": 95, "spd": 90 },
+      "heightDm": 13,
+      "weightHg": 400,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["fairy"],
       "debut": "red-blue",
       "sprite": "36",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "clefable-mega",
@@ -29,7 +37,10 @@
         "from": ["clefable"]
       },
       "types": ["fairy", "flying"],
+      "abilities": { "first": "magic-bounce" },
       "baseStats": { "hp": 95, "atk": 80, "def": 93, "spe": 70, "spa": 135, "spd": 110 },
+      "heightDm": 17,
+      "weightHg": 423,
       "debut": "legends-za",
       "sprite": "10278",
       "tools": {
@@ -38,7 +49,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

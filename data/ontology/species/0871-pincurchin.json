@@ -5,22 +5,30 @@
     "nationalDex": 871,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Sea Urchin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pincurchin",
       "types": ["electric"],
+      "abilities": { "first": "lightning-rod", "hidden": "electric-surge" },
       "baseStats": { "hp": 48, "atk": 101, "def": 95, "spe": 15, "spa": 91, "spd": 85 },
+      "heightDm": 3,
+      "weightHg": 10,
       "color": "purple",
       "shape": "tentacles",
       "eggGroups": ["water1", "indeterminate"],
       "debut": "sword-shield",
       "sprite": "871",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

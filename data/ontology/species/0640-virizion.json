@@ -5,22 +5,30 @@
     "nationalDex": 640,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 80,
+    "baseFriendship": 35,
+    "genus": { "en": "Grassland Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "virizion",
       "types": ["grass", "fighting"],
+      "abilities": { "first": "justified" },
       "baseStats": { "hp": 91, "atk": 90, "def": 72, "spe": 108, "spa": 90, "spd": 129 },
+      "heightDm": 20,
+      "weightHg": 2000,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "black-white",
       "sprite": "640",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

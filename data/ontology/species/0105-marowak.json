@@ -5,32 +5,42 @@
     "nationalDex": 105,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Bone Keeper Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "marowak",
       "types": ["ground"],
+      "abilities": { "first": "rock-head", "second": "lightning-rod", "hidden": "battle-armor" },
       "baseStats": { "hp": 60, "atk": 80, "def": 110, "spe": 45, "spa": 50, "spd": 80 },
+      "heightDm": 10,
+      "weightHg": 450,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["monster"],
       "debut": "red-blue",
       "sprite": "105",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "marowak-alola",
       "region": "alola",
       "types": ["fire", "ghost"],
+      "abilities": { "first": "cursed-body", "second": "lightning-rod", "hidden": "rock-head" },
+      "weightHg": 340,
       "color": "purple",
       "debut": "sun-moon",
       "sprite": "10115",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

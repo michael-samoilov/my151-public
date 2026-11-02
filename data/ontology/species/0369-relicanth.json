@@ -5,22 +5,30 @@
     "nationalDex": 369,
     "captureRate": 25,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Longevity Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "relicanth",
       "types": ["water", "rock"],
+      "abilities": { "first": "swift-swim", "second": "rock-head", "hidden": "sturdy" },
       "baseStats": { "hp": 100, "atk": 90, "def": 130, "spe": 55, "spa": 45, "spd": 65 },
+      "heightDm": 10,
+      "weightHg": 234,
       "color": "gray",
       "shape": "fish",
       "eggGroups": ["water1", "water2"],
       "debut": "ruby-sapphire",
       "sprite": "369",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

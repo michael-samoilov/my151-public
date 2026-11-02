@@ -5,22 +5,30 @@
     "nationalDex": 131,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Transport Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lapras",
       "types": ["water", "ice"],
+      "abilities": { "first": "water-absorb", "second": "shell-armor", "hidden": "hydration" },
       "baseStats": { "hp": 130, "atk": 85, "def": 80, "spe": 60, "spa": 85, "spd": 95 },
+      "heightDm": 25,
+      "weightHg": 2200,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["monster", "water1"],
       "debut": "red-blue",
       "sprite": "131",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lapras-gmax",
@@ -28,6 +36,8 @@
         "kind": "gigantamax",
         "from": ["lapras"]
       },
+      "heightDm": 240,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10204",
       "tools": {
@@ -36,7 +46,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

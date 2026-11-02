@@ -5,22 +5,30 @@
     "nationalDex": 899,
     "captureRate": 135,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Big Horn Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "wyrdeer",
       "types": ["normal", "psychic"],
+      "abilities": { "first": "intimidate", "second": "frisk", "hidden": "sap-sipper" },
       "baseStats": { "hp": 103, "atk": 105, "def": 72, "spe": 65, "spa": 105, "spd": 75 },
+      "heightDm": 18,
+      "weightHg": 951,
       "color": "white",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "legends-arceus",
       "sprite": "899",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

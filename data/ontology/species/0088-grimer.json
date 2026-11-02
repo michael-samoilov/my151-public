@@ -5,32 +5,43 @@
     "nationalDex": 88,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Sludge Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "grimer",
       "types": ["poison"],
+      "abilities": { "first": "stench", "second": "sticky-hold", "hidden": "poison-touch" },
       "baseStats": { "hp": 80, "atk": 80, "def": 50, "spe": 25, "spa": 40, "spd": 50 },
+      "heightDm": 9,
+      "weightHg": 300,
       "color": "purple",
       "shape": "arms",
       "eggGroups": ["indeterminate"],
       "debut": "red-blue",
       "sprite": "88",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "grimer-alola",
       "region": "alola",
       "types": ["poison", "dark"],
+      "abilities": { "first": "poison-touch", "second": "gluttony", "hidden": "power-of-alchemy" },
+      "heightDm": 7,
+      "weightHg": 420,
       "color": "green",
       "debut": "sun-moon",
       "sprite": "10112",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

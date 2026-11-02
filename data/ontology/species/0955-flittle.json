@@ -5,22 +5,30 @@
     "nationalDex": 955,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Frill Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "flittle",
       "types": ["psychic"],
+      "abilities": { "first": "anticipation", "second": "frisk", "hidden": "speed-boost" },
       "baseStats": { "hp": 30, "atk": 35, "def": 30, "spe": 75, "spa": 55, "spd": 30 },
+      "heightDm": 2,
+      "weightHg": 15,
       "color": "yellow",
       "shape": "legs",
       "eggGroups": ["flying"],
       "debut": "scarlet-violet",
       "sprite": "955",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

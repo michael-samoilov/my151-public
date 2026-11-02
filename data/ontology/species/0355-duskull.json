@@ -5,22 +5,30 @@
     "nationalDex": 355,
     "captureRate": 190,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 35,
+    "genus": { "en": "Requiem Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "duskull",
       "types": ["ghost"],
+      "abilities": { "first": "levitate", "hidden": "frisk" },
       "baseStats": { "hp": 20, "atk": 40, "def": 90, "spe": 25, "spa": 30, "spd": 90 },
+      "heightDm": 8,
+      "weightHg": 150,
       "color": "black",
       "shape": "arms",
       "eggGroups": ["indeterminate"],
       "debut": "ruby-sapphire",
       "sprite": "355",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

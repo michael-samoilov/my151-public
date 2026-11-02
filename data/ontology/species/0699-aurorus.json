@@ -5,22 +5,30 @@
     "nationalDex": 699,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Tundra Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "aurorus",
       "types": ["rock", "ice"],
+      "abilities": { "first": "refrigerate", "hidden": "snow-warning" },
       "baseStats": { "hp": 123, "atk": 77, "def": 72, "spe": 58, "spa": 99, "spd": 92 },
+      "heightDm": 27,
+      "weightHg": 2250,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["monster"],
       "debut": "x-y",
       "sprite": "699",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

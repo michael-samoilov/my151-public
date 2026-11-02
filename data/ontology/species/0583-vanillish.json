@@ -5,22 +5,30 @@
     "nationalDex": 583,
     "captureRate": 120,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Icy Snow Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "vanillish",
       "types": ["ice"],
+      "abilities": { "first": "ice-body", "second": "snow-cloak", "hidden": "weak-armor" },
       "baseStats": { "hp": 51, "atk": 65, "def": 65, "spe": 59, "spa": 80, "spd": 75 },
+      "heightDm": 11,
+      "weightHg": 410,
       "color": "white",
       "shape": "blob",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "583",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

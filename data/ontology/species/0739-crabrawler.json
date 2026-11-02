@@ -5,22 +5,30 @@
     "nationalDex": 739,
     "captureRate": 225,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Boxing Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "crabrawler",
       "types": ["fighting"],
+      "abilities": { "first": "hyper-cutter", "second": "iron-fist", "hidden": "anger-point" },
       "baseStats": { "hp": 47, "atk": 82, "def": 57, "spe": 63, "spa": 42, "spd": 47 },
+      "heightDm": 6,
+      "weightHg": 70,
       "color": "purple",
       "shape": "armor",
       "eggGroups": ["water3"],
       "debut": "sun-moon",
       "sprite": "739",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

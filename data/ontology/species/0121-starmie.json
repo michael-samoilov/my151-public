@@ -5,22 +5,30 @@
     "nationalDex": 121,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mysterious Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "starmie",
       "types": ["water", "psychic"],
+      "abilities": { "first": "illuminate", "second": "natural-cure", "hidden": "analytic" },
       "baseStats": { "hp": 60, "atk": 75, "def": 85, "spe": 115, "spa": 100, "spd": 85 },
+      "heightDm": 11,
+      "weightHg": 800,
       "color": "purple",
       "shape": "blob",
       "eggGroups": ["water3"],
       "debut": "red-blue",
       "sprite": "121",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "starmie-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["starmie"]
       },
+      "abilities": { "first": "huge-power" },
       "baseStats": { "hp": 60, "atk": 140, "def": 105, "spe": 120, "spa": 130, "spd": 105 },
+      "heightDm": 23,
       "debut": "legends-za",
       "sprite": "10280",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

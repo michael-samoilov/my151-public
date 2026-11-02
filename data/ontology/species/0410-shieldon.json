@@ -5,22 +5,30 @@
     "nationalDex": 410,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Shield Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "shieldon",
       "types": ["rock", "steel"],
+      "abilities": { "first": "sturdy", "hidden": "soundproof" },
       "baseStats": { "hp": 30, "atk": 42, "def": 118, "spe": 30, "spa": 42, "spd": 88 },
+      "heightDm": 5,
+      "weightHg": 570,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["monster"],
       "debut": "diamond-pearl",
       "sprite": "410",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 292,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Shed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "shedinja",
       "types": ["bug", "ghost"],
+      "abilities": { "first": "wonder-guard" },
       "baseStats": { "hp": 1, "atk": 90, "def": 45, "spe": 40, "spa": 30, "spd": 30 },
+      "heightDm": 8,
+      "weightHg": 12,
       "color": "brown",
       "shape": "blob",
       "eggGroups": ["mineral"],
       "debut": "ruby-sapphire",
       "sprite": "292",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

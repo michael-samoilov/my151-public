@@ -5,22 +5,30 @@
     "nationalDex": 468,
     "captureRate": 30,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 10,
+    "baseFriendship": 70,
+    "genus": { "en": "Jubilee Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "togekiss",
       "types": ["fairy", "flying"],
+      "abilities": { "first": "hustle", "second": "serene-grace", "hidden": "super-luck" },
       "baseStats": { "hp": 85, "atk": 50, "def": 95, "spe": 80, "spa": 120, "spd": 115 },
+      "heightDm": 15,
+      "weightHg": 380,
       "color": "white",
       "shape": "wings",
       "eggGroups": ["flying", "fairy"],
       "debut": "diamond-pearl",
       "sprite": "468",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 576,
     "captureRate": 50,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Astral Body Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gothitelle",
       "types": ["psychic"],
+      "abilities": { "first": "frisk", "second": "competitive", "hidden": "shadow-tag" },
       "baseStats": { "hp": 70, "atk": 55, "def": 95, "spe": 65, "spa": 95, "spd": 110 },
+      "heightDm": 15,
+      "weightHg": 440,
       "color": "purple",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "black-white",
       "sprite": "576",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

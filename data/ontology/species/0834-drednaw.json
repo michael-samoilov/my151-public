@@ -5,22 +5,30 @@
     "nationalDex": 834,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Bite Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "drednaw",
       "types": ["water", "rock"],
+      "abilities": { "first": "strong-jaw", "second": "shell-armor", "hidden": "swift-swim" },
       "baseStats": { "hp": 90, "atk": 115, "def": 90, "spe": 74, "spa": 48, "spd": 68 },
+      "heightDm": 10,
+      "weightHg": 1155,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["monster", "water1"],
       "debut": "sword-shield",
       "sprite": "834",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "drednaw-gmax",
@@ -28,13 +36,16 @@
         "kind": "gigantamax",
         "from": ["drednaw"]
       },
+      "heightDm": 240,
+      "weightHg": null,
       "sprite": "10214",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 166,
     "captureRate": 90,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Five Star Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ledian",
       "types": ["bug", "flying"],
+      "abilities": { "first": "swarm", "second": "early-bird", "hidden": "iron-fist" },
       "baseStats": { "hp": 55, "atk": 35, "def": 50, "spe": 85, "spa": 55, "spd": 110 },
+      "heightDm": 14,
+      "weightHg": 356,
       "color": "red",
       "shape": "wings",
       "eggGroups": ["bug"],
       "debut": "gold-silver",
       "sprite": "166",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

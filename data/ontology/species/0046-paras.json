@@ -5,22 +5,30 @@
     "nationalDex": 46,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mushroom Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "paras",
       "types": ["bug", "grass"],
+      "abilities": { "first": "effect-spore", "second": "dry-skin", "hidden": "damp" },
       "baseStats": { "hp": 35, "atk": 70, "def": 55, "spe": 25, "spa": 45, "spd": 55 },
+      "heightDm": 3,
+      "weightHg": 54,
       "color": "red",
       "shape": "armor",
       "eggGroups": ["bug", "plant"],
       "debut": "red-blue",
       "sprite": "46",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

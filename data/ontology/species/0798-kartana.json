@@ -5,22 +5,30 @@
     "nationalDex": 798,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Drawn Sword Pokémon" },
     "legendaryClass": "ultra-beast",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "kartana",
       "types": ["grass", "steel"],
+      "abilities": { "first": "beast-boost" },
       "baseStats": { "hp": 59, "atk": 181, "def": 131, "spe": 109, "spa": 59, "spd": 31 },
+      "heightDm": 3,
+      "weightHg": 1,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "798",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

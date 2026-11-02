@@ -5,22 +5,30 @@
     "nationalDex": 296,
     "captureRate": 180,
     "growthRate": "fluctuating",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Guts Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "makuhita",
       "types": ["fighting"],
+      "abilities": { "first": "thick-fat", "second": "guts", "hidden": "sheer-force" },
       "baseStats": { "hp": 72, "atk": 60, "def": 30, "spe": 25, "spa": 20, "spd": 30 },
+      "heightDm": 10,
+      "weightHg": 864,
       "color": "yellow",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "ruby-sapphire",
       "sprite": "296",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

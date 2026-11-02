@@ -5,22 +5,30 @@
     "nationalDex": 564,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Prototurtle Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tirtouga",
       "types": ["water", "rock"],
+      "abilities": { "first": "solid-rock", "second": "sturdy", "hidden": "swift-swim" },
       "baseStats": { "hp": 54, "atk": 78, "def": 103, "spe": 22, "spa": 53, "spd": 45 },
+      "heightDm": 7,
+      "weightHg": 165,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["water1", "water3"],
       "debut": "black-white",
       "sprite": "564",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

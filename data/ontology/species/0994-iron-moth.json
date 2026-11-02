@@ -5,22 +5,30 @@
     "nationalDex": 994,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "iron-moth",
       "types": ["fire", "poison"],
+      "abilities": { "first": "quark-drive" },
       "baseStats": { "hp": 80, "atk": 70, "def": 60, "spe": 110, "spa": 140, "spd": 110 },
+      "heightDm": 12,
+      "weightHg": 360,
       "color": "white",
       "shape": "bug-wings",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "994",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 634,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Hostile Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zweilous",
       "types": ["dark", "dragon"],
+      "abilities": { "first": "hustle" },
       "baseStats": { "hp": 72, "atk": 85, "def": 70, "spe": 58, "spa": 65, "spd": 70 },
+      "heightDm": 14,
+      "weightHg": 500,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["dragon"],
       "debut": "black-white",
       "sprite": "634",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

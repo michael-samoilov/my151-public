@@ -5,22 +5,30 @@
     "nationalDex": 213,
     "captureRate": 190,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mold Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "shuckle",
       "types": ["bug", "rock"],
+      "abilities": { "first": "sturdy", "second": "gluttony", "hidden": "contrary" },
       "baseStats": { "hp": 20, "atk": 10, "def": 230, "spe": 5, "spa": 10, "spd": 230 },
+      "heightDm": 6,
+      "weightHg": 205,
       "color": "yellow",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "gold-silver",
       "sprite": "213",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

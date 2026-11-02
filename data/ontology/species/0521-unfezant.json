@@ -5,28 +5,37 @@
     "nationalDex": 521,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Proud Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "unfezant",
       "sex": "male",
       "types": ["normal", "flying"],
+      "abilities": { "first": "big-pecks", "second": "super-luck", "hidden": "rivalry" },
       "baseStats": { "hp": 80, "atk": 115, "def": 80, "spe": 93, "spa": 65, "spd": 55 },
+      "heightDm": 12,
+      "weightHg": 290,
       "color": "gray",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "black-white",
       "sprite": "521",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "unfezant-female",
       "sex": "female",
       "sprite": "11095",
+      "externalIds": { "pokeapiPokemon": "unfezant" },
       "tools": {
         "picker": "in",
         "dex": { "out": "look-only" },

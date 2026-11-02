@@ -5,22 +5,30 @@
     "nationalDex": 828,
     "captureRate": 127,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Fox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "thievul",
       "types": ["dark"],
+      "abilities": { "first": "run-away", "second": "unburden", "hidden": "stakeout" },
       "baseStats": { "hp": 70, "atk": 58, "def": 58, "spe": 90, "spa": 87, "spd": 92 },
+      "heightDm": 12,
+      "weightHg": 199,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "sword-shield",
       "sprite": "828",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

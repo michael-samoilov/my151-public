@@ -5,22 +5,30 @@
     "nationalDex": 965,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Single-Cyl Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "varoom",
       "types": ["steel", "poison"],
+      "abilities": { "first": "overcoat", "hidden": "slow-start" },
       "baseStats": { "hp": 45, "atk": 70, "def": 63, "spe": 47, "spa": 30, "spd": 45 },
+      "heightDm": 10,
+      "weightHg": 350,
       "color": "gray",
       "shape": "legs",
       "eggGroups": ["mineral"],
       "debut": "scarlet-violet",
       "sprite": "965",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

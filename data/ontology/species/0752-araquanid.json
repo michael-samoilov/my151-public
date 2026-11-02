@@ -5,22 +5,30 @@
     "nationalDex": 752,
     "captureRate": 100,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Water Bubble Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "araquanid",
       "types": ["water", "bug"],
+      "abilities": { "first": "water-bubble", "hidden": "water-absorb" },
       "baseStats": { "hp": 68, "atk": 70, "def": 92, "spe": 42, "spa": 50, "spd": 132 },
+      "heightDm": 18,
+      "weightHg": 820,
       "color": "green",
       "shape": "armor",
       "eggGroups": ["water1", "bug"],
       "debut": "sun-moon",
       "sprite": "752",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

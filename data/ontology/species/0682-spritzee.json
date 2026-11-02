@@ -5,22 +5,30 @@
     "nationalDex": 682,
     "captureRate": 200,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Perfume Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "spritzee",
       "types": ["fairy"],
+      "abilities": { "first": "healer", "hidden": "aroma-veil" },
       "baseStats": { "hp": 78, "atk": 52, "def": 60, "spe": 23, "spa": 63, "spd": 65 },
+      "heightDm": 2,
+      "weightHg": 5,
       "color": "pink",
       "shape": "arms",
       "eggGroups": ["fairy"],
       "debut": "x-y",
       "sprite": "682",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

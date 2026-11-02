@@ -5,22 +5,30 @@
     "nationalDex": 722,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Grass Quill Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "rowlet",
       "types": ["grass", "flying"],
+      "abilities": { "first": "overgrow", "hidden": "long-reach" },
       "baseStats": { "hp": 68, "atk": 55, "def": 55, "spe": 42, "spa": 50, "spd": 50 },
+      "heightDm": 3,
+      "weightHg": 15,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "sun-moon",
       "sprite": "722",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

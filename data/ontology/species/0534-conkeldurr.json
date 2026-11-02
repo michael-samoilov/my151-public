@@ -5,22 +5,30 @@
     "nationalDex": 534,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Muscular Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "conkeldurr",
       "types": ["fighting"],
+      "abilities": { "first": "guts", "second": "sheer-force", "hidden": "iron-fist" },
       "baseStats": { "hp": 105, "atk": 140, "def": 95, "spe": 45, "spa": 55, "spd": 65 },
+      "heightDm": 14,
+      "weightHg": 870,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "black-white",
       "sprite": "534",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

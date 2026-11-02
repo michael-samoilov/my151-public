@@ -5,22 +5,30 @@
     "nationalDex": 917,
     "captureRate": 255,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "String Ball Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tarountula",
       "types": ["bug"],
+      "abilities": { "first": "insomnia", "hidden": "stakeout" },
       "baseStats": { "hp": 35, "atk": 41, "def": 45, "spe": 20, "spa": 29, "spd": 40 },
+      "heightDm": 3,
+      "weightHg": 40,
       "color": "white",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "scarlet-violet",
       "sprite": "917",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

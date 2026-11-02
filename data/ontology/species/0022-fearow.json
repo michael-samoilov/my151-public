@@ -5,22 +5,30 @@
     "nationalDex": 22,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Beak Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "fearow",
       "types": ["normal", "flying"],
+      "abilities": { "first": "keen-eye", "hidden": "sniper" },
       "baseStats": { "hp": 65, "atk": 90, "def": 65, "spe": 100, "spa": 61, "spd": 61 },
+      "heightDm": 12,
+      "weightHg": 380,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "red-blue",
       "sprite": "22",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

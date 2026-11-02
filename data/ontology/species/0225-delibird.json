@@ -5,22 +5,30 @@
     "nationalDex": 225,
     "captureRate": 45,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Delivery Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "delibird",
       "types": ["ice", "flying"],
+      "abilities": { "first": "vital-spirit", "second": "hustle", "hidden": "insomnia" },
       "baseStats": { "hp": 45, "atk": 55, "def": 45, "spe": 75, "spa": 65, "spd": 45 },
+      "heightDm": 9,
+      "weightHg": 160,
       "color": "red",
       "shape": "wings",
       "eggGroups": ["water1", "ground"],
       "debut": "gold-silver",
       "sprite": "225",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

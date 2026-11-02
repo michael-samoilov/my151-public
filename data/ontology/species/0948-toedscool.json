@@ -5,22 +5,30 @@
     "nationalDex": 948,
     "captureRate": 190,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Woodear Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "toedscool",
       "types": ["ground", "grass"],
+      "abilities": { "first": "mycelium-might" },
       "baseStats": { "hp": 40, "atk": 40, "def": 35, "spe": 70, "spa": 50, "spd": 100 },
+      "heightDm": 9,
+      "weightHg": 330,
       "color": "yellow",
       "shape": "legs",
       "eggGroups": ["plant"],
       "debut": "scarlet-violet",
       "sprite": "948",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

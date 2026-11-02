@@ -5,23 +5,31 @@
     "nationalDex": 555,
     "captureRate": 60,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Blazing Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "darmanitan",
       "types": ["fire"],
+      "abilities": { "first": "sheer-force", "hidden": "zen-mode" },
       "baseStats": { "hp": 105, "atk": 140, "def": 55, "spe": 95, "spa": 30, "spd": 55 },
+      "heightDm": 13,
+      "weightHg": 929,
       "color": "red",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "555",
       "externalIds": { "pokeapiForm": "darmanitan-standard" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "darmanitan-zen",
@@ -45,12 +53,15 @@
       "id": "darmanitan-galar",
       "region": "galar",
       "types": ["ice"],
+      "abilities": { "first": "gorilla-tactics", "hidden": "zen-mode" },
+      "heightDm": 17,
+      "weightHg": 1200,
       "color": "white",
       "debut": "sword-shield",
       "sprite": "10177",
       "externalIds": { "pokeapiForm": "darmanitan-galar-standard" },
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "darmanitan-galar-zen",

@@ -5,22 +5,30 @@
     "nationalDex": 939,
     "captureRate": 50,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "EleFrog Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bellibolt",
       "types": ["electric"],
+      "abilities": { "first": "electromorphosis", "second": "static", "hidden": "damp" },
       "baseStats": { "hp": 109, "atk": 64, "def": 91, "spe": 45, "spa": 103, "spd": 83 },
+      "heightDm": 12,
+      "weightHg": 1130,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["water1"],
       "debut": "scarlet-violet",
       "sprite": "939",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

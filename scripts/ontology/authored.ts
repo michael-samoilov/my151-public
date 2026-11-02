@@ -3,12 +3,20 @@
  * string; scripts/ontology/load.ts brands it after it has checked the reference.
  */
 import type { DataSourceId, DecisionId, FormId, GameId, RegionId, SpeciesId, SpriteStem, VarietyAxisId, VarietyValueId } from '../../src/ontology/ids';
-import type { FactKey, FormFacts, FormState, LegendaryClass, Sex, ToolId, ToolInclusion, Variety } from '../../src/ontology/model';
+import type { FactKey, FormFacts, FormState, GenderRatio, LegendaryClass, LocalizedText, Sex, ToolId, ToolInclusion, Variety } from '../../src/ontology/model';
+import type { ExternalIds, PokeapiExtract } from './pokeapi/source';
+
+/**
+ * The source a form cites for a fact it inherits because nothing describes the form: the value is
+ * the base form's by the inheritance rule, and nobody has checked it. Only a form the pinned
+ * PokeAPI snapshot does not know, or a fact that snapshot lacks, may cite it.
+ */
+export const INHERITED_UNSOURCED = 'inherited:unsourced';
 
 export interface Sourced<K extends string> {
   /** Where this record came from. Defaults to the file's source. */
   readonly source?: DataSourceId;
-  /** A field whose value came from another source than the record. */
+  /** A field whose value came from another source than the record, or INHERITED_UNSOURCED for an unchecked inherited fact. */
   readonly sourceOf?: { readonly [F in K]?: DataSourceId };
 }
 
@@ -21,11 +29,17 @@ export interface SpeciesFile {
   readonly evolutions: readonly EvolutionEntry[];
 }
 
-export interface SpeciesEntry {
+export type SpeciesFactKey = 'captureRate' | 'growthRate' | 'genderRatio' | 'hatchCycles' | 'baseFriendship' | 'genus';
+
+export interface SpeciesEntry extends Sourced<SpeciesFactKey> {
   readonly id: SpeciesId;
   readonly nationalDex: number;
   readonly captureRate: number;
   readonly growthRate: string;
+  readonly genderRatio: GenderRatio;
+  readonly hatchCycles: number;
+  readonly baseFriendship: number;
+  readonly genus: LocalizedText;
   readonly legendaryClass: LegendaryClass;
   readonly tags: readonly string[];
   /** The axes this species' forms vary on, with the values in display order. */
@@ -37,7 +51,7 @@ export interface SpeciesEntry {
 interface FormEntryBase extends Sourced<FactKey | 'tools' | 'sprite'> {
   readonly id: FormId;
   readonly sprite: SpriteStem;
-  readonly externalIds?: { readonly pokeapiForm?: string };
+  readonly externalIds?: ExternalIds;
 }
 
 export interface CoordinatesEntry {
@@ -47,11 +61,12 @@ export interface CoordinatesEntry {
   readonly fusion?: SpeciesId;
 }
 
-export type CoreFact = Exclude<FactKey, 'obtain'>;
+/** The facts a default form must state. Obtain and shiny default to "standard" and "available". */
+export type CoreFact = Exclude<FactKey, 'obtain' | 'shiny'>;
 
 /** The default form states every core fact. It is in every tool unless it says otherwise. */
 export type DefaultFormEntry = FormEntryBase & CoordinatesEntry & Pick<FormFacts, CoreFact> &
-  Partial<Pick<FormFacts, 'obtain'>> & { readonly state?: never; readonly tools?: ToolInclusion };
+  Partial<Pick<FormFacts, 'obtain' | 'shiny'>> & { readonly state?: never; readonly tools?: ToolInclusion };
 
 /** A permanent non-default form: coordinates, sparse facts, explicit tool verdicts. Inherits from forms[0]. */
 export type PermanentFormEntry = FormEntryBase & CoordinatesEntry & Partial<FormFacts> &
@@ -103,11 +118,11 @@ export interface DecisionEntry {
   readonly where: string;
 }
 
-export interface DataSourceEntry {
-  readonly id: DataSourceId;
-  readonly kind: 'legacy-file';
-  readonly ref: string;
-}
+export type DataSourceEntry =
+  | { readonly id: DataSourceId; readonly kind: 'legacy-file'; readonly ref: string }
+  /** PokeAPI's CSV tables at one commit, read through the extract file; see scripts/ontology/pokeapi/extract.ts. */
+  | { readonly id: DataSourceId; readonly kind: 'pokeapi-csv'; readonly repository: string; readonly commit: string; readonly extract: string }
+  | { readonly id: DataSourceId; readonly kind: 'inheritance'; readonly note: string };
 
 /** legacy/picker.json: what today's Favorite Picker records hold that the ontology does not derive. */
 export interface LegacyPicker {
@@ -133,9 +148,11 @@ export interface AuthoredOntology {
   readonly games: readonly GameEntry[];
   readonly regions: readonly string[];
   readonly varietyAxes: readonly string[];
-  readonly vocab: { readonly [kind in 'types' | 'colors' | 'shapes' | 'eggGroups' | 'growthRates' | 'speciesTags']: readonly string[] };
+  readonly vocab: { readonly [kind in 'types' | 'colors' | 'shapes' | 'eggGroups' | 'growthRates' | 'speciesTags' | 'abilities']: readonly string[] };
   readonly decisions: readonly DecisionEntry[];
   readonly sources: readonly DataSourceEntry[];
+  /** The pinned PokeAPI snapshot named by the pokeapi-csv source. */
+  readonly pokeapi: PokeapiExtract;
   readonly legacy: {
     readonly picker: LegacyPicker;
     readonly dex: LegacyDex;

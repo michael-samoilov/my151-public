@@ -5,22 +5,30 @@
     "nationalDex": 84,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Twin Bird Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "doduo",
       "types": ["normal", "flying"],
+      "abilities": { "first": "run-away", "second": "early-bird", "hidden": "tangled-feet" },
       "baseStats": { "hp": 35, "atk": 85, "def": 45, "spe": 75, "spa": 35, "spd": 35 },
+      "heightDm": 14,
+      "weightHg": 392,
       "color": "brown",
       "shape": "legs",
       "eggGroups": ["flying"],
       "debut": "red-blue",
       "sprite": "84",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

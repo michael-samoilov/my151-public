@@ -5,22 +5,30 @@
     "nationalDex": 782,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Scaly Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "jangmo-o",
       "types": ["dragon"],
+      "abilities": { "first": "bulletproof", "second": "soundproof", "hidden": "overcoat" },
       "baseStats": { "hp": 45, "atk": 55, "def": 65, "spe": 45, "spa": 45, "spd": 45 },
+      "heightDm": 6,
+      "weightHg": 297,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["dragon"],
       "debut": "sun-moon",
       "sprite": "782",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

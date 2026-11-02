@@ -5,22 +5,30 @@
     "nationalDex": 345,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Sea Lily Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lileep",
       "types": ["rock", "grass"],
+      "abilities": { "first": "suction-cups", "hidden": "storm-drain" },
       "baseStats": { "hp": 66, "atk": 41, "def": 77, "spe": 23, "spa": 61, "spd": 87 },
+      "heightDm": 10,
+      "weightHg": 238,
       "color": "purple",
       "shape": "blob",
       "eggGroups": ["water3"],
       "debut": "ruby-sapphire",
       "sprite": "345",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

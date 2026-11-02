@@ -5,22 +5,30 @@
     "nationalDex": 127,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Stag Beetle Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pinsir",
       "types": ["bug"],
+      "abilities": { "first": "hyper-cutter", "second": "mold-breaker", "hidden": "moxie" },
       "baseStats": { "hp": 65, "atk": 125, "def": 100, "spe": 85, "spa": 55, "spd": 70 },
+      "heightDm": 15,
+      "weightHg": 550,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["bug"],
       "debut": "red-blue",
       "sprite": "127",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "pinsir-mega",
@@ -29,7 +37,10 @@
         "from": ["pinsir"]
       },
       "types": ["bug", "flying"],
+      "abilities": { "first": "aerilate" },
       "baseStats": { "hp": 65, "atk": 155, "def": 120, "spe": 105, "spa": 65, "spd": 90 },
+      "heightDm": 17,
+      "weightHg": 590,
       "shape": "bug-wings",
       "debut": "x-y",
       "sprite": "10040",
@@ -39,7 +50,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

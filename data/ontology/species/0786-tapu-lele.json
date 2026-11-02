@@ -5,22 +5,30 @@
     "nationalDex": 786,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Land Spirit Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tapu-lele",
       "types": ["psychic", "fairy"],
+      "abilities": { "first": "psychic-surge", "hidden": "telepathy" },
       "baseStats": { "hp": 70, "atk": 85, "def": 75, "spe": 95, "spa": 130, "spd": 115 },
+      "heightDm": 12,
+      "weightHg": 186,
       "color": "pink",
       "shape": "arms",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "786",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

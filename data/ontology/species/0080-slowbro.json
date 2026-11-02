@@ -5,22 +5,30 @@
     "nationalDex": 80,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Hermit Crab Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "slowbro",
       "types": ["water", "psychic"],
+      "abilities": { "first": "oblivious", "second": "own-tempo", "hidden": "regenerator" },
       "baseStats": { "hp": 95, "atk": 75, "def": 110, "spe": 30, "spa": 100, "spd": 80 },
+      "heightDm": 16,
+      "weightHg": 785,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["monster", "water1"],
       "debut": "red-blue",
       "sprite": "80",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "slowbro-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["slowbro"]
       },
+      "abilities": { "first": "shell-armor" },
       "baseStats": { "hp": 95, "atk": 75, "def": 180, "spe": 30, "spa": 130, "spd": 80 },
+      "heightDm": 20,
+      "weightHg": 1200,
       "shape": "arms",
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10071",
@@ -38,17 +49,19 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "slowbro-galar",
       "region": "galar",
       "types": ["poison", "psychic"],
+      "abilities": { "first": "quick-draw", "second": "own-tempo", "hidden": "regenerator" },
       "baseStats": { "hp": 95, "atk": 100, "def": 95, "spe": 30, "spa": 100, "spd": 70 },
+      "weightHg": 705,
       "debut": "sword-shield",
       "sprite": "10165",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

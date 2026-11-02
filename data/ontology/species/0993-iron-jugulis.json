@@ -5,22 +5,30 @@
     "nationalDex": 993,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "iron-jugulis",
       "types": ["dark", "flying"],
+      "abilities": { "first": "quark-drive" },
       "baseStats": { "hp": 94, "atk": 80, "def": 86, "spe": 108, "spa": 122, "spd": 80 },
+      "heightDm": 13,
+      "weightHg": 1110,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "993",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 653,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "fennekin",
       "types": ["fire"],
+      "abilities": { "first": "blaze", "hidden": "magician" },
       "baseStats": { "hp": 40, "atk": 45, "def": 40, "spe": 60, "spa": 62, "spd": 60 },
+      "heightDm": 4,
+      "weightHg": 94,
       "color": "red",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "x-y",
       "sprite": "653",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

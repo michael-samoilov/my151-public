@@ -5,22 +5,30 @@
     "nationalDex": 655,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "delphox",
       "types": ["fire", "psychic"],
+      "abilities": { "first": "blaze", "hidden": "magician" },
       "baseStats": { "hp": 75, "atk": 69, "def": 72, "spe": 104, "spa": 114, "spd": 100 },
+      "heightDm": 15,
+      "weightHg": 390,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "x-y",
       "sprite": "655",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "delphox-mega",
@@ -28,6 +36,7 @@
         "kind": "mega",
         "from": ["delphox"]
       },
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 75, "atk": 69, "def": 72, "spe": 134, "spa": 159, "spd": 125 },
       "debut": "legends-za",
       "sprite": "10293",
@@ -37,7 +46,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

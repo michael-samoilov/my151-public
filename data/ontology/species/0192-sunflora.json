@@ -5,22 +5,30 @@
     "nationalDex": 192,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Sun Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "sunflora",
       "types": ["grass"],
+      "abilities": { "first": "chlorophyll", "second": "solar-power", "hidden": "early-bird" },
       "baseStats": { "hp": 75, "atk": 75, "def": 55, "spe": 30, "spa": 105, "spd": 85 },
+      "heightDm": 8,
+      "weightHg": 85,
       "color": "yellow",
       "shape": "humanoid",
       "eggGroups": ["plant"],
       "debut": "gold-silver",
       "sprite": "192",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

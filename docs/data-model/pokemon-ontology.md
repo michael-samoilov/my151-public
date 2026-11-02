@@ -1,6 +1,6 @@
 # Pokémon data model (ontology) spec
 
-Status: approved direction. Michael reviewed version 1 on 2026-11-02 and asked for the changes in version 2. Phase 0 is in progress. Nothing else is built yet.
+Status: approved direction. Michael reviewed version 1 on 2026-11-02 and asked for the changes in version 2. Phase 1 and phase 1b (core facts and the source audit, see the delivery plan) are built. Phase 0 (sprite alignment) is in review on the work branch. Phase 1b's open questions are in `data/ontology/reports/classification-audit.json`.
 Date: 2026-11-01, revised 2026-11-02.
 
 ## Summary
@@ -571,6 +571,7 @@ Each phase is one pull request that ends in a check. A phase starts only when th
 | --- | --- | --- |
 | 0. Sprite pose and bounds | `pose` and measured `bounds` for every sprite file. One shared alignment helper used by every sprite renderer. Grounded sprites stand 4 pixels above the floor, and floating sprites move down half as far. | A check fails when a sprite has no pose or stale bounds. `/verify-my151` before-and-after shots on every surface that draws a sprite. |
 | 1. Ontology scaffold | `data/ontology/` with every species and form the three catalogs know (1,427 identities), plus the `AppId` ledger. A generator writes today's catalog files from it. | The generated `pokemon.json` is byte-identical to today's. The Picker and League catalogs return the same records at runtime. |
+| 1b. Core facts and source audit | Abilities, height, weight, shiny locks, gender ratio, hatch cycles, base friendship, and genus, each with provenance, from PokeAPI at one pinned commit. Every classification and every fact already in the ontology compared with that snapshot; each disagreement reviewed in `data/ontology/reports/`. | `pokemon.json` stays byte-identical and parity holds. The check fails on a missing core fact, an unknown ability, or an unreviewed disagreement, with the file and field named. |
 | 2. One catalog | The Dex, League, and Picker read the generated projections. Duplicate tables are deleted: `formBst.json`, `alt-form-species.json`, `favoriteBrowserIds.json`, and the hand-written ID translations. The Picker's four colliding IDs migrate in saved data. | Saved-data migration tests. Every catalog consumer's existing tests pass. Bundle budget holds. |
 | 3. Exceptions become fields | Each hard-coded list in the census below becomes a typed field or link. A lint rule rejects a new list of Pokémon IDs in `src/`. | For each list: the field-driven result equals the list. The lint fails on a planted list. |
 | 4. Sprites and credits | `spriteAttribution.json`, `sprite-evidence.json`, and `creditTerms.json` merge into sprite, artist, project, and terms objects. Effective terms are derived by the rule in "Effective terms". | `credits:check-sprites` passes against the new source. The Acknowledgements page is unchanged in screenshots. |

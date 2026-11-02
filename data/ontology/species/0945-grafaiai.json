@@ -5,22 +5,30 @@
     "nationalDex": 945,
     "captureRate": 90,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Toxic Monkey Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "grafaiai",
       "types": ["poison", "normal"],
+      "abilities": { "first": "unburden", "second": "poison-touch", "hidden": "prankster" },
       "baseStats": { "hp": 63, "atk": 95, "def": 65, "spe": 110, "spa": 80, "spd": 72 },
+      "heightDm": 7,
+      "weightHg": 272,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "scarlet-violet",
       "sprite": "945",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

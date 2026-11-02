@@ -5,22 +5,30 @@
     "nationalDex": 872,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Worm Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "snom",
       "types": ["ice", "bug"],
+      "abilities": { "first": "shield-dust", "hidden": "ice-scales" },
       "baseStats": { "hp": 30, "atk": 25, "def": 35, "spe": 20, "spa": 45, "spd": 30 },
+      "heightDm": 3,
+      "weightHg": 38,
       "color": "white",
       "shape": "squiggle",
       "eggGroups": ["bug"],
       "debut": "sword-shield",
       "sprite": "872",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

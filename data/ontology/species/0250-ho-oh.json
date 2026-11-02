@@ -5,22 +5,30 @@
     "nationalDex": 250,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Rainbow Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ho-oh",
       "types": ["fire", "flying"],
+      "abilities": { "first": "pressure", "hidden": "regenerator" },
       "baseStats": { "hp": 106, "atk": 130, "def": 90, "spe": 90, "spa": 110, "spd": 154 },
+      "heightDm": 38,
+      "weightHg": 1990,
       "color": "red",
       "shape": "wings",
       "eggGroups": ["no-eggs"],
       "debut": "gold-silver",
       "sprite": "250",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

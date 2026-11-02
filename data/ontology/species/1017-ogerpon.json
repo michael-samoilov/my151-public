@@ -5,6 +5,10 @@
     "nationalDex": 1017,
     "captureRate": 5,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 50,
+    "baseFriendship": 50,
+    "genus": { "en": "Mask Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [
@@ -13,20 +17,24 @@
         "values": ["teal", "wellspring", "hearthflame", "cornerstone"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ogerpon",
       "variety": { "mask": "teal" },
       "types": ["grass"],
+      "abilities": { "first": "defiant" },
       "baseStats": { "hp": 80, "atk": 120, "def": 84, "spe": 110, "spa": 60, "spd": 96 },
+      "heightDm": 12,
+      "weightHg": 398,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1017",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "ogerpon-teal-tera",
@@ -42,12 +50,13 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-wellspring-mask",
       "variety": { "mask": "wellspring" },
       "types": ["grass", "water"],
+      "abilities": { "first": "water-absorb" },
       "color": "blue",
       "sprite": "10273",
       "tools": {
@@ -58,7 +67,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-wellspring-tera",
@@ -75,12 +84,13 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-hearthflame-mask",
       "variety": { "mask": "hearthflame" },
       "types": ["grass", "fire"],
+      "abilities": { "first": "mold-breaker" },
       "color": "red",
       "sprite": "10274",
       "tools": {
@@ -91,7 +101,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-hearthflame-tera",
@@ -108,12 +118,13 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-cornerstone-mask",
       "variety": { "mask": "cornerstone" },
       "types": ["grass", "rock"],
+      "abilities": { "first": "sturdy" },
       "color": "gray",
       "sprite": "10275",
       "tools": {
@@ -124,7 +135,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-cornerstone-tera",
@@ -141,7 +152,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

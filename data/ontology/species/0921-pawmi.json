@@ -5,22 +5,30 @@
     "nationalDex": 921,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Mouse Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pawmi",
       "types": ["electric"],
+      "abilities": { "first": "static", "second": "natural-cure", "hidden": "iron-fist" },
       "baseStats": { "hp": 45, "atk": 50, "def": 20, "spe": 60, "spa": 40, "spd": 25 },
+      "heightDm": 3,
+      "weightHg": 25,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "scarlet-violet",
       "sprite": "921",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

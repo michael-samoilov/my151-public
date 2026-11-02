@@ -5,22 +5,30 @@
     "nationalDex": 353,
     "captureRate": 225,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 35,
+    "genus": { "en": "Puppet Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "shuppet",
       "types": ["ghost"],
+      "abilities": { "first": "insomnia", "second": "frisk", "hidden": "cursed-body" },
       "baseStats": { "hp": 44, "atk": 75, "def": 35, "spe": 45, "spa": 63, "spd": 33 },
+      "heightDm": 6,
+      "weightHg": 23,
       "color": "black",
       "shape": "ball",
       "eggGroups": ["indeterminate"],
       "debut": "ruby-sapphire",
       "sprite": "353",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 362,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Face Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "glalie",
       "types": ["ice"],
+      "abilities": { "first": "inner-focus", "second": "ice-body", "hidden": "moody" },
       "baseStats": { "hp": 80, "atk": 80, "def": 80, "spe": 80, "spa": 80, "spd": 80 },
+      "heightDm": 15,
+      "weightHg": 2565,
       "color": "gray",
       "shape": "ball",
       "eggGroups": ["fairy", "mineral"],
       "debut": "ruby-sapphire",
       "sprite": "362",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "glalie-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["glalie"]
       },
+      "abilities": { "first": "refrigerate" },
       "baseStats": { "hp": 80, "atk": 120, "def": 80, "spe": 100, "spa": 120, "spd": 80 },
+      "heightDm": 21,
+      "weightHg": 3502,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10074",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

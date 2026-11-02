@@ -10,5 +10,8 @@
   { "id": "legacy:src/league/data/formPolicy.ts", "kind": "legacy-file", "ref": "src/league/data/formPolicy.ts" },
   { "id": "legacy:src/league/data/catalog.ts", "kind": "legacy-file", "ref": "src/league/data/catalog.ts" },
   { "id": "legacy:src/favorites/model/catalog.ts", "kind": "legacy-file", "ref": "src/favorites/model/catalog.ts" },
-  { "id": "legacy:src/data/categories.ts", "kind": "legacy-file", "ref": "src/data/categories.ts" }
+  { "id": "legacy:src/data/categories.ts", "kind": "legacy-file", "ref": "src/data/categories.ts" },
+  { "id": "legacy:scripts/data/shiny-sprite-sources.json", "kind": "legacy-file", "ref": "scripts/data/shiny-sprite-sources.json" },
+  { "id": "pokeapi@bc92d3b6", "kind": "pokeapi-csv", "repository": "https://github.com/PokeAPI/pokeapi", "commit": "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe", "extract": "data/ontology/sources/pokeapi-bc92d3b6.json" },
+  { "id": "inherited:unsourced", "kind": "inheritance", "note": "No source describes this form, or the pinned snapshot lacks the fact. The value is the base form's by the inheritance rule, and nobody has checked it." }
 ]

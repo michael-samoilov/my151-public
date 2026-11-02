@@ -5,22 +5,30 @@
     "nationalDex": 291,
     "captureRate": 120,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Ninja Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ninjask",
       "types": ["bug", "flying"],
+      "abilities": { "first": "speed-boost", "hidden": "infiltrator" },
       "baseStats": { "hp": 61, "atk": 90, "def": 45, "spe": 160, "spa": 50, "spd": 50 },
+      "heightDm": 8,
+      "weightHg": 120,
       "color": "yellow",
       "shape": "bug-wings",
       "eggGroups": ["bug"],
       "debut": "ruby-sapphire",
       "sprite": "291",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

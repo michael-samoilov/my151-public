@@ -7,14 +7,15 @@
  * Generated files: src/data/pokemon.json (the Dex catalog) and data/ontology/reports/tool-verdicts.json.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOLS } from '../../src/ontology/model';
 import type { AppIdLedger, Problem } from './authored';
 import { checkOntology, type CheckEnvironment } from './check';
-import { formatJson } from './json';
+import { formatJson, readJson } from './json';
 import { loadOntology } from './load';
+import { AUDIT_REPORTS, type AuditReport } from './pokeapi/compare';
 import { dexJson } from './projections/dex';
 import { resolveOntology, type Ontology } from './resolve';
 
@@ -31,9 +32,11 @@ function productionFile(root: string, path: string): string | null {
 export function checkEnvironment(root: string): CheckEnvironment {
   const ledger = productionFile(root, 'data/ontology/ids/app-ids.json');
   const dex = productionFile(root, 'src/data/pokemon.json');
+  const auditReport = (path: string): AuditReport | null => (existsSync(join(root, path)) ? (readJson(join(root, path)) as AuditReport) : null);
   return {
     productionLedger: ledger ? (JSON.parse(ledger) as AppIdLedger) : null,
     productionDexNames: new Map(dex ? (JSON.parse(dex) as { id: number; name: string }[]).map((row) => [row.id, row.name]) : []),
+    auditReports: { classification: auditReport(AUDIT_REPORTS.classification), fact: auditReport(AUDIT_REPORTS.fact) },
   };
 }
 

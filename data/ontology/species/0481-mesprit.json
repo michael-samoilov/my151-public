@@ -5,22 +5,30 @@
     "nationalDex": 481,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 80,
+    "baseFriendship": 140,
+    "genus": { "en": "Emotion Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "mesprit",
       "types": ["psychic"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 80, "atk": 105, "def": 105, "spe": 80, "spa": 105, "spd": 105 },
+      "heightDm": 3,
+      "weightHg": 3,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "diamond-pearl",
       "sprite": "481",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

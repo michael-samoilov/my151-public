@@ -5,22 +5,30 @@
     "nationalDex": 371,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Rock Head Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bagon",
       "types": ["dragon"],
+      "abilities": { "first": "rock-head", "hidden": "sheer-force" },
       "baseStats": { "hp": 45, "atk": 75, "def": 60, "spe": 50, "spa": 40, "spd": 30 },
+      "heightDm": 6,
+      "weightHg": 421,
       "color": "blue",
       "shape": "humanoid",
       "eggGroups": ["dragon"],
       "debut": "ruby-sapphire",
       "sprite": "371",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

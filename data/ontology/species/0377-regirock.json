@@ -5,22 +5,30 @@
     "nationalDex": 377,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 80,
+    "baseFriendship": 35,
+    "genus": { "en": "Rock Peak Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "regirock",
       "types": ["rock"],
+      "abilities": { "first": "clear-body", "hidden": "sturdy" },
       "baseStats": { "hp": 80, "atk": 100, "def": 200, "spe": 50, "spa": 50, "spd": 100 },
+      "heightDm": 17,
+      "weightHg": 2300,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "ruby-sapphire",
       "sprite": "377",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

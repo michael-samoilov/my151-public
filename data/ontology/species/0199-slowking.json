@@ -5,32 +5,42 @@
     "nationalDex": 199,
     "captureRate": 70,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Royal Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "slowking",
       "types": ["water", "psychic"],
+      "abilities": { "first": "oblivious", "second": "own-tempo", "hidden": "regenerator" },
       "baseStats": { "hp": 95, "atk": 75, "def": 80, "spe": 30, "spa": 100, "spd": 110 },
+      "heightDm": 20,
+      "weightHg": 795,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["monster", "water1"],
       "debut": "gold-silver",
       "sprite": "199",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "slowking-galar",
       "region": "galar",
       "types": ["poison", "psychic"],
+      "abilities": { "first": "curious-medicine", "second": "own-tempo", "hidden": "regenerator" },
       "baseStats": { "hp": 95, "atk": 65, "def": 80, "spe": 30, "spa": 110, "spd": 110 },
+      "heightDm": 18,
       "debut": "sword-shield",
       "sprite": "10172",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

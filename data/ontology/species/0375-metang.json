@@ -5,22 +5,30 @@
     "nationalDex": 375,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Iron Claw Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "metang",
       "types": ["steel", "psychic"],
+      "abilities": { "first": "clear-body", "hidden": "light-metal" },
       "baseStats": { "hp": 60, "atk": 75, "def": 100, "spe": 50, "spa": 55, "spd": 80 },
+      "heightDm": 12,
+      "weightHg": 2025,
       "color": "blue",
       "shape": "arms",
       "eggGroups": ["mineral"],
       "debut": "ruby-sapphire",
       "sprite": "375",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 862,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Blocking Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "obstagoon",
       "types": ["dark", "normal"],
+      "abilities": { "first": "reckless", "second": "guts", "hidden": "defiant" },
       "baseStats": { "hp": 93, "atk": 90, "def": 101, "spe": 95, "spa": 60, "spd": 81 },
+      "heightDm": 16,
+      "weightHg": 460,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "sword-shield",
       "sprite": "862",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

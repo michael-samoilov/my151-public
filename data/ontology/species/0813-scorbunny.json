@@ -5,22 +5,30 @@
     "nationalDex": 813,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Rabbit Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "scorbunny",
       "types": ["fire"],
+      "abilities": { "first": "blaze", "hidden": "libero" },
       "baseStats": { "hp": 50, "atk": 71, "def": 40, "spe": 69, "spa": 40, "spd": 40 },
+      "heightDm": 3,
+      "weightHg": 45,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["ground", "humanshape"],
       "debut": "sword-shield",
       "sprite": "813",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

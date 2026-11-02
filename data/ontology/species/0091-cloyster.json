@@ -5,22 +5,30 @@
     "nationalDex": 91,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Bivalve Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cloyster",
       "types": ["water", "ice"],
+      "abilities": { "first": "shell-armor", "second": "skill-link", "hidden": "overcoat" },
       "baseStats": { "hp": 50, "atk": 95, "def": 180, "spe": 70, "spa": 85, "spd": 45 },
+      "heightDm": 15,
+      "weightHg": 1325,
       "color": "purple",
       "shape": "ball",
       "eggGroups": ["water3"],
       "debut": "red-blue",
       "sprite": "91",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

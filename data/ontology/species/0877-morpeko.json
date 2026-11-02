@@ -5,23 +5,31 @@
     "nationalDex": 877,
     "captureRate": 180,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 10,
+    "baseFriendship": 50,
+    "genus": { "en": "Two-Sided Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "morpeko",
       "types": ["electric", "dark"],
+      "abilities": { "first": "hunger-switch" },
       "baseStats": { "hp": 58, "atk": 95, "def": 58, "spe": 97, "spa": 70, "spd": 58 },
+      "heightDm": 3,
+      "weightHg": 30,
       "color": "yellow",
       "shape": "humanoid",
       "eggGroups": ["ground", "fairy"],
       "debut": "sword-shield",
       "sprite": "877",
       "externalIds": { "pokeapiForm": "morpeko-full-belly" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "morpeko-hangry",

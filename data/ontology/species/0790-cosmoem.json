@@ -5,22 +5,30 @@
     "nationalDex": 790,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Protostar Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cosmoem",
       "types": ["psychic"],
+      "abilities": { "first": "sturdy" },
       "baseStats": { "hp": 43, "atk": 29, "def": 131, "spe": 37, "spa": 29, "spd": 131 },
+      "heightDm": 1,
+      "weightHg": 9999,
       "color": "blue",
       "shape": "ball",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "790",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

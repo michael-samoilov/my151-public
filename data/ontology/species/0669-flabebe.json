@@ -5,6 +5,10 @@
     "nationalDex": 669,
     "captureRate": 225,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Single Bloom Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,21 +17,25 @@
         "values": ["red", "blue", "orange", "white", "yellow"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "flabebe",
       "variety": { "flower": "red" },
       "types": ["fairy"],
+      "abilities": { "first": "flower-veil", "hidden": "symbiosis" },
       "baseStats": { "hp": 44, "atk": 38, "def": 39, "spe": 42, "spa": 61, "spd": 79 },
+      "heightDm": 1,
+      "weightHg": 1,
       "color": "white",
       "shape": "arms",
       "eggGroups": ["fairy"],
       "debut": "x-y",
       "sprite": "669",
       "externalIds": { "pokeapiForm": "flabebe-red" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "flabebe-blue",

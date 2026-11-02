@@ -5,22 +5,30 @@
     "nationalDex": 108,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Licking Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lickitung",
       "types": ["normal"],
+      "abilities": { "first": "own-tempo", "second": "oblivious", "hidden": "cloud-nine" },
       "baseStats": { "hp": 90, "atk": 55, "def": 75, "spe": 30, "spa": 60, "spd": 75 },
+      "heightDm": 12,
+      "weightHg": 655,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["monster"],
       "debut": "red-blue",
       "sprite": "108",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

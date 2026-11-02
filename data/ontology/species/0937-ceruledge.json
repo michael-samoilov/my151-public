@@ -5,22 +5,30 @@
     "nationalDex": 937,
     "captureRate": 25,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 35,
+    "baseFriendship": 20,
+    "genus": { "en": "Fire Blades Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ceruledge",
       "types": ["fire", "ghost"],
+      "abilities": { "first": "flash-fire", "hidden": "weak-armor" },
       "baseStats": { "hp": 75, "atk": 125, "def": 80, "spe": 85, "spa": 60, "spd": 100 },
+      "heightDm": 16,
+      "weightHg": 620,
       "color": "purple",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "scarlet-violet",
       "sprite": "937",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 987,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "flutter-mane",
       "types": ["ghost", "fairy"],
+      "abilities": { "first": "protosynthesis" },
       "baseStats": { "hp": 55, "atk": 55, "def": 55, "spe": 135, "spa": 135, "spd": 135 },
+      "heightDm": 14,
+      "weightHg": 40,
       "color": "gray",
       "shape": "wings",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "987",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

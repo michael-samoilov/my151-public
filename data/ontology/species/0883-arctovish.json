@@ -5,22 +5,30 @@
     "nationalDex": 883,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 35,
+    "baseFriendship": 50,
+    "genus": { "en": "Fossil Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "arctovish",
       "types": ["water", "ice"],
+      "abilities": { "first": "water-absorb", "second": "ice-body", "hidden": "slush-rush" },
       "baseStats": { "hp": 90, "atk": 90, "def": 100, "spe": 55, "spa": 80, "spd": 90 },
+      "heightDm": 20,
+      "weightHg": 1750,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["no-eggs"],
       "debut": "sword-shield",
       "sprite": "883",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

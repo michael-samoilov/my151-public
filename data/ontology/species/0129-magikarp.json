@@ -5,22 +5,30 @@
     "nationalDex": 129,
     "captureRate": 255,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 5,
+    "baseFriendship": 70,
+    "genus": { "en": "Fish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "magikarp",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "hidden": "rattled" },
       "baseStats": { "hp": 20, "atk": 10, "def": 55, "spe": 80, "spa": 15, "spd": 20 },
+      "heightDm": 9,
+      "weightHg": 100,
       "color": "red",
       "shape": "fish",
       "eggGroups": ["water2", "dragon"],
       "debut": "red-blue",
       "sprite": "129",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

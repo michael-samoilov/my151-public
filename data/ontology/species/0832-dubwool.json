@@ -5,22 +5,30 @@
     "nationalDex": 832,
     "captureRate": 127,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Sheep Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dubwool",
       "types": ["normal"],
+      "abilities": { "first": "fluffy", "second": "steadfast", "hidden": "bulletproof" },
       "baseStats": { "hp": 72, "atk": 80, "def": 100, "spe": 88, "spa": 60, "spd": 90 },
+      "heightDm": 13,
+      "weightHg": 430,
       "color": "white",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "sword-shield",
       "sprite": "832",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

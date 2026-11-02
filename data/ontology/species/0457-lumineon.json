@@ -5,22 +5,30 @@
     "nationalDex": 457,
     "captureRate": 75,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Neon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lumineon",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "second": "storm-drain", "hidden": "water-veil" },
       "baseStats": { "hp": 69, "atk": 69, "def": 76, "spe": 91, "spa": 69, "spd": 86 },
+      "heightDm": 12,
+      "weightHg": 240,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "diamond-pearl",
       "sprite": "457",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

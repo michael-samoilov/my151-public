@@ -5,22 +5,30 @@
     "nationalDex": 686,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Revolving Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "inkay",
       "types": ["dark", "psychic"],
+      "abilities": { "first": "contrary", "second": "suction-cups", "hidden": "infiltrator" },
       "baseStats": { "hp": 53, "atk": 54, "def": 53, "spe": 45, "spa": 37, "spd": 46 },
+      "heightDm": 4,
+      "weightHg": 35,
       "color": "blue",
       "shape": "tentacles",
       "eggGroups": ["water1", "water2"],
       "debut": "x-y",
       "sprite": "686",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

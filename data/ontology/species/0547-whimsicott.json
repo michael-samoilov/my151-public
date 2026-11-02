@@ -5,22 +5,30 @@
     "nationalDex": 547,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Windveiled Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "whimsicott",
       "types": ["grass", "fairy"],
+      "abilities": { "first": "prankster", "second": "infiltrator", "hidden": "chlorophyll" },
       "baseStats": { "hp": 60, "atk": 67, "def": 85, "spe": 116, "spa": 77, "spd": 75 },
+      "heightDm": 7,
+      "weightHg": 66,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["plant", "fairy"],
       "debut": "black-white",
       "sprite": "547",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

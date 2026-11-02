@@ -5,22 +5,30 @@
     "nationalDex": 996,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 50,
+    "genus": { "en": "Ice Fin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "frigibax",
       "types": ["dragon", "ice"],
+      "abilities": { "first": "thermal-exchange", "hidden": "ice-body" },
       "baseStats": { "hp": 65, "atk": 75, "def": 45, "spe": 55, "spa": 35, "spd": 45 },
+      "heightDm": 5,
+      "weightHg": 170,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["dragon", "mineral"],
       "debut": "scarlet-violet",
       "sprite": "996",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 687,
     "captureRate": 80,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Overturning Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "malamar",
       "types": ["dark", "psychic"],
+      "abilities": { "first": "contrary", "second": "suction-cups", "hidden": "infiltrator" },
       "baseStats": { "hp": 86, "atk": 92, "def": 88, "spe": 73, "spa": 68, "spd": 75 },
+      "heightDm": 15,
+      "weightHg": 470,
       "color": "blue",
       "shape": "blob",
       "eggGroups": ["water1", "water2"],
       "debut": "x-y",
       "sprite": "687",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "malamar-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["malamar"]
       },
+      "abilities": { "first": "contrary" },
       "baseStats": { "hp": 86, "atk": 102, "def": 88, "spe": 88, "spa": 98, "spd": 120 },
+      "heightDm": 29,
+      "weightHg": 698,
       "shape": "arms",
       "debut": "legends-za",
       "sprite": "10297",
@@ -38,7 +49,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

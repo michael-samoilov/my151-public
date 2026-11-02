@@ -5,22 +5,30 @@
     "nationalDex": 112,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Drill Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "rhydon",
       "types": ["ground", "rock"],
+      "abilities": { "first": "lightning-rod", "second": "rock-head", "hidden": "reckless" },
       "baseStats": { "hp": 105, "atk": 130, "def": 120, "spe": 40, "spa": 45, "spd": 45 },
+      "heightDm": 19,
+      "weightHg": 1200,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["monster", "ground"],
       "debut": "red-blue",
       "sprite": "112",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

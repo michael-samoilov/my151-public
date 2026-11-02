@@ -5,22 +5,30 @@
     "nationalDex": 680,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Sword Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "doublade",
       "types": ["steel", "ghost"],
+      "abilities": { "first": "no-guard" },
       "baseStats": { "hp": 59, "atk": 110, "def": 150, "spe": 35, "spa": 45, "spd": 49 },
+      "heightDm": 8,
+      "weightHg": 45,
       "color": "brown",
       "shape": "heads",
       "eggGroups": ["mineral"],
       "debut": "x-y",
       "sprite": "680",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

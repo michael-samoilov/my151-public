@@ -5,22 +5,30 @@
     "nationalDex": 280,
     "captureRate": 235,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Feeling Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ralts",
       "types": ["psychic", "fairy"],
+      "abilities": { "first": "synchronize", "second": "trace", "hidden": "telepathy" },
       "baseStats": { "hp": 28, "atk": 25, "def": 25, "spe": 40, "spa": 45, "spd": 35 },
+      "heightDm": 4,
+      "weightHg": 66,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["humanshape", "indeterminate"],
       "debut": "ruby-sapphire",
       "sprite": "280",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

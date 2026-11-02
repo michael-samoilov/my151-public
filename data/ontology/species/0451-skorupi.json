@@ -5,22 +5,30 @@
     "nationalDex": 451,
     "captureRate": 120,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Scorpion Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "skorupi",
       "types": ["poison", "bug"],
+      "abilities": { "first": "battle-armor", "second": "sniper", "hidden": "keen-eye" },
       "baseStats": { "hp": 40, "atk": 50, "def": 90, "spe": 65, "spa": 30, "spd": 55 },
+      "heightDm": 8,
+      "weightHg": 120,
       "color": "purple",
       "shape": "armor",
       "eggGroups": ["bug", "water3"],
       "debut": "diamond-pearl",
       "sprite": "451",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []
