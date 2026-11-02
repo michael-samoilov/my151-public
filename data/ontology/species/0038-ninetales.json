@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ninetales",
+    "nationalDex": 38,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ninetales",
+      "types": ["fire"],
+      "baseStats": { "hp": 73, "atk": 76, "def": 75, "spe": 100, "spa": 81, "spd": 100 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "38",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "ninetales-alola",
+      "region": "alola",
+      "types": ["ice", "fairy"],
+      "baseStats": { "hp": 73, "atk": 67, "def": 75, "spe": 109, "spa": 81, "spd": 100 },
+      "color": "blue",
+      "debut": "sun-moon",
+      "sprite": "10104",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "vulpix",
+      "to": "ninetales",
+      "methods": []
+    },
+    {
+      "from": "vulpix-alola",
+      "to": "ninetales-alola",
+      "methods": []
+    }
+  ]
+}

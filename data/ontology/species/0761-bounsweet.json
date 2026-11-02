@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bounsweet",
+    "nationalDex": 761,
+    "captureRate": 235,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bounsweet",
+      "types": ["grass"],
+      "baseStats": { "hp": 42, "atk": 30, "def": 38, "spe": 32, "spa": 30, "spd": 38 },
+      "color": "purple",
+      "shape": "legs",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "761",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

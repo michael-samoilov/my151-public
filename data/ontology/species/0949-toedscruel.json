@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "toedscruel",
+    "nationalDex": 949,
+    "captureRate": 90,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "toedscruel",
+      "types": ["ground", "grass"],
+      "baseStats": { "hp": 80, "atk": 70, "def": 65, "spe": 100, "spa": 80, "spd": 120 },
+      "color": "black",
+      "shape": "tentacles",
+      "eggGroups": ["plant"],
+      "debut": "scarlet-violet",
+      "sprite": "949",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "toedscool",
+      "to": "toedscruel",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

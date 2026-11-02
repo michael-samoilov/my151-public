@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wooper",
+    "nationalDex": 194,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wooper",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 55, "atk": 45, "def": 45, "spe": 15, "spa": 25, "spd": 25 },
+      "color": "blue",
+      "shape": "legs",
+      "eggGroups": ["water1", "ground"],
+      "debut": "gold-silver",
+      "sprite": "194",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "wooper-paldea",
+      "region": "paldea",
+      "types": ["poison", "ground"],
+      "color": "brown",
+      "debut": "scarlet-violet",
+      "sprite": "10253",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,47 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shellos",
+    "nationalDex": 422,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "side",
+        "values": ["west", "east"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shellos",
+      "variety": { "side": "west" },
+      "types": ["water"],
+      "baseStats": { "hp": 76, "atk": 48, "def": 48, "spe": 34, "spa": 57, "spd": 62 },
+      "color": "purple",
+      "shape": "squiggle",
+      "eggGroups": ["water1", "indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "422",
+      "externalIds": { "pokeapiForm": "shellos-west" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "shellos-east",
+      "variety": { "side": "east" },
+      "color": "blue",
+      "sprite": "11065",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

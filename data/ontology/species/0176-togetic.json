@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "togetic",
+    "nationalDex": 176,
+    "captureRate": 75,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "togetic",
+      "types": ["fairy", "flying"],
+      "baseStats": { "hp": 55, "atk": 40, "def": 85, "spe": 40, "spa": 80, "spd": 105 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["flying", "fairy"],
+      "debut": "gold-silver",
+      "sprite": "176",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "togepi",
+      "to": "togetic",
+      "methods": []
+    }
+  ]
+}

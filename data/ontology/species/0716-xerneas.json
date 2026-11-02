@@ -1,0 +1,46 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "xerneas",
+    "nationalDex": 716,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["active", "neutral"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "xerneas",
+      "variety": { "forme": "active" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 126, "atk": 131, "def": 95, "spe": 99, "spa": 131, "spd": 98 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "x-y",
+      "sprite": "716",
+      "externalIds": { "pokeapiForm": "xerneas-neutral" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "xerneas-neutral",
+      "variety": { "forme": "neutral" },
+      "sprite": "11001",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

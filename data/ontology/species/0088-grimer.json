@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grimer",
+    "nationalDex": 88,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grimer",
+      "types": ["poison"],
+      "baseStats": { "hp": 80, "atk": 80, "def": 50, "spe": 25, "spa": 40, "spd": 50 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "red-blue",
+      "sprite": "88",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "grimer-alola",
+      "region": "alola",
+      "types": ["poison", "dark"],
+      "color": "green",
+      "debut": "sun-moon",
+      "sprite": "10112",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tapu-koko",
+    "nationalDex": 785,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tapu-koko",
+      "types": ["electric", "fairy"],
+      "baseStats": { "hp": 70, "atk": 115, "def": 85, "spe": 130, "spa": 95, "spd": 75 },
+      "color": "yellow",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "785",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fraxure",
+    "nationalDex": 611,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fraxure",
+      "types": ["dragon"],
+      "baseStats": { "hp": 66, "atk": 117, "def": 70, "spe": 67, "spa": 40, "spd": 50 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "black-white",
+      "sprite": "611",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "axew",
+      "to": "fraxure",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 38 }
+          ]
+        }
+      ]
+    }
+  ]
+}

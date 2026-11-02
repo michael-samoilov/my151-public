@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandy-shocks",
+    "nationalDex": 989,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandy-shocks",
+      "types": ["electric", "ground"],
+      "baseStats": { "hp": 85, "atk": 81, "def": 97, "spe": 101, "spa": 121, "spd": 85 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "989",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

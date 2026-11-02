@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "marshtomp",
+    "nationalDex": 259,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "marshtomp",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 70, "atk": 85, "def": 70, "spe": 50, "spa": 60, "spd": 70 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "ruby-sapphire",
+      "sprite": "259",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mudkip",
+      "to": "marshtomp",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

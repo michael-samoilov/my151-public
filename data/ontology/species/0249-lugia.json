@@ -1,0 +1,46 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lugia",
+    "nationalDex": 249,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["shadow"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lugia",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 106, "atk": 90, "def": 130, "spe": 110, "spa": 90, "spd": 154 },
+      "color": "white",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "249",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "lugia-shadow",
+      "variety": { "look": "shadow" },
+      "debut": "xd",
+      "obtain": "spinoff-only",
+      "sprite": "11123",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "morpeko",
+    "nationalDex": 877,
+    "captureRate": 180,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "morpeko",
+      "types": ["electric", "dark"],
+      "baseStats": { "hp": 58, "atk": 95, "def": 58, "spe": 97, "spa": 70, "spd": 58 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "sword-shield",
+      "sprite": "877",
+      "externalIds": { "pokeapiForm": "morpeko-full-belly" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "morpeko-hangry",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["morpeko"]
+      },
+      "color": "purple",
+      "sprite": "10187",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

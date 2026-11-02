@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "heracross",
+    "nationalDex": 214,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "heracross",
+      "types": ["bug", "fighting"],
+      "baseStats": { "hp": 80, "atk": 125, "def": 75, "spe": 85, "spa": 40, "spd": 95 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "214",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "heracross-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["heracross"]
+      },
+      "baseStats": { "hp": 80, "atk": 185, "def": 115, "spe": 75, "spa": 40, "spd": 105 },
+      "debut": "x-y",
+      "sprite": "10047",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

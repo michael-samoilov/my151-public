@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "metagross",
+    "nationalDex": 376,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "metagross",
+      "types": ["steel", "psychic"],
+      "baseStats": { "hp": 80, "atk": 135, "def": 130, "spe": 70, "spa": 95, "spd": 90 },
+      "color": "blue",
+      "shape": "heads",
+      "eggGroups": ["mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "376",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "metagross-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["metagross"]
+      },
+      "baseStats": { "hp": 80, "atk": 145, "def": 150, "spe": 110, "spa": 105, "spd": 110 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10076",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "metang",
+      "to": "metagross",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 45 }
+          ]
+        }
+      ]
+    }
+  ]
+}

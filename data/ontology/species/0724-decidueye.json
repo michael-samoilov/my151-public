@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "decidueye",
+    "nationalDex": 724,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "decidueye",
+      "types": ["grass", "ghost"],
+      "baseStats": { "hp": 78, "atk": 107, "def": 75, "spe": 70, "spa": 100, "spd": 100 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "sun-moon",
+      "sprite": "724",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "decidueye-hisui",
+      "region": "hisui",
+      "types": ["grass", "fighting"],
+      "baseStats": { "hp": 88, "atk": 112, "def": 80, "spe": 60, "spa": 95, "spd": 95 },
+      "debut": "legends-arceus",
+      "sprite": "10244",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dartrix",
+      "to": "decidueye",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "dartrix",
+      "to": "decidueye-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

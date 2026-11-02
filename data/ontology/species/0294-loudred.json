@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "loudred",
+    "nationalDex": 294,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "loudred",
+      "types": ["normal"],
+      "baseStats": { "hp": 84, "atk": 71, "def": 43, "spe": 48, "spa": 71, "spd": 43 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "294",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "whismur",
+      "to": "loudred",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

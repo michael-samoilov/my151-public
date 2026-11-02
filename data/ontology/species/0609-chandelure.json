@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chandelure",
+    "nationalDex": 609,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chandelure",
+      "types": ["ghost", "fire"],
+      "baseStats": { "hp": 60, "atk": 55, "def": 90, "spe": 80, "spa": 145, "spd": 90 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "black-white",
+      "sprite": "609",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "chandelure-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["chandelure"]
+      },
+      "baseStats": { "hp": 60, "atk": 75, "def": 110, "spe": 90, "spa": 175, "spd": 110 },
+      "debut": "legends-za",
+      "sprite": "10291",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "lampent",
+      "to": "chandelure",
+      "methods": []
+    }
+  ]
+}

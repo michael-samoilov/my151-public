@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mr-rime",
+    "nationalDex": 866,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mr-rime",
+      "types": ["ice", "psychic"],
+      "baseStats": { "hp": 80, "atk": 85, "def": 75, "spe": 70, "spa": 110, "spd": 100 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "sword-shield",
+      "sprite": "866",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mr-mime-galar",
+      "to": "mr-rime",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

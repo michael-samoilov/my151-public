@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cinccino",
+    "nationalDex": 573,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cinccino",
+      "types": ["normal"],
+      "baseStats": { "hp": 75, "atk": 95, "def": 60, "spe": 115, "spa": 65, "spd": 60 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "573",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "minccino",
+      "to": "cinccino",
+      "methods": []
+    }
+  ]
+}

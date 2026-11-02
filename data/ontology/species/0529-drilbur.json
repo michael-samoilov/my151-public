@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "drilbur",
+    "nationalDex": 529,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "drilbur",
+      "types": ["ground"],
+      "baseStats": { "hp": 60, "atk": 85, "def": 40, "spe": 68, "spa": 30, "spd": 45 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "529",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

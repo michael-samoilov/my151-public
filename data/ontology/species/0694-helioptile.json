@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "helioptile",
+    "nationalDex": 694,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "helioptile",
+      "types": ["electric", "normal"],
+      "baseStats": { "hp": 44, "atk": 38, "def": 33, "spe": 70, "spa": 61, "spd": 43 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "x-y",
+      "sprite": "694",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

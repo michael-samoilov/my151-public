@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "staravia",
+    "nationalDex": 397,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "staravia",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 55, "atk": 75, "def": 50, "spe": 80, "spa": 40, "spd": 40 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "diamond-pearl",
+      "sprite": "397",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "starly",
+      "to": "staravia",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 14 }
+          ]
+        }
+      ]
+    }
+  ]
+}

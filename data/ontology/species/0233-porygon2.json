@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "porygon2",
+    "nationalDex": 233,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "porygon2",
+      "types": ["normal"],
+      "baseStats": { "hp": 85, "atk": 80, "def": 90, "spe": 60, "spa": 105, "spd": 95 },
+      "color": "red",
+      "shape": "legs",
+      "eggGroups": ["mineral"],
+      "debut": "gold-silver",
+      "sprite": "233",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "porygon",
+      "to": "porygon2",
+      "methods": []
+    }
+  ]
+}

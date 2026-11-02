@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "salandit",
+    "nationalDex": 757,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "salandit",
+      "types": ["poison", "fire"],
+      "baseStats": { "hp": 48, "atk": 44, "def": 40, "spe": 77, "spa": 71, "spd": 40 },
+      "color": "black",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "sun-moon",
+      "sprite": "757",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

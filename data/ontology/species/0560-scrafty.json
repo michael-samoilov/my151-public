@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scrafty",
+    "nationalDex": 560,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scrafty",
+      "types": ["dark", "fighting"],
+      "baseStats": { "hp": 65, "atk": 90, "def": 115, "spe": 58, "spa": 45, "spd": 115 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground", "dragon"],
+      "debut": "black-white",
+      "sprite": "560",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "scrafty-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["scrafty"]
+      },
+      "baseStats": { "hp": 65, "atk": 130, "def": 135, "spe": 68, "spa": 55, "spd": 135 },
+      "debut": "legends-za",
+      "sprite": "10289",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "scraggy",
+      "to": "scrafty",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 39 }
+          ]
+        }
+      ]
+    }
+  ]
+}

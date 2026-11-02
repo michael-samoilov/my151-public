@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zacian",
+    "nationalDex": 888,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["hero", "crowned"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zacian",
+      "variety": { "forme": "hero" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 92, "atk": 120, "def": 115, "spe": 138, "spa": 80, "spd": 115 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "888",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zacian-crowned",
+      "variety": { "forme": "crowned" },
+      "types": ["fairy", "steel"],
+      "baseStats": { "hp": 92, "atk": 150, "def": 115, "spe": 148, "spa": 80, "spd": 115 },
+      "sprite": "10188",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

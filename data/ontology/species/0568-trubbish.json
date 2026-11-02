@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "trubbish",
+    "nationalDex": 568,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "trubbish",
+      "types": ["poison"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 62, "spe": 65, "spa": 40, "spd": 62 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["mineral"],
+      "debut": "black-white",
+      "sprite": "568",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

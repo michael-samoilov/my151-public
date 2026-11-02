@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cutiefly",
+    "nationalDex": 742,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cutiefly",
+      "types": ["bug", "fairy"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 40, "spe": 84, "spa": 55, "spd": 40 },
+      "color": "yellow",
+      "shape": "armor",
+      "eggGroups": ["bug", "fairy"],
+      "debut": "sun-moon",
+      "sprite": "742",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

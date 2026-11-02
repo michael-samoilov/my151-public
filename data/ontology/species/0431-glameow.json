@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "glameow",
+    "nationalDex": 431,
+    "captureRate": 190,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "glameow",
+      "types": ["normal"],
+      "baseStats": { "hp": 49, "atk": 55, "def": 42, "spe": 85, "spa": 42, "spd": 37 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "431",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bibarel",
+    "nationalDex": 400,
+    "captureRate": 127,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bibarel",
+      "types": ["normal", "water"],
+      "baseStats": { "hp": 79, "atk": 85, "def": 60, "spe": 71, "spa": 55, "spd": 60 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["water1", "ground"],
+      "debut": "diamond-pearl",
+      "sprite": "400",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bidoof",
+      "to": "bibarel",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 15 }
+          ]
+        }
+      ]
+    }
+  ]
+}

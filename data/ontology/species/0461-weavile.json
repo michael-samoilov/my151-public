@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "weavile",
+    "nationalDex": 461,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "weavile",
+      "types": ["dark", "ice"],
+      "baseStats": { "hp": 70, "atk": 120, "def": 65, "spe": 125, "spa": 45, "spd": 85 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "461",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sneasel",
+      "to": "weavile",
+      "methods": []
+    }
+  ]
+}

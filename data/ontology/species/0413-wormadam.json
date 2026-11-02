@@ -1,0 +1,110 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wormadam",
+    "nationalDex": 413,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "cloak",
+        "values": ["plant", "sandy", "trash"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wormadam",
+      "variety": { "cloak": "plant" },
+      "types": ["bug", "grass"],
+      "baseStats": { "hp": 60, "atk": 59, "def": 85, "spe": 36, "spa": 79, "spd": 105 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "413",
+      "externalIds": { "pokeapiForm": "wormadam-plant" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "wormadam-sandy",
+      "variety": { "cloak": "sandy" },
+      "types": ["bug", "ground"],
+      "baseStats": { "hp": 60, "atk": 79, "def": 105, "spe": 36, "spa": 59, "spd": 85 },
+      "color": "brown",
+      "sprite": "10004",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "wormadam-trash",
+      "variety": { "cloak": "trash" },
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 60, "atk": 69, "def": 95, "spe": 36, "spa": 69, "spd": 95 },
+      "color": "red",
+      "sprite": "10005",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "burmy",
+      "to": "wormadam",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "burmy",
+      "to": "wormadam-sandy",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "burmy",
+      "to": "wormadam-trash",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spoink",
+    "nationalDex": 325,
+    "captureRate": 255,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spoink",
+      "types": ["psychic"],
+      "baseStats": { "hp": 60, "atk": 25, "def": 35, "spe": 60, "spa": 70, "spd": 80 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "325",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

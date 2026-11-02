@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "happiny",
+    "nationalDex": 440,
+    "captureRate": 130,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "happiny",
+      "types": ["normal"],
+      "baseStats": { "hp": 100, "atk": 5, "def": 5, "spe": 30, "spa": 15, "spd": 65 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "440",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

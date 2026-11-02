@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clamperl",
+    "nationalDex": 366,
+    "captureRate": 255,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clamperl",
+      "types": ["water"],
+      "baseStats": { "hp": 35, "atk": 64, "def": 85, "spe": 32, "spa": 74, "spd": 55 },
+      "color": "blue",
+      "shape": "ball",
+      "eggGroups": ["water1"],
+      "debut": "ruby-sapphire",
+      "sprite": "366",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

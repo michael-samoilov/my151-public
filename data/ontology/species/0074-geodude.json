@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "geodude",
+    "nationalDex": 74,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "geodude",
+      "types": ["rock", "ground"],
+      "baseStats": { "hp": 40, "atk": 80, "def": 100, "spe": 20, "spa": 30, "spd": 30 },
+      "color": "brown",
+      "shape": "arms",
+      "eggGroups": ["mineral"],
+      "debut": "red-blue",
+      "sprite": "74",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "geodude-alola",
+      "region": "alola",
+      "types": ["rock", "electric"],
+      "color": "gray",
+      "debut": "sun-moon",
+      "sprite": "10109",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

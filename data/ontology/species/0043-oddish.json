@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "oddish",
+    "nationalDex": 43,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "oddish",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 45, "atk": 50, "def": 55, "spe": 30, "spa": 75, "spd": 65 },
+      "color": "blue",
+      "shape": "legs",
+      "eggGroups": ["plant"],
+      "debut": "red-blue",
+      "sprite": "43",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

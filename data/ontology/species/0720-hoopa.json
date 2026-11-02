@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hoopa",
+    "nationalDex": 720,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["confined", "unbound"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hoopa",
+      "variety": { "forme": "confined" },
+      "types": ["psychic", "ghost"],
+      "baseStats": { "hp": 80, "atk": 110, "def": 60, "spe": 70, "spa": 150, "spd": 130 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "x-y",
+      "sprite": "720",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "hoopa-unbound",
+      "variety": { "forme": "unbound" },
+      "types": ["psychic", "dark"],
+      "baseStats": { "hp": 80, "atk": 160, "def": 60, "spe": 80, "spa": 170, "spd": 130 },
+      "shape": "upright",
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10086",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

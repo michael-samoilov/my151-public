@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kartana",
+    "nationalDex": 798,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kartana",
+      "types": ["grass", "steel"],
+      "baseStats": { "hp": 59, "atk": 181, "def": 131, "spe": 109, "spa": 59, "spd": 31 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "798",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tranquill",
+    "nationalDex": 520,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tranquill",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 62, "atk": 77, "def": 62, "spe": 65, "spa": 50, "spd": 42 },
+      "color": "gray",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "black-white",
+      "sprite": "520",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pidove",
+      "to": "tranquill",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 21 }
+          ]
+        }
+      ]
+    }
+  ]
+}

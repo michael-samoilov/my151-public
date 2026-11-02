@@ -1,0 +1,87 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "necrozma",
+    "nationalDex": 800,
+    "captureRate": 255,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "necrozma",
+      "types": ["psychic"],
+      "baseStats": { "hp": 97, "atk": 107, "def": 101, "spe": 79, "spa": 127, "spd": 89 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "800",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "necrozma-dusk",
+      "fusion": "solgaleo",
+      "types": ["psychic", "steel"],
+      "baseStats": { "hp": 97, "atk": 157, "def": 127, "spe": 77, "spa": 113, "spd": 109 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "10155",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "necrozma-dawn",
+      "fusion": "lunala",
+      "types": ["psychic", "ghost"],
+      "baseStats": { "hp": 97, "atk": 113, "def": 109, "spe": 77, "spa": 157, "spd": 127 },
+      "color": "blue",
+      "shape": "wings",
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "10156",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "necrozma-ultra",
+      "state": {
+        "kind": "ultra-burst",
+        "from": ["necrozma-dusk", "necrozma-dawn"]
+      },
+      "types": ["psychic", "dragon"],
+      "baseStats": { "hp": 97, "atk": 167, "def": 97, "spe": 129, "spa": 167, "spd": 97 },
+      "shape": "bug-wings",
+      "sprite": "10157",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

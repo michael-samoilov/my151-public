@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "frillish",
+    "nationalDex": 592,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "frillish",
+      "sex": "male",
+      "types": ["water", "ghost"],
+      "baseStats": { "hp": 55, "atk": 40, "def": 50, "spe": 40, "spa": 65, "spd": 85 },
+      "color": "white",
+      "shape": "tentacles",
+      "eggGroups": ["indeterminate"],
+      "debut": "black-white",
+      "sprite": "592",
+      "externalIds": { "pokeapiForm": "frillish-male" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "frillish-female",
+      "sex": "female",
+      "sprite": "11069",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

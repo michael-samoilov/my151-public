@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bewear",
+    "nationalDex": 760,
+    "captureRate": 70,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bewear",
+      "types": ["normal", "fighting"],
+      "baseStats": { "hp": 120, "atk": 125, "def": 80, "spe": 60, "spa": 55, "spd": 60 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "760",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "stufful",
+      "to": "bewear",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 27 }
+          ]
+        }
+      ]
+    }
+  ]
+}

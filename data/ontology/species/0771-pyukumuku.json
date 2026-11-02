@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pyukumuku",
+    "nationalDex": 771,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pyukumuku",
+      "types": ["water"],
+      "baseStats": { "hp": 55, "atk": 60, "def": 130, "spe": 5, "spa": 30, "spd": 130 },
+      "color": "black",
+      "shape": "squiggle",
+      "eggGroups": ["water1"],
+      "debut": "sun-moon",
+      "sprite": "771",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

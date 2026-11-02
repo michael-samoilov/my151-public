@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "huntail",
+    "nationalDex": 367,
+    "captureRate": 60,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "huntail",
+      "types": ["water"],
+      "baseStats": { "hp": 55, "atk": 104, "def": 105, "spe": 52, "spa": 94, "spd": 75 },
+      "color": "blue",
+      "shape": "squiggle",
+      "eggGroups": ["water1"],
+      "debut": "ruby-sapphire",
+      "sprite": "367",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "clamperl",
+      "to": "huntail",
+      "methods": []
+    }
+  ]
+}

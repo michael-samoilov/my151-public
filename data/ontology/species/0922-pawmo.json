@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pawmo",
+    "nationalDex": 922,
+    "captureRate": 80,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pawmo",
+      "types": ["electric", "fighting"],
+      "baseStats": { "hp": 60, "atk": 75, "def": 40, "spe": 85, "spa": 50, "spd": 40 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "922",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pawmi",
+      "to": "pawmo",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ]
+    }
+  ]
+}

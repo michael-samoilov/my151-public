@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "turtwig",
+    "nationalDex": 387,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "turtwig",
+      "types": ["grass"],
+      "baseStats": { "hp": 55, "atk": 68, "def": 64, "spe": 31, "spa": 45, "spd": 55 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "plant"],
+      "debut": "diamond-pearl",
+      "sprite": "387",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

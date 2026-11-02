@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "teddiursa",
+    "nationalDex": 216,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "teddiursa",
+      "types": ["normal"],
+      "baseStats": { "hp": 60, "atk": 80, "def": 50, "spe": 40, "spa": 50, "spd": 50 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "216",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

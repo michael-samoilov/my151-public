@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bagon",
+    "nationalDex": 371,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bagon",
+      "types": ["dragon"],
+      "baseStats": { "hp": 45, "atk": 75, "def": 60, "spe": 50, "spa": 40, "spd": 30 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "371",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

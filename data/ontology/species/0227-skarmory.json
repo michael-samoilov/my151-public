@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "skarmory",
+    "nationalDex": 227,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "skarmory",
+      "types": ["steel", "flying"],
+      "baseStats": { "hp": 65, "atk": 80, "def": 140, "spe": 70, "spa": 40, "spd": 70 },
+      "color": "gray",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "gold-silver",
+      "sprite": "227",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "skarmory-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["skarmory"]
+      },
+      "baseStats": { "hp": 65, "atk": 140, "def": 110, "spe": 110, "spa": 40, "spd": 100 },
+      "debut": "legends-za",
+      "sprite": "10284",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

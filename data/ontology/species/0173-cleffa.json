@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cleffa",
+    "nationalDex": 173,
+    "captureRate": 150,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cleffa",
+      "types": ["fairy"],
+      "baseStats": { "hp": 50, "atk": 25, "def": 28, "spe": 15, "spa": 45, "spd": 55 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "173",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

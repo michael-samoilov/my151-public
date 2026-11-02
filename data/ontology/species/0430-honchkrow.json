@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "honchkrow",
+    "nationalDex": 430,
+    "captureRate": 30,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "honchkrow",
+      "types": ["dark", "flying"],
+      "baseStats": { "hp": 100, "atk": 125, "def": 52, "spe": 71, "spa": 105, "spd": 52 },
+      "color": "black",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "diamond-pearl",
+      "sprite": "430",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "murkrow",
+      "to": "honchkrow",
+      "methods": []
+    }
+  ]
+}

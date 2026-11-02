@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bronzor",
+    "nationalDex": 436,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bronzor",
+      "types": ["steel", "psychic"],
+      "baseStats": { "hp": 57, "atk": 24, "def": 86, "spe": 23, "spa": 24, "spd": 86 },
+      "color": "green",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "diamond-pearl",
+      "sprite": "436",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

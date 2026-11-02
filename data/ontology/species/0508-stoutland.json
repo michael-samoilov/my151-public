@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "stoutland",
+    "nationalDex": 508,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "stoutland",
+      "types": ["normal"],
+      "baseStats": { "hp": 85, "atk": 110, "def": 90, "spe": 80, "spa": 45, "spd": 90 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "508",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "herdier",
+      "to": "stoutland",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

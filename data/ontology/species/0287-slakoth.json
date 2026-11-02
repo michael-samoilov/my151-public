@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "slakoth",
+    "nationalDex": 287,
+    "captureRate": 255,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "slakoth",
+      "types": ["normal"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 60, "spe": 30, "spa": 35, "spd": 35 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "287",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

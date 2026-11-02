@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arbok",
+    "nationalDex": 24,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arbok",
+      "types": ["poison"],
+      "baseStats": { "hp": 60, "atk": 95, "def": 69, "spe": 80, "spa": 65, "spd": 79 },
+      "color": "purple",
+      "shape": "squiggle",
+      "eggGroups": ["ground", "dragon"],
+      "debut": "red-blue",
+      "sprite": "24",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ekans",
+      "to": "arbok",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 22 }
+          ]
+        }
+      ]
+    }
+  ]
+}

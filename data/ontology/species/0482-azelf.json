@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "azelf",
+    "nationalDex": 482,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "azelf",
+      "types": ["psychic"],
+      "baseStats": { "hp": 75, "atk": 125, "def": 70, "spe": 115, "spa": 125, "spd": 70 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "482",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "stufful",
+    "nationalDex": 759,
+    "captureRate": 140,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "stufful",
+      "types": ["normal", "fighting"],
+      "baseStats": { "hp": 70, "atk": 75, "def": 50, "spe": 50, "spa": 45, "spd": 50 },
+      "color": "pink",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "759",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

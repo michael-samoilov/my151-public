@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lechonk",
+    "nationalDex": 915,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lechonk",
+      "types": ["normal"],
+      "baseStats": { "hp": 54, "atk": 45, "def": 40, "spe": 35, "spa": 35, "spd": 45 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "915",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

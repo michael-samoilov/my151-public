@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hitmontop",
+    "nationalDex": 237,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hitmontop",
+      "types": ["fighting"],
+      "baseStats": { "hp": 50, "atk": 95, "def": 95, "spe": 70, "spa": 35, "spd": 110 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "gold-silver",
+      "sprite": "237",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tyrogue",
+      "to": "hitmontop",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

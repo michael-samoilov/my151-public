@@ -1,0 +1,93 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kyurem",
+    "nationalDex": 646,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kyurem",
+      "types": ["dragon", "ice"],
+      "baseStats": { "hp": 125, "atk": 130, "def": 90, "spe": 95, "spa": 130, "spd": 90 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "646",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "kyurem-black",
+      "fusion": "zekrom",
+      "baseStats": { "hp": 125, "atk": 170, "def": 100, "spe": 95, "spa": 120, "spd": 90 },
+      "debut": "black-2-white-2",
+      "sprite": "10022",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "kyurem-black-overdrive",
+      "state": {
+        "kind": "move-look",
+        "from": ["kyurem-black"]
+      },
+      "sprite": "11107",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "kyurem-white",
+      "fusion": "reshiram",
+      "baseStats": { "hp": 125, "atk": 120, "def": 90, "spe": 95, "spa": 170, "spd": 100 },
+      "debut": "black-2-white-2",
+      "sprite": "10023",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "kyurem-white-overdrive",
+      "state": {
+        "kind": "move-look",
+        "from": ["kyurem-white"]
+      },
+      "sprite": "11108",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

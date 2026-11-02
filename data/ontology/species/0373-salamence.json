@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "salamence",
+    "nationalDex": 373,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "salamence",
+      "types": ["dragon", "flying"],
+      "baseStats": { "hp": 95, "atk": 135, "def": 80, "spe": 100, "spa": 110, "spd": 80 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "373",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "salamence-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["salamence"]
+      },
+      "baseStats": { "hp": 95, "atk": 145, "def": 130, "spe": 120, "spa": 120, "spd": 90 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10089",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shelgon",
+      "to": "salamence",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 50 }
+          ]
+        }
+      ]
+    }
+  ]
+}

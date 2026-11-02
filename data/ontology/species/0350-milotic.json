@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "milotic",
+    "nationalDex": 350,
+    "captureRate": 60,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "milotic",
+      "types": ["water"],
+      "baseStats": { "hp": 95, "atk": 60, "def": 79, "spe": 81, "spa": 100, "spd": 125 },
+      "color": "pink",
+      "shape": "squiggle",
+      "eggGroups": ["water1", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "350",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "feebas",
+      "to": "milotic",
+      "methods": []
+    }
+  ]
+}

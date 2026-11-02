@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "piplup",
+    "nationalDex": 393,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "piplup",
+      "types": ["water"],
+      "baseStats": { "hp": 53, "atk": 51, "def": 53, "spe": 40, "spa": 61, "spd": 56 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["water1", "ground"],
+      "debut": "diamond-pearl",
+      "sprite": "393",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

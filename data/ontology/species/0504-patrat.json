@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "patrat",
+    "nationalDex": 504,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "patrat",
+      "types": ["normal"],
+      "baseStats": { "hp": 45, "atk": 55, "def": 39, "spe": 42, "spa": 35, "spd": 39 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "504",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

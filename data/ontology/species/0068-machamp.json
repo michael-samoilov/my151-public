@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "machamp",
+    "nationalDex": 68,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "machamp",
+      "types": ["fighting"],
+      "baseStats": { "hp": 90, "atk": 130, "def": 80, "spe": 55, "spa": 65, "spd": 85 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "68",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "machamp-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["machamp"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10201",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "machoke",
+      "to": "machamp",
+      "methods": []
+    }
+  ]
+}

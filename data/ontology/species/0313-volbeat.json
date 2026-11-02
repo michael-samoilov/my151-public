@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "volbeat",
+    "nationalDex": 313,
+    "captureRate": 150,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "volbeat",
+      "types": ["bug"],
+      "baseStats": { "hp": 65, "atk": 73, "def": 75, "spe": 85, "spa": 47, "spd": 85 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["bug", "humanshape"],
+      "debut": "ruby-sapphire",
+      "sprite": "313",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

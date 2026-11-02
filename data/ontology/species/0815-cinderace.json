@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cinderace",
+    "nationalDex": 815,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cinderace",
+      "types": ["fire"],
+      "baseStats": { "hp": 80, "atk": 116, "def": 75, "spe": 119, "spa": 65, "spd": 75 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "sword-shield",
+      "sprite": "815",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "cinderace-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["cinderace"]
+      },
+      "sprite": "10210",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "raboot",
+      "to": "cinderace",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

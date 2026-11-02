@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "magmortar",
+    "nationalDex": 467,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "magmortar",
+      "types": ["fire"],
+      "baseStats": { "hp": 75, "atk": 95, "def": 67, "spe": 83, "spa": 125, "spd": 95 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "467",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "magmar",
+      "to": "magmortar",
+      "methods": []
+    }
+  ]
+}

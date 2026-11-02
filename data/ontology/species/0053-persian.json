@@ -1,0 +1,57 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "persian",
+    "nationalDex": 53,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "persian",
+      "types": ["normal"],
+      "baseStats": { "hp": 65, "atk": 70, "def": 60, "spe": 115, "spa": 65, "spd": 65 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "53",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "persian-alola",
+      "region": "alola",
+      "types": ["dark"],
+      "baseStats": { "hp": 65, "atk": 60, "def": 60, "spe": 115, "spa": 75, "spd": 65 },
+      "color": "blue",
+      "debut": "sun-moon",
+      "sprite": "10108",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "meowth",
+      "to": "persian",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "meowth-alola",
+      "to": "persian-alola",
+      "methods": []
+    }
+  ]
+}

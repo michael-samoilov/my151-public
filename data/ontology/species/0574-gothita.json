@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gothita",
+    "nationalDex": 574,
+    "captureRate": 200,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gothita",
+      "types": ["psychic"],
+      "baseStats": { "hp": 45, "atk": 30, "def": 50, "spe": 45, "spa": 55, "spd": 65 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "574",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

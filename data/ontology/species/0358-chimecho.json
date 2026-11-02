@@ -1,0 +1,52 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chimecho",
+    "nationalDex": 358,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chimecho",
+      "types": ["psychic"],
+      "baseStats": { "hp": 75, "atk": 50, "def": 80, "spe": 65, "spa": 95, "spd": 90 },
+      "color": "blue",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "358",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "chimecho-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["chimecho"]
+      },
+      "types": ["psychic", "steel"],
+      "baseStats": { "hp": 75, "atk": 50, "def": 110, "spe": 65, "spa": 135, "spd": 120 },
+      "shape": "heads",
+      "debut": "legends-za",
+      "sprite": "10306",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "chingling",
+      "to": "chimecho",
+      "methods": []
+    }
+  ]
+}

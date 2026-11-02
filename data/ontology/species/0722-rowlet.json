@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rowlet",
+    "nationalDex": 722,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rowlet",
+      "types": ["grass", "flying"],
+      "baseStats": { "hp": 68, "atk": 55, "def": 55, "spe": 42, "spa": 50, "spd": 50 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "sun-moon",
+      "sprite": "722",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

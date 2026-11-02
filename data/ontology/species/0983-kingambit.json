@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kingambit",
+    "nationalDex": 983,
+    "captureRate": 25,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kingambit",
+      "types": ["dark", "steel"],
+      "baseStats": { "hp": 100, "atk": 135, "def": 120, "spe": 50, "spa": 60, "spd": 85 },
+      "color": "black",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "scarlet-violet",
+      "sprite": "983",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bisharp",
+      "to": "kingambit",
+      "methods": []
+    }
+  ]
+}

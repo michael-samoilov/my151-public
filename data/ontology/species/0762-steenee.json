@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "steenee",
+    "nationalDex": 762,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "steenee",
+      "types": ["grass"],
+      "baseStats": { "hp": 52, "atk": 40, "def": 48, "spe": 62, "spa": 40, "spd": 48 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "762",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bounsweet",
+      "to": "steenee",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ]
+    }
+  ]
+}

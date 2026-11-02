@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clefairy",
+    "nationalDex": 35,
+    "captureRate": 150,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clefairy",
+      "types": ["fairy"],
+      "baseStats": { "hp": 70, "atk": 45, "def": 48, "spe": 35, "spa": 60, "spd": 65 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["fairy"],
+      "debut": "red-blue",
+      "sprite": "35",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cleffa",
+      "to": "clefairy",
+      "methods": []
+    }
+  ]
+}

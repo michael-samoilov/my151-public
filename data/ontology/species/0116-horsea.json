@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "horsea",
+    "nationalDex": 116,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "horsea",
+      "types": ["water"],
+      "baseStats": { "hp": 30, "atk": 40, "def": 70, "spe": 60, "spa": 70, "spd": 25 },
+      "color": "blue",
+      "shape": "blob",
+      "eggGroups": ["water1", "dragon"],
+      "debut": "red-blue",
+      "sprite": "116",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

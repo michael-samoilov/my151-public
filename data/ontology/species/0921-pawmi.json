@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pawmi",
+    "nationalDex": 921,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pawmi",
+      "types": ["electric"],
+      "baseStats": { "hp": 45, "atk": 50, "def": 20, "spe": 60, "spa": 40, "spd": 25 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "921",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

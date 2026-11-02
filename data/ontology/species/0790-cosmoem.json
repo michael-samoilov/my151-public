@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cosmoem",
+    "nationalDex": 790,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cosmoem",
+      "types": ["psychic"],
+      "baseStats": { "hp": 43, "atk": 29, "def": 131, "spe": 37, "spa": 29, "spd": 131 },
+      "color": "blue",
+      "shape": "ball",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "790",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cosmog",
+      "to": "cosmoem",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 43 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clefable",
+    "nationalDex": 36,
+    "captureRate": 25,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clefable",
+      "types": ["fairy"],
+      "baseStats": { "hp": 95, "atk": 70, "def": 73, "spe": 60, "spa": 95, "spd": 90 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["fairy"],
+      "debut": "red-blue",
+      "sprite": "36",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "clefable-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["clefable"]
+      },
+      "types": ["fairy", "flying"],
+      "baseStats": { "hp": 95, "atk": 80, "def": 93, "spe": 70, "spa": 135, "spd": 110 },
+      "debut": "legends-za",
+      "sprite": "10278",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "clefairy",
+      "to": "clefable",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nidoran-f",
+    "nationalDex": 29,
+    "captureRate": 235,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nidoran-f",
+      "types": ["poison"],
+      "baseStats": { "hp": 55, "atk": 47, "def": 52, "spe": 41, "spa": 40, "spd": 40 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "ground"],
+      "debut": "red-blue",
+      "sprite": "29",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

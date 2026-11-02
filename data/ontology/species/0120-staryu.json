@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "staryu",
+    "nationalDex": 120,
+    "captureRate": 225,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "staryu",
+      "types": ["water"],
+      "baseStats": { "hp": 30, "atk": 45, "def": 55, "spe": 85, "spa": 70, "spd": 55 },
+      "color": "brown",
+      "shape": "blob",
+      "eggGroups": ["water3"],
+      "debut": "red-blue",
+      "sprite": "120",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

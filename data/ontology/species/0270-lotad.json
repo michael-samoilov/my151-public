@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lotad",
+    "nationalDex": 270,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lotad",
+      "types": ["water", "grass"],
+      "baseStats": { "hp": 40, "atk": 30, "def": 30, "spe": 30, "spa": 40, "spd": 50 },
+      "color": "green",
+      "shape": "armor",
+      "eggGroups": ["water1", "plant"],
+      "debut": "ruby-sapphire",
+      "sprite": "270",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

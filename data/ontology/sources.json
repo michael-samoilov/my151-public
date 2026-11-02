@@ -1,0 +1,14 @@
+[
+  { "id": "legacy:src/data/pokemon.json", "kind": "legacy-file", "ref": "src/data/pokemon.json" },
+  { "id": "legacy:src/favorites/model/alternateForms.ts", "kind": "legacy-file", "ref": "src/favorites/model/alternateForms.ts" },
+  { "id": "legacy:src/league/data/powerupForms.json", "kind": "legacy-file", "ref": "src/league/data/powerupForms.json" },
+  { "id": "legacy:src/favorites/data/formMetadata.json", "kind": "legacy-file", "ref": "src/favorites/data/formMetadata.json" },
+  { "id": "legacy:src/favorites/data/powerupTypes.json", "kind": "legacy-file", "ref": "src/favorites/data/powerupTypes.json" },
+  { "id": "legacy:src/data/form-shapes.json", "kind": "legacy-file", "ref": "src/data/form-shapes.json" },
+  { "id": "legacy:src/favorites/model/sourceGame.ts", "kind": "legacy-file", "ref": "src/favorites/model/sourceGame.ts" },
+  { "id": "legacy:src/favorites/model/debut.ts", "kind": "legacy-file", "ref": "src/favorites/model/debut.ts" },
+  { "id": "legacy:src/league/data/formPolicy.ts", "kind": "legacy-file", "ref": "src/league/data/formPolicy.ts" },
+  { "id": "legacy:src/league/data/catalog.ts", "kind": "legacy-file", "ref": "src/league/data/catalog.ts" },
+  { "id": "legacy:src/favorites/model/catalog.ts", "kind": "legacy-file", "ref": "src/favorites/model/catalog.ts" },
+  { "id": "legacy:src/data/categories.ts", "kind": "legacy-file", "ref": "src/data/categories.ts" }
+]

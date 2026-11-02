@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "flareon",
+    "nationalDex": 136,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "flareon",
+      "types": ["fire"],
+      "baseStats": { "hp": 65, "atk": 130, "def": 60, "spe": 65, "spa": 95, "spd": 110 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "136",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "eevee",
+      "to": "flareon",
+      "methods": []
+    }
+  ]
+}

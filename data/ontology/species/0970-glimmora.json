@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "glimmora",
+    "nationalDex": 970,
+    "captureRate": 25,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "glimmora",
+      "types": ["rock", "poison"],
+      "baseStats": { "hp": 83, "atk": 55, "def": 90, "spe": 86, "spa": 130, "spd": 81 },
+      "color": "blue",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "970",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "glimmora-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["glimmora"]
+      },
+      "baseStats": { "hp": 83, "atk": 90, "def": 105, "spe": 101, "spa": 150, "spd": 96 },
+      "debut": "legends-za",
+      "sprite": "10321",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "glimmet",
+      "to": "glimmora",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

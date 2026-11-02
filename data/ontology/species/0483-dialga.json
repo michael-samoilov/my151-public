@@ -1,0 +1,67 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dialga",
+    "nationalDex": 483,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["origin"]
+      },
+      {
+        "axis": "look",
+        "values": ["primal"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dialga",
+      "types": ["steel", "dragon"],
+      "baseStats": { "hp": 100, "atk": 120, "def": 120, "spe": 90, "spa": 150, "spd": 100 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "483",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "dialga-origin",
+      "variety": { "forme": "origin" },
+      "baseStats": { "hp": 100, "atk": 100, "def": 120, "spe": 90, "spa": 150, "spd": 120 },
+      "color": "blue",
+      "debut": "legends-arceus",
+      "sprite": "10245",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "dialga-primal",
+      "variety": { "look": "primal" },
+      "debut": "mystery-dungeon-explorers",
+      "obtain": "spinoff-only",
+      "sprite": "11124",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

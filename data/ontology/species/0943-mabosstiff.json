@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mabosstiff",
+    "nationalDex": 943,
+    "captureRate": 75,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mabosstiff",
+      "types": ["dark"],
+      "baseStats": { "hp": 80, "atk": 120, "def": 90, "spe": 85, "spa": 60, "spd": 70 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "943",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "maschiff",
+      "to": "mabosstiff",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pawmot",
+    "nationalDex": 923,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pawmot",
+      "types": ["electric", "fighting"],
+      "baseStats": { "hp": 70, "atk": 115, "def": 70, "spe": 105, "spa": 70, "spd": 60 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "923",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pawmo",
+      "to": "pawmot",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "emboar",
+    "nationalDex": 500,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "emboar",
+      "types": ["fire", "fighting"],
+      "baseStats": { "hp": 110, "atk": 123, "def": 65, "spe": 65, "spa": 100, "spd": 65 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "500",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "emboar-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["emboar"]
+      },
+      "baseStats": { "hp": 110, "atk": 148, "def": 75, "spe": 75, "spa": 110, "spd": 110 },
+      "debut": "legends-za",
+      "sprite": "10286",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pignite",
+      "to": "emboar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

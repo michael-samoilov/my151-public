@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "floragato",
+    "nationalDex": 907,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "floragato",
+      "types": ["grass"],
+      "baseStats": { "hp": 61, "atk": 80, "def": 63, "spe": 83, "spa": 60, "spd": 63 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["ground", "plant"],
+      "debut": "scarlet-violet",
+      "sprite": "907",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sprigatito",
+      "to": "floragato",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

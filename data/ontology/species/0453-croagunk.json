@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "croagunk",
+    "nationalDex": 453,
+    "captureRate": 140,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "croagunk",
+      "types": ["poison", "fighting"],
+      "baseStats": { "hp": 48, "atk": 61, "def": 40, "spe": 50, "spa": 61, "spd": 40 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "453",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "swalot",
+    "nationalDex": 317,
+    "captureRate": 75,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "swalot",
+      "types": ["poison"],
+      "baseStats": { "hp": 100, "atk": 73, "def": 83, "spe": 55, "spa": 73, "spd": 83 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "317",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "gulpin",
+      "to": "swalot",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}

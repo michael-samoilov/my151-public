@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "squirtle",
+    "nationalDex": 7,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "squirtle",
+      "types": ["water"],
+      "baseStats": { "hp": 44, "atk": 48, "def": 65, "spe": 43, "spa": 50, "spd": 64 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "red-blue",
+      "sprite": "7",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

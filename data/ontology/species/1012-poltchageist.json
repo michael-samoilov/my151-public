@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "poltchageist",
+    "nationalDex": 1012,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "poltchageist",
+      "types": ["grass", "ghost"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 45, "spe": 50, "spa": 74, "spd": 54 },
+      "color": "green",
+      "shape": "ball",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "scarlet-violet",
+      "sprite": "1012",
+      "externalIds": { "pokeapiForm": "poltchageist-counterfeit" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

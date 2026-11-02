@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ariados",
+    "nationalDex": 168,
+    "captureRate": 90,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ariados",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 70, "atk": 90, "def": 70, "spe": 40, "spa": 60, "spd": 70 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "168",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "spinarak",
+      "to": "ariados",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 22 }
+          ]
+        }
+      ]
+    }
+  ]
+}

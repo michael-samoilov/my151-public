@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "natu",
+    "nationalDex": 177,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "natu",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 40, "atk": 50, "def": 45, "spe": 70, "spa": 70, "spd": 45 },
+      "color": "green",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "gold-silver",
+      "sprite": "177",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

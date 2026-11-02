@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grovyle",
+    "nationalDex": 253,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grovyle",
+      "types": ["grass"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 45, "spe": 95, "spa": 85, "spd": 65 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "253",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "treecko",
+      "to": "grovyle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

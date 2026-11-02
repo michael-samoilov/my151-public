@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kabuto",
+    "nationalDex": 140,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kabuto",
+      "types": ["rock", "water"],
+      "baseStats": { "hp": 30, "atk": 80, "def": 90, "spe": 55, "spa": 55, "spd": 45 },
+      "color": "brown",
+      "shape": "armor",
+      "eggGroups": ["water1", "water3"],
+      "debut": "red-blue",
+      "sprite": "140",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

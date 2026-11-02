@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gardevoir",
+    "nationalDex": 282,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gardevoir",
+      "types": ["psychic", "fairy"],
+      "baseStats": { "hp": 68, "atk": 65, "def": 65, "spe": 80, "spa": 125, "spd": 115 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape", "indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "282",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gardevoir-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["gardevoir"]
+      },
+      "baseStats": { "hp": 68, "atk": 85, "def": 65, "spe": 100, "spa": 165, "spd": 135 },
+      "eggGroups": ["indeterminate"],
+      "debut": "x-y",
+      "sprite": "10051",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kirlia",
+      "to": "gardevoir",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

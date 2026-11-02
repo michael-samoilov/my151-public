@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "carvanha",
+    "nationalDex": 318,
+    "captureRate": 225,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "carvanha",
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 45, "atk": 90, "def": 20, "spe": 65, "spa": 65, "spd": 20 },
+      "color": "red",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "318",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

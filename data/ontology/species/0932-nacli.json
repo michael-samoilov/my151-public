@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nacli",
+    "nationalDex": 932,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nacli",
+      "types": ["rock"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 75, "spe": 25, "spa": 35, "spd": 35 },
+      "color": "brown",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "932",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

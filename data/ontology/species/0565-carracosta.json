@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "carracosta",
+    "nationalDex": 565,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "carracosta",
+      "types": ["water", "rock"],
+      "baseStats": { "hp": 74, "atk": 108, "def": 133, "spe": 32, "spa": 83, "spd": 65 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["water1", "water3"],
+      "debut": "black-white",
+      "sprite": "565",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tirtouga",
+      "to": "carracosta",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

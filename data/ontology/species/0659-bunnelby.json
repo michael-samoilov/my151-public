@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bunnelby",
+    "nationalDex": 659,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bunnelby",
+      "types": ["normal"],
+      "baseStats": { "hp": 38, "atk": 36, "def": 38, "spe": 57, "spa": 32, "spd": 36 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "659",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

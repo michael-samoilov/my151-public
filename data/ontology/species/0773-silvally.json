@@ -1,0 +1,34 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "silvally",
+    "nationalDex": 773,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "silvally",
+      "types": ["normal"],
+      "baseStats": { "hp": 95, "atk": 95, "def": 95, "spe": 95, "spa": 95, "spd": 95 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "773",
+      "externalIds": { "pokeapiForm": "silvally-normal" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "type-null",
+      "to": "silvally",
+      "methods": []
+    }
+  ]
+}

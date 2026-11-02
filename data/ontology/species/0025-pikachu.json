@@ -1,0 +1,304 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pikachu",
+    "nationalDex": 25,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "outfit",
+        "values": ["cosplay", "rock-star", "belle", "pop-star", "phd", "libre", "original-cap", "hoenn-cap", "sinnoh-cap", "unova-cap", "kalos-cap", "alola-cap", "partner-cap", "world-cap"]
+      },
+      {
+        "axis": "look",
+        "values": ["peakychu"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pikachu",
+      "types": ["electric"],
+      "baseStats": { "hp": 35, "atk": 55, "def": 40, "spe": 90, "spa": 50, "spd": 50 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "red-blue",
+      "sprite": "25",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "pikachu-cosplay",
+      "variety": { "outfit": "cosplay" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10085",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-rock-star",
+      "variety": { "outfit": "rock-star" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10080",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-belle",
+      "variety": { "outfit": "belle" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10081",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-pop-star",
+      "variety": { "outfit": "pop-star" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10082",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-phd",
+      "variety": { "outfit": "phd" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10083",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-libre",
+      "variety": { "outfit": "libre" },
+      "eggGroups": ["no-eggs"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10084",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-original-cap",
+      "variety": { "outfit": "original-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10094",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-hoenn-cap",
+      "variety": { "outfit": "hoenn-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10095",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-sinnoh-cap",
+      "variety": { "outfit": "sinnoh-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10096",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-unova-cap",
+      "variety": { "outfit": "unova-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10097",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-kalos-cap",
+      "variety": { "outfit": "kalos-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10098",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-alola-cap",
+      "variety": { "outfit": "alola-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10099",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-partner-cap",
+      "variety": { "outfit": "partner-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "ultra-sun-ultra-moon",
+      "obtain": "event-only",
+      "sprite": "10148",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-world-cap",
+      "variety": { "outfit": "world-cap" },
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "obtain": "event-only",
+      "sprite": "10160",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pikachu-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["pikachu"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10199",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "pikachu-peakychu",
+      "variety": { "look": "peakychu" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11121",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pichu",
+      "to": "pikachu",
+      "methods": []
+    }
+  ]
+}

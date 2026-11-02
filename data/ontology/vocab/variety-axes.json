@@ -1,0 +1,23 @@
+[
+  { "id": "appliance", "note": "Rotom appliances." },
+  { "id": "breed", "note": "Paldean Tauros breeds." },
+  { "id": "cells", "note": "Zygarde cell share." },
+  { "id": "cloak", "note": "Burmy and Wormadam cloaks." },
+  { "id": "color", "note": "A spin-off recolor: Purple Kecleon." },
+  { "id": "cream", "note": "Alcremie creams." },
+  { "id": "flower", "note": "Flabébé line flower colors." },
+  { "id": "forme", "note": "An official Forme or Form name with no finer axis: Attack Forme, Origin Forme, Therian Forme, Crowned, Bloodmoon." },
+  { "id": "letter", "note": "Unown letters and punctuation." },
+  { "id": "look", "note": "A look from a spin-off game or an event: Shadow Lugia, Pokopia outfits." },
+  { "id": "mask", "note": "Ogerpon masks." },
+  { "id": "outfit", "note": "Pikachu caps and Cosplay outfits." },
+  { "id": "paint", "note": "Magearna colors." },
+  { "id": "pattern", "note": "Vivillon wing patterns." },
+  { "id": "plumage", "note": "Squawkabilly plumages." },
+  { "id": "season", "note": "Deerling and Sawsbuck seasons." },
+  { "id": "side", "note": "Shellos and Gastrodon seas." },
+  { "id": "stripe", "note": "Basculin stripes." },
+  { "id": "style", "note": "Urshifu styles and Oricorio dance styles." },
+  { "id": "sweet", "note": "Alcremie sweets." },
+  { "id": "trim", "note": "Furfrou trims." }
+]

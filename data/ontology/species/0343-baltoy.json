@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "baltoy",
+    "nationalDex": 343,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "baltoy",
+      "types": ["ground", "psychic"],
+      "baseStats": { "hp": 40, "atk": 40, "def": 55, "spe": 55, "spa": 40, "spd": 70 },
+      "color": "brown",
+      "shape": "arms",
+      "eggGroups": ["mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "343",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

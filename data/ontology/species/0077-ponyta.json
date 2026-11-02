@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ponyta",
+    "nationalDex": 77,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ponyta",
+      "types": ["fire"],
+      "baseStats": { "hp": 50, "atk": 85, "def": 55, "spe": 90, "spa": 65, "spd": 65 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "77",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "ponyta-galar",
+      "region": "galar",
+      "types": ["psychic"],
+      "color": "white",
+      "debut": "sword-shield",
+      "sprite": "10162",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

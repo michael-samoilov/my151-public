@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bramblin",
+    "nationalDex": 946,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bramblin",
+      "types": ["grass", "ghost"],
+      "baseStats": { "hp": 40, "atk": 65, "def": 30, "spe": 60, "spa": 45, "spd": 35 },
+      "color": "brown",
+      "shape": "ball",
+      "eggGroups": ["plant"],
+      "debut": "scarlet-violet",
+      "sprite": "946",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

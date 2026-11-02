@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "jigglypuff",
+    "nationalDex": 39,
+    "captureRate": 170,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "jigglypuff",
+      "types": ["normal", "fairy"],
+      "baseStats": { "hp": 115, "atk": 45, "def": 20, "spe": 20, "spa": 45, "spd": 25 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "red-blue",
+      "sprite": "39",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "igglybuff",
+      "to": "jigglypuff",
+      "methods": []
+    }
+  ]
+}

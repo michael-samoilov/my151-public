@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "infernape",
+    "nationalDex": 392,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "infernape",
+      "types": ["fire", "fighting"],
+      "baseStats": { "hp": 76, "atk": 104, "def": 71, "spe": 108, "spa": 104, "spd": 71 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "392",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "monferno",
+      "to": "infernape",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

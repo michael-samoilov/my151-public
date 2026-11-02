@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "milcery",
+    "nationalDex": 868,
+    "captureRate": 200,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "milcery",
+      "types": ["fairy"],
+      "baseStats": { "hp": 45, "atk": 40, "def": 40, "spe": 34, "spa": 50, "spd": 61 },
+      "color": "white",
+      "shape": "ball",
+      "eggGroups": ["fairy", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "868",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

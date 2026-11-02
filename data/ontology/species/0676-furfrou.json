@@ -1,0 +1,142 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "furfrou",
+    "nationalDex": 676,
+    "captureRate": 160,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "trim",
+        "values": ["natural", "heart", "star", "diamond", "debutante", "matron", "dandy", "la-reine", "kabuki", "pharaoh"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "furfrou",
+      "variety": { "trim": "natural" },
+      "types": ["normal"],
+      "baseStats": { "hp": 75, "atk": 80, "def": 60, "spe": 102, "spa": 65, "spd": 90 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "676",
+      "externalIds": { "pokeapiForm": "furfrou-natural" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "furfrou-heart",
+      "variety": { "trim": "heart" },
+      "sprite": "11096",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-star",
+      "variety": { "trim": "star" },
+      "sprite": "11097",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-diamond",
+      "variety": { "trim": "diamond" },
+      "sprite": "11098",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-debutante",
+      "variety": { "trim": "debutante" },
+      "sprite": "11099",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-matron",
+      "variety": { "trim": "matron" },
+      "sprite": "11100",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-dandy",
+      "variety": { "trim": "dandy" },
+      "sprite": "11101",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-la-reine",
+      "variety": { "trim": "la-reine" },
+      "sprite": "11102",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-kabuki",
+      "variety": { "trim": "kabuki" },
+      "sprite": "11103",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "furfrou-pharaoh",
+      "variety": { "trim": "pharaoh" },
+      "sprite": "11104",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

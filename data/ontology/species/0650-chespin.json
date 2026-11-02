@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chespin",
+    "nationalDex": 650,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chespin",
+      "types": ["grass"],
+      "baseStats": { "hp": 56, "atk": 61, "def": 65, "spe": 38, "spa": 48, "spd": 45 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "650",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

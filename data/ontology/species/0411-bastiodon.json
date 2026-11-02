@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bastiodon",
+    "nationalDex": 411,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bastiodon",
+      "types": ["rock", "steel"],
+      "baseStats": { "hp": 60, "atk": 52, "def": 168, "spe": 30, "spa": 47, "spd": 138 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["monster"],
+      "debut": "diamond-pearl",
+      "sprite": "411",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shieldon",
+      "to": "bastiodon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

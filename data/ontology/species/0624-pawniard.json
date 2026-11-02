@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pawniard",
+    "nationalDex": 624,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pawniard",
+      "types": ["dark", "steel"],
+      "baseStats": { "hp": 45, "atk": 85, "def": 70, "spe": 60, "spa": 40, "spd": 40 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "624",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

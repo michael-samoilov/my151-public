@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kakuna",
+    "nationalDex": 14,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kakuna",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 45, "atk": 25, "def": 50, "spe": 35, "spa": 25, "spd": 25 },
+      "color": "yellow",
+      "shape": "squiggle",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "14",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "weedle",
+      "to": "kakuna",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 7 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rhydon",
+    "nationalDex": 112,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rhydon",
+      "types": ["ground", "rock"],
+      "baseStats": { "hp": 105, "atk": 130, "def": 120, "spe": 40, "spa": 45, "spd": 45 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "red-blue",
+      "sprite": "112",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rhyhorn",
+      "to": "rhydon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

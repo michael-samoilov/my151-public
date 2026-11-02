@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kingdra",
+    "nationalDex": 230,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kingdra",
+      "types": ["water", "dragon"],
+      "baseStats": { "hp": 75, "atk": 95, "def": 95, "spe": 85, "spa": 95, "spd": 95 },
+      "color": "blue",
+      "shape": "blob",
+      "eggGroups": ["water1", "dragon"],
+      "debut": "gold-silver",
+      "sprite": "230",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "seadra",
+      "to": "kingdra",
+      "methods": []
+    }
+  ]
+}

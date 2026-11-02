@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "glalie",
+    "nationalDex": 362,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "glalie",
+      "types": ["ice"],
+      "baseStats": { "hp": 80, "atk": 80, "def": 80, "spe": 80, "spa": 80, "spd": 80 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["fairy", "mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "362",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "glalie-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["glalie"]
+      },
+      "baseStats": { "hp": 80, "atk": 120, "def": 80, "spe": 100, "spa": 120, "spd": 80 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10074",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "snorunt",
+      "to": "glalie",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

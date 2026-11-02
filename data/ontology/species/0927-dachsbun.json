@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dachsbun",
+    "nationalDex": 927,
+    "captureRate": 90,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dachsbun",
+      "types": ["fairy"],
+      "baseStats": { "hp": 57, "atk": 80, "def": 115, "spe": 95, "spa": 50, "spd": 80 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground", "mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "927",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "fidough",
+      "to": "dachsbun",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}

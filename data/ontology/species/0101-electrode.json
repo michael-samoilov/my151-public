@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "electrode",
+    "nationalDex": 101,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "electrode",
+      "types": ["electric"],
+      "baseStats": { "hp": 60, "atk": 50, "def": 70, "spe": 150, "spa": 80, "spd": 80 },
+      "color": "red",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "red-blue",
+      "sprite": "101",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "electrode-hisui",
+      "region": "hisui",
+      "types": ["electric", "grass"],
+      "debut": "legends-arceus",
+      "sprite": "10232",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "voltorb",
+      "to": "electrode",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "voltorb-hisui",
+      "to": "electrode-hisui",
+      "methods": []
+    }
+  ]
+}

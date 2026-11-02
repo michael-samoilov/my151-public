@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grafaiai",
+    "nationalDex": 945,
+    "captureRate": 90,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grafaiai",
+      "types": ["poison", "normal"],
+      "baseStats": { "hp": 63, "atk": 95, "def": 65, "spe": 110, "spa": 80, "spd": 72 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "945",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shroodle",
+      "to": "grafaiai",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    }
+  ]
+}

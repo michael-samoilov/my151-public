@@ -1,0 +1,52 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tangrowth",
+    "nationalDex": 465,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["professor"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tangrowth",
+      "types": ["grass"],
+      "baseStats": { "hp": 100, "atk": 100, "def": 125, "spe": 50, "spa": 110, "spd": 50 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "diamond-pearl",
+      "sprite": "465",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tangrowth-professor",
+      "variety": { "look": "professor" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11126",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tangela",
+      "to": "tangrowth",
+      "methods": []
+    }
+  ]
+}

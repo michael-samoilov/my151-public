@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "eternatus",
+    "nationalDex": 890,
+    "captureRate": 255,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "eternatus",
+      "types": ["poison", "dragon"],
+      "baseStats": { "hp": 140, "atk": 85, "def": 95, "spe": 130, "spa": 145, "spd": 95 },
+      "color": "purple",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "890",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "eternatus-eternamax",
+      "state": {
+        "kind": "eternamax",
+        "from": ["eternatus"]
+      },
+      "baseStats": { "hp": 255, "atk": 115, "def": 250, "spe": 130, "spa": 125, "spd": 250 },
+      "shape": "squiggle",
+      "obtain": "story-only",
+      "sprite": "10190",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

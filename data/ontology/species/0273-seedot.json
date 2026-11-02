@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "seedot",
+    "nationalDex": 273,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "seedot",
+      "types": ["grass"],
+      "baseStats": { "hp": 40, "atk": 40, "def": 50, "spe": 30, "spa": 30, "spd": 30 },
+      "color": "brown",
+      "shape": "legs",
+      "eggGroups": ["ground", "plant"],
+      "debut": "ruby-sapphire",
+      "sprite": "273",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

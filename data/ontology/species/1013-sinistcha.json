@@ -1,0 +1,34 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sinistcha",
+    "nationalDex": 1013,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sinistcha",
+      "types": ["grass", "ghost"],
+      "baseStats": { "hp": 71, "atk": 60, "def": 106, "spe": 70, "spa": 121, "spd": 80 },
+      "color": "green",
+      "shape": "ball",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "scarlet-violet",
+      "sprite": "1013",
+      "externalIds": { "pokeapiForm": "sinistcha-unremarkable" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "poltchageist",
+      "to": "sinistcha",
+      "methods": []
+    }
+  ]
+}

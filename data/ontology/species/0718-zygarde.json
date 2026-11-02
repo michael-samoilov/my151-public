@@ -1,0 +1,88 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zygarde",
+    "nationalDex": 718,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "cells",
+        "values": ["50", "10"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zygarde",
+      "variety": { "cells": "50" },
+      "types": ["dragon", "ground"],
+      "baseStats": { "hp": 108, "atk": 100, "def": 121, "spe": 95, "spa": 81, "spd": 95 },
+      "color": "green",
+      "shape": "squiggle",
+      "eggGroups": ["no-eggs"],
+      "debut": "x-y",
+      "sprite": "718",
+      "externalIds": { "pokeapiForm": "zygarde-50" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zygarde-complete",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["zygarde", "zygarde-10"]
+      },
+      "baseStats": { "hp": 216, "atk": 100, "def": 121, "spe": 85, "spa": 91, "spd": 95 },
+      "color": "black",
+      "shape": "upright",
+      "debut": "sun-moon",
+      "sprite": "10120",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "zygarde-10",
+      "variety": { "cells": "10" },
+      "baseStats": { "hp": 54, "atk": 100, "def": 71, "spe": 115, "spa": 61, "spd": 85 },
+      "color": "black",
+      "shape": "quadruped",
+      "debut": "sun-moon",
+      "sprite": "10181",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "zygarde-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["zygarde"]
+      },
+      "baseStats": { "hp": 216, "atk": 70, "def": 91, "spe": 100, "spa": 216, "spd": 85 },
+      "debut": "legends-za",
+      "sprite": "10301",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

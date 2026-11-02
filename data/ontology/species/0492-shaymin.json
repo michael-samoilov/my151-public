@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shaymin",
+    "nationalDex": 492,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["land", "sky"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shaymin",
+      "variety": { "forme": "land" },
+      "types": ["grass"],
+      "baseStats": { "hp": 100, "atk": 100, "def": 100, "spe": 100, "spa": 100, "spd": 100 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "492",
+      "externalIds": { "pokeapiForm": "shaymin-land" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "shaymin-sky",
+      "variety": { "forme": "sky" },
+      "types": ["grass", "flying"],
+      "baseStats": { "hp": 100, "atk": 103, "def": 75, "spe": 127, "spa": 120, "spd": 75 },
+      "debut": "platinum",
+      "sprite": "10006",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

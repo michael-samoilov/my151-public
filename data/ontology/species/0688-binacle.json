@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "binacle",
+    "nationalDex": 688,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "binacle",
+      "types": ["rock", "water"],
+      "baseStats": { "hp": 42, "atk": 52, "def": 67, "spe": 50, "spa": 39, "spd": 56 },
+      "color": "brown",
+      "shape": "heads",
+      "eggGroups": ["water3"],
+      "debut": "x-y",
+      "sprite": "688",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

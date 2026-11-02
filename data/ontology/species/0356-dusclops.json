@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dusclops",
+    "nationalDex": 356,
+    "captureRate": 90,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dusclops",
+      "types": ["ghost"],
+      "baseStats": { "hp": 40, "atk": 70, "def": 130, "spe": 25, "spa": 60, "spd": 130 },
+      "color": "black",
+      "shape": "humanoid",
+      "eggGroups": ["indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "356",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "duskull",
+      "to": "dusclops",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

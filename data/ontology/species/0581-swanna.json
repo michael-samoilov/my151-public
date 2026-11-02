@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "swanna",
+    "nationalDex": 581,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "swanna",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 75, "atk": 87, "def": 63, "spe": 98, "spa": 87, "spd": 63 },
+      "color": "white",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "black-white",
+      "sprite": "581",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ducklett",
+      "to": "swanna",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

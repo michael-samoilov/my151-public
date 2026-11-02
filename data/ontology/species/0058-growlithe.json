@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "growlithe",
+    "nationalDex": 58,
+    "captureRate": 190,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "growlithe",
+      "types": ["fire"],
+      "baseStats": { "hp": 55, "atk": 70, "def": 45, "spe": 60, "spa": 70, "spd": 50 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "58",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "growlithe-hisui",
+      "region": "hisui",
+      "types": ["fire", "rock"],
+      "baseStats": { "hp": 60, "atk": 75, "def": 45, "spe": 55, "spa": 65, "spd": 50 },
+      "debut": "legends-arceus",
+      "sprite": "10229",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

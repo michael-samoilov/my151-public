@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dedenne",
+    "nationalDex": 702,
+    "captureRate": 180,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dedenne",
+      "types": ["electric", "fairy"],
+      "baseStats": { "hp": 67, "atk": 58, "def": 57, "spe": 101, "spa": 81, "spd": 67 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "x-y",
+      "sprite": "702",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

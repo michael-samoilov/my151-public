@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bergmite",
+    "nationalDex": 712,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bergmite",
+      "types": ["ice"],
+      "baseStats": { "hp": 55, "atk": 69, "def": 85, "spe": 28, "spa": 32, "spd": 35 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "mineral"],
+      "debut": "x-y",
+      "sprite": "712",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

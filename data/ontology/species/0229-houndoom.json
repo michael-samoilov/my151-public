@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "houndoom",
+    "nationalDex": 229,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "houndoom",
+      "types": ["dark", "fire"],
+      "baseStats": { "hp": 75, "atk": 90, "def": 50, "spe": 95, "spa": 110, "spd": 80 },
+      "color": "black",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "229",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "houndoom-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["houndoom"]
+      },
+      "baseStats": { "hp": 75, "atk": 90, "def": 90, "spe": 115, "spa": 140, "spd": 90 },
+      "debut": "x-y",
+      "sprite": "10048",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "houndour",
+      "to": "houndoom",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "barboach",
+    "nationalDex": 339,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "barboach",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 50, "atk": 48, "def": 43, "spe": 60, "spa": 46, "spd": 41 },
+      "color": "gray",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "339",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

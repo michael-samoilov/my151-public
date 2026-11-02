@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rabsca",
+    "nationalDex": 954,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rabsca",
+      "types": ["bug", "psychic"],
+      "baseStats": { "hp": 75, "atk": 50, "def": 85, "spe": 45, "spa": 115, "spd": 100 },
+      "color": "green",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "scarlet-violet",
+      "sprite": "954",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rellor",
+      "to": "rabsca",
+      "methods": []
+    }
+  ]
+}

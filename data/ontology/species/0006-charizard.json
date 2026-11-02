@@ -1,0 +1,95 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "charizard",
+    "nationalDex": 6,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "charizard",
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 78, "atk": 84, "def": 78, "spe": 100, "spa": 109, "spd": 85 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "red-blue",
+      "sprite": "6",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "charizard-mega-x",
+      "state": {
+        "kind": "mega",
+        "letter": "x",
+        "from": ["charizard"]
+      },
+      "types": ["fire", "dragon"],
+      "baseStats": { "hp": 78, "atk": 130, "def": 111, "spe": 100, "spa": 130, "spd": 85 },
+      "color": "black",
+      "debut": "x-y",
+      "sprite": "10034",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "charizard-mega-y",
+      "state": {
+        "kind": "mega",
+        "letter": "y",
+        "from": ["charizard"]
+      },
+      "baseStats": { "hp": 78, "atk": 104, "def": 78, "spe": 100, "spa": 159, "spd": 115 },
+      "debut": "x-y",
+      "sprite": "10035",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "charizard-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["charizard"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10196",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "charmeleon",
+      "to": "charizard",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

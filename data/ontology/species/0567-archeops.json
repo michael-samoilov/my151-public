@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "archeops",
+    "nationalDex": 567,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "archeops",
+      "types": ["rock", "flying"],
+      "baseStats": { "hp": 75, "atk": 140, "def": 65, "spe": 110, "spa": 112, "spd": 65 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["flying", "water3"],
+      "debut": "black-white",
+      "sprite": "567",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "archen",
+      "to": "archeops",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

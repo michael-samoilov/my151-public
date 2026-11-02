@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scolipede",
+    "nationalDex": 545,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scolipede",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 60, "atk": 100, "def": 89, "spe": 112, "spa": 55, "spd": 69 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "black-white",
+      "sprite": "545",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "scolipede-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["scolipede"]
+      },
+      "baseStats": { "hp": 60, "atk": 140, "def": 149, "spe": 62, "spa": 75, "spd": 99 },
+      "debut": "legends-za",
+      "sprite": "10288",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "whirlipede",
+      "to": "scolipede",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

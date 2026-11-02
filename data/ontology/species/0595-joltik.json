@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "joltik",
+    "nationalDex": 595,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "joltik",
+      "types": ["bug", "electric"],
+      "baseStats": { "hp": 50, "atk": 47, "def": 50, "spe": 65, "spa": 57, "spd": 50 },
+      "color": "yellow",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "black-white",
+      "sprite": "595",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

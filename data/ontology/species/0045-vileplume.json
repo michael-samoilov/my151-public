@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vileplume",
+    "nationalDex": 45,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vileplume",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 75, "atk": 80, "def": 85, "spe": 50, "spa": 110, "spd": 90 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "red-blue",
+      "sprite": "45",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "gloom",
+      "to": "vileplume",
+      "methods": []
+    }
+  ]
+}

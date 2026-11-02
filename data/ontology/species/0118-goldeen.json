@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "goldeen",
+    "nationalDex": 118,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "goldeen",
+      "types": ["water"],
+      "baseStats": { "hp": 45, "atk": 67, "def": 60, "spe": 63, "spa": 35, "spd": 50 },
+      "color": "red",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "red-blue",
+      "sprite": "118",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

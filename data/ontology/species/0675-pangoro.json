@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pangoro",
+    "nationalDex": 675,
+    "captureRate": 65,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pangoro",
+      "types": ["fighting", "dark"],
+      "baseStats": { "hp": 95, "atk": 124, "def": 78, "spe": 58, "spa": 69, "spd": 71 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "x-y",
+      "sprite": "675",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pancham",
+      "to": "pangoro",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

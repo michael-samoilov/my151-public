@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gible",
+    "nationalDex": 443,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gible",
+      "types": ["dragon", "ground"],
+      "baseStats": { "hp": 58, "atk": 70, "def": 45, "spe": 42, "spa": 40, "spd": 45 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "diamond-pearl",
+      "sprite": "443",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

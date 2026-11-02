@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "quaxly",
+    "nationalDex": 912,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "quaxly",
+      "types": ["water"],
+      "baseStats": { "hp": 55, "atk": 65, "def": 45, "spe": 50, "spa": 50, "spd": 45 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["flying", "water1"],
+      "debut": "scarlet-violet",
+      "sprite": "912",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

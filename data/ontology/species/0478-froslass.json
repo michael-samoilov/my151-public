@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "froslass",
+    "nationalDex": 478,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "froslass",
+      "types": ["ice", "ghost"],
+      "baseStats": { "hp": 70, "atk": 80, "def": 70, "spe": 110, "spa": 80, "spd": 70 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["fairy", "mineral"],
+      "debut": "diamond-pearl",
+      "sprite": "478",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "froslass-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["froslass"]
+      },
+      "baseStats": { "hp": 70, "atk": 80, "def": 70, "spe": 120, "spa": 140, "spd": 100 },
+      "debut": "legends-za",
+      "sprite": "10285",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "snorunt",
+      "to": "froslass",
+      "methods": []
+    }
+  ]
+}

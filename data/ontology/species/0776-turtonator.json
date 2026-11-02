@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "turtonator",
+    "nationalDex": 776,
+    "captureRate": 70,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "turtonator",
+      "types": ["fire", "dragon"],
+      "baseStats": { "hp": 60, "atk": 78, "def": 135, "spe": 36, "spa": 91, "spd": 85 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "sun-moon",
+      "sprite": "776",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

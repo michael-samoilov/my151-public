@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "okidogi",
+    "nationalDex": 1014,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "okidogi",
+      "types": ["poison", "fighting"],
+      "baseStats": { "hp": 88, "atk": 128, "def": 115, "spe": 80, "spa": 58, "spd": 86 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1014",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

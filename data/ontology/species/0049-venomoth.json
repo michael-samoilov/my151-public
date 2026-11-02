@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "venomoth",
+    "nationalDex": 49,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "venomoth",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 70, "atk": 65, "def": 60, "spe": 90, "spa": 90, "spd": 75 },
+      "color": "purple",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "49",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "venonat",
+      "to": "venomoth",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 31 }
+          ]
+        }
+      ]
+    }
+  ]
+}

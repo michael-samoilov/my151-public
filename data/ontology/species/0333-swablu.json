@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "swablu",
+    "nationalDex": 333,
+    "captureRate": 255,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "swablu",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 45, "atk": 40, "def": 60, "spe": 50, "spa": 40, "spd": 75 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["flying", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "333",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

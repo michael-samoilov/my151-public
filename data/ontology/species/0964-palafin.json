@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "palafin",
+    "nationalDex": 964,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": { "dex": "palafin-hero" }
+  },
+  "forms": [
+    {
+      "id": "palafin",
+      "types": ["water"],
+      "baseStats": { "hp": 100, "atk": 70, "def": 72, "spe": 100, "spa": 53, "spd": 62 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["ground", "water2"],
+      "debut": "scarlet-violet",
+      "sprite": "964",
+      "externalIds": { "pokeapiForm": "palafin-zero" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "palafin-hero",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["palafin"]
+      },
+      "baseStats": { "hp": 100, "atk": 160, "def": 97, "spe": 100, "spa": 106, "spd": 87 },
+      "sprite": "11004",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "finizen",
+      "to": "palafin",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 38 }
+          ]
+        }
+      ]
+    }
+  ]
+}

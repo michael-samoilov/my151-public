@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vullaby",
+    "nationalDex": 629,
+    "captureRate": 190,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vullaby",
+      "types": ["dark", "flying"],
+      "baseStats": { "hp": 70, "atk": 55, "def": 75, "spe": 60, "spa": 45, "spd": 65 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "black-white",
+      "sprite": "629",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

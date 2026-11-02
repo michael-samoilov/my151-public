@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hypno",
+    "nationalDex": 97,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hypno",
+      "types": ["psychic"],
+      "baseStats": { "hp": 85, "atk": 73, "def": 70, "spe": 67, "spa": 73, "spd": 115 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "97",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "drowzee",
+      "to": "hypno",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}

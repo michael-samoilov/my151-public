@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tepig",
+    "nationalDex": 498,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tepig",
+      "types": ["fire"],
+      "baseStats": { "hp": 65, "atk": 63, "def": 45, "spe": 45, "spa": 45, "spd": 45 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "498",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,36 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "voltorb",
+    "nationalDex": 100,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "voltorb",
+      "types": ["electric"],
+      "baseStats": { "hp": 40, "atk": 30, "def": 50, "spe": 100, "spa": 55, "spd": 55 },
+      "color": "red",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "red-blue",
+      "sprite": "100",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "voltorb-hisui",
+      "region": "hisui",
+      "types": ["electric", "grass"],
+      "debut": "legends-arceus",
+      "sprite": "10231",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

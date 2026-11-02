@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "diancie",
+    "nationalDex": 719,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "diancie",
+      "types": ["rock", "fairy"],
+      "baseStats": { "hp": 50, "atk": 100, "def": 150, "spe": 50, "spa": 100, "spd": 150 },
+      "color": "pink",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "x-y",
+      "sprite": "719",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "diancie-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["diancie"]
+      },
+      "baseStats": { "hp": 50, "atk": 160, "def": 110, "spe": 110, "spa": 160, "spd": 110 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10075",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

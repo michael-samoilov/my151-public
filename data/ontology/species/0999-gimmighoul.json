@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gimmighoul",
+    "nationalDex": 999,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["chest", "roaming"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gimmighoul",
+      "variety": { "forme": "chest" },
+      "types": ["ghost"],
+      "baseStats": { "hp": 45, "atk": 30, "def": 70, "spe": 10, "spa": 75, "spd": 70 },
+      "color": "red",
+      "shape": "blob",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "999",
+      "externalIds": { "pokeapiForm": "gimmighoul-chest" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gimmighoul-roaming",
+      "variety": { "forme": "roaming" },
+      "baseStats": { "hp": 45, "atk": 30, "def": 25, "spe": 80, "spa": 75, "spd": 45 },
+      "color": "gray",
+      "shape": "humanoid",
+      "debut": "go",
+      "obtain": "spinoff-only",
+      "sprite": "10263",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

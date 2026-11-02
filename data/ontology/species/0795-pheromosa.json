@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pheromosa",
+    "nationalDex": 795,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pheromosa",
+      "types": ["bug", "fighting"],
+      "baseStats": { "hp": 71, "atk": 137, "def": 37, "spe": 151, "spa": 137, "spd": 37 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "795",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dwebble",
+    "nationalDex": 557,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dwebble",
+      "types": ["bug", "rock"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 85, "spe": 55, "spa": 35, "spd": 35 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["bug", "mineral"],
+      "debut": "black-white",
+      "sprite": "557",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

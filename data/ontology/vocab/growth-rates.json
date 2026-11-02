@@ -1,0 +1,8 @@
+[
+  { "id": "erratic" },
+  { "id": "fast" },
+  { "id": "fluctuating" },
+  { "id": "medium" },
+  { "id": "medium-slow" },
+  { "id": "slow" }
+]

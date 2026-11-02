@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pupitar",
+    "nationalDex": 247,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pupitar",
+      "types": ["rock", "ground"],
+      "baseStats": { "hp": 70, "atk": 84, "def": 70, "spe": 51, "spa": 65, "spd": 70 },
+      "color": "gray",
+      "shape": "squiggle",
+      "eggGroups": ["monster"],
+      "debut": "gold-silver",
+      "sprite": "247",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "larvitar",
+      "to": "pupitar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

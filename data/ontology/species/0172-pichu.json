@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pichu",
+    "nationalDex": 172,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["spiky-eared"]
+      },
+      {
+        "axis": "look",
+        "values": ["ukulele"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pichu",
+      "types": ["electric"],
+      "baseStats": { "hp": 20, "atk": 40, "def": 15, "spe": 60, "spa": 35, "spd": 35 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "172",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "pichu-spiky-eared",
+      "variety": { "forme": "spiky-eared" },
+      "debut": "heartgold-soulsilver",
+      "obtain": "event-only",
+      "sprite": "11064",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pichu-ukulele",
+      "variety": { "look": "ukulele" },
+      "debut": "ranger-guardian-signs",
+      "obtain": "spinoff-only",
+      "sprite": "11129",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

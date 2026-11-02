@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "runerigus",
+    "nationalDex": 867,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "runerigus",
+      "types": ["ground", "ghost"],
+      "baseStats": { "hp": 58, "atk": 95, "def": 145, "spe": 30, "spa": 50, "spd": 105 },
+      "color": "gray",
+      "shape": "blob",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "867",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "yamask-galar",
+      "to": "runerigus",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chesnaught",
+    "nationalDex": 652,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chesnaught",
+      "types": ["grass", "fighting"],
+      "baseStats": { "hp": 88, "atk": 107, "def": 122, "spe": 64, "spa": 74, "spd": 75 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "652",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "chesnaught-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["chesnaught"]
+      },
+      "baseStats": { "hp": 88, "atk": 137, "def": 172, "spe": 44, "spa": 74, "spd": 115 },
+      "debut": "legends-za",
+      "sprite": "10292",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "quilladin",
+      "to": "chesnaught",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

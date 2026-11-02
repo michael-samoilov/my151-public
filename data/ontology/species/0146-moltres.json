@@ -1,0 +1,38 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "moltres",
+    "nationalDex": 146,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "moltres",
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 90, "atk": 100, "def": 90, "spe": 90, "spa": 125, "spd": 85 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "146",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "moltres-galar",
+      "region": "galar",
+      "types": ["dark", "flying"],
+      "baseStats": { "hp": 90, "atk": 85, "def": 90, "spe": 90, "spa": 100, "spd": 125 },
+      "color": "red",
+      "debut": "sword-shield",
+      "sprite": "10171",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

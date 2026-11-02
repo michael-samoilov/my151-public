@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tyrunt",
+    "nationalDex": 696,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tyrunt",
+      "types": ["rock", "dragon"],
+      "baseStats": { "hp": 58, "atk": 89, "def": 77, "spe": 48, "spa": 45, "spd": 45 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "x-y",
+      "sprite": "696",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

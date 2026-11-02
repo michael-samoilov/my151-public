@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spinarak",
+    "nationalDex": 167,
+    "captureRate": 255,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spinarak",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 40, "atk": 60, "def": 40, "spe": 30, "spa": 40, "spd": 40 },
+      "color": "green",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "167",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

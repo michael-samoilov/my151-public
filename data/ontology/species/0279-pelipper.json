@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pelipper",
+    "nationalDex": 279,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pelipper",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 60, "atk": 50, "def": 100, "spe": 65, "spa": 95, "spd": 70 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "ruby-sapphire",
+      "sprite": "279",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wingull",
+      "to": "pelipper",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

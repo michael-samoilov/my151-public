@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mudkip",
+    "nationalDex": 258,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mudkip",
+      "types": ["water"],
+      "baseStats": { "hp": 50, "atk": 70, "def": 50, "spe": 40, "spa": 50, "spd": 50 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "water1"],
+      "debut": "ruby-sapphire",
+      "sprite": "258",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

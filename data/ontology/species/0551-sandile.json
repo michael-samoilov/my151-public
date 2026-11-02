@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandile",
+    "nationalDex": 551,
+    "captureRate": 180,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandile",
+      "types": ["ground", "dark"],
+      "baseStats": { "hp": 50, "atk": 72, "def": 35, "spe": 65, "spa": 35, "spd": 35 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "551",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

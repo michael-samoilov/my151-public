@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "quilladin",
+    "nationalDex": 651,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "quilladin",
+      "types": ["grass"],
+      "baseStats": { "hp": 61, "atk": 78, "def": 95, "spe": 57, "spa": 56, "spd": 58 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "651",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "chespin",
+      "to": "quilladin",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

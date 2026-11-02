@@ -1,0 +1,65 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "raticate",
+    "nationalDex": 20,
+    "captureRate": 127,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "raticate",
+      "types": ["normal"],
+      "baseStats": { "hp": 55, "atk": 81, "def": 60, "spe": 97, "spa": 50, "spd": 70 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "20",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "raticate-alola",
+      "region": "alola",
+      "types": ["dark", "normal"],
+      "baseStats": { "hp": 75, "atk": 71, "def": 70, "spe": 77, "spa": 40, "spd": 80 },
+      "color": "black",
+      "debut": "sun-moon",
+      "sprite": "10092",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rattata",
+      "to": "raticate",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "rattata-alola",
+      "to": "raticate-alola",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

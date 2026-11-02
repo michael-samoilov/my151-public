@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "altaria",
+    "nationalDex": 334,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "altaria",
+      "types": ["dragon", "flying"],
+      "baseStats": { "hp": 75, "atk": 70, "def": 90, "spe": 80, "spa": 70, "spd": 105 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["flying", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "334",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "altaria-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["altaria"]
+      },
+      "types": ["dragon", "fairy"],
+      "baseStats": { "hp": 75, "atk": 110, "def": 110, "spe": 80, "spa": 110, "spd": 105 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10067",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "swablu",
+      "to": "altaria",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dewgong",
+    "nationalDex": 87,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dewgong",
+      "types": ["water", "ice"],
+      "baseStats": { "hp": 90, "atk": 70, "def": 80, "spe": 70, "spa": 70, "spd": 95 },
+      "color": "white",
+      "shape": "fish",
+      "eggGroups": ["water1", "ground"],
+      "debut": "red-blue",
+      "sprite": "87",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "seel",
+      "to": "dewgong",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    }
+  ]
+}

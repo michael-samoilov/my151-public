@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "aerodactyl",
+    "nationalDex": 142,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "aerodactyl",
+      "types": ["rock", "flying"],
+      "baseStats": { "hp": 80, "atk": 105, "def": 65, "spe": 130, "spa": 60, "spd": 75 },
+      "color": "purple",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "red-blue",
+      "sprite": "142",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "aerodactyl-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["aerodactyl"]
+      },
+      "baseStats": { "hp": 80, "atk": 135, "def": 85, "spe": 150, "spa": 70, "spd": 95 },
+      "debut": "x-y",
+      "sprite": "10042",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

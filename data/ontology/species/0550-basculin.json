@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "basculin",
+    "nationalDex": 550,
+    "captureRate": 25,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "stripe",
+        "values": ["red", "blue", "white"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "basculin",
+      "variety": { "stripe": "red" },
+      "types": ["water"],
+      "baseStats": { "hp": 70, "atk": 92, "def": 65, "spe": 98, "spa": 80, "spd": 55 },
+      "color": "green",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "black-white",
+      "sprite": "550",
+      "externalIds": { "pokeapiForm": "basculin-red-striped" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "basculin-blue-striped",
+      "variety": { "stripe": "blue" },
+      "sprite": "10016",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "basculin-white-striped",
+      "variety": { "stripe": "white" },
+      "debut": "legends-arceus",
+      "sprite": "10247",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

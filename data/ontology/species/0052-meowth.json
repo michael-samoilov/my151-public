@@ -1,0 +1,66 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "meowth",
+    "nationalDex": 52,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "meowth",
+      "types": ["normal"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 35, "spe": 90, "spa": 40, "spd": 40 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "52",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meowth-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["meowth"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10200",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meowth-alola",
+      "region": "alola",
+      "types": ["dark"],
+      "baseStats": { "hp": 40, "atk": 35, "def": 35, "spe": 90, "spa": 50, "spd": 40 },
+      "color": "blue",
+      "debut": "sun-moon",
+      "sprite": "10107",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meowth-galar",
+      "region": "galar",
+      "types": ["steel"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 55, "spe": 40, "spa": 40, "spd": 40 },
+      "color": "brown",
+      "shape": "upright",
+      "debut": "sword-shield",
+      "sprite": "10161",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

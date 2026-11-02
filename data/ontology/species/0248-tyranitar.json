@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tyranitar",
+    "nationalDex": 248,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tyranitar",
+      "types": ["rock", "dark"],
+      "baseStats": { "hp": 100, "atk": 134, "def": 110, "spe": 61, "spa": 95, "spd": 100 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "gold-silver",
+      "sprite": "248",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tyranitar-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["tyranitar"]
+      },
+      "baseStats": { "hp": 100, "atk": 164, "def": 150, "spe": 71, "spa": 95, "spd": 120 },
+      "debut": "x-y",
+      "sprite": "10049",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pupitar",
+      "to": "tyranitar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 55 }
+          ]
+        }
+      ]
+    }
+  ]
+}

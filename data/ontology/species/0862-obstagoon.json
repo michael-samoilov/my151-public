@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "obstagoon",
+    "nationalDex": 862,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "obstagoon",
+      "types": ["dark", "normal"],
+      "baseStats": { "hp": 93, "atk": 90, "def": 101, "spe": 95, "spa": 60, "spd": 81 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "862",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "linoone-galar",
+      "to": "obstagoon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

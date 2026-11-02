@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "yamask",
+    "nationalDex": 562,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "yamask",
+      "types": ["ghost"],
+      "baseStats": { "hp": 38, "atk": 30, "def": 85, "spe": 30, "spa": 55, "spd": 65 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "black-white",
+      "sprite": "562",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "yamask-galar",
+      "region": "galar",
+      "types": ["ground", "ghost"],
+      "baseStats": { "hp": 38, "atk": 55, "def": 85, "spe": 30, "spa": 30, "spd": 65 },
+      "debut": "sword-shield",
+      "sprite": "10179",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

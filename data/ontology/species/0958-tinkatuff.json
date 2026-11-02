@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tinkatuff",
+    "nationalDex": 958,
+    "captureRate": 90,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tinkatuff",
+      "types": ["fairy", "steel"],
+      "baseStats": { "hp": 65, "atk": 55, "def": 55, "spe": 78, "spa": 45, "spd": 82 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "scarlet-violet",
+      "sprite": "958",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tinkatink",
+      "to": "tinkatuff",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

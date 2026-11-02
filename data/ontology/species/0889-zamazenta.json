@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zamazenta",
+    "nationalDex": 889,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["hero", "crowned"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zamazenta",
+      "variety": { "forme": "hero" },
+      "types": ["fighting"],
+      "baseStats": { "hp": 92, "atk": 120, "def": 115, "spe": 138, "spa": 80, "spd": 115 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "889",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zamazenta-crowned",
+      "variety": { "forme": "crowned" },
+      "types": ["fighting", "steel"],
+      "baseStats": { "hp": 92, "atk": 120, "def": 140, "spe": 128, "spa": 80, "spd": 140 },
+      "sprite": "10189",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

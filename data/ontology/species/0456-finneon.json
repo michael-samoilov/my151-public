@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "finneon",
+    "nationalDex": 456,
+    "captureRate": 190,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "finneon",
+      "types": ["water"],
+      "baseStats": { "hp": 49, "atk": 49, "def": 56, "spe": 66, "spa": 49, "spd": 61 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "diamond-pearl",
+      "sprite": "456",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

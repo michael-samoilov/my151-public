@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "beedrill",
+    "nationalDex": 15,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "beedrill",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 65, "atk": 90, "def": 40, "spe": 75, "spa": 45, "spd": 80 },
+      "color": "yellow",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "15",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "beedrill-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["beedrill"]
+      },
+      "baseStats": { "hp": 65, "atk": 150, "def": 40, "spe": 145, "spa": 15, "spd": 80 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10090",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kakuna",
+      "to": "beedrill",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 10 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ninjask",
+    "nationalDex": 291,
+    "captureRate": 120,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ninjask",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 61, "atk": 90, "def": 45, "spe": 160, "spa": 50, "spd": 50 },
+      "color": "yellow",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "ruby-sapphire",
+      "sprite": "291",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nincada",
+      "to": "ninjask",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

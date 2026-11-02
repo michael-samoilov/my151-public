@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cubone",
+    "nationalDex": 104,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cubone",
+      "types": ["ground"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 95, "spe": 35, "spa": 40, "spd": 50 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "red-blue",
+      "sprite": "104",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

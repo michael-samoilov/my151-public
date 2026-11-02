@@ -1,0 +1,57 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandslash",
+    "nationalDex": 28,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandslash",
+      "types": ["ground"],
+      "baseStats": { "hp": 75, "atk": 100, "def": 110, "spe": 65, "spa": 45, "spd": 55 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "28",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sandslash-alola",
+      "region": "alola",
+      "types": ["ice", "steel"],
+      "baseStats": { "hp": 75, "atk": 100, "def": 120, "spe": 65, "spa": 25, "spd": 65 },
+      "color": "blue",
+      "debut": "sun-moon",
+      "sprite": "10102",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sandshrew",
+      "to": "sandslash",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 22 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "sandshrew-alola",
+      "to": "sandslash-alola",
+      "methods": []
+    }
+  ]
+}

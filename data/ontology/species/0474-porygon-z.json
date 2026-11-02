@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "porygon-z",
+    "nationalDex": 474,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "porygon-z",
+      "types": ["normal"],
+      "baseStats": { "hp": 85, "atk": 80, "def": 70, "spe": 90, "spa": 135, "spd": 75 },
+      "color": "red",
+      "shape": "arms",
+      "eggGroups": ["mineral"],
+      "debut": "diamond-pearl",
+      "sprite": "474",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "porygon2",
+      "to": "porygon-z",
+      "methods": []
+    }
+  ]
+}

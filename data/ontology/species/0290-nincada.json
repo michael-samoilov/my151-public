@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nincada",
+    "nationalDex": 290,
+    "captureRate": 255,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nincada",
+      "types": ["bug", "ground"],
+      "baseStats": { "hp": 31, "atk": 45, "def": 90, "spe": 40, "spa": 30, "spd": 30 },
+      "color": "gray",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "ruby-sapphire",
+      "sprite": "290",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

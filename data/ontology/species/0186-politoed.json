@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "politoed",
+    "nationalDex": 186,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "politoed",
+      "types": ["water"],
+      "baseStats": { "hp": 90, "atk": 75, "def": 75, "spe": 70, "spa": 90, "spd": 100 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "gold-silver",
+      "sprite": "186",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "poliwhirl",
+      "to": "politoed",
+      "methods": []
+    }
+  ]
+}

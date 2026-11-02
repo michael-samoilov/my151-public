@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cresselia",
+    "nationalDex": 488,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cresselia",
+      "types": ["psychic"],
+      "baseStats": { "hp": 120, "atk": 70, "def": 110, "spe": 85, "spa": 75, "spd": 120 },
+      "color": "yellow",
+      "shape": "squiggle",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "488",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

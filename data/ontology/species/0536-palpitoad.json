@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "palpitoad",
+    "nationalDex": 536,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "palpitoad",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 75, "atk": 65, "def": 55, "spe": 69, "spa": 65, "spd": 55 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["water1"],
+      "debut": "black-white",
+      "sprite": "536",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tympole",
+      "to": "palpitoad",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

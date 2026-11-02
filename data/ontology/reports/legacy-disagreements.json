@@ -1,0 +1,100 @@
+[
+  {
+    "fact": "appId",
+    "form": "stunfisk-galar",
+    "values": { "pokemon.json": 10179, "favorites/model/catalog.ts": 10180 },
+    "chosen": 10179,
+    "reason": "Dex numbers win collisions; a new number starts at 20001."
+  },
+  {
+    "fact": "appId",
+    "form": "urshifu-rapid-strike",
+    "values": { "pokemon.json": 10227, "favorites/model/catalog.ts": 10191 },
+    "chosen": 10227,
+    "reason": "Dex numbers win collisions; a new number starts at 20001."
+  },
+  {
+    "fact": "appId",
+    "form": "urshifu-rapid-strike-gmax",
+    "values": { "pokemon.json": null, "favorites/model/catalog.ts": 10227 },
+    "chosen": 20001,
+    "reason": "Dex numbers win collisions; a new number starts at 20001."
+  },
+  {
+    "fact": "appId",
+    "form": "yamask-galar",
+    "values": { "pokemon.json": 10178, "favorites/model/catalog.ts": 10179 },
+    "chosen": 10178,
+    "reason": "Dex numbers win collisions; a new number starts at 20001."
+  },
+  {
+    "fact": "debut",
+    "form": "gimmighoul-roaming",
+    "values": { "sourceGame.ts": "go", "debut.ts": "scarlet-violet" },
+    "chosen": "go",
+    "reason": "The tooltip names the source game; the debut sort only needs its generation."
+  },
+  {
+    "fact": "debut",
+    "form": "magearna-original",
+    "values": { "sourceGame.ts": "home", "debut.ts": "sun-moon" },
+    "chosen": "home",
+    "reason": "The tooltip names the source game; the debut sort only needs its generation."
+  },
+  {
+    "fact": "evolvesFrom",
+    "form": "basculegion",
+    "values": { "pokemon.json": "basculin", "formPolicy.ts FORM_PARENT_IDS": "basculin-white-striped" },
+    "chosen": "basculin-white-striped",
+    "reason": "The League names the exact form; the Dex shows that form’s species because it does not list the form."
+  },
+  {
+    "fact": "evolvesFrom",
+    "form": "vespiquen",
+    "values": { "pokemon.json": "combee", "formPolicy.ts FORM_PARENT_IDS": "combee-female" },
+    "chosen": "combee-female",
+    "reason": "The League names the exact form; the Dex shows that form’s species because it does not list the form."
+  },
+  {
+    "fact": "name",
+    "form": "urshifu",
+    "values": { "pokemon.json": "urshifu", "favorites/model/catalog.ts": "urshifu-single-strike" },
+    "chosen": "urshifu",
+    "reason": "The form id is the species slug; the Picker string is kept in legacy/picker.json."
+  },
+  {
+    "fact": "persistence",
+    "form": "rotom-dj",
+    "values": { "formPolicy.ts TEMPORARY_FORM_IDS": "temporary", "sourceGame.ts": "spin-off" },
+    "chosen": "permanent, spinoff-only",
+    "reason": "Stereo Rotom is a Pokopia form, not a battle state; the League keeps it out as a spin-off form."
+  },
+  {
+    "fact": "sprite",
+    "form": "palafin",
+    "values": { "pokemon.json": "/sprites/pokemon/10256.png", "favorites/model/catalog.ts": "/sprites/pokemon/964.png" },
+    "chosen": "964, with species.standIn.dex = alcremie-star",
+    "reason": "The Dex shows a stand-in form; the Picker shows the default form’s own sprite."
+  },
+  {
+    "fact": "sprite",
+    "form": "terapagos",
+    "values": { "pokemon.json": "/sprites/pokemon/10276.png", "favorites/model/catalog.ts": "/sprites/pokemon/1024.png" },
+    "chosen": "1024, with species.standIn.dex = terapagos-terastal",
+    "reason": "The Dex shows a stand-in form; the Picker shows the default form’s own sprite."
+  },
+  {
+    "fact": "sprite",
+    "form": "wishiwashi",
+    "values": { "pokemon.json": "/sprites/pokemon/10127.png", "favorites/model/catalog.ts": "/sprites/pokemon/746.png" },
+    "chosen": "746, with species.standIn.dex = wishiwashi-school",
+    "reason": "The Dex shows a stand-in form; the Picker shows the default form’s own sprite."
+  },
+  {
+    "fact": "state.from",
+    "form": "floette-mega",
+    "values": { "powerupForms.json": "floette", "spec risk 5": "floette-eternal" },
+    "chosen": ["floette-eternal"],
+    "reason": "In Legends: Z-A only Eternal Floette Mega Evolves; the League and Picker keep offering it on plain Floette until phase 2."
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hitmonlee",
+    "nationalDex": 106,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hitmonlee",
+      "types": ["fighting"],
+      "baseStats": { "hp": 50, "atk": 120, "def": 53, "spe": 87, "spa": 35, "spd": 110 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "106",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tyrogue",
+      "to": "hitmonlee",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

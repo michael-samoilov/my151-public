@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "toxel",
+    "nationalDex": 848,
+    "captureRate": 75,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "toxel",
+      "types": ["electric", "poison"],
+      "baseStats": { "hp": 40, "atk": 38, "def": 35, "spe": 40, "spa": 54, "spd": 35 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "848",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

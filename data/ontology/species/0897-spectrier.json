@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spectrier",
+    "nationalDex": 897,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spectrier",
+      "types": ["ghost"],
+      "baseStats": { "hp": 100, "atk": 65, "def": 60, "spe": 130, "spa": 145, "spd": 80 },
+      "color": "black",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "897",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

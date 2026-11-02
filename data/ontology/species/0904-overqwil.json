@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "overqwil",
+    "nationalDex": 904,
+    "captureRate": 135,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "overqwil",
+      "types": ["dark", "poison"],
+      "baseStats": { "hp": 85, "atk": 115, "def": 95, "spe": 85, "spa": 65, "spd": 65 },
+      "color": "black",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "legends-arceus",
+      "sprite": "904",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "qwilfish-hisui",
+      "to": "overqwil",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bruxish",
+    "nationalDex": 779,
+    "captureRate": 80,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bruxish",
+      "types": ["water", "psychic"],
+      "baseStats": { "hp": 68, "atk": 105, "def": 70, "spe": 92, "spa": 70, "spd": 70 },
+      "color": "pink",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "sun-moon",
+      "sprite": "779",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}
