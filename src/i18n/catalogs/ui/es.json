@@ -763,7 +763,7 @@
   "analytics.regionalDex": "Dex regional",
   "analytics.shape.heading": "Forma del cuerpo",
   "analytics.tip": "Consejo: pulsa las barras para ver qué Pokémon marcan las tendencias de tu Pokédex",
-  "analytics.type.descMatchup": "Media neta de enfrentamientos favorables de cada tipo contra todos los Pokémon de esta Pokédex (muy eficaz al atacar, no muy eficaz al defender) y la diferencia con la Pokédex Nacional.",
+  "analytics.type.descMatchup": "Media neta de duelos favorables de cada tipo contra los Pokémon de esta Pokédex (muy eficaz al atacar, no muy eficaz al defender), comparada con la Pokédex Nacional.",
   "analytics.type.heading": "Tipo de Pokémon",
   "analytics.typeView.distribution": "Distribución de tipos",
   "analytics.typeView.matchups": "Eficacia de tipos",
