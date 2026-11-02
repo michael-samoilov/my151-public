@@ -73,8 +73,6 @@
   "common.skipToMain": "Aller au contenu principal",
   "dex.national": "Pokédex National",
   "header.tagline": " — créez votre propre Pokédex",
-  "header.toolNameCore": "Pokédex perso",
-  "header.toolNameQualifier": "Créateur de",
   "intro.body": "Composez votre Pokédex régional, analysez des statistiques détaillées, puis exportez-le en image pour en garder une copie et le partager.",
   "intro.dismiss": "Fermer l’introduction",
   "intro.headline": "Créez vos propres {count}",

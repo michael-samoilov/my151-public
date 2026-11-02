@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Hammer } from 'lucide-react';
@@ -33,6 +33,40 @@ function tabLabelClass(selected: boolean) {
   return cn(LABEL_ANIM, selected && LABEL_ACTIVE, LABEL_WIDE);
 }
 
+// Each name is condensed to the room its column has while the widest tab label
+// shows, so it fits on every tab and keeps one width as tabs change. The
+// breakpoints match LABEL_ACTIVE and LABEL_WIDE: no labels below 380px, the
+// active one up to 640px, and all three from there.
+function useFitTitle() {
+  const nav = useRef<HTMLDivElement>(null);
+  const fullName = useRef<HTMLSpanElement>(null);
+  const shortName = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const row = nav.current?.parentElement;
+    if (!row || !nav.current) return;
+    const fit = () => {
+      const labels = [...nav.current!.querySelectorAll<HTMLElement>('[data-tab-label]')];
+      const labelMargin = parseFloat(getComputedStyle(document.documentElement).fontSize) / 4;
+      const base = nav.current!.offsetWidth - labels.reduce((sum, l) => sum + l.offsetWidth + parseFloat(getComputedStyle(l).marginLeft), 0);
+      const widths = labels.map((l) => l.scrollWidth + labelMargin);
+      const shown = matchMedia('(min-width: 640px)').matches ? widths.reduce((a, b) => a + b, 0)
+        : matchMedia('(min-width: 380px)').matches ? Math.max(...widths) : 0;
+      const style = getComputedStyle(row);
+      const room = (row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 2 * parseFloat(style.columnGap) - base - shown) / 2;
+      for (const el of [fullName.current, shortName.current]) {
+        if (!el?.offsetWidth) continue;
+        const k = Math.min(1, room / el.offsetWidth);
+        el.style.transform = k < 1 ? `scaleX(${k})` : '';
+      }
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(row);
+    return () => observer.disconnect();
+  });
+  return { nav, fullName, shortName };
+}
+
 function tabTriggerClass(selected: boolean) {
   return cn(
     'px-2 sm:px-3',
@@ -49,6 +83,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
   const analyticsUnlocked = isAnalyticsUnlocked(milestoneMax);
   const [lockTip, setLockTip] = useState(false);
   const t = useT();
+  const { nav, fullName, shortName } = useFitTitle();
 
   const [placedAtMount] = useState(count);
   const [promo, setPromo] = useState(() => !isFavoritesNoticeWindow() && placedAtMount > 0 && !isLeaguePromoSeen());
@@ -98,8 +133,8 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
       >
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
           <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            <span className="inline-block leading-none max-[680px]:sr-only">{t('header.toolNameQualifier')}</span>{' '}
-            {t('header.toolNameCore')}
+            <span ref={fullName} className="inline-block origin-left leading-none max-[680px]:hidden">{t('home.dex.title')}</span>
+            <span ref={shortName} className="inline-block origin-left leading-none min-[681px]:hidden">{t('tools.dex')}</span>
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
             <span className="font-extrabold text-primary">{count}</span>
@@ -109,7 +144,8 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
 
         <div
           role="tablist"
-          aria-label={t('header.toolNameCore')}
+          ref={nav}
+          aria-label={t('tools.dex')}
           data-testid="dex-nav"
           className="inline-flex h-8 items-center rounded-lg bg-muted p-0.5"
         >
@@ -125,7 +161,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
             data-state={currentView === 'builder' ? 'active' : 'inactive'}
           >
             <Hammer className="h-4 w-4" />
-            <span className={tabLabelClass(currentView === 'builder')}>{t('nav.build')}</span>
+            <span data-tab-label className={tabLabelClass(currentView === 'builder')}>{t('nav.build')}</span>
           </Button>
 
           {analyticsUnlocked ? (
@@ -141,7 +177,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
               data-state={currentView === 'analytics' ? 'active' : 'inactive'}
             >
               <BarChart3 className="h-4 w-4" />
-              <span className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
+              <span data-tab-label className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
             </Button>
           ) : (
             <Tooltip open={lockTip} onOpenChange={setLockTip}>
@@ -159,7 +195,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
                   aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })}
                 >
                   <AnalyticsLockedIcon className="h-4 w-4" />
-                  <span className={tabLabelClass(false)}>{t('nav.analytics')}</span>
+                  <span data-tab-label className={tabLabelClass(false)}>{t('nav.analytics')}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
@@ -184,7 +220,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
             data-state={currentView === 'view' ? 'active' : 'inactive'}
           >
             <Camera className="h-4 w-4" />
-            <span className={tabLabelClass(currentView === 'view')}>{t('nav.view')}</span>
+            <span data-tab-label className={tabLabelClass(currentView === 'view')}>{t('nav.view')}</span>
           </Button>
         </div>
 
