@@ -5,22 +5,30 @@
     "nationalDex": 781,
     "captureRate": 25,
     "growthRate": "medium",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Sea Creeper Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dhelmise",
       "types": ["ghost", "grass"],
+      "abilities": { "first": "steelworker" },
       "baseStats": { "hp": 70, "atk": 131, "def": 100, "spe": 40, "spa": 86, "spd": 90 },
+      "heightDm": 39,
+      "weightHg": 2100,
       "color": "green",
       "shape": "blob",
       "eggGroups": ["mineral"],
       "debut": "sun-moon",
       "sprite": "781",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

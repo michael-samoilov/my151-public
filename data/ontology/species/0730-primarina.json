@@ -5,22 +5,30 @@
     "nationalDex": 730,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Soloist Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "primarina",
       "types": ["water", "fairy"],
+      "abilities": { "first": "torrent", "hidden": "liquid-voice" },
       "baseStats": { "hp": 80, "atk": 74, "def": 74, "spe": 60, "spa": 126, "spd": 116 },
+      "heightDm": 18,
+      "weightHg": 440,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["water1", "ground"],
       "debut": "sun-moon",
       "sprite": "730",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

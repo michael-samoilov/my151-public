@@ -5,22 +5,30 @@
     "nationalDex": 654,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "braixen",
       "types": ["fire"],
+      "abilities": { "first": "blaze", "hidden": "magician" },
       "baseStats": { "hp": 59, "atk": 59, "def": 58, "spe": 73, "spa": 90, "spd": 70 },
+      "heightDm": 10,
+      "weightHg": 145,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "x-y",
       "sprite": "654",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

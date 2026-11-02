@@ -5,22 +5,30 @@
     "nationalDex": 186,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Frog Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "politoed",
       "types": ["water"],
+      "abilities": { "first": "water-absorb", "second": "damp", "hidden": "drizzle" },
       "baseStats": { "hp": 90, "atk": 75, "def": 75, "spe": 70, "spa": 90, "spd": 100 },
+      "heightDm": 11,
+      "weightHg": 339,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["water1"],
       "debut": "gold-silver",
       "sprite": "186",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

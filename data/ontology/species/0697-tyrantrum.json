@@ -5,22 +5,30 @@
     "nationalDex": 697,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Despot Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tyrantrum",
       "types": ["rock", "dragon"],
+      "abilities": { "first": "strong-jaw", "hidden": "rock-head" },
       "baseStats": { "hp": 82, "atk": 121, "def": 119, "spe": 71, "spa": 69, "spd": 59 },
+      "heightDm": 25,
+      "weightHg": 2700,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["monster", "dragon"],
       "debut": "x-y",
       "sprite": "697",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

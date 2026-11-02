@@ -5,22 +5,30 @@
     "nationalDex": 867,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 50,
+    "genus": { "en": "Grudge Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "runerigus",
       "types": ["ground", "ghost"],
+      "abilities": { "first": "wandering-spirit" },
       "baseStats": { "hp": 58, "atk": 95, "def": 145, "spe": 30, "spa": 50, "spd": 105 },
+      "heightDm": 16,
+      "weightHg": 666,
       "color": "gray",
       "shape": "blob",
       "eggGroups": ["mineral", "indeterminate"],
       "debut": "sword-shield",
       "sprite": "867",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

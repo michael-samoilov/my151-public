@@ -5,22 +5,30 @@
     "nationalDex": 374,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Iron Ball Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "beldum",
       "types": ["steel", "psychic"],
+      "abilities": { "first": "clear-body", "hidden": "light-metal" },
       "baseStats": { "hp": 40, "atk": 55, "def": 80, "spe": 30, "spa": 35, "spd": 60 },
+      "heightDm": 6,
+      "weightHg": 952,
       "color": "blue",
       "shape": "blob",
       "eggGroups": ["mineral"],
       "debut": "ruby-sapphire",
       "sprite": "374",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

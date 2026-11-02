@@ -5,22 +5,30 @@
     "nationalDex": 367,
     "captureRate": 60,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Deep Sea Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "huntail",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "hidden": "water-veil" },
       "baseStats": { "hp": 55, "atk": 104, "def": 105, "spe": 52, "spa": 94, "spd": 75 },
+      "heightDm": 17,
+      "weightHg": 270,
       "color": "blue",
       "shape": "squiggle",
       "eggGroups": ["water1"],
       "debut": "ruby-sapphire",
       "sprite": "367",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

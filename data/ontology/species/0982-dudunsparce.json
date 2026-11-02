@@ -5,6 +5,10 @@
     "nationalDex": 982,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Land Snake Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,33 +17,41 @@
         "values": ["two-segment", "three-segment"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dudunsparce",
       "variety": { "forme": "two-segment" },
       "types": ["normal"],
+      "abilities": { "first": "serene-grace", "second": "run-away", "hidden": "rattled" },
       "baseStats": { "hp": 125, "atk": 100, "def": 80, "spe": 55, "spa": 85, "spd": 75 },
+      "heightDm": 36,
+      "weightHg": 392,
       "color": "yellow",
       "shape": "squiggle",
       "eggGroups": ["ground"],
       "debut": "scarlet-violet",
       "sprite": "982",
       "externalIds": { "pokeapiForm": "dudunsparce-two-segment" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "dudunsparce-three-segment",
       "variety": { "forme": "three-segment" },
+      "heightDm": 45,
+      "weightHg": 474,
       "sprite": "11003",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

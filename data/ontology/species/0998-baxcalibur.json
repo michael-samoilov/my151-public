@@ -5,22 +5,30 @@
     "nationalDex": 998,
     "captureRate": 10,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 50,
+    "genus": { "en": "Ice Dragon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "baxcalibur",
       "types": ["dragon", "ice"],
+      "abilities": { "first": "thermal-exchange", "hidden": "ice-body" },
       "baseStats": { "hp": 115, "atk": 145, "def": 92, "spe": 87, "spa": 75, "spd": 86 },
+      "heightDm": 21,
+      "weightHg": 2100,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["dragon", "mineral"],
       "debut": "scarlet-violet",
       "sprite": "998",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "baxcalibur-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["baxcalibur"]
       },
+      "abilities": { "first": "thermal-exchange" },
       "baseStats": { "hp": 115, "atk": 175, "def": 117, "spe": 87, "spa": 105, "spd": 101 },
+      "weightHg": 3150,
       "debut": "legends-za",
       "sprite": "10325",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

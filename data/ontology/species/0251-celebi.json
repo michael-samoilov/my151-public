@@ -5,22 +5,30 @@
     "nationalDex": 251,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 100,
+    "genus": { "en": "Time Travel Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "celebi",
       "types": ["psychic", "grass"],
+      "abilities": { "first": "natural-cure" },
       "baseStats": { "hp": 100, "atk": 100, "def": 100, "spe": 100, "spa": 100, "spd": 100 },
+      "heightDm": 6,
+      "weightHg": 50,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "gold-silver",
       "sprite": "251",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

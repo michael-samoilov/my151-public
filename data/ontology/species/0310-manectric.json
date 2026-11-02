@@ -5,22 +5,30 @@
     "nationalDex": 310,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Discharge Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "manectric",
       "types": ["electric"],
+      "abilities": { "first": "static", "second": "lightning-rod", "hidden": "minus" },
       "baseStats": { "hp": 70, "atk": 75, "def": 60, "spe": 105, "spa": 105, "spd": 60 },
+      "heightDm": 15,
+      "weightHg": 402,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "310",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "manectric-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["manectric"]
       },
+      "abilities": { "first": "intimidate" },
       "baseStats": { "hp": 70, "atk": 75, "def": 80, "spe": 135, "spa": 135, "spd": 80 },
+      "heightDm": 18,
+      "weightHg": 440,
       "debut": "x-y",
       "sprite": "10055",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

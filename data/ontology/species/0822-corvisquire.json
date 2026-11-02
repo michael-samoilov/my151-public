@@ -5,22 +5,30 @@
     "nationalDex": 822,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Raven Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "corvisquire",
       "types": ["flying"],
+      "abilities": { "first": "keen-eye", "second": "unnerve", "hidden": "big-pecks" },
       "baseStats": { "hp": 68, "atk": 67, "def": 55, "spe": 77, "spa": 43, "spd": 55 },
+      "heightDm": 8,
+      "weightHg": 160,
       "color": "blue",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "sword-shield",
       "sprite": "822",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

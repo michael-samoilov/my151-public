@@ -5,22 +5,30 @@
     "nationalDex": 853,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 50,
+    "genus": { "en": "Jujitsu Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "grapploct",
       "types": ["fighting"],
+      "abilities": { "first": "limber", "hidden": "technician" },
       "baseStats": { "hp": 80, "atk": 118, "def": 90, "spe": 42, "spa": 70, "spd": 80 },
+      "heightDm": 16,
+      "weightHg": 390,
       "color": "blue",
       "shape": "tentacles",
       "eggGroups": ["water1", "humanshape"],
       "debut": "sword-shield",
       "sprite": "853",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

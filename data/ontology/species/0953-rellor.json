@@ -5,22 +5,30 @@
     "nationalDex": 953,
     "captureRate": 190,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Rolling Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "rellor",
       "types": ["bug"],
+      "abilities": { "first": "compound-eyes", "hidden": "shed-skin" },
       "baseStats": { "hp": 41, "atk": 50, "def": 60, "spe": 30, "spa": 31, "spd": 58 },
+      "heightDm": 2,
+      "weightHg": 10,
       "color": "brown",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "scarlet-violet",
       "sprite": "953",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 879,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 50,
+    "genus": { "en": "Copperderm Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "copperajah",
       "types": ["steel"],
+      "abilities": { "first": "sheer-force", "hidden": "heavy-metal" },
       "baseStats": { "hp": 122, "atk": 130, "def": 69, "spe": 30, "spa": 80, "spd": 69 },
+      "heightDm": 30,
+      "weightHg": 6500,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["ground", "mineral"],
       "debut": "sword-shield",
       "sprite": "879",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "copperajah-gmax",
@@ -28,13 +36,16 @@
         "kind": "gigantamax",
         "from": ["copperajah"]
       },
+      "heightDm": 230,
+      "weightHg": null,
       "sprite": "10224",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 852,
     "captureRate": 180,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 50,
+    "genus": { "en": "Tantrum Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "clobbopus",
       "types": ["fighting"],
+      "abilities": { "first": "limber", "hidden": "technician" },
       "baseStats": { "hp": 50, "atk": 68, "def": 60, "spe": 32, "spa": 50, "spd": 50 },
+      "heightDm": 6,
+      "weightHg": 40,
       "color": "brown",
       "shape": "tentacles",
       "eggGroups": ["water1", "humanshape"],
       "debut": "sword-shield",
       "sprite": "852",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

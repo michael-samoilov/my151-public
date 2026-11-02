@@ -5,22 +5,30 @@
     "nationalDex": 859,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Wily Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "impidimp",
       "types": ["dark", "fairy"],
+      "abilities": { "first": "prankster", "second": "frisk", "hidden": "pickpocket" },
       "baseStats": { "hp": 45, "atk": 45, "def": 30, "spe": 50, "spa": 55, "spd": 40 },
+      "heightDm": 4,
+      "weightHg": 55,
       "color": "pink",
       "shape": "humanoid",
       "eggGroups": ["fairy", "humanshape"],
       "debut": "sword-shield",
       "sprite": "859",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,32 +5,43 @@
     "nationalDex": 157,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Volcano Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "typhlosion",
       "types": ["fire"],
+      "abilities": { "first": "blaze", "hidden": "flash-fire" },
       "baseStats": { "hp": 78, "atk": 84, "def": 78, "spe": 100, "spa": 109, "spd": 85 },
+      "heightDm": 17,
+      "weightHg": 795,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "gold-silver",
       "sprite": "157",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "typhlosion-hisui",
       "region": "hisui",
       "types": ["fire", "ghost"],
+      "abilities": { "first": "blaze", "hidden": "frisk" },
       "baseStats": { "hp": 73, "atk": 84, "def": 78, "spe": 95, "spa": 119, "spd": 85 },
+      "heightDm": 16,
+      "weightHg": 698,
       "debut": "legends-arceus",
       "sprite": "10233",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 388,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Grove Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "grotle",
       "types": ["grass"],
+      "abilities": { "first": "overgrow", "hidden": "shell-armor" },
       "baseStats": { "hp": 75, "atk": 89, "def": 85, "spe": 36, "spa": 55, "spd": 65 },
+      "heightDm": 11,
+      "weightHg": 970,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["monster", "plant"],
       "debut": "diamond-pearl",
       "sprite": "388",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

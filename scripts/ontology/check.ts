@@ -6,6 +6,8 @@
 import { TOOLS } from '../../src/ontology/model';
 import type { ResolvedForm } from '../../src/ontology/model';
 import type { AppIdLedger, Problem } from './authored';
+import { INHERITED_UNSOURCED } from './authored';
+import { AUDIT_REPORTS, disagreementsOf, linkedForms, rowKey, type AuditKind, type AuditReport } from './pokeapi/compare';
 import { mechanicallyEqual, type Ontology } from './resolve';
 
 export interface CheckEnvironment {
@@ -13,10 +15,15 @@ export interface CheckEnvironment {
   readonly productionLedger: AppIdLedger | null;
   /** Production's src/data/pokemon.json rows: a Dex number must keep naming the same form. */
   readonly productionDexNames: ReadonlyMap<number, string>;
+  /** The committed audit reports, or null where a report file is missing. */
+  readonly auditReports: { readonly [K in AuditKind]: AuditReport | null };
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const LEDGER = 'data/ontology/ids/app-ids.json';
+const AUDIT = 'npm run ontology:audit';
+/** The facts PokeAPI supplies per form, which a form must state, inherit from a checked source, or mark unsourced. */
+const POKEAPI_FORM_FACTS = ['abilities', 'heightDm', 'weightHg'] as const;
 const STAT_CHANGING_STEPS = new Set<ResolvedForm['states'][number]['kind']>(['mega', 'primal', 'ultra-burst', 'eternamax']);
 
 export function checkOntology(ontology: Ontology, environment: CheckEnvironment): readonly Problem[] {
@@ -37,6 +44,13 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
       if (form.coordinates.sex === 'female') {
         const male = permanent.find((other) => other.coordinates.sex === 'male' && same({ ...other.coordinates, sex: null }, { ...form.coordinates, sex: null }));
         if (!male) problem(form, 'sex-pair-incomplete', `${pathOf(form)}.sex`, `"${form.id}" is a female form with no male form at the same other coordinates; give the default form sex "male"`);
+      }
+    }
+    for (const tool of TOOLS) {
+      const shown = members.filter((form) => form.tools[tool] === 'in');
+      for (const [index, form] of shown.entries()) {
+        const twin = shown.slice(0, index).find((other) => other.sprite === form.sprite && same(other.states, form.states));
+        if (twin) problem(form, 'twins-both-shown', `${pathOf(form)}.tools.${tool}`, `"${form.id}" and "${twin.id}" have one sprite and one state chain, and the ${tool} shows both; set ${tool} to { "out": { "mergedInto": "${twin.id}" } }`);
       }
     }
     const states = members.filter((form) => form.states.length > 0);
@@ -67,6 +81,19 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
       if (reason === 'battle-state' && form.states.length === 0) problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "battle-state" but has no state step`);
       if (reason === 'spinoff-only' && games.get(form.facts.debut)?.series === 'mainline') problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "spinoff-only" but its debut game "${form.facts.debut}" is mainline`);
       if (reason === 'look-only' && !form.is.lookOnly) problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "look-only" but its types, base stats, or egg groups differ from "${form.species}"`);
+      if (typeof reason === 'object' && 'mergedInto' in reason) {
+        const target = forms.get(reason.mergedInto)!;
+        const claim = `"${form.id}" claims it is merged into "${target.id}"`;
+        if (target.species !== form.species) problem(form, 'exclusion-reason-false', path, `${claim}, but the target is a form of another species, "${target.species}"`);
+        if (target.sprite !== form.sprite) problem(form, 'exclusion-reason-false', path, `${claim}, but its sprite "${form.sprite}" is not the target's sprite "${target.sprite}"`);
+        if (!same(target.states, form.states)) problem(form, 'exclusion-reason-false', path, `${claim}, but its state steps ${JSON.stringify(form.states)} are not the target's ${JSON.stringify(target.states)}`);
+        if (target.tools[tool] !== 'in') problem(form, 'exclusion-reason-false', path, `${claim}, but the target is not in the ${tool}, so the ${tool} would show neither`);
+      }
+    }
+    const step = form.states.at(-1);
+    if (step?.kind === 'battle-mode' && step.trigger) {
+      const without = form.enteredFrom.filter((id) => !Object.values(forms.get(id)!.facts.abilities).includes(step.trigger!.ability));
+      if (without.length) problem(form, 'state-trigger-false', `${pathOf(form)}.state.trigger.ability`, `"${form.id}" is triggered by the ability "${step.trigger.ability}", which ${without.join(', ')} does not have`);
     }
     if (form.isDefault && form.appId !== form.nationalDex) problem(null, 'app-id-default', `rows`, `"${form.id}" is a default form, so its number must be its National Dex number ${form.nationalDex}, not ${form.appId}`);
   }
@@ -126,6 +153,48 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
     const missing = dexForms.filter((id) => !listed.includes(id));
     const extra = listed.filter((id) => !dexForms.includes(id as never));
     report('data/ontology/legacy/dex.json', 'legacy-dex-order', 'formOrder', `legacy/dex.json must list exactly the non-default forms that are in the Dex; missing: ${missing.join(', ') || 'none'}; extra: ${extra.join(', ') || 'none'}`);
+  }
+
+  const pokeapiSource = authored.sources.find((source) => source.kind === 'pokeapi-csv')!.id;
+  const claimed = new Map<string, ResolvedForm>();
+  for (const { form, entry, identity } of linkedForms(ontology)) {
+    const path = pathOf(form);
+    if (identity.kind === 'form') {
+      const other = claimed.get(identity.form.identifier);
+      if (other) problem(form, 'pokeapi-identity-duplicate', `${path}.externalIds`, `"${form.id}" and "${other.id}" both name PokeAPI form "${identity.form.identifier}"; one form, one identity`);
+      claimed.set(identity.form.identifier, form);
+    }
+    for (const fact of POKEAPI_FORM_FACTS) {
+      const marked = entry.sourceOf?.[fact] === INHERITED_UNSOURCED;
+      const known = identity.kind !== 'none' && (fact !== 'abilities' || identity.pokemon.abilities.first !== undefined);
+      if (marked && known) problem(form, 'unsourced-fact-known', `${path}.sourceOf.${fact}`, `"${form.id}" marks "${fact}" ${INHERITED_UNSOURCED}, but ${pokeapiSource} knows the form; state the fact with that source or drop the mark`);
+      if (!marked && !known && !(fact in entry)) problem(form, 'unsourced-fact-silent', `${path}.sourceOf.${fact}`, `"${form.id}" inherits "${fact}" and ${pokeapiSource} does not know the form; mark sourceOf.${fact} ${INHERITED_UNSOURCED} or state the fact with its source`);
+    }
+  }
+
+  const decisions = new Set<string>(authored.decisions.map((decision) => decision.id));
+  for (const kind of Object.keys(AUDIT_REPORTS) as AuditKind[]) {
+    const file = AUDIT_REPORTS[kind];
+    const committed = environment.auditReports[kind];
+    if (!committed) {
+      report(file, 'audit-missing', '', `the report does not exist; run ${AUDIT}`);
+      continue;
+    }
+    if (committed.source !== pokeapiSource) report(file, 'audit-stale', 'source', `the report audits ${committed.source}, the ontology cites ${pokeapiSource}; run ${AUDIT}`);
+    const rows = new Map(committed.rows.map((row) => [rowKey(row), row]));
+    const live = disagreementsOf[kind](ontology);
+    for (const disagreement of live) {
+      const form = forms.get(disagreement.form)!;
+      const path = `${pathOf(form)}.${disagreement.fact}`;
+      const row = rows.get(rowKey(disagreement));
+      const describe = `"${form.id}" ${disagreement.fact} is ${JSON.stringify(disagreement.app)} here and ${JSON.stringify(disagreement.source)} in ${pokeapiSource}`;
+      if (!row) problem(form, 'audit-unlisted', path, `${describe}; ${file} has no row for it. Run ${AUDIT}, then review the row`);
+      else if (!same(row.app, disagreement.app) || !same(row.source, disagreement.source)) problem(form, 'audit-stale', path, `${describe}; the row in ${file} holds other values. Run ${AUDIT}, then review the row`);
+      else if (row.review.status === 'unreviewed') problem(form, 'audit-unreviewed', path, `${describe}; the row in ${file} is unreviewed. Set its review to kept with a decision from decisions.json, or open with the evidence on each side`);
+      else if (row.review.status === 'kept' && !decisions.has(row.review.decision)) problem(form, 'audit-decision-missing', path, `the row in ${file} cites decision "${row.review.decision}", which is not in decisions.json`);
+    }
+    const liveKeys = new Set(live.map(rowKey));
+    for (const row of committed.rows) if (!liveKeys.has(rowKey(row))) report(file, 'audit-stale', rowKey(row), `"${row.form}" ${row.fact} no longer disagrees with ${pokeapiSource}; run ${AUDIT} to drop the row`);
   }
   return problems;
 }

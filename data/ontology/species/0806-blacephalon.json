@@ -5,22 +5,30 @@
     "nationalDex": 806,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Fireworks Pokémon" },
     "legendaryClass": "ultra-beast",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "blacephalon",
       "types": ["fire", "ghost"],
+      "abilities": { "first": "beast-boost" },
       "baseStats": { "hp": 53, "atk": 127, "def": 53, "spe": 107, "spa": 151, "spd": 79 },
+      "heightDm": 18,
+      "weightHg": 130,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "ultra-sun-ultra-moon",
       "sprite": "806",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 900,
     "captureRate": 115,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Axe Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "kleavor",
       "types": ["bug", "rock"],
+      "abilities": { "first": "swarm", "second": "sheer-force", "hidden": "sharpness" },
       "baseStats": { "hp": 70, "atk": 135, "def": 95, "spe": 85, "spa": 45, "spd": 70 },
+      "heightDm": 18,
+      "weightHg": 890,
       "color": "brown",
       "shape": "bug-wings",
       "eggGroups": ["bug"],
       "debut": "legends-arceus",
       "sprite": "900",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

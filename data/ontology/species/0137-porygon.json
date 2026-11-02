@@ -5,22 +5,30 @@
     "nationalDex": 137,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Virtual Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "porygon",
       "types": ["normal"],
+      "abilities": { "first": "trace", "second": "download", "hidden": "analytic" },
       "baseStats": { "hp": 65, "atk": 60, "def": 70, "spe": 40, "spa": 85, "spd": 75 },
+      "heightDm": 8,
+      "weightHg": 365,
       "color": "pink",
       "shape": "legs",
       "eggGroups": ["mineral"],
       "debut": "red-blue",
       "sprite": "137",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

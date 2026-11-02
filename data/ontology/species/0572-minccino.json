@@ -5,22 +5,30 @@
     "nationalDex": 572,
     "captureRate": 255,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Chinchilla Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "minccino",
       "types": ["normal"],
+      "abilities": { "first": "cute-charm", "second": "technician", "hidden": "skill-link" },
       "baseStats": { "hp": 55, "atk": 50, "def": 40, "spe": 75, "spa": 40, "spd": 40 },
+      "heightDm": 4,
+      "weightHg": 58,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "572",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

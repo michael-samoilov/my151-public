@@ -5,22 +5,30 @@
     "nationalDex": 442,
     "captureRate": 100,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 70,
+    "genus": { "en": "Forbidden Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "spiritomb",
       "types": ["ghost", "dark"],
+      "abilities": { "first": "pressure", "hidden": "infiltrator" },
       "baseStats": { "hp": 50, "atk": 92, "def": 108, "spe": 35, "spa": 92, "spd": 108 },
+      "heightDm": 10,
+      "weightHg": 1080,
       "color": "purple",
       "shape": "blob",
       "eggGroups": ["indeterminate"],
       "debut": "diamond-pearl",
       "sprite": "442",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

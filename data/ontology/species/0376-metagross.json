@@ -5,22 +5,30 @@
     "nationalDex": 376,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Iron Leg Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "metagross",
       "types": ["steel", "psychic"],
+      "abilities": { "first": "clear-body", "hidden": "light-metal" },
       "baseStats": { "hp": 80, "atk": 135, "def": 130, "spe": 70, "spa": 95, "spd": 90 },
+      "heightDm": 16,
+      "weightHg": 5500,
       "color": "blue",
       "shape": "heads",
       "eggGroups": ["mineral"],
       "debut": "ruby-sapphire",
       "sprite": "376",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "metagross-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["metagross"]
       },
+      "abilities": { "first": "tough-claws" },
       "baseStats": { "hp": 80, "atk": 145, "def": 150, "spe": 110, "spa": 105, "spd": 110 },
+      "heightDm": 25,
+      "weightHg": 9429,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10076",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

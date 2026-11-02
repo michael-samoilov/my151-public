@@ -5,22 +5,30 @@
     "nationalDex": 313,
     "captureRate": 150,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Firefly Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "volbeat",
       "types": ["bug"],
+      "abilities": { "first": "illuminate", "second": "swarm", "hidden": "prankster" },
       "baseStats": { "hp": 65, "atk": 73, "def": 75, "spe": 85, "spa": 47, "spd": 85 },
+      "heightDm": 7,
+      "weightHg": 177,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["bug", "humanshape"],
       "debut": "ruby-sapphire",
       "sprite": "313",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

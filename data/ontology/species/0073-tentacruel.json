@@ -5,22 +5,30 @@
     "nationalDex": 73,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Jellyfish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tentacruel",
       "types": ["water", "poison"],
+      "abilities": { "first": "clear-body", "second": "liquid-ooze", "hidden": "rain-dish" },
       "baseStats": { "hp": 80, "atk": 70, "def": 65, "spe": 100, "spa": 80, "spd": 120 },
+      "heightDm": 16,
+      "weightHg": 550,
       "color": "blue",
       "shape": "tentacles",
       "eggGroups": ["water3"],
       "debut": "red-blue",
       "sprite": "73",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

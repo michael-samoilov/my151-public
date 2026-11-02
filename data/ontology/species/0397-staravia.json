@@ -5,22 +5,30 @@
     "nationalDex": 397,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Starling Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "staravia",
       "types": ["normal", "flying"],
+      "abilities": { "first": "intimidate", "hidden": "reckless" },
       "baseStats": { "hp": 55, "atk": 75, "def": 50, "spe": 80, "spa": 40, "spd": 40 },
+      "heightDm": 6,
+      "weightHg": 155,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "diamond-pearl",
       "sprite": "397",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

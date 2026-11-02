@@ -5,32 +5,42 @@
     "nationalDex": 724,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Arrow Quill Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "decidueye",
       "types": ["grass", "ghost"],
+      "abilities": { "first": "overgrow", "hidden": "long-reach" },
       "baseStats": { "hp": 78, "atk": 107, "def": 75, "spe": 70, "spa": 100, "spd": 100 },
+      "heightDm": 16,
+      "weightHg": 366,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "sun-moon",
       "sprite": "724",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "decidueye-hisui",
       "region": "hisui",
       "types": ["grass", "fighting"],
+      "abilities": { "first": "overgrow", "hidden": "scrappy" },
       "baseStats": { "hp": 88, "atk": 112, "def": 80, "spe": 60, "spa": 95, "spd": 95 },
+      "weightHg": 370,
       "debut": "legends-arceus",
       "sprite": "10244",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

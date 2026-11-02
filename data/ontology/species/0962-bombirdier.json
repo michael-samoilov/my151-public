@@ -5,22 +5,30 @@
     "nationalDex": 962,
     "captureRate": 25,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 35,
+    "baseFriendship": 50,
+    "genus": { "en": "Item Drop Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bombirdier",
       "types": ["flying", "dark"],
+      "abilities": { "first": "big-pecks", "second": "keen-eye", "hidden": "rocky-payload" },
       "baseStats": { "hp": 70, "atk": 103, "def": 85, "spe": 82, "spa": 60, "spd": 85 },
+      "heightDm": 15,
+      "weightHg": 429,
       "color": "white",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "scarlet-violet",
       "sprite": "962",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

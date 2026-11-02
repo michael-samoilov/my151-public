@@ -5,22 +5,30 @@
     "nationalDex": 432,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Tiger Cat Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "purugly",
       "types": ["normal"],
+      "abilities": { "first": "thick-fat", "second": "own-tempo", "hidden": "defiant" },
       "baseStats": { "hp": 71, "atk": 82, "def": 64, "spe": 112, "spa": 64, "spd": 59 },
+      "heightDm": 10,
+      "weightHg": 438,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "432",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

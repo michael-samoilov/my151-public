@@ -5,22 +5,30 @@
     "nationalDex": 286,
     "captureRate": 90,
     "growthRate": "fluctuating",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Mushroom Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "breloom",
       "types": ["grass", "fighting"],
+      "abilities": { "first": "effect-spore", "second": "poison-heal", "hidden": "technician" },
       "baseStats": { "hp": 60, "atk": 130, "def": 80, "spe": 70, "spa": 60, "spd": 60 },
+      "heightDm": 12,
+      "weightHg": 392,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["fairy", "plant"],
       "debut": "ruby-sapphire",
       "sprite": "286",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,33 +5,44 @@
     "nationalDex": 28,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mouse Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "sandslash",
       "types": ["ground"],
+      "abilities": { "first": "sand-veil", "hidden": "sand-rush" },
       "baseStats": { "hp": 75, "atk": 100, "def": 110, "spe": 65, "spa": 45, "spd": 55 },
+      "heightDm": 10,
+      "weightHg": 295,
       "color": "yellow",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "red-blue",
       "sprite": "28",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "sandslash-alola",
       "region": "alola",
       "types": ["ice", "steel"],
+      "abilities": { "first": "snow-cloak", "hidden": "slush-rush" },
       "baseStats": { "hp": 75, "atk": 100, "def": 120, "spe": 65, "spa": 25, "spd": 65 },
+      "heightDm": 12,
+      "weightHg": 550,
       "color": "blue",
       "debut": "sun-moon",
       "sprite": "10102",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

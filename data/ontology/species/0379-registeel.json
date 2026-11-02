@@ -5,22 +5,30 @@
     "nationalDex": 379,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 80,
+    "baseFriendship": 35,
+    "genus": { "en": "Iron Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "registeel",
       "types": ["steel"],
+      "abilities": { "first": "clear-body", "hidden": "light-metal" },
       "baseStats": { "hp": 80, "atk": 75, "def": 150, "spe": 50, "spa": 75, "spd": 150 },
+      "heightDm": 19,
+      "weightHg": 2050,
       "color": "gray",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "ruby-sapphire",
       "sprite": "379",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

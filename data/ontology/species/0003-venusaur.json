@@ -5,22 +5,30 @@
     "nationalDex": 3,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Seed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "venusaur",
       "types": ["grass", "poison"],
+      "abilities": { "first": "overgrow", "hidden": "chlorophyll" },
       "baseStats": { "hp": 80, "atk": 82, "def": 83, "spe": 80, "spa": 100, "spd": 100 },
+      "heightDm": 20,
+      "weightHg": 1000,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["monster", "plant"],
       "debut": "red-blue",
       "sprite": "3",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "venusaur-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["venusaur"]
       },
+      "abilities": { "first": "thick-fat" },
       "baseStats": { "hp": 80, "atk": 100, "def": 123, "spe": 80, "spa": 122, "spd": 120 },
+      "heightDm": 24,
+      "weightHg": 1555,
       "debut": "x-y",
       "sprite": "10033",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "venusaur-gmax",
@@ -45,6 +56,8 @@
         "kind": "gigantamax",
         "from": ["venusaur"]
       },
+      "heightDm": 240,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10195",
       "tools": {
@@ -53,7 +66,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

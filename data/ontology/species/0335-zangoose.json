@@ -5,22 +5,30 @@
     "nationalDex": 335,
     "captureRate": 90,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Cat Ferret Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zangoose",
       "types": ["normal"],
+      "abilities": { "first": "immunity", "hidden": "toxic-boost" },
       "baseStats": { "hp": 73, "atk": 115, "def": 60, "spe": 90, "spa": 60, "spd": 60 },
+      "heightDm": 13,
+      "weightHg": 403,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "335",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

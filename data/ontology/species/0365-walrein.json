@@ -5,22 +5,30 @@
     "nationalDex": 365,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Ice Break Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "walrein",
       "types": ["ice", "water"],
+      "abilities": { "first": "thick-fat", "second": "ice-body", "hidden": "oblivious" },
       "baseStats": { "hp": 110, "atk": 80, "def": 90, "spe": 65, "spa": 95, "spd": 90 },
+      "heightDm": 14,
+      "weightHg": 1506,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["water1", "ground"],
       "debut": "ruby-sapphire",
       "sprite": "365",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 761,
     "captureRate": 235,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Fruit Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bounsweet",
       "types": ["grass"],
+      "abilities": { "first": "leaf-guard", "second": "oblivious", "hidden": "sweet-veil" },
       "baseStats": { "hp": 42, "atk": 30, "def": 38, "spe": 32, "spa": 30, "spd": 38 },
+      "heightDm": 3,
+      "weightHg": 32,
       "color": "purple",
       "shape": "legs",
       "eggGroups": ["plant"],
       "debut": "sun-moon",
       "sprite": "761",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

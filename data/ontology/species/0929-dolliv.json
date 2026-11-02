@@ -5,22 +5,30 @@
     "nationalDex": 929,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Olive Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dolliv",
       "types": ["grass", "normal"],
+      "abilities": { "first": "early-bird", "hidden": "harvest" },
       "baseStats": { "hp": 52, "atk": 53, "def": 60, "spe": 33, "spa": 78, "spd": 78 },
+      "heightDm": 6,
+      "weightHg": 119,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["plant"],
       "debut": "scarlet-violet",
       "sprite": "929",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

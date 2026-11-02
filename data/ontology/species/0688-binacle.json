@@ -5,22 +5,30 @@
     "nationalDex": 688,
     "captureRate": 120,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Two-Handed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "binacle",
       "types": ["rock", "water"],
+      "abilities": { "first": "tough-claws", "second": "sniper", "hidden": "pickpocket" },
       "baseStats": { "hp": 42, "atk": 52, "def": 67, "spe": 50, "spa": 39, "spd": 56 },
+      "heightDm": 5,
+      "weightHg": 310,
       "color": "brown",
       "shape": "heads",
       "eggGroups": ["water3"],
       "debut": "x-y",
       "sprite": "688",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

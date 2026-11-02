@@ -5,31 +5,40 @@
     "nationalDex": 100,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Ball Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "voltorb",
       "types": ["electric"],
+      "abilities": { "first": "soundproof", "second": "static", "hidden": "aftermath" },
       "baseStats": { "hp": 40, "atk": 30, "def": 50, "spe": 100, "spa": 55, "spd": 55 },
+      "heightDm": 5,
+      "weightHg": 104,
       "color": "red",
       "shape": "ball",
       "eggGroups": ["mineral"],
       "debut": "red-blue",
       "sprite": "100",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "voltorb-hisui",
       "region": "hisui",
       "types": ["electric", "grass"],
+      "weightHg": 130,
       "debut": "legends-arceus",
       "sprite": "10231",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

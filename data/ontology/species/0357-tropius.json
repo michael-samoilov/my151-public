@@ -5,22 +5,30 @@
     "nationalDex": 357,
     "captureRate": 200,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Fruit Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tropius",
       "types": ["grass", "flying"],
+      "abilities": { "first": "chlorophyll", "second": "solar-power", "hidden": "harvest" },
       "baseStats": { "hp": 99, "atk": 68, "def": 83, "spe": 51, "spa": 72, "spd": 87 },
+      "heightDm": 20,
+      "weightHg": 1000,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["monster", "plant"],
       "debut": "ruby-sapphire",
       "sprite": "357",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 512,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Thorn Monkey Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "simisage",
       "types": ["grass"],
+      "abilities": { "first": "gluttony", "hidden": "overgrow" },
       "baseStats": { "hp": 75, "atk": 98, "def": 63, "spe": 101, "spa": 98, "spd": 63 },
+      "heightDm": 11,
+      "weightHg": 305,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "512",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

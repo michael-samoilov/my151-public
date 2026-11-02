@@ -5,22 +5,30 @@
     "nationalDex": 337,
     "captureRate": 45,
     "growthRate": "fast",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Meteorite Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lunatone",
       "types": ["rock", "psychic"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 90, "atk": 55, "def": 65, "spe": 70, "spa": 95, "spd": 85 },
+      "heightDm": 10,
+      "weightHg": 1680,
       "color": "yellow",
       "shape": "ball",
       "eggGroups": ["mineral"],
       "debut": "ruby-sapphire",
       "sprite": "337",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

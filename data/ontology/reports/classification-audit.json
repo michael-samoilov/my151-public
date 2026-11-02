@@ -1,0 +1,228 @@
+{
+  "source": "pokeapi@bc92d3b6",
+  "generated": "npm run ontology:audit",
+  "notes": ["battleOnly compares the derived persistence with pokemon_forms.is_battle_only; mega with is_mega; default with is_default on the form and its pokemon.", "entry applies to Mega, Primal, and Gigantamax forms, which PokeAPI names after the form they enter from. Other states carry no entry information in the snapshot.", "unmatched lists forms PokeAPI does not know; their inherited facts are marked inherited:unsourced in the species file.", "missingStateForms lists power-up forms PokeAPI has for app species and the app does not."],
+  "summary": { "formsCompared": 1407, "disagreements": 11, "kept": 11, "open": 0, "unreviewed": 0 },
+  "rows": [
+    {
+      "form": "xerneas",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": false,
+      "source": true,
+      "review": { "status": "kept", "decision": "xerneas-active-default-2026-11-02", "note": "Michael chose option a on 2026-11-02: Active Mode stays the default form and the sprite the Dex and Gym Builder show, and Neutral Mode stays a permanent form (app id 11000). PokeAPI makes Neutral Mode the default and Active Mode battle-only." }
+    },
+    {
+      "form": "xerneas",
+      "fact": "default",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "xerneas-active-default-2026-11-02", "note": "Michael chose option a on 2026-11-02: Active Mode stays the default form and the sprite the Dex and Gym Builder show, and Neutral Mode stays a permanent form (app id 11000). PokeAPI makes Neutral Mode the default and Active Mode battle-only." }
+    },
+    {
+      "form": "xerneas-neutral",
+      "fact": "default",
+      "level": "form",
+      "app": false,
+      "source": true,
+      "review": { "status": "kept", "decision": "xerneas-active-default-2026-11-02", "note": "Michael chose option a on 2026-11-02: Active Mode stays the default form and the sprite the Dex and Gym Builder show, and Neutral Mode stays a permanent form (app id 11000). PokeAPI makes Neutral Mode the default and Active Mode battle-only." }
+    },
+    {
+      "form": "minior-red",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-orange",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-yellow",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-green",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-blue",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-indigo",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "minior-violet",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "minior-core-battle-mode-2026-11-02", "note": "Michael, 2026-11-02: a Core shows in battle because of the ability Shields Down, so each Core is a battle-mode step with trigger { ability: shields-down }, modeled like Wishiwashi School (Schooling) and Palafin Hero (Zero to Hero). PokeAPI keeps each Core as a pokemon that is not battle-only. No verdict or sprite changed." }
+    },
+    {
+      "form": "eternatus-eternamax",
+      "fact": "battleOnly",
+      "level": "form",
+      "app": true,
+      "source": false,
+      "review": { "status": "kept", "decision": "spec-v2-state-kinds", "note": "Eternamax Eternatus appears only as the story raid boss and is never held outside battle; the spec names eternamax a state step.", "auto": true }
+    }
+  ],
+  "unmatched": [
+    {
+      "form": "pikachu-peakychu",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "snorlax-mosslax",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "mewtwo-shadow",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "pichu-ukulele",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "smeargle-smearguru",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "lugia-shadow",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "kecleon-purple",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "tangrowth-professor",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "rotom-dj",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "dialga-primal",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "reshiram-overdrive",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "zekrom-overdrive",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "kyurem-black-overdrive",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "kyurem-white-overdrive",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "solgaleo-radiant-sun",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "lunala-full-moon",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "marshadow-zenith",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "greedent-chef-dente",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "tinkaton-tinkmaster",
+      "inherits": ["abilities", "heightDm", "weightHg"]
+    },
+    {
+      "form": "ogerpon-teal-tera",
+      "inherits": ["heightDm", "weightHg"]
+    },
+    {
+      "form": "ogerpon-wellspring-tera",
+      "inherits": ["heightDm", "weightHg"]
+    },
+    {
+      "form": "ogerpon-hearthflame-tera",
+      "inherits": ["heightDm", "weightHg"]
+    },
+    {
+      "form": "ogerpon-cornerstone-tera",
+      "inherits": ["heightDm", "weightHg"]
+    }
+  ],
+  "missingStateForms": [],
+  "questions": [
+    {
+      "id": "mega-meowstic-female",
+      "question": "Should the app add Mega Meowstic (female) as a form?",
+      "evidence": ["PokeAPI (mega-dimension version group) has meowstic-female-mega with the same stats and ability (Trace) as meowstic-male-mega, so female Meowstic Mega Evolves, into a form with its own look.", "The app has one Mega Meowstic, entered from the male form only; it is listed under missingStateForms."],
+      "recommendation": "Add it as a new form when the Legends: Z-A DLC forms are added. No fact in the ontology changes until then.",
+      "review": { "status": "answered", "by": "Michael", "date": "2026-11-02", "decision": "Yes. One look, two records: Mega Meowstic has one sprite for both sexes, and male and female have identical Mega stats. Add the female record for completeness, and never render both twins.", "outcome": "Added meowstic-female-mega (AppId 20002), entered from meowstic-female, with the facts of PokeAPI's meowstic-female-mega and sprite 10314. Its Picker and League verdicts are { mergedInto: meowstic-mega }, a claim the checker proves; the Dex leaves it out as a battle state. meowstic-mega is unchanged." }
+    },
+    {
+      "id": "gigantamax-toxtricity-abilities",
+      "question": "Gigantamax Toxtricity is one form entered from Amped and Low Key; whose abilities should it carry?",
+      "evidence": ["PokeAPI keeps two Gigantamax records: toxtricity-amped-gmax with Plus and toxtricity-low-key-gmax with Minus; the games keep each form's abilities when it Gigantamaxes.", "The app has one form, so its abilities are Amped's (Punk Rock, Plus, Technician). Low Key's Gigantamax (Minus) is listed under missingStateForms."],
+      "recommendation": "Keep one form with Amped's abilities until phase 2 makes the catalogs projections; then split it into two forms, one per entry form.",
+      "review": { "status": "answered", "by": "Michael", "date": "2026-11-02", "decision": "Two records with one look: Gigantamax Toxtricity entered from Low Key is its own record and keeps Low Key's abilities.", "outcome": "toxtricity-gmax now enters from toxtricity (Amped) only and keeps Punk Rock, Plus, Technician. Added toxtricity-low-key-gmax (AppId 20004), entered from toxtricity-low-key; it inherits Punk Rock, Minus, Technician, which match PokeAPI. Both use sprite 10219, and the Low Key record is merged into toxtricity-gmax in the Picker and League." }
+    },
+    {
+      "id": "mega-pyroar-female",
+      "question": "Can female Pyroar Mega Evolve?",
+      "evidence": ["PokeAPI has one pyroar-mega and no female Mega form, while it has both Meowstic Megas. So either female Pyroar cannot Mega Evolve, or Mega Pyroar has no gender difference. The snapshot cannot tell which.", "The app enters Mega Pyroar from the male form only."],
+      "recommendation": "Keep the male-only entry until a game record settles it.",
+      "review": { "status": "answered", "by": "Michael", "date": "2026-11-02", "decision": "Yes. Female Pyroar Mega Evolves, into the same look with identical Mega stats.", "outcome": "Added pyroar-female-mega (AppId 20003), entered from pyroar-female, with sprite 10295. PokeAPI has one pyroar-mega record and no female Mega form, so the new form names that record in externalIds.pokeapiPokemon, as a cosmetic female names its pokemon row, and its facts match it. Merged into pyroar-mega in the Picker and League." }
+    },
+    {
+      "id": "ogerpon-tera-abilities",
+      "question": "What abilities do the four Terastal Ogerpon forms have?",
+      "evidence": ["The snapshot has no Terastal Ogerpon forms, so the app inherits each mask form's ability and marks it inherited:unsourced.", "In Scarlet and Violet a Terastallized Ogerpon has Embody Aspect, one per mask."],
+      "recommendation": "Add a cited source for the four abilities (a game personal record or Bulbapedia) in a later phase; nothing shows abilities today.",
+      "review": { "status": "answered", "by": "Michael", "date": "2026-11-02", "decision": "Each of the four Terastal Ogerpon forms has the ability Embody Aspect for its mask (Michael, 2026-11-02, from the games).", "outcome": "The four forms state abilities { first: embody-aspect }, cited to the source michael:ogerpon-terastal-abilities@2026-11-02. The pinned PokeAPI snapshot has one identifier, embody-aspect (ability 303), not one per mask, so the mask comes from the form the step enters from. Height and weight stay inherited:unsourced, because the statement covers abilities only." }
+    },
+    {
+      "id": "za-mega-abilities",
+      "question": "What abilities do the nine Legends: Z-A Megas that PokeAPI has no abilities for have?",
+      "evidence": ["At commit bc92d3b6 PokeAPI lists no ability for zygarde-mega, heatran-mega, darkrai-mega, magearna-mega, magearna-original-mega, zeraora-mega, and the three tatsugiri megas.", "The app inherits each base form's abilities and marks them inherited:unsourced."],
+      "recommendation": "Refresh from a newer pinned PokeAPI commit, or a ZA personal record, when either has them.",
+      "review": { "status": "answered", "by": "Michael", "date": "2026-11-02", "decision": "Take the abilities of the nine Megas from https://www.serebii.net/pokemonchampions/megaabilities.shtml. If the page lacks a Mega, leave it unsourced; never guess.", "outcome": "Read on 2026-11-02 with the user agent my151-ontology-tool: HTTP 200, 67,577 bytes, sha256 e413ad1bc39ca5179042d0587611908e2e7ca693f50da0d670d48de206619b32. The page lists 39 Megas and none of the nine (no Zygarde, Heatran, Darkrai, Magearna, Zeraora, or Tatsugiri row), so all nine stay inherited:unsourced and no source record was added. The other 39 rows agree with the ontology on abilities and types." }
+    }
+  ]
+}

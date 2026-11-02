@@ -5,6 +5,10 @@
     "nationalDex": 718,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Order Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [
@@ -13,21 +17,25 @@
         "values": ["50", "10"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "zygarde",
       "variety": { "cells": "50" },
       "types": ["dragon", "ground"],
+      "abilities": { "first": "aura-break" },
       "baseStats": { "hp": 108, "atk": 100, "def": 121, "spe": 95, "spa": 81, "spd": 95 },
+      "heightDm": 50,
+      "weightHg": 3050,
       "color": "green",
       "shape": "squiggle",
       "eggGroups": ["no-eggs"],
       "debut": "x-y",
       "sprite": "718",
       "externalIds": { "pokeapiForm": "zygarde-50" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "zygarde-complete",
@@ -35,7 +43,10 @@
         "kind": "battle-mode",
         "from": ["zygarde", "zygarde-10"]
       },
+      "abilities": { "first": "power-construct" },
       "baseStats": { "hp": 216, "atk": 100, "def": 121, "spe": 85, "spa": 91, "spd": 95 },
+      "heightDm": 45,
+      "weightHg": 6100,
       "color": "black",
       "shape": "upright",
       "debut": "sun-moon",
@@ -46,12 +57,14 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "zygarde-10",
       "variety": { "cells": "10" },
       "baseStats": { "hp": 54, "atk": 100, "def": 71, "spe": 115, "spa": 61, "spd": 85 },
+      "heightDm": 12,
+      "weightHg": 335,
       "color": "black",
       "shape": "quadruped",
       "debut": "sun-moon",
@@ -64,7 +77,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "zygarde-mega",
@@ -73,6 +86,8 @@
         "from": ["zygarde"]
       },
       "baseStats": { "hp": 216, "atk": 70, "def": 91, "spe": 100, "spa": 216, "spd": 85 },
+      "heightDm": 77,
+      "weightHg": 6100,
       "debut": "legends-za",
       "sprite": "10301",
       "tools": {
@@ -81,7 +96,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

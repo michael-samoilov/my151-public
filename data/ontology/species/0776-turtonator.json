@@ -5,22 +5,30 @@
     "nationalDex": 776,
     "captureRate": 70,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Blast Turtle Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "turtonator",
       "types": ["fire", "dragon"],
+      "abilities": { "first": "shell-armor" },
       "baseStats": { "hp": 60, "atk": 78, "def": 135, "spe": 36, "spa": 91, "spd": 85 },
+      "heightDm": 20,
+      "weightHg": 2120,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["monster", "dragon"],
       "debut": "sun-moon",
       "sprite": "776",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

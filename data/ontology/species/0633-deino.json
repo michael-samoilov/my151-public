@@ -5,22 +5,30 @@
     "nationalDex": 633,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Irate Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "deino",
       "types": ["dark", "dragon"],
+      "abilities": { "first": "hustle" },
       "baseStats": { "hp": 52, "atk": 65, "def": 50, "spe": 38, "spa": 45, "spd": 50 },
+      "heightDm": 8,
+      "weightHg": 173,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["dragon"],
       "debut": "black-white",
       "sprite": "633",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

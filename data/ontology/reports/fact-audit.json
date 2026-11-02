@@ -1,0 +1,1704 @@
+{
+  "source": "pokeapi@bc92d3b6",
+  "generated": "npm run ontology:audit",
+  "notes": ["Level pokemon facts come from the form's pokemon row. Level species facts come from its species row; PokeAPI states color, shape, and egg groups per species, so a form's own value is compared with its species' value.", "captureRate, growthRate, legendaryClass, baby, generation, genderRatio, hatchCycles, baseFriendship, and genus are compared once per species, on the default form.", "legendaryClass compares only the legendary flag: PokeAPI has one, the app splits it into sub-legendary and restricted and tags Ultra Beasts from its own list.", "The app's evolution chain number (legacy/evolution-chains.json, shipped in pokemon.json) is a family key, not PokeAPI's chain id. Measured on 2026-11-02: 576 species carry a different number, and the two numberings partition the 1,025 species into the same families (each app number maps to one PokeAPI chain and back). It is not compared; the legacy-chain-mismatch check proves species that evolve into each other share a number.", "A fact marked inherited:unsourced is not compared."],
+  "summary": { "formsCompared": 1407, "disagreements": 212, "kept": 209, "open": 3, "unreviewed": 0 },
+  "rows": [
+    {
+      "form": "venusaur-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "charizard-mega-x",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "charizard-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "blastoise-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "butterfree-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "rattata-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "raticate-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-cosplay",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-rock-star",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-belle",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-pop-star",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-phd",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-libre",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Omega Ruby and Alpha Sapphire personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-original-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-hoenn-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-sinnoh-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-unova-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-kalos-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-alola-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-partner-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-world-cap",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy", "ground"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pikachu-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "raichu-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "sandshrew-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "sandslash-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vulpix-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ninetales-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "meowth-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "meowth-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "meowth-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "meowth-galar",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "quadruped",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "persian-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "machamp-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "geodude-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "graveler-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "golem-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ponyta-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "rapidash-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "slowbro-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "arms",
+      "source": "upright",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "grimer-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "muk-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gengar-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "kingler-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "marowak-alola",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "weezing-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "starmie-mega",
+      "fact": "baseStats",
+      "level": "pokemon",
+      "app": { "hp": 60, "atk": 140, "def": 105, "spe": 120, "spa": 130, "spd": 105 },
+      "source": { "hp": 60, "atk": 100, "def": 105, "spe": 120, "spa": 130, "spd": 105 },
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "mr-mime-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "pinsir-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "bug-wings",
+      "source": "humanoid",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "tauros-paldea-combat",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tauros-paldea-blaze",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tauros-paldea-aqua",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "lapras-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "eevee-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "snorlax-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "articuno-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "moltres-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "wooper-paldea",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "qwilfish-hisui",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "sneasel-hisui",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "black",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "corsola-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "zigzagoon-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gardevoir-mega",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["indeterminate"],
+      "source": ["humanshape", "indeterminate"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "castform-sunny",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "castform-rainy",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "castform-snowy",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "chimecho-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "heads",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "absol-mega-z",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "latias-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "latios-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "staraptor-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "wormadam-sandy",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Arceus personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "wormadam-trash",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Arceus personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "shellos-east",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gastrodon-east",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "purple",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "lucario-mega-z",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gallade-mega",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["indeterminate"],
+      "source": ["humanshape", "indeterminate"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "dialga-origin",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "palkia-origin",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "upright",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "giratina-origin",
+      "fact": "shape",
+      "level": "species",
+      "app": "squiggle",
+      "source": "tentacles",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "darkrai-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "arms",
+      "source": "humanoid",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "audino-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "lilligant-hisui",
+      "fact": "shape",
+      "level": "species",
+      "app": "humanoid",
+      "source": "blob",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "darumaka-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "darmanitan-zen",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "darmanitan-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "darmanitan-galar-zen",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "garbodor-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "deerling-summer",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "deerling-autumn",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "deerling-winter",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "stunfisk-galar",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "braviary-hisui",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tornadus-therian",
+      "fact": "shape",
+      "level": "species",
+      "app": "wings",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "thundurus-therian",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "landorus-therian",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "greninja-ash",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["water1"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon",
+      "fact": "color",
+      "level": "species",
+      "app": "pink",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-archipelago",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-continental",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-elegant",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-fancy",
+      "fact": "color",
+      "level": "species",
+      "app": "pink",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-garden",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-high-plains",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-jungle",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-marine",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-modern",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-monsoon",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-ocean",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-pokeball",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-polar",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-river",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-sandstorm",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-savanna",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-sun",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "vivillon-tundra",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "floette-eternal",
+      "fact": "eggGroups",
+      "level": "species",
+      "app": ["no-eggs"],
+      "source": ["fairy"],
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "meowstic-female",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "malamar-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "arms",
+      "source": "blob",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "zygarde-complete",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "zygarde-complete",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "squiggle",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "zygarde-10",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Sword and Shield personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "zygarde-10",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "squiggle",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "hoopa-unbound",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "oricorio-pom-pom",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "oricorio-pau",
+      "fact": "color",
+      "level": "species",
+      "app": "pink",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "oricorio-sensu",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "lycanroc-midnight",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "lycanroc-midnight",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "quadruped",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "wishiwashi-school",
+      "fact": "shape",
+      "level": "species",
+      "app": "heads",
+      "source": "fish",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "golisopod-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "tentacles",
+      "source": "humanoid",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "minior-red",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-orange",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-yellow",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-green",
+      "fact": "color",
+      "level": "species",
+      "app": "green",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-blue",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-indigo",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "minior-violet",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "necrozma-dusk",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "black",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "necrozma-dusk",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "necrozma-dawn",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "black",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "necrozma-dawn",
+      "fact": "shape",
+      "level": "species",
+      "app": "wings",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "necrozma-ultra",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "black",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Ultra Sun and Ultra Moon personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "necrozma-ultra",
+      "fact": "shape",
+      "level": "species",
+      "app": "bug-wings",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "magearna-original",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "magearna-original-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "gray",
+      "review": { "status": "open", "note": "PokeAPI states one color per species: gray for Magearna. The app value red comes from formMetadata.json for a form newer than the form-metadata audit, so no game personal record backs it. Original Color Magearna is red and gold, and its Mega keeps that paint. Recommendation: keep red; confirm from a ZA personal record when one is captured." }
+    },
+    {
+      "form": "melmetal-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "rillaboom-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "cinderace-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "inteleon-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "corviknight-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "orbeetle-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "drednaw-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "coalossal-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "flapple-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "appletun-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "sandaconda-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "toxtricity-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "toxtricity-low-key-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "centiskorch-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "hatterene-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "grimmsnarl-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "alcremie-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "morpeko-hangry",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "copperajah-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "duraludon-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "eternatus-eternamax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 0,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a eternamax form; PokeAPI's 0 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "eternatus-eternamax",
+      "fact": "shape",
+      "level": "species",
+      "app": "squiggle",
+      "source": "wings",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "urshifu-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "urshifu-rapid-strike-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "zarude",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "zarude-dada",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "calyrex-ice",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "calyrex-ice",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "humanoid",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "calyrex-shadow",
+      "fact": "color",
+      "level": "species",
+      "app": "black",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "calyrex-shadow",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "humanoid",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "wyrdeer",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ursaluna-bloodmoon",
+      "fact": "shape",
+      "level": "species",
+      "app": "upright",
+      "source": "quadruped",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "sneasler",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "enamorus-therian",
+      "fact": "shape",
+      "level": "species",
+      "app": "quadruped",
+      "source": "arms",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "quaxly",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "white",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "oinkologne-female",
+      "fact": "color",
+      "level": "species",
+      "app": "brown",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "squawkabilly-blue-plumage",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "squawkabilly-yellow-plumage",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "squawkabilly-white-plumage",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ceruledge",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tatsugiri",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tatsugiri-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "tatsugiri-mega",
+      "fact": "shape",
+      "level": "species",
+      "app": "heads",
+      "source": "fish",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "tatsugiri-stretchy-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "pink",
+      "review": { "status": "open", "note": "PokeAPI states one color per species: pink for Tatsugiri. The app value yellow comes from formMetadata.json for a form newer than the form-metadata audit, so no game personal record backs it. Stretchy Form Tatsugiri is yellow, and its Mega keeps the body color. Recommendation: keep yellow; confirm from a ZA personal record when one is captured." }
+    },
+    {
+      "form": "tatsugiri-stretchy",
+      "fact": "color",
+      "level": "species",
+      "app": "yellow",
+      "source": "pink",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "slither-wing",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "red",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "iron-moth",
+      "fact": "color",
+      "level": "species",
+      "app": "white",
+      "source": "yellow",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "arctibax",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "baxcalibur",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "baxcalibur-mega",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "gray",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Legends: Z-A personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gimmighoul",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gimmighoul-roaming",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "brown",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gimmighoul-roaming",
+      "fact": "shape",
+      "level": "species",
+      "app": "humanoid",
+      "source": "blob",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "roaring-moon",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "miraidon",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "blue",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "miraidon-low-power-mode",
+      "fact": "color",
+      "level": "species",
+      "app": "purple",
+      "source": "blue",
+      "review": { "status": "open", "note": "PokeAPI states one color per species: blue for Miraidon. The app value purple follows the default form, whose SV personal record is purple (kept row for miraidon). Low-Power Mode is not in the form-metadata audit inventory, so its own record was not captured. Recommendation: keep purple." }
+    },
+    {
+      "form": "walking-wake",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "iron-leaves",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "ogerpon-wellspring-mask",
+      "fact": "color",
+      "level": "species",
+      "app": "blue",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ogerpon-hearthflame-mask",
+      "fact": "color",
+      "level": "species",
+      "app": "red",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "ogerpon-cornerstone-mask",
+      "fact": "color",
+      "level": "species",
+      "app": "gray",
+      "source": "green",
+      "review": { "status": "kept", "decision": "form-metadata-audit-2026-10-20", "note": "The Scarlet and Violet personal record in docs/favorite-picker-work/form-metadata-audit/inventory.json gives this value for the form; PokeAPI states the species' value.", "auto": true }
+    },
+    {
+      "form": "gouging-fire",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "raging-bolt",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "iron-boulder",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "iron-crown",
+      "fact": "legendaryClass",
+      "level": "species",
+      "app": "legendary",
+      "source": "none",
+      "review": { "status": "kept", "decision": "legendary-paradox-flags-2026-10-20", "note": "PokeAPI does not flag the Paradox legendaries; the app lists them with the sub-legendaries.", "auto": true }
+    },
+    {
+      "form": "terapagos-terastal",
+      "fact": "shape",
+      "level": "species",
+      "app": "ball",
+      "source": "quadruped",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    },
+    {
+      "form": "terapagos-stellar",
+      "fact": "shape",
+      "level": "species",
+      "app": "ball",
+      "source": "quadruped",
+      "review": { "status": "kept", "decision": "form-shape-review-2026-10-06", "note": "PokeAPI gives one shape per species; the form shape review set this form's own shape from Bulbapedia.", "auto": true }
+    }
+  ]
+}

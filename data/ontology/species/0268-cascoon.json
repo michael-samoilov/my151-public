@@ -5,22 +5,30 @@
     "nationalDex": 268,
     "captureRate": 120,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Cocoon Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cascoon",
       "types": ["bug"],
+      "abilities": { "first": "shed-skin" },
       "baseStats": { "hp": 50, "atk": 35, "def": 55, "spe": 15, "spa": 25, "spd": 25 },
+      "heightDm": 7,
+      "weightHg": 115,
       "color": "purple",
       "shape": "ball",
       "eggGroups": ["bug"],
       "debut": "ruby-sapphire",
       "sprite": "268",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

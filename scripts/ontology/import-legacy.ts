@@ -8,7 +8,7 @@
  * data/ontology/reports/legacy-disagreements.json. A form the classification table does not cover
  * stops the import.
  */
-import { readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pokemonData from '../../src/data/pokemon.json';
@@ -26,12 +26,23 @@ import { pickerPokemonMetadata } from '../../src/favorites/model/metadata';
 import { ADDITIONAL_EVOLUTION_EDGES, FORM_PARENT_IDS, STANDALONE_FORM_IDS, isLeagueAlternateForm } from '../../src/league/data/formPolicy';
 import { RESTRICTED_LEGENDARY_IDS, ULTRA_BEAST_IDS } from '../../src/data/categories';
 import { COLOR_NAMES, EGG_GROUP_NAMES, SHAPE_NAMES, TYPE_NAMES, type Pokemon } from '../../src/types/pokemon';
-import type { Obtain, Sex, ToolInclusion, ToolVerdict } from '../../src/ontology/model';
-import type { DefaultFormEntry, EvolutionEntry, FormEntry, SpeciesFile, StateEntry } from './authored';
-import { writeJson } from './json';
+import shinySources from '../data/shiny-sprite-sources.json';
+import type { Abilities, FemaleEighths, FormFacts, GenderRatio, Obtain, Sex, ToolInclusion, ToolVerdict } from '../../src/ontology/model';
+import { FACT_KEYS } from '../../src/ontology/model';
+import type { DefaultFormEntry, EvolutionEntry, FormEntry, SpeciesEntry, SpeciesFile, StateEntry } from './authored';
+import { INHERITED_UNSOURCED } from './authored';
+import { readJson, writeJson } from './json';
+import type { ExternalIds, PokeapiExtract, PokeapiIdentity } from './pokeapi/source';
+import { pokeapiExtractPath, pokeapiIdentityOf, pokeapiSourceId } from './pokeapi/source';
+import { mechanicallyEqual } from './resolve';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const out = join(root, 'data', 'ontology');
+
+/** The one PokeAPI commit every imported fact cites. npm run ontology:extract writes its snapshot. */
+const POKEAPI_COMMIT = 'bc92d3b6029ef1abe9e7ad424c400b338f3c11fe';
+const pokeapi = readJson(join(root, pokeapiExtractPath(POKEAPI_COMMIT))) as PokeapiExtract;
+if (pokeapi.commit !== POKEAPI_COMMIT) throw new Error(`${pokeapiExtractPath(POKEAPI_COMMIT)} holds commit ${pokeapi.commit}`);
 
 type Mon = PickerMon;
 const dex = pokemonData as Pokemon[];
@@ -67,9 +78,12 @@ const SOURCE = {
   leagueCatalog: 'legacy:src/league/data/catalog.ts',
   pickerCatalog: 'legacy:src/favorites/model/catalog.ts',
   categories: 'legacy:src/data/categories.ts',
+  shiny: 'legacy:scripts/data/shiny-sprite-sources.json',
   spec: 'docs/data-model/pokemon-ontology.md',
+  pokeapi: pokeapiSourceId(POKEAPI_COMMIT),
 } as const;
 
+const AUDIT_README = 'docs/favorite-picker-work/form-metadata-audit/README.md';
 const DECISIONS = [
   {
     id: 'spec-v2-keeps-todays-verdicts',
@@ -79,13 +93,64 @@ const DECISIONS = [
     where: 'docs/data-model/pokemon-ontology.md, "Open questions", item 2',
   },
   {
+    id: 'spec-v2-state-kinds',
+    by: 'Michael',
+    date: '2026-11-02',
+    quote: 'A state step, for temporary forms: exactly one step (mega, primal, gigantamax, eternamax, ultra-burst, terastal, battle-mode, move-look, or ride) and the forms that enter it.',
+    where: 'docs/data-model/pokemon-ontology.md, "How forms are classified"',
+  },
+  {
     id: 'league-spinoff-forms-2026-10-20',
     by: 'Michael',
     date: '2026-10-20',
     quote: 'for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder.',
     where: 'src/league/data/formPolicy.ts, PICKER_ONLY_FORM_IDS',
   },
+  {
+    id: 'mega-floette-eternal-only-2026-10-29',
+    by: 'Michael',
+    date: '2026-10-29',
+    quote: 'Mega Floette applies only to Eternal Floette (Michael, 2026-10-29).',
+    where: 'scripts/data/shiny-sprite-sources.json, held 10061 and 10296',
+  },
+  {
+    id: 'form-metadata-audit-2026-10-20',
+    by: 'form-metadata audit, merged 2026-10-20',
+    date: '2026-10-20',
+    quote: 'Each accepted game record matches its species, explicit form index, types, and six PokeAPI stats. Mega Starmie is the documented exception: direct ZA species 121/form 1 has Attack 140, rather than the CSV\'s 100.',
+    where: `${AUDIT_README}, "Sources and limits"; per-form records in docs/favorite-picker-work/form-metadata-audit/inventory.json`,
+  },
+  {
+    id: 'gigantamax-weight-unknown-2026-10-20',
+    by: 'form-metadata audit, merged 2026-10-20',
+    date: '2026-10-20',
+    quote: 'All 33 Gigantamax weights are explicitly unknown: the repeated upstream 10000 value is not a measured 1,000 kg weight. Their displayed heights are lower bounds, rather than exact measurements.',
+    where: `${AUDIT_README}, "Sources and limits"`,
+  },
+  {
+    id: 'legendary-paradox-flags-2026-10-20',
+    by: 'form-metadata audit, merged 2026-10-20',
+    date: '2026-10-20',
+    quote: 'Six Legendary Paradox flags retain the app\'s established category policy even though PokeAPI distinguishes them from conventional Legendary species.',
+    where: `${AUDIT_README}, "Sources and limits"; src/data/categories.ts, LEGENDARY_PARADOX_IDS`,
+  },
+  {
+    id: 'form-shape-review-2026-10-06',
+    by: 'form shape review, 2026-10-06',
+    date: '2026-10-06',
+    quote: 'Shape is a published species classification. These game personal tables contain no form-shape field. The 30 form shapes that differ from the species come from Bulbapedia, List of Pokémon by shape.',
+    where: 'docs/favorite-picker-work/form-shape-review/review.json; applied in src/data/form-shapes.json',
+  },
 ];
+
+/** PokeAPI forms the legacy identity maps name wrongly or not at all. */
+const POKEAPI_FORM: Record<string, { form: string; why: string }> = {
+  xerneas: { form: 'xerneas-active', why: 'The app shows Xerneas as Active Mode (sprite 716) and lists Neutral Mode as its own form; the legacy map picked PokeAPI\'s default form, Neutral Mode.' },
+  'vivillon-pokeball': { form: 'vivillon-poke-ball', why: 'The app spells the pattern "pokeball"; PokeAPI spells it "poke-ball".' },
+};
+/** Cosmetic females that PokeAPI keeps on the species' pokemon record, with no form of their own. */
+const POKEAPI_POKEMON: Record<string, string> = { 'combee-female': 'combee', 'hippopotas-female': 'hippopotas', 'hippowdon-female': 'hippowdon', 'unfezant-female': 'unfezant' };
+const heldShiny = (shinySources as { held: Record<string, string> }).held;
 
 // ── Games ────────────────────────────────────────────────────────────────────────────────────
 
@@ -302,6 +367,17 @@ interface Identity {
   classification: Classification;
   appId: number;
   inLeague: boolean;
+  /** The PokeAPI form the legacy identity maps name, when they name one. */
+  legacyPokeapiForm?: string;
+  externalIds?: ExternalIds;
+  pokeapi: PokeapiIdentity;
+}
+
+function externalIdsOf(formId: string, legacyForm: string | undefined): ExternalIds | undefined {
+  if (POKEAPI_POKEMON[formId]) return { pokeapiPokemon: POKEAPI_POKEMON[formId] };
+  const form = POKEAPI_FORM[formId]?.form ?? legacyForm ?? (pokeapi.forms[formId] ? formId : undefined);
+  if (form && !pokeapi.forms[form]) throw new Error(`${formId}: PokeAPI form "${form}" is not in ${pokeapiExtractPath(POKEAPI_COMMIT)}`);
+  return form && form !== formId ? { pokeapiForm: form } : undefined;
 }
 
 const speciesSlug = new Map(dex.filter((row) => row.id <= 1025).map((row) => [row.id, row.name]));
@@ -338,10 +414,17 @@ const identities: Identity[] = mons.map((mon) => {
   const formId = formIdOf(mon, dexRow);
   const alt = altById.get(mon.id);
   const inLeague = Boolean(dexRow) || mon.source === 'powerup' || (alt !== undefined && isLeagueAlternateForm(alt));
+  const legacyPokeapiForm = dexRow ? idMapByAppId.get(dexRow.id)?.formIdentifier : provenanceById.get(mon.id)?.identifier;
+  const externalIds = externalIdsOf(formId, legacyPokeapiForm);
+  const found = pokeapiIdentityOf(formId, externalIds, pokeapi);
+  if ('error' in found) throw new Error(`${formId}: ${found.error}`);
   return {
     mon, formId, species, speciesDex, dexRow, shown, classification: classify(formId, species, mon),
     appId: dexRow ? dexRow.id : formId === 'urshifu-rapid-strike-gmax' ? 20001 : mon.id,
     inLeague,
+    legacyPokeapiForm,
+    externalIds,
+    pokeapi: found,
   };
 });
 const identityByForm = new Map(identities.map((identity) => [identity.formId, identity]));
@@ -388,6 +471,10 @@ for (const identity of identities) {
   if (source && source.game !== byDebut) disagree('debut', formId, { 'sourceGame.ts': source.game, 'debut.ts': byDebut }, source.game, 'The tooltip names the source game; the debut sort only needs its generation.');
   if (formId === 'rotom-dj') disagree('persistence', formId, { 'formPolicy.ts TEMPORARY_FORM_IDS': 'temporary', 'sourceGame.ts': 'spin-off' }, 'permanent, spinoff-only', 'Stereo Rotom is a Pokopia form, not a battle state; the League keeps it out as a spin-off form.');
   if (formId === 'floette-mega') disagree('state.from', formId, { 'powerupForms.json': 'floette', 'spec risk 5': 'floette-eternal' }, ['floette-eternal'], 'In Legends: Z-A only Eternal Floette Mega Evolves; the League and Picker keep offering it on plain Floette until phase 2.');
+  const chosenPokeapiForm = identity.externalIds?.pokeapiForm ?? (identity.pokeapi.kind === 'form' ? formId : undefined);
+  if (identity.legacyPokeapiForm && identity.legacyPokeapiForm !== chosenPokeapiForm) {
+    disagree('externalIds.pokeapiForm', formId, { [dexRow ? 'scripts/i18n/pokemon-id-map.json' : 'form-types/provenance.json']: identity.legacyPokeapiForm, 'PokeAPI snapshot': chosenPokeapiForm }, chosenPokeapiForm, POKEAPI_FORM[formId].why);
+  }
 }
 const leagueParentOverrides: Record<number, number | null> = FORM_PARENT_IDS;
 for (const [dexId, parentPickerId] of Object.entries(leagueParentOverrides)) {
@@ -417,19 +504,57 @@ const stem = (sprite: string): string => {
   return match[1];
 };
 
-interface Facts { types: string[]; baseStats: Pokemon['stats']; color: string; shape: string; eggGroups: string[]; debut: string; obtain: Obtain }
-function factsOf(identity: Identity): Facts {
+/** What today's catalogs state about a form. */
+type LegacyFacts = Pick<FormFacts, 'types' | 'baseStats' | 'color' | 'shape' | 'eggGroups' | 'debut' | 'obtain'>;
+function legacyFactsOf(identity: Identity): LegacyFacts {
   const { mon, shown } = identity;
   const source = sourceOfMon(mon);
   return {
-    types: shown.types,
+    types: shown.types as unknown as FormFacts['types'],
     baseStats: shown.stats,
-    color: shown.color,
-    shape: shown.shape,
-    eggGroups: shown.eggGroups,
-    debut: source?.game ?? debutByDebutTs(mon),
+    color: shown.color as FormFacts['color'],
+    shape: shown.shape as FormFacts['shape'],
+    eggGroups: shown.eggGroups as unknown as FormFacts['eggGroups'],
+    debut: (source?.game ?? debutByDebutTs(mon)) as FormFacts['debut'],
     obtain: (source && OBTAIN[source.group]) || 'standard',
   };
+}
+
+type UnsourcedKey = 'abilities' | 'heightDm' | 'weightHg';
+/** A form's complete facts, and which of the PokeAPI ones it inherits with no source. */
+interface Imported { facts: FormFacts; unsourced: readonly UnsourcedKey[] }
+const factsCache = new Map<string, Imported>();
+
+/**
+ * Today's facts plus the PokeAPI ones. A form PokeAPI does not know inherits the new facts from
+ * its base and says so; so does a Mega whose abilities the snapshot lacks. Gigantamax and Eternamax
+ * weights are null because the games show "????.? kg".
+ */
+function factsOf(identity: Identity): Imported {
+  const cached = factsCache.get(identity.formId);
+  if (cached) return cached;
+  const defaultIdentity = identityByForm.get(identity.species)!;
+  const base = identity === defaultIdentity ? null : factsOf(baseOf(identity, defaultIdentity)).facts;
+  const legacy = legacyFactsOf(identity);
+  const found = identity.pokeapi;
+  const pokemon = found.kind === 'none' ? null : found.pokemon;
+  const inherit = (keys: readonly UnsourcedKey[]): Pick<FormFacts, UnsourcedKey> => {
+    if (!base) throw new Error(`${identity.formId} is a default form and PokeAPI gives no ${keys.join(', ')} for it`);
+    return { abilities: base.abilities, heightDm: base.heightDm, weightHg: base.weightHg };
+  };
+  const kind = identity.classification.kind === 'state' ? identity.classification.state.kind : null;
+  const unsourced: UnsourcedKey[] = pokemon === null ? ['abilities', 'heightDm', 'weightHg'] : pokemon.abilities.first ? [] : ['abilities'];
+  const added: Pick<FormFacts, UnsourcedKey> = pokemon === null
+    ? inherit(unsourced)
+    : {
+        abilities: pokemon.abilities.first ? (pokemon.abilities as Abilities) : inherit(unsourced).abilities,
+        heightDm: pokemon.height,
+        weightHg: kind === 'gigantamax' || kind === 'eternamax' ? null : pokemon.weight,
+      };
+  const reason = heldShiny[identity.mon.id];
+  const result: Imported = { facts: { ...legacy, ...added, shiny: reason ? { locked: reason } : 'available' }, unsourced };
+  factsCache.set(identity.formId, result);
+  return result;
 }
 
 function baseOf(identity: Identity, defaultIdentity: Identity): Identity {
@@ -441,11 +566,22 @@ function baseOf(identity: Identity, defaultIdentity: Identity): Identity {
   return base;
 }
 
-function verdicts(identity: Identity, defaultIdentity: Identity, facts: Facts): ToolInclusion {
+function speciesFactsOf(defaultIdentity: Identity): Pick<SpeciesEntry, 'genderRatio' | 'hatchCycles' | 'baseFriendship' | 'genus'> {
+  const found = defaultIdentity.pokeapi;
+  if (found.kind === 'none') throw new Error(`${defaultIdentity.formId} has no PokeAPI species`);
+  const { species } = found;
+  if (!species.genus) throw new Error(`${species.identifier} has no English genus in PokeAPI`);
+  const eighths: readonly FemaleEighths[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const femaleEighths = eighths.find((value) => value === species.genderRate);
+  if (species.genderRate !== -1 && femaleEighths === undefined) throw new Error(`${species.identifier} has gender rate ${species.genderRate}`);
+  const genderRatio: GenderRatio = femaleEighths === undefined ? { kind: 'genderless' } : { kind: 'ratio', femaleEighths };
+  return { genderRatio, hatchCycles: species.hatchCounter, baseFriendship: species.baseHappiness, genus: { en: species.genus } };
+}
+
+function verdicts(identity: Identity, defaultIdentity: Identity, facts: FormFacts): ToolInclusion {
   const isState = identity.classification.kind === 'state';
   const game = gameById.get(facts.debut)!;
-  const defaultFacts = factsOf(defaultIdentity);
-  const lookOnly = same(facts.types, defaultFacts.types) && same(facts.baseStats, defaultFacts.baseStats) && same(facts.eggGroups, defaultFacts.eggGroups);
+  const lookOnly = mechanicallyEqual(facts, factsOf(defaultIdentity).facts);
   const out = (): ToolVerdict => ({
     out: isState ? 'battle-state' : game.series !== 'mainline' ? 'spinoff-only' : lookOnly ? 'look-only' : { decision: 'spec-v2-keeps-todays-verdicts' as never },
   });
@@ -475,7 +611,7 @@ function sparse<T extends object>(own: T, base: T, keys: readonly (keyof T & str
   return Object.fromEntries(keys.filter((key) => !same(own[key], base[key])).map((key) => [key, own[key]])) as Partial<T>;
 }
 
-const FACT_SOURCES = (identity: Identity, stated: Partial<Facts>): Record<string, string> => {
+const FACT_SOURCES = (identity: Identity, stated: Partial<FormFacts>, unsourced: readonly UnsourcedKey[]): Record<string, string> => {
   const { mon } = identity;
   const sources: Record<string, string> = {};
   const meta = metadata[mon.id];
@@ -488,6 +624,11 @@ const FACT_SOURCES = (identity: Identity, stated: Partial<Facts>): Record<string
   } else if (stated.shape && shapes[mon.id]) sources.shape = SOURCE.shapes;
   if (stated.debut) sources.debut = sourceOfMon(mon) ? SOURCE.sourceGame : SOURCE.debut;
   if (stated.obtain) sources.obtain = SOURCE.sourceGame;
+  for (const key of ['abilities', 'heightDm', 'weightHg'] as const) {
+    if (unsourced.includes(key)) sources[key] = INHERITED_UNSOURCED;
+    else if (key in stated) sources[key] = SOURCE.pokeapi;
+  }
+  if (stated.shiny) sources.shiny = SOURCE.shiny;
   return sources;
 };
 
@@ -554,13 +695,14 @@ for (const [species, members] of bySpecies) {
     }
   };
   const forms = sorted.map((identity, index): FormEntry | DefaultFormEntry => {
-    const facts = factsOf(identity);
+    const { facts, unsourced } = factsOf(identity);
     const base = index === 0 ? null : baseOf(identity, defaultIdentity);
-    const stated = base ? sparse(facts, factsOf(base), ['types', 'baseStats', 'color', 'shape', 'eggGroups', 'debut', 'obtain']) : { ...facts, ...(facts.obtain === 'standard' ? { obtain: undefined } : {}) };
+    const stated: Partial<FormFacts> = base
+      ? sparse(facts, factsOf(base).facts, FACT_KEYS)
+      : Object.fromEntries(FACT_KEYS.filter((key) => !((key === 'obtain' && facts.obtain === 'standard') || (key === 'shiny' && facts.shiny === 'available'))).map((key) => [key, facts[key]]));
     const classification = identity.classification;
     if (classification.kind === 'permanent') noteAxis(classification.coordinates.variety);
-    const pokeapiForm = identity.dexRow ? idMapByAppId.get(identity.dexRow.id)?.formIdentifier : provenanceById.get(identity.mon.id)?.identifier;
-    const sourceOf = FACT_SOURCES(identity, stated);
+    const sourceOf = FACT_SOURCES(identity, stated, unsourced);
     const source = identity.dexRow ? undefined : identity.mon.source === 'powerup' && !altById.has(identity.mon.id) ? SOURCE.powerups : SOURCE.altForms;
     if (index > 0 && !identity.dexRow && identity.mon.source !== 'powerup') sourceOf.tools = SOURCE.formPolicy;
     const entry = {
@@ -569,7 +711,7 @@ for (const [species, members] of bySpecies) {
       ...(classification.kind === 'state' ? { state: { kind: classification.state.kind, ...(classification.state.letter ? { letter: classification.state.letter } : {}), ...(classification.state.teraType ? { teraType: classification.state.teraType } : {}), from: classification.state.from ?? [species] } } : {}),
       ...stated,
       sprite: stem(identity.mon.sprite),
-      ...(pokeapiForm && pokeapiForm !== identity.formId ? { externalIds: { pokeapiForm } } : {}),
+      ...(identity.externalIds ? { externalIds: identity.externalIds } : {}),
       ...(index > 0 ? { tools: verdicts(identity, defaultIdentity, facts) } : {}),
       ...(source ? { source } : {}),
       ...(Object.keys(sourceOf).length ? { sourceOf } : {}),
@@ -595,10 +737,12 @@ for (const [species, members] of bySpecies) {
       nationalDex: row.id,
       captureRate: row.captureRate,
       growthRate: row.growthRate,
+      ...speciesFactsOf(defaultIdentity),
       legendaryClass: row.isMythical ? 'mythical' : RESTRICTED_LEGENDARY_IDS.has(row.id) ? 'restricted' : row.isLegendary ? 'sub-legendary' : ULTRA_BEAST_IDS.has(row.id) ? 'ultra-beast' : 'none',
       tags: row.isBaby ? ['baby'] : [],
       varietyAxes: [...axes].map(([axis, values]) => ({ axis: axis as never, values: values as never })),
       standIn: standInOf.has(species) ? { dex: standInOf.get(species) as never } : {},
+      sourceOf: Object.fromEntries(['genderRatio', 'hatchCycles', 'baseFriendship', 'genus'].map((key) => [key, SOURCE.pokeapi])) as SpeciesEntry['sourceOf'],
     },
     forms: forms as unknown as SpeciesFile['forms'],
     evolutions: sorted.flatMap((identity) => evolutionsInto.get(identity.formId) ?? []),
@@ -625,6 +769,14 @@ function regionOf(identity: Identity): string | undefined {
 
 // ── Write ────────────────────────────────────────────────────────────────────────────────────
 
+// Since 2026-11-02 the ontology holds forms, facts, sources, and decisions no legacy catalog has, such as
+// the female Mega Pyroar, so a rerun over an existing ontology would erase them.
+const ledgerPath = join(out, 'ids', 'app-ids.json');
+if (existsSync(ledgerPath) && !process.argv.includes('--overwrite')) {
+  const written = new Set(identities.map((identity) => identity.formId));
+  const lost = (readJson(ledgerPath) as { rows: [number, string][] }).rows.filter(([, form]) => !written.has(form));
+  throw new Error(`data/ontology/ already exists, and this one-time import would erase authored data, including ${lost.length} form(s) no legacy catalog has (${lost.map(([, form]) => form).join(', ') || 'none'}). Edit the species files instead. Pass --overwrite only to start the ontology over.`);
+}
 // Only the species folder is emptied, so a renamed species leaves no stale file. reports/tool-verdicts.json belongs to ontology:build.
 rmSync(join(out, 'species'), { recursive: true, force: true });
 for (const { file, data } of speciesFiles) writeJson(join(out, 'species', file), data);
@@ -655,8 +807,13 @@ writeJson(join(out, 'vocab', 'shapes.json'), SHAPE_NAMES.map((id) => ({ id })));
 writeJson(join(out, 'vocab', 'egg-groups.json'), EGG_GROUP_NAMES.map((id) => ({ id })));
 writeJson(join(out, 'vocab', 'growth-rates.json'), [...new Set(dex.map((row) => row.growthRate))].sort().map((id) => ({ id })));
 writeJson(join(out, 'vocab', 'species-tags.json'), [{ id: 'baby', note: 'isBaby in pokemon.json' }]);
+writeJson(join(out, 'vocab', 'abilities.json'), pokeapi.abilities.map((id) => ({ id })));
 writeJson(join(out, 'decisions.json'), DECISIONS);
-writeJson(join(out, 'sources.json'), Object.values(SOURCE).filter((id) => id.startsWith('legacy:')).map((id) => ({ id, kind: 'legacy-file', ref: id.slice('legacy:'.length) })));
+writeJson(join(out, 'sources.json'), [
+  ...Object.values(SOURCE).filter((id) => id.startsWith('legacy:')).map((id) => ({ id, kind: 'legacy-file', ref: id.slice('legacy:'.length) })),
+  { id: SOURCE.pokeapi, kind: 'pokeapi-csv', repository: pokeapi.repository, commit: POKEAPI_COMMIT, extract: pokeapiExtractPath(POKEAPI_COMMIT) },
+  { id: INHERITED_UNSOURCED, kind: 'inheritance', note: 'No source describes this form, or the pinned snapshot lacks the fact. The value is the base form\'s by the inheritance rule, and nobody has checked it.' },
+]);
 writeJson(join(out, 'legacy', 'picker.json'), { ids: legacyIds, names: legacyNames, owners: legacyOwners });
 writeJson(join(out, 'legacy', 'dex.json'), {
   formOrder: dex.flatMap((row, index) => row.id > 1025 ? [{ form: identityByDexId.get(row.id)!.formId, after: identityByDexId.get(dex[index - 1].id)!.formId }] : []),

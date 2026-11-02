@@ -5,22 +5,30 @@
     "nationalDex": 248,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 35,
+    "genus": { "en": "Armor Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "tyranitar",
       "types": ["rock", "dark"],
+      "abilities": { "first": "sand-stream", "hidden": "unnerve" },
       "baseStats": { "hp": 100, "atk": 134, "def": 110, "spe": 61, "spa": 95, "spd": 100 },
+      "heightDm": 20,
+      "weightHg": 2020,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["monster"],
       "debut": "gold-silver",
       "sprite": "248",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "tyranitar-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["tyranitar"]
       },
+      "abilities": { "first": "sand-stream" },
       "baseStats": { "hp": 100, "atk": 164, "def": 150, "spe": 71, "spa": 95, "spd": 120 },
+      "heightDm": 25,
+      "weightHg": 2550,
       "debut": "x-y",
       "sprite": "10049",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

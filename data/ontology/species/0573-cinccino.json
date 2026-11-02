@@ -5,22 +5,30 @@
     "nationalDex": 573,
     "captureRate": 60,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Scarf Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "cinccino",
       "types": ["normal"],
+      "abilities": { "first": "cute-charm", "second": "technician", "hidden": "skill-link" },
       "baseStats": { "hp": 75, "atk": 95, "def": 60, "spe": 115, "spa": 65, "spd": 60 },
+      "heightDm": 5,
+      "weightHg": 75,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "573",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

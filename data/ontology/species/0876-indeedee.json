@@ -5,28 +5,37 @@
     "nationalDex": 876,
     "captureRate": 30,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 140,
+    "genus": { "en": "Emotion Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "indeedee",
       "sex": "male",
       "types": ["psychic", "normal"],
+      "abilities": { "first": "inner-focus", "second": "synchronize", "hidden": "psychic-surge" },
       "baseStats": { "hp": 60, "atk": 65, "def": 55, "spe": 95, "spa": 105, "spd": 95 },
+      "heightDm": 9,
+      "weightHg": 280,
       "color": "purple",
       "shape": "upright",
       "eggGroups": ["fairy"],
       "debut": "sword-shield",
       "sprite": "876",
       "externalIds": { "pokeapiForm": "indeedee-male" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "indeedee-female",
       "sex": "female",
+      "abilities": { "first": "own-tempo", "second": "synchronize", "hidden": "psychic-surge" },
       "baseStats": { "hp": 70, "atk": 55, "def": 65, "spe": 85, "spa": 95, "spd": 105 },
       "sprite": "10186",
       "tools": {
@@ -37,7 +46,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 719,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Jewel Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "diancie",
       "types": ["rock", "fairy"],
+      "abilities": { "first": "clear-body" },
       "baseStats": { "hp": 50, "atk": 100, "def": 150, "spe": 50, "spa": 100, "spd": 150 },
+      "heightDm": 7,
+      "weightHg": 88,
       "color": "pink",
       "shape": "arms",
       "eggGroups": ["no-eggs"],
       "debut": "x-y",
       "sprite": "719",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "diancie-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["diancie"]
       },
+      "abilities": { "first": "magic-bounce" },
       "baseStats": { "hp": 50, "atk": 160, "def": 110, "spe": 110, "spa": 160, "spd": 110 },
+      "heightDm": 11,
+      "weightHg": 278,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10075",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

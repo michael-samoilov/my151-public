@@ -5,28 +5,38 @@
     "nationalDex": 800,
     "captureRate": 255,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Prism Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "necrozma",
       "types": ["psychic"],
+      "abilities": { "first": "prism-armor" },
       "baseStats": { "hp": 97, "atk": 107, "def": 101, "spe": 79, "spa": 127, "spd": 89 },
+      "heightDm": 24,
+      "weightHg": 2300,
       "color": "black",
       "shape": "arms",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "800",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "necrozma-dusk",
       "fusion": "solgaleo",
       "types": ["psychic", "steel"],
       "baseStats": { "hp": 97, "atk": 157, "def": 127, "spe": 77, "spa": 113, "spd": 109 },
+      "heightDm": 38,
+      "weightHg": 4600,
       "color": "yellow",
       "shape": "quadruped",
       "debut": "ultra-sun-ultra-moon",
@@ -41,13 +51,15 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "necrozma-dawn",
       "fusion": "lunala",
       "types": ["psychic", "ghost"],
       "baseStats": { "hp": 97, "atk": 113, "def": 109, "spe": 77, "spa": 157, "spd": 127 },
+      "heightDm": 42,
+      "weightHg": 3500,
       "color": "blue",
       "shape": "wings",
       "debut": "ultra-sun-ultra-moon",
@@ -62,7 +74,7 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "necrozma-ultra",
@@ -71,7 +83,10 @@
         "from": ["necrozma-dusk", "necrozma-dawn"]
       },
       "types": ["psychic", "dragon"],
+      "abilities": { "first": "neuroforce" },
       "baseStats": { "hp": 97, "atk": 167, "def": 97, "spe": 129, "spa": 167, "spd": 97 },
+      "heightDm": 75,
+      "weightHg": 2300,
       "shape": "bug-wings",
       "sprite": "10157",
       "tools": {
@@ -80,7 +95,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 920,
     "captureRate": 30,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 0,
+    "genus": { "en": "Grasshopper Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lokix",
       "types": ["bug", "dark"],
+      "abilities": { "first": "swarm", "hidden": "tinted-lens" },
       "baseStats": { "hp": 71, "atk": 102, "def": 78, "spe": 92, "spa": 52, "spd": 55 },
+      "heightDm": 10,
+      "weightHg": 175,
       "color": "gray",
       "shape": "humanoid",
       "eggGroups": ["bug"],
       "debut": "scarlet-violet",
       "sprite": "920",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

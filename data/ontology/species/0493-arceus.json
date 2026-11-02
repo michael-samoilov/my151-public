@@ -5,23 +5,31 @@
     "nationalDex": 493,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Alpha Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "arceus",
       "types": ["normal"],
+      "abilities": { "first": "multitype" },
       "baseStats": { "hp": 120, "atk": 120, "def": 120, "spe": 120, "spa": 120, "spd": 120 },
+      "heightDm": 32,
+      "weightHg": 3200,
       "color": "white",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "diamond-pearl",
       "sprite": "493",
       "externalIds": { "pokeapiForm": "arceus-normal" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 866,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 50,
+    "genus": { "en": "Comedian Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "mr-rime",
       "types": ["ice", "psychic"],
+      "abilities": { "first": "tangled-feet", "second": "screen-cleaner", "hidden": "ice-body" },
       "baseStats": { "hp": 80, "atk": 85, "def": 75, "spe": 70, "spa": 110, "spd": 100 },
+      "heightDm": 15,
+      "weightHg": 582,
       "color": "purple",
       "shape": "humanoid",
       "eggGroups": ["humanshape"],
       "debut": "sword-shield",
       "sprite": "866",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

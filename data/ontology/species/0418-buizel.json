@@ -5,22 +5,30 @@
     "nationalDex": 418,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Sea Weasel Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "buizel",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "hidden": "water-veil" },
       "baseStats": { "hp": 55, "atk": 65, "def": 35, "spe": 85, "spa": 60, "spd": 30 },
+      "heightDm": 7,
+      "weightHg": 295,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["water1", "ground"],
       "debut": "diamond-pearl",
       "sprite": "418",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

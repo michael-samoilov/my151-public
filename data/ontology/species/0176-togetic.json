@@ -5,22 +5,30 @@
     "nationalDex": 176,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 10,
+    "baseFriendship": 70,
+    "genus": { "en": "Happiness Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "togetic",
       "types": ["fairy", "flying"],
+      "abilities": { "first": "hustle", "second": "serene-grace", "hidden": "super-luck" },
       "baseStats": { "hp": 55, "atk": 40, "def": 85, "spe": 40, "spa": 80, "spd": 105 },
+      "heightDm": 6,
+      "weightHg": 32,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["flying", "fairy"],
       "debut": "gold-silver",
       "sprite": "176",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,23 +5,31 @@
     "nationalDex": 1008,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "miraidon",
       "types": ["electric", "dragon"],
+      "abilities": { "first": "hadron-engine" },
       "baseStats": { "hp": 100, "atk": 85, "def": 100, "spe": 135, "spa": 135, "spd": 115 },
+      "heightDm": 35,
+      "weightHg": 2400,
       "color": "purple",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1008",
       "externalIds": { "pokeapiForm": "miraidon-ultimate-mode" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "miraidon-low-power-mode",
@@ -29,6 +37,7 @@
         "kind": "ride",
         "from": ["miraidon"]
       },
+      "heightDm": 28,
       "sprite": "11119",
       "tools": {
         "picker": "in",
@@ -36,7 +45,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

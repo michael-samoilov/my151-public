@@ -5,22 +5,30 @@
     "nationalDex": 437,
     "captureRate": 90,
     "growthRate": "medium",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Bronze Bell Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bronzong",
       "types": ["steel", "psychic"],
+      "abilities": { "first": "levitate", "second": "heatproof", "hidden": "heavy-metal" },
       "baseStats": { "hp": 67, "atk": 89, "def": 116, "spe": 33, "spa": 79, "spd": 116 },
+      "heightDm": 13,
+      "weightHg": 1870,
       "color": "green",
       "shape": "arms",
       "eggGroups": ["mineral"],
       "debut": "diamond-pearl",
       "sprite": "437",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

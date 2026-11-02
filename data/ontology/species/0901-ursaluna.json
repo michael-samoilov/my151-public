@@ -5,6 +5,10 @@
     "nationalDex": 901,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Peat Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,23 +17,28 @@
         "values": ["bloodmoon"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "ursaluna",
       "types": ["ground", "normal"],
+      "abilities": { "first": "guts", "second": "bulletproof", "hidden": "unnerve" },
       "baseStats": { "hp": 130, "atk": 140, "def": 105, "spe": 50, "spa": 45, "spd": 80 },
+      "heightDm": 24,
+      "weightHg": 2900,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "legends-arceus",
       "sprite": "901",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "ursaluna-bloodmoon",
       "variety": { "forme": "bloodmoon" },
+      "abilities": { "first": "minds-eye" },
       "baseStats": { "hp": 113, "atk": 70, "def": 120, "spe": 52, "spa": 135, "spd": 65 },
       "shape": "upright",
       "debut": "scarlet-violet",
@@ -42,7 +51,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

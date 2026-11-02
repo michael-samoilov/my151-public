@@ -5,22 +5,30 @@
     "nationalDex": 448,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Aura Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lucario",
       "types": ["fighting", "steel"],
+      "abilities": { "first": "steadfast", "second": "inner-focus", "hidden": "justified" },
       "baseStats": { "hp": 70, "atk": 110, "def": 70, "spe": 90, "spa": 115, "spd": 70 },
+      "heightDm": 12,
+      "weightHg": 540,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["ground", "humanshape"],
       "debut": "diamond-pearl",
       "sprite": "448",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lucario-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["lucario"]
       },
+      "abilities": { "first": "adaptability" },
       "baseStats": { "hp": 70, "atk": 145, "def": 88, "spe": 112, "spa": 140, "spd": 70 },
+      "heightDm": 13,
+      "weightHg": 575,
       "debut": "x-y",
       "sprite": "10059",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lucario-mega-z",
@@ -46,7 +57,10 @@
         "letter": "z",
         "from": ["lucario"]
       },
+      "abilities": { "first": "aura-guard" },
       "baseStats": { "hp": 70, "atk": 100, "def": 70, "spe": 151, "spa": 164, "spd": 70 },
+      "heightDm": 13,
+      "weightHg": 494,
       "color": "gray",
       "debut": "legends-za",
       "sprite": "10310",
@@ -56,7 +70,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

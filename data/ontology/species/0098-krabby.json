@@ -5,22 +5,30 @@
     "nationalDex": 98,
     "captureRate": 225,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "River Crab Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "krabby",
       "types": ["water"],
+      "abilities": { "first": "hyper-cutter", "second": "shell-armor", "hidden": "sheer-force" },
       "baseStats": { "hp": 30, "atk": 105, "def": 90, "spe": 50, "spa": 25, "spd": 25 },
+      "heightDm": 4,
+      "weightHg": 65,
       "color": "red",
       "shape": "armor",
       "eggGroups": ["water3"],
       "debut": "red-blue",
       "sprite": "98",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 300,
     "captureRate": 255,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Kitten Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "skitty",
       "types": ["normal"],
+      "abilities": { "first": "cute-charm", "second": "normalize", "hidden": "wonder-skin" },
       "baseStats": { "hp": 50, "atk": 45, "def": 45, "spe": 50, "spa": 35, "spd": 35 },
+      "heightDm": 6,
+      "weightHg": 110,
       "color": "pink",
       "shape": "quadruped",
       "eggGroups": ["ground", "fairy"],
       "debut": "ruby-sapphire",
       "sprite": "300",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

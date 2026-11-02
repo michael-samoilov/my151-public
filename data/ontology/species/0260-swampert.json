@@ -5,22 +5,30 @@
     "nationalDex": 260,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mud Fish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "swampert",
       "types": ["water", "ground"],
+      "abilities": { "first": "torrent", "hidden": "damp" },
       "baseStats": { "hp": 100, "atk": 110, "def": 90, "spe": 60, "spa": 85, "spd": 90 },
+      "heightDm": 15,
+      "weightHg": 819,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["monster", "water1"],
       "debut": "ruby-sapphire",
       "sprite": "260",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "swampert-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["swampert"]
       },
+      "abilities": { "first": "swift-swim" },
       "baseStats": { "hp": 100, "atk": 150, "def": 110, "spe": 70, "spa": 95, "spd": 110 },
+      "heightDm": 19,
+      "weightHg": 1020,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10064",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

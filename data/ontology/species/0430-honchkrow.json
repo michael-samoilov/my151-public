@@ -5,22 +5,30 @@
     "nationalDex": 430,
     "captureRate": 30,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Big Boss Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "honchkrow",
       "types": ["dark", "flying"],
+      "abilities": { "first": "insomnia", "second": "super-luck", "hidden": "moxie" },
       "baseStats": { "hp": 100, "atk": 125, "def": 52, "spe": 71, "spa": 105, "spd": 52 },
+      "heightDm": 9,
+      "weightHg": 273,
       "color": "black",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "diamond-pearl",
       "sprite": "430",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

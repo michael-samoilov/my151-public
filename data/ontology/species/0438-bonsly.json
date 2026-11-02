@@ -5,22 +5,30 @@
     "nationalDex": 438,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Bonsai Pokémon" },
     "legendaryClass": "none",
     "tags": ["baby"],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bonsly",
       "types": ["rock"],
+      "abilities": { "first": "sturdy", "second": "rock-head", "hidden": "rattled" },
       "baseStats": { "hp": 50, "atk": 80, "def": 95, "spe": 10, "spa": 10, "spd": 45 },
+      "heightDm": 5,
+      "weightHg": 150,
       "color": "brown",
       "shape": "legs",
       "eggGroups": ["no-eggs"],
       "debut": "diamond-pearl",
       "sprite": "438",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

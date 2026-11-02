@@ -5,32 +5,41 @@
     "nationalDex": 562,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Spirit Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "yamask",
       "types": ["ghost"],
+      "abilities": { "first": "mummy" },
       "baseStats": { "hp": 38, "atk": 30, "def": 85, "spe": 30, "spa": 55, "spd": 65 },
+      "heightDm": 5,
+      "weightHg": 15,
       "color": "black",
       "shape": "arms",
       "eggGroups": ["mineral", "indeterminate"],
       "debut": "black-white",
       "sprite": "562",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "yamask-galar",
       "region": "galar",
       "types": ["ground", "ghost"],
+      "abilities": { "first": "wandering-spirit" },
       "baseStats": { "hp": 38, "atk": 55, "def": 85, "spe": 30, "spa": 30, "spd": 65 },
       "debut": "sword-shield",
       "sprite": "10179",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

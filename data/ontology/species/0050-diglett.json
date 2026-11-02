@@ -5,32 +5,42 @@
     "nationalDex": 50,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Mole Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "diglett",
       "types": ["ground"],
+      "abilities": { "first": "sand-veil", "second": "arena-trap", "hidden": "sand-force" },
       "baseStats": { "hp": 10, "atk": 55, "def": 25, "spe": 95, "spa": 35, "spd": 45 },
+      "heightDm": 2,
+      "weightHg": 8,
       "color": "brown",
       "shape": "blob",
       "eggGroups": ["ground"],
       "debut": "red-blue",
       "sprite": "50",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "diglett-alola",
       "region": "alola",
       "types": ["ground", "steel"],
+      "abilities": { "first": "sand-veil", "second": "tangling-hair", "hidden": "sand-force" },
       "baseStats": { "hp": 10, "atk": 55, "def": 30, "spe": 90, "spa": 35, "spd": 45 },
+      "weightHg": 10,
       "debut": "sun-moon",
       "sprite": "10105",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 118,
     "captureRate": 225,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Goldfish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "goldeen",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "second": "water-veil", "hidden": "lightning-rod" },
       "baseStats": { "hp": 45, "atk": 67, "def": 60, "spe": 63, "spa": 35, "spd": 50 },
+      "heightDm": 6,
+      "weightHg": 150,
       "color": "red",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "red-blue",
       "sprite": "118",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

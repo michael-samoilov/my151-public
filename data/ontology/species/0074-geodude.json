@@ -5,32 +5,42 @@
     "nationalDex": 74,
     "captureRate": 255,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Rock Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "geodude",
       "types": ["rock", "ground"],
+      "abilities": { "first": "rock-head", "second": "sturdy", "hidden": "sand-veil" },
       "baseStats": { "hp": 40, "atk": 80, "def": 100, "spe": 20, "spa": 30, "spd": 30 },
+      "heightDm": 4,
+      "weightHg": 200,
       "color": "brown",
       "shape": "arms",
       "eggGroups": ["mineral"],
       "debut": "red-blue",
       "sprite": "74",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "geodude-alola",
       "region": "alola",
       "types": ["rock", "electric"],
+      "abilities": { "first": "magnet-pull", "second": "sturdy", "hidden": "galvanize" },
+      "weightHg": 203,
       "color": "gray",
       "debut": "sun-moon",
       "sprite": "10109",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

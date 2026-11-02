@@ -5,23 +5,31 @@
     "nationalDex": 778,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Disguise Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "mimikyu",
       "types": ["ghost", "fairy"],
+      "abilities": { "first": "disguise" },
       "baseStats": { "hp": 55, "atk": 90, "def": 80, "spe": 96, "spa": 50, "spd": 105 },
+      "heightDm": 2,
+      "weightHg": 7,
       "color": "yellow",
       "shape": "squiggle",
       "eggGroups": ["indeterminate"],
       "debut": "sun-moon",
       "sprite": "778",
       "externalIds": { "pokeapiForm": "mimikyu-disguised" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "mimikyu-busted",

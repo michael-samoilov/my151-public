@@ -5,22 +5,30 @@
     "nationalDex": 526,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Compressed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gigalith",
       "types": ["rock"],
+      "abilities": { "first": "sturdy", "second": "sand-stream", "hidden": "sand-force" },
       "baseStats": { "hp": 85, "atk": 135, "def": 130, "spe": 25, "spa": 60, "spd": 80 },
+      "heightDm": 17,
+      "weightHg": 2600,
       "color": "blue",
       "shape": "tentacles",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "526",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

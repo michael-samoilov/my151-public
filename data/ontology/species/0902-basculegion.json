@@ -5,24 +5,32 @@
     "nationalDex": 902,
     "captureRate": 135,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Big Fish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "basculegion",
       "sex": "male",
       "types": ["water", "ghost"],
+      "abilities": { "first": "swift-swim", "second": "adaptability", "hidden": "mold-breaker" },
       "baseStats": { "hp": 120, "atk": 112, "def": 65, "spe": 78, "spa": 80, "spd": 75 },
+      "heightDm": 30,
+      "weightHg": 1100,
       "color": "green",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "legends-arceus",
       "sprite": "902",
       "externalIds": { "pokeapiForm": "basculegion-male" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "basculegion-female",

@@ -5,22 +5,30 @@
     "nationalDex": 9,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Shellfish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "blastoise",
       "types": ["water"],
+      "abilities": { "first": "torrent", "hidden": "rain-dish" },
       "baseStats": { "hp": 79, "atk": 83, "def": 100, "spe": 78, "spa": 85, "spd": 105 },
+      "heightDm": 16,
+      "weightHg": 855,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["monster", "water1"],
       "debut": "red-blue",
       "sprite": "9",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "blastoise-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["blastoise"]
       },
+      "abilities": { "first": "mega-launcher" },
       "baseStats": { "hp": 79, "atk": 103, "def": 120, "spe": 78, "spa": 135, "spd": 115 },
+      "weightHg": 1011,
       "debut": "x-y",
       "sprite": "10036",
       "tools": {
@@ -37,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "blastoise-gmax",
@@ -45,6 +55,8 @@
         "kind": "gigantamax",
         "from": ["blastoise"]
       },
+      "heightDm": 250,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10197",
       "tools": {
@@ -53,7 +65,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

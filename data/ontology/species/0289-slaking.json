@@ -5,22 +5,30 @@
     "nationalDex": 289,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Lazy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "slaking",
       "types": ["normal"],
+      "abilities": { "first": "truant" },
       "baseStats": { "hp": 150, "atk": 160, "def": 100, "spe": 100, "spa": 95, "spd": 65 },
+      "heightDm": 20,
+      "weightHg": 1305,
       "color": "brown",
       "shape": "humanoid",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "289",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

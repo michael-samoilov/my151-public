@@ -5,22 +5,30 @@
     "nationalDex": 911,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Singer Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "skeledirge",
       "types": ["fire", "ghost"],
+      "abilities": { "first": "blaze", "hidden": "unaware" },
       "baseStats": { "hp": 104, "atk": 75, "def": 100, "spe": 66, "spa": 110, "spd": 75 },
+      "heightDm": 16,
+      "weightHg": 3265,
       "color": "red",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "scarlet-violet",
       "sprite": "911",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

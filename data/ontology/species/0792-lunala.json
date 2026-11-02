@@ -5,22 +5,30 @@
     "nationalDex": 792,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Moone Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lunala",
       "types": ["psychic", "ghost"],
+      "abilities": { "first": "shadow-shield" },
       "baseStats": { "hp": 137, "atk": 113, "def": 89, "spe": 97, "spa": 137, "spd": 107 },
+      "heightDm": 40,
+      "weightHg": 1200,
       "color": "purple",
       "shape": "wings",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "792",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lunala-full-moon",
@@ -35,7 +43,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

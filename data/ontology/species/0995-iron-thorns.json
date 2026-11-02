@@ -5,22 +5,30 @@
     "nationalDex": 995,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "iron-thorns",
       "types": ["rock", "electric"],
+      "abilities": { "first": "quark-drive" },
       "baseStats": { "hp": 100, "atk": 134, "def": 110, "spe": 72, "spa": 70, "spd": 84 },
+      "heightDm": 16,
+      "weightHg": 3030,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "995",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

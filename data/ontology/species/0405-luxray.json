@@ -5,22 +5,30 @@
     "nationalDex": 405,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Gleam Eyes Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "luxray",
       "types": ["electric"],
+      "abilities": { "first": "rivalry", "second": "intimidate", "hidden": "guts" },
       "baseStats": { "hp": 80, "atk": 120, "def": 79, "spe": 70, "spa": 95, "spd": 79 },
+      "heightDm": 14,
+      "weightHg": 420,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "diamond-pearl",
       "sprite": "405",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

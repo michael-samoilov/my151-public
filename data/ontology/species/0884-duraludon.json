@@ -5,22 +5,30 @@
     "nationalDex": 884,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 30,
+    "baseFriendship": 50,
+    "genus": { "en": "Alloy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "duraludon",
       "types": ["steel", "dragon"],
+      "abilities": { "first": "light-metal", "second": "heavy-metal", "hidden": "stalwart" },
       "baseStats": { "hp": 70, "atk": 95, "def": 115, "spe": 85, "spa": 120, "spd": 50 },
+      "heightDm": 18,
+      "weightHg": 400,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["mineral", "dragon"],
       "debut": "sword-shield",
       "sprite": "884",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "duraludon-gmax",
@@ -28,13 +36,16 @@
         "kind": "gigantamax",
         "from": ["duraludon"]
       },
+      "heightDm": 430,
+      "weightHg": null,
       "sprite": "10225",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

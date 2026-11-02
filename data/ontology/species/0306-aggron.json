@@ -5,22 +5,30 @@
     "nationalDex": 306,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 35,
+    "baseFriendship": 35,
+    "genus": { "en": "Iron Armor Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "aggron",
       "types": ["steel", "rock"],
+      "abilities": { "first": "sturdy", "second": "rock-head", "hidden": "heavy-metal" },
       "baseStats": { "hp": 70, "atk": 110, "def": 180, "spe": 50, "spa": 60, "spd": 60 },
+      "heightDm": 21,
+      "weightHg": 3600,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["monster"],
       "debut": "ruby-sapphire",
       "sprite": "306",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "aggron-mega",
@@ -29,7 +37,10 @@
         "from": ["aggron"]
       },
       "types": ["steel"],
+      "abilities": { "first": "filter" },
       "baseStats": { "hp": 70, "atk": 140, "def": 230, "spe": 50, "spa": 60, "spd": 80 },
+      "heightDm": 22,
+      "weightHg": 3950,
       "debut": "x-y",
       "sprite": "10053",
       "tools": {
@@ -38,7 +49,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

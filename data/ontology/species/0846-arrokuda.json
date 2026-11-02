@@ -5,22 +5,30 @@
     "nationalDex": 846,
     "captureRate": 255,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Rush Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "arrokuda",
       "types": ["water"],
+      "abilities": { "first": "swift-swim", "hidden": "propeller-tail" },
       "baseStats": { "hp": 41, "atk": 63, "def": 40, "spe": 66, "spa": 40, "spd": 30 },
+      "heightDm": 5,
+      "weightHg": 10,
       "color": "brown",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "sword-shield",
       "sprite": "846",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

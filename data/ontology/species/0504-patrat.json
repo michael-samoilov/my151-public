@@ -5,22 +5,30 @@
     "nationalDex": 504,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Scout Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "patrat",
       "types": ["normal"],
+      "abilities": { "first": "run-away", "second": "keen-eye", "hidden": "analytic" },
       "baseStats": { "hp": 45, "atk": 55, "def": 39, "spe": 42, "spa": 35, "spd": 39 },
+      "heightDm": 5,
+      "weightHg": 116,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "504",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

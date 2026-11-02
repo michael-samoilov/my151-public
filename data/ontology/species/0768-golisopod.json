@@ -5,22 +5,30 @@
     "nationalDex": 768,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Hard Scale Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "golisopod",
       "types": ["bug", "water"],
+      "abilities": { "first": "emergency-exit" },
       "baseStats": { "hp": 75, "atk": 125, "def": 140, "spe": 40, "spa": 60, "spd": 90 },
+      "heightDm": 20,
+      "weightHg": 1080,
       "color": "gray",
       "shape": "humanoid",
       "eggGroups": ["bug", "water3"],
       "debut": "sun-moon",
       "sprite": "768",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "golisopod-mega",
@@ -29,7 +37,10 @@
         "from": ["golisopod"]
       },
       "types": ["bug", "steel"],
+      "abilities": { "first": "tough-claws" },
       "baseStats": { "hp": 75, "atk": 150, "def": 175, "spe": 40, "spa": 70, "spd": 120 },
+      "heightDm": 23,
+      "weightHg": 1480,
       "shape": "tentacles",
       "debut": "legends-za",
       "sprite": "10316",
@@ -39,7 +50,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

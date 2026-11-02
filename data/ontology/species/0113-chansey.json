@@ -5,22 +5,30 @@
     "nationalDex": 113,
     "captureRate": 30,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 40,
+    "baseFriendship": 140,
+    "genus": { "en": "Egg Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "chansey",
       "types": ["normal"],
+      "abilities": { "first": "natural-cure", "second": "serene-grace", "hidden": "healer" },
       "baseStats": { "hp": 250, "atk": 5, "def": 5, "spe": 50, "spa": 35, "spd": 105 },
+      "heightDm": 11,
+      "weightHg": 346,
       "color": "pink",
       "shape": "upright",
       "eggGroups": ["fairy"],
       "debut": "red-blue",
       "sprite": "113",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

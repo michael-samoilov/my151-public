@@ -5,22 +5,30 @@
     "nationalDex": 309,
     "captureRate": 120,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Lightning Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "electrike",
       "types": ["electric"],
+      "abilities": { "first": "static", "second": "lightning-rod", "hidden": "minus" },
       "baseStats": { "hp": 40, "atk": 45, "def": 40, "spe": 65, "spa": 65, "spd": 40 },
+      "heightDm": 6,
+      "weightHg": 152,
       "color": "green",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "ruby-sapphire",
       "sprite": "309",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

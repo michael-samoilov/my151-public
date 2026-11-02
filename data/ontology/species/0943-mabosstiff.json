@@ -5,22 +5,30 @@
     "nationalDex": 943,
     "captureRate": 75,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Boss Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "mabosstiff",
       "types": ["dark"],
+      "abilities": { "first": "intimidate", "second": "guard-dog", "hidden": "stakeout" },
       "baseStats": { "hp": 80, "atk": 120, "def": 90, "spe": 85, "spa": 60, "spd": 70 },
+      "heightDm": 11,
+      "weightHg": 610,
       "color": "gray",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "scarlet-violet",
       "sprite": "943",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,33 +5,43 @@
     "nationalDex": 222,
     "captureRate": 60,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 6 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Coral Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "corsola",
       "types": ["water", "rock"],
+      "abilities": { "first": "hustle", "second": "natural-cure", "hidden": "regenerator" },
       "baseStats": { "hp": 65, "atk": 55, "def": 95, "spe": 35, "spa": 65, "spd": 95 },
+      "heightDm": 6,
+      "weightHg": 50,
       "color": "pink",
       "shape": "armor",
       "eggGroups": ["water1", "water3"],
       "debut": "gold-silver",
       "sprite": "222",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "corsola-galar",
       "region": "galar",
       "types": ["ghost"],
+      "abilities": { "first": "weak-armor", "hidden": "cursed-body" },
       "baseStats": { "hp": 60, "atk": 55, "def": 100, "spe": 30, "spa": 65, "spd": 100 },
+      "weightHg": 5,
       "color": "white",
       "debut": "sword-shield",
       "sprite": "10173",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

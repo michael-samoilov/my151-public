@@ -5,27 +5,37 @@
     "nationalDex": 646,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Boundary Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "kyurem",
       "types": ["dragon", "ice"],
+      "abilities": { "first": "pressure" },
       "baseStats": { "hp": 125, "atk": 130, "def": 90, "spe": 95, "spa": 130, "spd": 90 },
+      "heightDm": 30,
+      "weightHg": 3250,
       "color": "gray",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "black-white",
       "sprite": "646",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "kyurem-black",
       "fusion": "zekrom",
+      "abilities": { "first": "teravolt" },
       "baseStats": { "hp": 125, "atk": 170, "def": 100, "spe": 95, "spa": 120, "spd": 90 },
+      "heightDm": 33,
       "debut": "black-2-white-2",
       "sprite": "10022",
       "tools": {
@@ -38,7 +48,7 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "kyurem-black-overdrive",
@@ -53,12 +63,14 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "kyurem-white",
       "fusion": "reshiram",
+      "abilities": { "first": "turboblaze" },
       "baseStats": { "hp": 125, "atk": 120, "def": 90, "spe": 95, "spa": 170, "spd": 100 },
+      "heightDm": 36,
       "debut": "black-2-white-2",
       "sprite": "10023",
       "tools": {
@@ -71,7 +83,7 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "kyurem-white-overdrive",
@@ -86,7 +98,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 609,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Luring Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "chandelure",
       "types": ["ghost", "fire"],
+      "abilities": { "first": "flash-fire", "second": "flame-body", "hidden": "infiltrator" },
       "baseStats": { "hp": 60, "atk": 55, "def": 90, "spe": 80, "spa": 145, "spd": 90 },
+      "heightDm": 10,
+      "weightHg": 343,
       "color": "black",
       "shape": "arms",
       "eggGroups": ["indeterminate"],
       "debut": "black-white",
       "sprite": "609",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "chandelure-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["chandelure"]
       },
+      "abilities": { "first": "infiltrator" },
       "baseStats": { "hp": 60, "atk": 75, "def": 110, "spe": 90, "spa": 175, "spd": 110 },
+      "heightDm": 25,
+      "weightHg": 696,
       "debut": "legends-za",
       "sprite": "10291",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

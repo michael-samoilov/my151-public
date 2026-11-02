@@ -5,22 +5,30 @@
     "nationalDex": 796,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Glowing Pokémon" },
     "legendaryClass": "ultra-beast",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "xurkitree",
       "types": ["electric"],
+      "abilities": { "first": "beast-boost" },
       "baseStats": { "hp": 83, "atk": 89, "def": 71, "spe": 83, "spa": 173, "spd": 71 },
+      "heightDm": 38,
+      "weightHg": 1000,
       "color": "black",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "796",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

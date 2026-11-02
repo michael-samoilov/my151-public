@@ -5,22 +5,30 @@
     "nationalDex": 71,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Flycatcher Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "victreebel",
       "types": ["grass", "poison"],
+      "abilities": { "first": "chlorophyll", "hidden": "gluttony" },
       "baseStats": { "hp": 80, "atk": 105, "def": 65, "spe": 70, "spa": 100, "spd": 70 },
+      "heightDm": 17,
+      "weightHg": 155,
       "color": "green",
       "shape": "blob",
       "eggGroups": ["plant"],
       "debut": "red-blue",
       "sprite": "71",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "victreebel-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["victreebel"]
       },
+      "abilities": { "first": "innards-out" },
       "baseStats": { "hp": 80, "atk": 125, "def": 85, "spe": 70, "spa": 135, "spd": 95 },
+      "heightDm": 45,
+      "weightHg": 1255,
       "debut": "legends-za",
       "sprite": "10279",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

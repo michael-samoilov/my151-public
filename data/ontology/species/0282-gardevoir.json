@@ -5,22 +5,30 @@
     "nationalDex": 282,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Embrace Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gardevoir",
       "types": ["psychic", "fairy"],
+      "abilities": { "first": "synchronize", "second": "trace", "hidden": "telepathy" },
       "baseStats": { "hp": 68, "atk": 65, "def": 65, "spe": 80, "spa": 125, "spd": 115 },
+      "heightDm": 16,
+      "weightHg": 484,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["humanshape", "indeterminate"],
       "debut": "ruby-sapphire",
       "sprite": "282",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "gardevoir-mega",
@@ -28,6 +36,7 @@
         "kind": "mega",
         "from": ["gardevoir"]
       },
+      "abilities": { "first": "pixilate" },
       "baseStats": { "hp": 68, "atk": 85, "def": 65, "spe": 100, "spa": 165, "spd": 135 },
       "eggGroups": ["indeterminate"],
       "debut": "x-y",
@@ -38,7 +47,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

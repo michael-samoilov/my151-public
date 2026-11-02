@@ -5,22 +5,30 @@
     "nationalDex": 569,
     "captureRate": 60,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Trash Heap Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "garbodor",
       "types": ["poison"],
+      "abilities": { "first": "stench", "second": "weak-armor", "hidden": "aftermath" },
       "baseStats": { "hp": 80, "atk": 95, "def": 82, "spe": 75, "spa": 60, "spd": 82 },
+      "heightDm": 19,
+      "weightHg": 1073,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "569",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "garbodor-gmax",
@@ -28,6 +36,8 @@
         "kind": "gigantamax",
         "from": ["garbodor"]
       },
+      "heightDm": 210,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10207",
       "tools": {
@@ -36,7 +46,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

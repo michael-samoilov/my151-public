@@ -5,6 +5,10 @@
     "nationalDex": 925,
     "captureRate": 75,
     "growthRate": "fast",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 10,
+    "baseFriendship": 50,
+    "genus": { "en": "Family Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,33 +17,40 @@
         "values": ["family-of-four", "family-of-three"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "maushold",
       "variety": { "forme": "family-of-four" },
       "types": ["normal"],
+      "abilities": { "first": "friend-guard", "second": "cheek-pouch", "hidden": "technician" },
       "baseStats": { "hp": 74, "atk": 75, "def": 70, "spe": 111, "spa": 65, "spd": 75 },
+      "heightDm": 3,
+      "weightHg": 28,
       "color": "white",
       "shape": "heads",
       "eggGroups": ["ground", "fairy"],
       "debut": "scarlet-violet",
       "sprite": "925",
       "externalIds": { "pokeapiForm": "maushold-family-of-four" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "maushold-family-of-three",
       "variety": { "forme": "family-of-three" },
+      "weightHg": 23,
       "sprite": "11005",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": [

@@ -5,22 +5,30 @@
     "nationalDex": 126,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Spitfire Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "magmar",
       "types": ["fire"],
+      "abilities": { "first": "flame-body", "hidden": "vital-spirit" },
       "baseStats": { "hp": 65, "atk": 95, "def": 57, "spe": 93, "spa": 100, "spd": 85 },
+      "heightDm": 13,
+      "weightHg": 445,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["humanshape"],
       "debut": "red-blue",
       "sprite": "126",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

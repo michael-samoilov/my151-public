@@ -5,22 +5,30 @@
     "nationalDex": 460,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Frost Tree Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "abomasnow",
       "types": ["grass", "ice"],
+      "abilities": { "first": "snow-warning", "hidden": "soundproof" },
       "baseStats": { "hp": 90, "atk": 92, "def": 75, "spe": 60, "spa": 92, "spd": 85 },
+      "heightDm": 22,
+      "weightHg": 1355,
       "color": "white",
       "shape": "upright",
       "eggGroups": ["monster", "plant"],
       "debut": "diamond-pearl",
       "sprite": "460",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "abomasnow-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["abomasnow"]
       },
+      "abilities": { "first": "snow-warning" },
       "baseStats": { "hp": 90, "atk": 132, "def": 105, "spe": 30, "spa": 132, "spd": 105 },
+      "heightDm": 27,
+      "weightHg": 1850,
       "debut": "x-y",
       "sprite": "10060",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

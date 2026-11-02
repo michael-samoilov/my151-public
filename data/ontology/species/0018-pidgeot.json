@@ -5,22 +5,30 @@
     "nationalDex": 18,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Bird Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pidgeot",
       "types": ["normal", "flying"],
+      "abilities": { "first": "keen-eye", "second": "tangled-feet", "hidden": "big-pecks" },
       "baseStats": { "hp": 83, "atk": 80, "def": 75, "spe": 101, "spa": 70, "spd": 70 },
+      "heightDm": 15,
+      "weightHg": 395,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "red-blue",
       "sprite": "18",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "pidgeot-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["pidgeot"]
       },
+      "abilities": { "first": "no-guard" },
       "baseStats": { "hp": 83, "atk": 80, "def": 80, "spe": 121, "spa": 135, "spd": 80 },
+      "heightDm": 22,
+      "weightHg": 505,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10073",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

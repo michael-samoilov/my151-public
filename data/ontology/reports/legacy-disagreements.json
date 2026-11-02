@@ -56,6 +56,13 @@
     "reason": "The League names the exact form; the Dex shows that form’s species because it does not list the form."
   },
   {
+    "fact": "externalIds.pokeapiForm",
+    "form": "xerneas",
+    "values": { "scripts/i18n/pokemon-id-map.json": "xerneas-neutral", "PokeAPI snapshot": "xerneas-active" },
+    "chosen": "xerneas-active",
+    "reason": "The app shows Xerneas as Active Mode (sprite 716) and lists Neutral Mode as its own form; the legacy map picked PokeAPI's default form, Neutral Mode."
+  },
+  {
     "fact": "name",
     "form": "urshifu",
     "values": { "pokemon.json": "urshifu", "favorites/model/catalog.ts": "urshifu-single-strike" },

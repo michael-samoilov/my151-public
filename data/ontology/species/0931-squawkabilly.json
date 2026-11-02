@@ -5,6 +5,10 @@
     "nationalDex": 931,
     "captureRate": 190,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Parrot Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [
@@ -13,21 +17,25 @@
         "values": ["green", "blue", "yellow", "white"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "squawkabilly",
       "variety": { "plumage": "green" },
       "types": ["normal", "flying"],
+      "abilities": { "first": "intimidate", "second": "hustle", "hidden": "guts" },
       "baseStats": { "hp": 82, "atk": 96, "def": 51, "spe": 92, "spa": 45, "spd": 51 },
+      "heightDm": 6,
+      "weightHg": 24,
       "color": "green",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "scarlet-violet",
       "sprite": "931",
       "externalIds": { "pokeapiForm": "squawkabilly-green-plumage" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "squawkabilly-blue-plumage",
@@ -45,28 +53,34 @@
     {
       "id": "squawkabilly-yellow-plumage",
       "variety": { "plumage": "yellow" },
+      "abilities": { "first": "intimidate", "second": "hustle", "hidden": "sheer-force" },
       "color": "yellow",
       "sprite": "10261",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "squawkabilly-white-plumage",
       "variety": { "plumage": "white" },
+      "abilities": { "first": "intimidate", "second": "hustle", "hidden": "sheer-force" },
       "color": "white",
       "sprite": "10262",
       "tools": {
         "picker": "in",
-        "dex": { "out": "look-only" },
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 977,
     "captureRate": 25,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 50,
+    "genus": { "en": "Big Catfish Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dondozo",
       "types": ["water"],
+      "abilities": { "first": "unaware", "second": "oblivious", "hidden": "water-veil" },
       "baseStats": { "hp": 150, "atk": 100, "def": 115, "spe": 35, "spa": 65, "spd": 65 },
+      "heightDm": 120,
+      "weightHg": 2200,
       "color": "blue",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "scarlet-violet",
       "sprite": "977",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

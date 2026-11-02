@@ -5,23 +5,31 @@
     "nationalDex": 665,
     "captureRate": 120,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Scatterdust Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "spewpa",
       "types": ["bug"],
+      "abilities": { "first": "shed-skin", "hidden": "friend-guard" },
       "baseStats": { "hp": 45, "atk": 22, "def": 60, "spe": 29, "spa": 27, "spd": 30 },
+      "heightDm": 3,
+      "weightHg": 84,
       "color": "black",
       "shape": "blob",
       "eggGroups": ["bug"],
       "debut": "x-y",
       "sprite": "665",
       "externalIds": { "pokeapiForm": "spewpa-icy-snow" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

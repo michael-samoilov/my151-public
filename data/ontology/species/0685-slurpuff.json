@@ -5,22 +5,30 @@
     "nationalDex": 685,
     "captureRate": 140,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Meringue Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "slurpuff",
       "types": ["fairy"],
+      "abilities": { "first": "sweet-veil", "hidden": "unburden" },
       "baseStats": { "hp": 82, "atk": 80, "def": 86, "spe": 72, "spa": 85, "spd": 75 },
+      "heightDm": 8,
+      "weightHg": 50,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["fairy"],
       "debut": "x-y",
       "sprite": "685",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

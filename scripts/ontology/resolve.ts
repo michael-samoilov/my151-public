@@ -5,7 +5,7 @@
  */
 import type { AppId, FormId, SpeciesId, SpriteStem } from '../../src/ontology/ids';
 import type { Coordinates, FormFacts, FormFlags, FormState, Persistence, ResolvedEvolution, ResolvedForm, ResolvedSpecies, ToolInclusion } from '../../src/ontology/model';
-import { FACT_KEYS } from '../../src/ontology/model';
+import { FACT_KEYS, MECHANICAL_FACT_KEYS } from '../../src/ontology/model';
 import type { AuthoredOntology, FormEntry, Problem, SpeciesFile } from './authored';
 
 export interface Ontology {
@@ -48,6 +48,7 @@ function stepOf(entry: FormEntry): FormState | null {
   switch (state.kind) {
     case 'mega': return state.letter ? { kind: 'mega', letter: state.letter } : { kind: 'mega' };
     case 'terastal': return { kind: 'terastal', teraType: state.teraType! };
+    case 'battle-mode': return state.trigger ? { kind: 'battle-mode', trigger: state.trigger } : { kind: 'battle-mode' };
     default: return { kind: state.kind };
   }
 }
@@ -74,9 +75,8 @@ function flagsOf(coordinates: Coordinates, states: readonly FormState[], persist
   };
 }
 
-/** Types, base stats, and egg groups equal: the form differs in looks or availability only. */
-export const mechanicallyEqual = (a: FormFacts, b: FormFacts): boolean =>
-  same(a.types, b.types) && same(a.baseStats, b.baseStats) && same(a.eggGroups, b.eggGroups);
+/** Every mechanical fact equal: the form differs in looks or availability only. */
+export const mechanicallyEqual = (a: FormFacts, b: FormFacts): boolean => MECHANICAL_FACT_KEYS.every((key) => same(a[key], b[key]));
 
 export function resolveOntology(authored: AuthoredOntology): Resolution {
   const problems: Problem[] = [];
@@ -135,7 +135,7 @@ export function resolveOntology(authored: AuthoredOntology): Resolution {
         problem('state-entry-chains-differ', `${path}.state.from`, `${entry.id} is entered from forms with different state chains; list forms that share one chain`);
       }
       const own = Object.fromEntries(FACT_KEYS.filter((key) => key in entry).map((key) => [key, entry[key]]));
-      const facts = { obtain: 'standard', ...(base?.facts ?? {}), ...own } as FormFacts;
+      const facts = { obtain: 'standard', shiny: 'available', ...(base?.facts ?? {}), ...own } as FormFacts;
       const states = step ? [...bases[0].states, step] : [];
       const coordinates = step ? sharedCoordinates(bases.map((other) => other.coordinates)) : coordinatesOf(entry);
       const persistence = persistenceOf(states);
@@ -179,6 +179,10 @@ export function resolveOntology(authored: AuthoredOntology): Resolution {
       generation: speciesGeneration ?? 0,
       captureRate: data.species.captureRate,
       growthRate: data.species.growthRate,
+      genderRatio: data.species.genderRatio,
+      hatchCycles: data.species.hatchCycles,
+      baseFriendship: data.species.baseFriendship,
+      genus: data.species.genus,
       legendaryClass: data.species.legendaryClass,
       tags: data.species.tags,
       standIn: data.species.standIn,

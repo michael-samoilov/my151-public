@@ -5,6 +5,10 @@
     "nationalDex": 484,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Spatial Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [
@@ -13,24 +17,30 @@
         "values": ["origin"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "palkia",
       "types": ["water", "dragon"],
+      "abilities": { "first": "pressure", "hidden": "telepathy" },
       "baseStats": { "hp": 90, "atk": 120, "def": 100, "spe": 100, "spa": 150, "spd": 120 },
+      "heightDm": 42,
+      "weightHg": 3360,
       "color": "purple",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "diamond-pearl",
       "sprite": "484",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "palkia-origin",
       "variety": { "forme": "origin" },
       "baseStats": { "hp": 90, "atk": 100, "def": 100, "spe": 120, "spa": 150, "spd": 120 },
+      "heightDm": 63,
+      "weightHg": 6590,
       "shape": "quadruped",
       "debut": "legends-arceus",
       "sprite": "10246",
@@ -42,7 +52,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 394,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Penguin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "prinplup",
       "types": ["water"],
+      "abilities": { "first": "torrent", "hidden": "competitive" },
       "baseStats": { "hp": 64, "atk": 66, "def": 68, "spe": 50, "spa": 81, "spd": 76 },
+      "heightDm": 8,
+      "weightHg": 230,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["water1", "ground"],
       "debut": "diamond-pearl",
       "sprite": "394",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

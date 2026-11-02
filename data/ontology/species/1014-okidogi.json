@@ -5,22 +5,30 @@
     "nationalDex": 1014,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Retainer Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "okidogi",
       "types": ["poison", "fighting"],
+      "abilities": { "first": "toxic-chain", "hidden": "guard-dog" },
       "baseStats": { "hp": 88, "atk": 128, "def": 115, "spe": 80, "spa": 58, "spd": 86 },
+      "heightDm": 18,
+      "weightHg": 922,
       "color": "black",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1014",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 69,
     "captureRate": 255,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Flower Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "bellsprout",
       "types": ["grass", "poison"],
+      "abilities": { "first": "chlorophyll", "hidden": "gluttony" },
       "baseStats": { "hp": 50, "atk": 75, "def": 35, "spe": 40, "spa": 70, "spd": 30 },
+      "heightDm": 7,
+      "weightHg": 40,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["plant"],
       "debut": "red-blue",
       "sprite": "69",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

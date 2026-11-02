@@ -5,6 +5,10 @@
     "nationalDex": 720,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 100,
+    "genus": { "en": "Mischief Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [
@@ -13,26 +17,32 @@
         "values": ["confined", "unbound"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "hoopa",
       "variety": { "forme": "confined" },
       "types": ["psychic", "ghost"],
+      "abilities": { "first": "magician" },
       "baseStats": { "hp": 80, "atk": 110, "def": 60, "spe": 70, "spa": 150, "spd": 130 },
+      "heightDm": 5,
+      "weightHg": 90,
       "color": "purple",
       "shape": "arms",
       "eggGroups": ["no-eggs"],
       "debut": "x-y",
       "sprite": "720",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "hoopa-unbound",
       "variety": { "forme": "unbound" },
       "types": ["psychic", "dark"],
       "baseStats": { "hp": 80, "atk": 160, "def": 60, "spe": 80, "spa": 170, "spd": 130 },
+      "heightDm": 65,
+      "weightHg": 4900,
       "shape": "upright",
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10086",
@@ -44,7 +54,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

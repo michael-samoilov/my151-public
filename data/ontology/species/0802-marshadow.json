@@ -5,22 +5,30 @@
     "nationalDex": 802,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Gloomdweller Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "marshadow",
       "types": ["fighting", "ghost"],
+      "abilities": { "first": "technician" },
       "baseStats": { "hp": 90, "atk": 125, "def": 80, "spe": 125, "spa": 90, "spd": 90 },
+      "heightDm": 7,
+      "weightHg": 222,
       "color": "gray",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "802",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "marshadow-zenith",
@@ -35,7 +43,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

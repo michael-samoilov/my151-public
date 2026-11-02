@@ -5,6 +5,10 @@
     "nationalDex": 150,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Genetic Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [
@@ -13,19 +17,23 @@
         "values": ["shadow"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "mewtwo",
       "types": ["psychic"],
+      "abilities": { "first": "pressure", "hidden": "unnerve" },
       "baseStats": { "hp": 106, "atk": 110, "def": 90, "spe": 130, "spa": 154, "spd": 90 },
+      "heightDm": 20,
+      "weightHg": 1220,
       "color": "purple",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "red-blue",
       "sprite": "150",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "mewtwo-mega-x",
@@ -35,7 +43,10 @@
         "from": ["mewtwo"]
       },
       "types": ["psychic", "fighting"],
+      "abilities": { "first": "steadfast" },
       "baseStats": { "hp": 106, "atk": 190, "def": 100, "spe": 130, "spa": 154, "spd": 100 },
+      "heightDm": 23,
+      "weightHg": 1270,
       "debut": "x-y",
       "sprite": "10043",
       "tools": {
@@ -44,7 +55,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "mewtwo-mega-y",
@@ -53,7 +64,10 @@
         "letter": "y",
         "from": ["mewtwo"]
       },
+      "abilities": { "first": "insomnia" },
       "baseStats": { "hp": 106, "atk": 150, "def": 70, "spe": 140, "spa": 194, "spd": 120 },
+      "heightDm": 15,
+      "weightHg": 330,
       "debut": "x-y",
       "sprite": "10044",
       "tools": {
@@ -62,7 +76,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "mewtwo-shadow",
@@ -76,7 +90,7 @@
         "league": { "out": "spinoff-only" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

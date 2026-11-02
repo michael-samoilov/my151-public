@@ -233,10 +233,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const switched = parseLocale(body.switched);
     const ref = parseReferrerHost(body.ref);
 
-    const mergeRecord = (existing: ClientRecord | null, recCid: string): ClientRecord => {
+    const mergeRecord = (existing: ClientRecord | null): ClientRecord => {
       const oldSpans = existing?.sessions !== undefined ? endStampedSpans(existing) : [];
       const rec: ClientRecord = existing ? {...existing} : {
-        cid: recCid,
+        cid,
         firstTs: now,
         firstAt: at,
         lastTs: now,
@@ -386,33 +386,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return rec;
     };
 
-    const readClient = (key: string) =>
-      Promise.all([
-        redis.hget(CLIENTS_KEY, key) as Promise<unknown>,
-        redis.hget(VERSION_KEY, key) as Promise<string | number | null>,
-      ]);
-    const firstRead = await readClient(cid);
-    const rawExisting = parseRecord(firstRead[0]);
-    let effectiveCid = cid;
-    if (rawExisting && geo.country && rawExisting.country && geo.country !== rawExisting.country) {
-      const existingSet = new Set(rawExisting.latestIds);
-      const overlap = ids.filter((id) => existingSet.has(id)).length;
-      const union = new Set([...rawExisting.latestIds, ...ids]).size;
-      const jaccard = union > 0 ? overlap / union : 1;
-      if (jaccard < 0.2) effectiveCid = `${cid}::${geo.country}`;
-    }
-
     for (let attempt = 0; attempt < 6; attempt++) {
-      const [rawStr, verStr] =
-        attempt === 0 && effectiveCid === cid ? firstRead : await readClient(effectiveCid);
+      const [rawStr, verStr] = await Promise.all([
+        redis.hget(CLIENTS_KEY, cid) as Promise<unknown>,
+        redis.hget(VERSION_KEY, cid) as Promise<string | number | null>,
+      ]);
       const existing = parseRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
 
-      const rec = mergeRecord(existing, effectiveCid);
+      const rec = mergeRecord(existing);
       const ok = await redis.eval(
         CAS_LUA,
         [CLIENTS_KEY, VERSION_KEY],
-        [effectiveCid, expectedVer, JSON.stringify(rec), MAX_CLIENTS],
+        [cid, expectedVer, JSON.stringify(rec), MAX_CLIENTS],
       );
       if (ok === 2) {
         await countDrop('cap');

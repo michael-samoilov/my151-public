@@ -5,23 +5,31 @@
     "nationalDex": 1013,
     "captureRate": 60,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 50,
+    "genus": { "en": "Matcha Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "sinistcha",
       "types": ["grass", "ghost"],
+      "abilities": { "first": "hospitality", "hidden": "heatproof" },
       "baseStats": { "hp": 71, "atk": 60, "def": 106, "spe": 70, "spa": 121, "spd": 80 },
+      "heightDm": 2,
+      "weightHg": 22,
       "color": "green",
       "shape": "ball",
       "eggGroups": ["mineral", "indeterminate"],
       "debut": "scarlet-violet",
       "sprite": "1013",
       "externalIds": { "pokeapiForm": "sinistcha-unremarkable" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

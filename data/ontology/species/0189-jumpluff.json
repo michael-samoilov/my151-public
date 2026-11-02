@@ -5,22 +5,30 @@
     "nationalDex": 189,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Cottonweed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "jumpluff",
       "types": ["grass", "flying"],
+      "abilities": { "first": "chlorophyll", "second": "leaf-guard", "hidden": "infiltrator" },
       "baseStats": { "hp": 75, "atk": 55, "def": 70, "spe": 110, "spa": 55, "spd": 95 },
+      "heightDm": 8,
+      "weightHg": 30,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["fairy", "plant"],
       "debut": "gold-silver",
       "sprite": "189",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,33 +5,44 @@
     "nationalDex": 549,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 8 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Flowering Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lilligant",
       "types": ["grass"],
+      "abilities": { "first": "chlorophyll", "second": "own-tempo", "hidden": "leaf-guard" },
       "baseStats": { "hp": 70, "atk": 60, "def": 75, "spe": 90, "spa": 110, "spd": 75 },
+      "heightDm": 11,
+      "weightHg": 163,
       "color": "green",
       "shape": "blob",
       "eggGroups": ["plant"],
       "debut": "black-white",
       "sprite": "549",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "lilligant-hisui",
       "region": "hisui",
       "types": ["grass", "fighting"],
+      "abilities": { "first": "chlorophyll", "second": "hustle", "hidden": "leaf-guard" },
       "baseStats": { "hp": 70, "atk": 105, "def": 75, "spe": 105, "spa": 50, "spd": 75 },
+      "heightDm": 12,
+      "weightHg": 192,
       "shape": "humanoid",
       "debut": "legends-arceus",
       "sprite": "10237",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

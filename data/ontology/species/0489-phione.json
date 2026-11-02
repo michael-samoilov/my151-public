@@ -5,22 +5,30 @@
     "nationalDex": 489,
     "captureRate": 30,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Sea Drifter Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "phione",
       "types": ["water"],
+      "abilities": { "first": "hydration" },
       "baseStats": { "hp": 80, "atk": 80, "def": 80, "spe": 80, "spa": 80, "spd": 80 },
+      "heightDm": 4,
+      "weightHg": 31,
       "color": "blue",
       "shape": "arms",
       "eggGroups": ["water1", "fairy"],
       "debut": "diamond-pearl",
       "sprite": "489",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

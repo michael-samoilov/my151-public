@@ -5,22 +5,30 @@
     "nationalDex": 334,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Humming Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "altaria",
       "types": ["dragon", "flying"],
+      "abilities": { "first": "natural-cure", "hidden": "cloud-nine" },
       "baseStats": { "hp": 75, "atk": 70, "def": 90, "spe": 80, "spa": 70, "spd": 105 },
+      "heightDm": 11,
+      "weightHg": 206,
       "color": "blue",
       "shape": "wings",
       "eggGroups": ["flying", "dragon"],
       "debut": "ruby-sapphire",
       "sprite": "334",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "altaria-mega",
@@ -29,7 +37,9 @@
         "from": ["altaria"]
       },
       "types": ["dragon", "fairy"],
+      "abilities": { "first": "pixilate" },
       "baseStats": { "hp": 75, "atk": 110, "def": 110, "spe": 80, "spa": 110, "spd": 105 },
+      "heightDm": 15,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10067",
       "tools": {
@@ -38,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

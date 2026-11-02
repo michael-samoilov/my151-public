@@ -5,22 +5,30 @@
     "nationalDex": 581,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "White Bird Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "swanna",
       "types": ["water", "flying"],
+      "abilities": { "first": "keen-eye", "second": "big-pecks", "hidden": "hydration" },
       "baseStats": { "hp": 75, "atk": 87, "def": 63, "spe": 98, "spa": 87, "spd": 63 },
+      "heightDm": 13,
+      "weightHg": 242,
       "color": "white",
       "shape": "wings",
       "eggGroups": ["water1", "flying"],
       "debut": "black-white",
       "sprite": "581",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

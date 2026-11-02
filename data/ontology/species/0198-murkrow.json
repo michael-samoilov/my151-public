@@ -5,22 +5,30 @@
     "nationalDex": 198,
     "captureRate": 30,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Darkness Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "murkrow",
       "types": ["dark", "flying"],
+      "abilities": { "first": "insomnia", "second": "super-luck", "hidden": "prankster" },
       "baseStats": { "hp": 60, "atk": 85, "def": 42, "spe": 91, "spa": 85, "spd": 42 },
+      "heightDm": 5,
+      "weightHg": 21,
       "color": "black",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "gold-silver",
       "sprite": "198",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 973,
     "captureRate": 100,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Synchronize Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "flamigo",
       "types": ["flying", "fighting"],
+      "abilities": { "first": "scrappy", "second": "tangled-feet", "hidden": "costar" },
       "baseStats": { "hp": 82, "atk": 115, "def": 74, "spe": 90, "spa": 75, "spd": 64 },
+      "heightDm": 16,
+      "weightHg": 370,
       "color": "pink",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "scarlet-violet",
       "sprite": "973",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

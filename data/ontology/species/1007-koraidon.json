@@ -5,23 +5,31 @@
     "nationalDex": 1007,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 50,
+    "baseFriendship": 0,
+    "genus": { "en": "Paradox Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "koraidon",
       "types": ["fighting", "dragon"],
+      "abilities": { "first": "orichalcum-pulse" },
       "baseStats": { "hp": 100, "atk": 135, "def": 115, "spe": 135, "spa": 85, "spd": 100 },
+      "heightDm": 25,
+      "weightHg": 3030,
       "color": "red",
       "shape": "upright",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1007",
       "externalIds": { "pokeapiForm": "koraidon-apex-build" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "koraidon-limited-build",
@@ -29,6 +37,7 @@
         "kind": "ride",
         "from": ["koraidon"]
       },
+      "heightDm": 35,
       "sprite": "11118",
       "tools": {
         "picker": "in",
@@ -36,7 +45,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

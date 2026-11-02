@@ -5,22 +5,30 @@
     "nationalDex": 466,
     "captureRate": 30,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Thunderbolt Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "electivire",
       "types": ["electric"],
+      "abilities": { "first": "motor-drive", "hidden": "vital-spirit" },
       "baseStats": { "hp": 75, "atk": 123, "def": 67, "spe": 95, "spa": 95, "spd": 85 },
+      "heightDm": 18,
+      "weightHg": 1386,
       "color": "yellow",
       "shape": "upright",
       "eggGroups": ["humanshape"],
       "debut": "diamond-pearl",
       "sprite": "466",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

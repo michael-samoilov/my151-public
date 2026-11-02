@@ -5,22 +5,30 @@
     "nationalDex": 33,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Poison Pin Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "nidorino",
       "types": ["poison"],
+      "abilities": { "first": "poison-point", "second": "rivalry", "hidden": "hustle" },
       "baseStats": { "hp": 61, "atk": 72, "def": 57, "spe": 65, "spa": 55, "spd": 55 },
+      "heightDm": 9,
+      "weightHg": 195,
       "color": "purple",
       "shape": "quadruped",
       "eggGroups": ["monster", "ground"],
       "debut": "red-blue",
       "sprite": "33",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

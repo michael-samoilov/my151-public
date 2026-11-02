@@ -5,32 +5,42 @@
     "nationalDex": 83,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Wild Duck Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "farfetchd",
       "types": ["normal", "flying"],
+      "abilities": { "first": "keen-eye", "second": "inner-focus", "hidden": "defiant" },
       "baseStats": { "hp": 52, "atk": 90, "def": 55, "spe": 60, "spa": 58, "spd": 62 },
+      "heightDm": 8,
+      "weightHg": 150,
       "color": "brown",
       "shape": "wings",
       "eggGroups": ["flying", "ground"],
       "debut": "red-blue",
       "sprite": "83",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "farfetchd-galar",
       "region": "galar",
       "types": ["fighting"],
+      "abilities": { "first": "steadfast", "hidden": "scrappy" },
       "baseStats": { "hp": 52, "atk": 95, "def": 55, "spe": 55, "spa": 58, "spd": 62 },
+      "weightHg": 420,
       "debut": "sword-shield",
       "sprite": "10166",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

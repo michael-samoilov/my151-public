@@ -5,22 +5,30 @@
     "nationalDex": 318,
     "captureRate": 225,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Savage Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "carvanha",
       "types": ["water", "dark"],
+      "abilities": { "first": "rough-skin", "hidden": "speed-boost" },
       "baseStats": { "hp": 45, "atk": 90, "def": 20, "spe": 65, "spa": 65, "spd": 20 },
+      "heightDm": 8,
+      "weightHg": 208,
       "color": "red",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "ruby-sapphire",
       "sprite": "318",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

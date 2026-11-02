@@ -5,32 +5,43 @@
     "nationalDex": 58,
     "captureRate": 190,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Puppy Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "growlithe",
       "types": ["fire"],
+      "abilities": { "first": "intimidate", "second": "flash-fire", "hidden": "justified" },
       "baseStats": { "hp": 55, "atk": 70, "def": 45, "spe": 60, "spa": 70, "spd": 50 },
+      "heightDm": 7,
+      "weightHg": 190,
       "color": "brown",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "red-blue",
       "sprite": "58",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "growlithe-hisui",
       "region": "hisui",
       "types": ["fire", "rock"],
+      "abilities": { "first": "intimidate", "second": "flash-fire", "hidden": "rock-head" },
       "baseStats": { "hp": 60, "atk": 75, "def": 45, "spe": 55, "spa": 65, "spd": 50 },
+      "heightDm": 8,
+      "weightHg": 227,
       "debut": "legends-arceus",
       "sprite": "10229",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

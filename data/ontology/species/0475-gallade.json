@@ -5,22 +5,30 @@
     "nationalDex": 475,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 0 },
+    "hatchCycles": 20,
+    "baseFriendship": 35,
+    "genus": { "en": "Blade Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "gallade",
       "types": ["psychic", "fighting"],
+      "abilities": { "first": "steadfast", "second": "sharpness", "hidden": "justified" },
       "baseStats": { "hp": 68, "atk": 125, "def": 65, "spe": 80, "spa": 65, "spd": 115 },
+      "heightDm": 16,
+      "weightHg": 520,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["humanshape", "indeterminate"],
       "debut": "diamond-pearl",
       "sprite": "475",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "gallade-mega",
@@ -28,7 +36,9 @@
         "kind": "mega",
         "from": ["gallade"]
       },
+      "abilities": { "first": "inner-focus" },
       "baseStats": { "hp": 68, "atk": 165, "def": 95, "spe": 110, "spa": 65, "spd": 115 },
+      "weightHg": 564,
       "eggGroups": ["indeterminate"],
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10068",
@@ -38,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

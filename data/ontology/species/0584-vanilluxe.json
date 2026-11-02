@@ -5,22 +5,30 @@
     "nationalDex": 584,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Snowstorm Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "vanilluxe",
       "types": ["ice"],
+      "abilities": { "first": "ice-body", "second": "snow-warning", "hidden": "weak-armor" },
       "baseStats": { "hp": 71, "atk": 95, "def": 85, "spe": 79, "spa": 110, "spd": 95 },
+      "heightDm": 13,
+      "weightHg": 575,
       "color": "white",
       "shape": "heads",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "584",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

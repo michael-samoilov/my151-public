@@ -5,22 +5,30 @@
     "nationalDex": 947,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Tumbleweed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "brambleghast",
       "types": ["grass", "ghost"],
+      "abilities": { "first": "wind-rider", "hidden": "infiltrator" },
       "baseStats": { "hp": 55, "atk": 115, "def": 70, "spe": 90, "spa": 80, "spd": 70 },
+      "heightDm": 12,
+      "weightHg": 60,
       "color": "brown",
       "shape": "ball",
       "eggGroups": ["plant"],
       "debut": "scarlet-violet",
       "sprite": "947",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

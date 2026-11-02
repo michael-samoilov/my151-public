@@ -5,22 +5,30 @@
     "nationalDex": 63,
     "captureRate": 200,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 2 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Psi Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "abra",
       "types": ["psychic"],
+      "abilities": { "first": "synchronize", "second": "inner-focus", "hidden": "magic-guard" },
       "baseStats": { "hp": 25, "atk": 20, "def": 15, "spe": 90, "spa": 105, "spd": 55 },
+      "heightDm": 9,
+      "weightHg": 195,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["humanshape"],
       "debut": "red-blue",
       "sprite": "63",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 200,
     "captureRate": 45,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 35,
+    "genus": { "en": "Screech Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "misdreavus",
       "types": ["ghost"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 60, "atk": 60, "def": 60, "spe": 85, "spa": 85, "spd": 85 },
+      "heightDm": 7,
+      "weightHg": 10,
       "color": "gray",
       "shape": "ball",
       "eggGroups": ["indeterminate"],
       "debut": "gold-silver",
       "sprite": "200",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

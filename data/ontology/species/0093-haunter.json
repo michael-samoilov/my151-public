@@ -5,22 +5,30 @@
     "nationalDex": 93,
     "captureRate": 90,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Gas Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "haunter",
       "types": ["ghost", "poison"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 45, "atk": 50, "def": 45, "spe": 95, "spa": 115, "spd": 55 },
+      "heightDm": 16,
+      "weightHg": 1,
       "color": "purple",
       "shape": "arms",
       "eggGroups": ["indeterminate"],
       "debut": "red-blue",
       "sprite": "93",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

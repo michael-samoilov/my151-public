@@ -5,22 +5,30 @@
     "nationalDex": 283,
     "captureRate": 200,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Pond Skater Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "surskit",
       "types": ["bug", "water"],
+      "abilities": { "first": "swift-swim", "hidden": "rain-dish" },
       "baseStats": { "hp": 40, "atk": 30, "def": 32, "spe": 65, "spa": 50, "spd": 52 },
+      "heightDm": 5,
+      "weightHg": 17,
       "color": "blue",
       "shape": "armor",
       "eggGroups": ["water1", "bug"],
       "debut": "ruby-sapphire",
       "sprite": "283",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 378,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 80,
+    "baseFriendship": 35,
+    "genus": { "en": "Iceberg Pokémon" },
     "legendaryClass": "sub-legendary",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "regice",
       "types": ["ice"],
+      "abilities": { "first": "clear-body", "hidden": "ice-body" },
       "baseStats": { "hp": 80, "atk": 50, "def": 100, "spe": 50, "spa": 100, "spd": 200 },
+      "heightDm": 18,
+      "weightHg": 1750,
       "color": "blue",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "ruby-sapphire",
       "sprite": "378",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

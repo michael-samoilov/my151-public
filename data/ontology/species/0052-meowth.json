@@ -5,22 +5,30 @@
     "nationalDex": 52,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Scratch Cat Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "meowth",
       "types": ["normal"],
+      "abilities": { "first": "pickup", "second": "technician", "hidden": "unnerve" },
       "baseStats": { "hp": 40, "atk": 45, "def": 35, "spe": 90, "spa": 40, "spd": 40 },
+      "heightDm": 4,
+      "weightHg": 42,
       "color": "yellow",
       "shape": "quadruped",
       "eggGroups": ["ground"],
       "debut": "red-blue",
       "sprite": "52",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "meowth-gmax",
@@ -28,6 +36,8 @@
         "kind": "gigantamax",
         "from": ["meowth"]
       },
+      "heightDm": 330,
+      "weightHg": null,
       "debut": "sword-shield",
       "sprite": "10200",
       "tools": {
@@ -36,30 +46,33 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "meowth-alola",
       "region": "alola",
       "types": ["dark"],
+      "abilities": { "first": "pickup", "second": "technician", "hidden": "rattled" },
       "baseStats": { "hp": 40, "atk": 35, "def": 35, "spe": 90, "spa": 50, "spd": 40 },
       "color": "blue",
       "debut": "sun-moon",
       "sprite": "10107",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     },
     {
       "id": "meowth-galar",
       "region": "galar",
       "types": ["steel"],
+      "abilities": { "first": "pickup", "second": "tough-claws", "hidden": "unnerve" },
       "baseStats": { "hp": 50, "atk": 65, "def": 55, "spe": 40, "spa": 40, "spd": 40 },
+      "weightHg": 75,
       "color": "brown",
       "shape": "upright",
       "debut": "sword-shield",
       "sprite": "10161",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

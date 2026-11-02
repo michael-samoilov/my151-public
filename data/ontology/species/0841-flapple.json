@@ -5,22 +5,30 @@
     "nationalDex": 841,
     "captureRate": 45,
     "growthRate": "erratic",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Apple Wing Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "flapple",
       "types": ["grass", "dragon"],
+      "abilities": { "first": "ripen", "second": "gluttony", "hidden": "hustle" },
       "baseStats": { "hp": 70, "atk": 110, "def": 80, "spe": 70, "spa": 95, "spd": 60 },
+      "heightDm": 3,
+      "weightHg": 10,
       "color": "green",
       "shape": "wings",
       "eggGroups": ["plant", "dragon"],
       "debut": "sword-shield",
       "sprite": "841",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "flapple-gmax",
@@ -28,13 +36,16 @@
         "kind": "gigantamax",
         "from": ["flapple"]
       },
+      "heightDm": 240,
+      "weightHg": null,
       "sprite": "10216",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

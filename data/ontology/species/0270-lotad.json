@@ -5,22 +5,30 @@
     "nationalDex": 270,
     "captureRate": 255,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Water Weed Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "lotad",
       "types": ["water", "grass"],
+      "abilities": { "first": "swift-swim", "second": "rain-dish", "hidden": "own-tempo" },
       "baseStats": { "hp": 40, "atk": 30, "def": 30, "spe": 30, "spa": 40, "spd": 50 },
+      "heightDm": 5,
+      "weightHg": 26,
       "color": "green",
       "shape": "armor",
       "eggGroups": ["water1", "plant"],
       "debut": "ruby-sapphire",
       "sprite": "270",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 976,
     "captureRate": 100,
     "growthRate": "fast",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Jettison Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "veluza",
       "types": ["water", "psychic"],
+      "abilities": { "first": "mold-breaker", "hidden": "sharpness" },
       "baseStats": { "hp": 90, "atk": 102, "def": 73, "spe": 70, "spa": 78, "spd": 65 },
+      "heightDm": 25,
+      "weightHg": 900,
       "color": "gray",
       "shape": "fish",
       "eggGroups": ["water2"],
       "debut": "scarlet-violet",
       "sprite": "976",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,28 +5,39 @@
     "nationalDex": 898,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 100,
+    "genus": { "en": "King Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "calyrex",
       "types": ["psychic", "grass"],
+      "abilities": { "first": "unnerve" },
       "baseStats": { "hp": 100, "atk": 80, "def": 80, "spe": 80, "spa": 80, "spd": 80 },
+      "heightDm": 11,
+      "weightHg": 77,
       "color": "green",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "sword-shield",
       "sprite": "898",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "calyrex-ice",
       "fusion": "glastrier",
       "types": ["psychic", "ice"],
+      "abilities": { "first": "as-one-glastrier" },
       "baseStats": { "hp": 100, "atk": 165, "def": 150, "spe": 50, "spa": 85, "spd": 130 },
+      "heightDm": 24,
+      "weightHg": 8091,
       "color": "white",
       "shape": "quadruped",
       "sprite": "10193",
@@ -40,13 +51,16 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "calyrex-shadow",
       "fusion": "spectrier",
       "types": ["psychic", "ghost"],
+      "abilities": { "first": "as-one-spectrier" },
       "baseStats": { "hp": 100, "atk": 85, "def": 80, "spe": 150, "spa": 165, "spd": 100 },
+      "heightDm": 24,
+      "weightHg": 536,
       "color": "black",
       "shape": "quadruped",
       "sprite": "10194",
@@ -60,7 +74,7 @@
         }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 545,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Megapede Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "scolipede",
       "types": ["bug", "poison"],
+      "abilities": { "first": "poison-point", "second": "swarm", "hidden": "speed-boost" },
       "baseStats": { "hp": 60, "atk": 100, "def": 89, "spe": 112, "spa": 55, "spd": 69 },
+      "heightDm": 25,
+      "weightHg": 2005,
       "color": "red",
       "shape": "armor",
       "eggGroups": ["bug"],
       "debut": "black-white",
       "sprite": "545",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "scolipede-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["scolipede"]
       },
+      "abilities": { "first": "shell-armor" },
       "baseStats": { "hp": 60, "atk": 140, "def": 149, "spe": 62, "spa": 75, "spd": 99 },
+      "heightDm": 32,
+      "weightHg": 2305,
       "debut": "legends-za",
       "sprite": "10288",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

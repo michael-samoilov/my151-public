@@ -5,22 +5,30 @@
     "nationalDex": 819,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Cheeky Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "skwovet",
       "types": ["normal"],
+      "abilities": { "first": "cheek-pouch", "hidden": "gluttony" },
       "baseStats": { "hp": 70, "atk": 55, "def": 55, "spe": 25, "spa": 35, "spd": 35 },
+      "heightDm": 3,
+      "weightHg": 25,
       "color": "brown",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "sword-shield",
       "sprite": "819",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

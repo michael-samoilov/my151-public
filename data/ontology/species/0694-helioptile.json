@@ -5,22 +5,30 @@
     "nationalDex": 694,
     "captureRate": 190,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Generator Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "helioptile",
       "types": ["electric", "normal"],
+      "abilities": { "first": "dry-skin", "second": "sand-veil", "hidden": "solar-power" },
       "baseStats": { "hp": 44, "atk": 38, "def": 33, "spe": 70, "spa": 61, "spd": 43 },
+      "heightDm": 5,
+      "weightHg": 60,
       "color": "yellow",
       "shape": "upright",
       "eggGroups": ["monster", "dragon"],
       "debut": "x-y",
       "sprite": "694",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

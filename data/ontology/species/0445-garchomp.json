@@ -5,22 +5,30 @@
     "nationalDex": 445,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 70,
+    "genus": { "en": "Mach Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "garchomp",
       "types": ["dragon", "ground"],
+      "abilities": { "first": "sand-veil", "hidden": "rough-skin" },
       "baseStats": { "hp": 108, "atk": 130, "def": 95, "spe": 102, "spa": 80, "spd": 85 },
+      "heightDm": 19,
+      "weightHg": 950,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["monster", "dragon"],
       "debut": "diamond-pearl",
       "sprite": "445",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "garchomp-mega",
@@ -28,6 +36,7 @@
         "kind": "mega",
         "from": ["garchomp"]
       },
+      "abilities": { "first": "sand-force" },
       "baseStats": { "hp": 108, "atk": 170, "def": 115, "spe": 92, "spa": 120, "spd": 95 },
       "debut": "x-y",
       "sprite": "10058",
@@ -37,7 +46,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6" }
     },
     {
       "id": "garchomp-mega-z",
@@ -47,7 +56,9 @@
         "from": ["garchomp"]
       },
       "types": ["dragon"],
+      "abilities": { "first": "levitate" },
       "baseStats": { "hp": 108, "atk": 130, "def": 85, "spe": 151, "spa": 141, "spd": 85 },
+      "weightHg": 990,
       "debut": "legends-za",
       "sprite": "10309",
       "tools": {
@@ -56,7 +67,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

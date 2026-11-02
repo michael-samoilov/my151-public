@@ -5,22 +5,30 @@
     "nationalDex": 208,
     "captureRate": 25,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 25,
+    "baseFriendship": 70,
+    "genus": { "en": "Iron Snake Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "steelix",
       "types": ["steel", "ground"],
+      "abilities": { "first": "rock-head", "second": "sturdy", "hidden": "sheer-force" },
       "baseStats": { "hp": 75, "atk": 85, "def": 200, "spe": 30, "spa": 55, "spd": 65 },
+      "heightDm": 92,
+      "weightHg": 4000,
       "color": "gray",
       "shape": "squiggle",
       "eggGroups": ["mineral"],
       "debut": "gold-silver",
       "sprite": "208",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "steelix-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["steelix"]
       },
+      "abilities": { "first": "sand-force" },
       "baseStats": { "hp": 75, "atk": 125, "def": 230, "spe": 30, "spa": 55, "spd": 95 },
+      "heightDm": 105,
+      "weightHg": 7400,
       "debut": "omega-ruby-alpha-sapphire",
       "sprite": "10072",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

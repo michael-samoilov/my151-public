@@ -5,22 +5,30 @@
     "nationalDex": 886,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 40,
+    "baseFriendship": 50,
+    "genus": { "en": "Caretaker Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "drakloak",
       "types": ["dragon", "ghost"],
+      "abilities": { "first": "clear-body", "second": "infiltrator", "hidden": "cursed-body" },
       "baseStats": { "hp": 68, "atk": 80, "def": 50, "spe": 102, "spa": 60, "spd": 50 },
+      "heightDm": 14,
+      "weightHg": 110,
       "color": "green",
       "shape": "arms",
       "eggGroups": ["indeterminate", "dragon"],
       "debut": "sword-shield",
       "sprite": "886",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

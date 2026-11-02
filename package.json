@@ -40,6 +40,8 @@
     "ontology:check": "tsx scripts/ontology/build.ts",
     "ontology:build": "tsx scripts/ontology/build.ts --write",
     "ontology:import": "tsx --tsconfig tsconfig.node.json scripts/ontology/import-legacy.ts",
+    "ontology:extract": "tsx scripts/ontology/pokeapi/extract.ts",
+    "ontology:audit": "tsx scripts/ontology/audit.ts",
     "ontology:parity": "vitest run scripts/ontology/parity.test.ts",
     "type-icons:glyph-paths": "tsx --tsconfig tsconfig.node.json scripts/build-type-glyph-paths.ts",
     "ci": "node --import tsx scripts/ci/run.ts affected",

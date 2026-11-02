@@ -5,22 +5,30 @@
     "nationalDex": 731,
     "captureRate": 255,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Woodpecker Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "pikipek",
       "types": ["normal", "flying"],
+      "abilities": { "first": "keen-eye", "second": "skill-link", "hidden": "pickup" },
       "baseStats": { "hp": 35, "atk": 75, "def": 30, "spe": 65, "spa": 30, "spd": 30 },
+      "heightDm": 3,
+      "weightHg": 12,
       "color": "black",
       "shape": "wings",
       "eggGroups": ["flying"],
       "debut": "sun-moon",
       "sprite": "731",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

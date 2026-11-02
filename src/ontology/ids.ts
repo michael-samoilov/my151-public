@@ -23,6 +23,7 @@ export type TypeId = Brand<string, 'TypeId'>;
 export type ColorId = Brand<string, 'ColorId'>;
 export type ShapeId = Brand<string, 'ShapeId'>;
 export type EggGroupId = Brand<string, 'EggGroupId'>;
+export type AbilityId = Brand<string, 'AbilityId'>; // 'overgrow', 'chlorophyll'
 export type GrowthRateId = Brand<string, 'GrowthRateId'>;
 export type SpeciesTagId = Brand<string, 'SpeciesTagId'>; // 'baby'
 export type DecisionId = Brand<string, 'DecisionId'>;

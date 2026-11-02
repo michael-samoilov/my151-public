@@ -5,22 +5,30 @@
     "nationalDex": 502,
     "captureRate": 45,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 1 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Discipline Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "dewott",
       "types": ["water"],
+      "abilities": { "first": "torrent", "hidden": "shell-armor" },
       "baseStats": { "hp": 75, "atk": 75, "def": 60, "spe": 60, "spa": 83, "spd": 60 },
+      "heightDm": 8,
+      "weightHg": 245,
       "color": "blue",
       "shape": "upright",
       "eggGroups": ["ground"],
       "debut": "black-white",
       "sprite": "502",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

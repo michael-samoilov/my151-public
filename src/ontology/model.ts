@@ -4,7 +4,7 @@
  * because only the build reads them.
  */
 import type {
-  AppId, ColorId, DecisionId, EggGroupId, FormId, GameId, RegionId, ShapeId, SpeciesId, SpriteStem, TypeId,
+  AbilityId, AppId, ColorId, DecisionId, EggGroupId, FormId, GameId, RegionId, ShapeId, SpeciesId, SpriteStem, TypeId,
   VarietyValueId,
 } from './ids';
 
@@ -14,7 +14,18 @@ export interface BaseStats {
   readonly hp: number; readonly atk: number; readonly def: number;
   readonly spe: number; readonly spa: number; readonly spd: number;
 }
+export interface Abilities {
+  readonly first: AbilityId;
+  readonly second?: AbilityId;
+  readonly hidden?: AbilityId;
+}
+/** Every form has a shiny look unless the games lock it; the reason is quoted on hover. */
+export type Shiny = 'available' | { readonly locked: string };
 export type Variety = { readonly [axis: string]: VarietyValueId };
+/** Text per app locale. English is always present; the i18n catalogs add the other locales later. */
+export interface LocalizedText { readonly en: string; readonly [locale: string]: string }
+export type FemaleEighths = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type GenderRatio = { readonly kind: 'genderless' } | { readonly kind: 'ratio'; readonly femaleEighths: FemaleEighths };
 
 /**
  * Where a permanent form sits within its species. Each facet is independent and has an explicit
@@ -28,9 +39,11 @@ export interface Coordinates {
 }
 
 export type TeraType = TypeId | 'stellar';
+/** What starts a battle-mode step. The checker proves an ability trigger is an ability of every form the step enters from. */
+export type StateTrigger = { readonly ability: AbilityId };
 /**
- * One temporary transformation. Item, move, and trigger payloads arrive with the items and moves
- * phases, so each kind carries only what today's catalogs know.
+ * One temporary transformation. Item and move payloads arrive with the items and moves phases, so
+ * each kind carries only what is recorded so far. A battle-mode step without a trigger has none recorded yet.
  */
 export type FormState =
   | { readonly kind: 'mega'; readonly letter?: 'x' | 'y' | 'z' }
@@ -39,7 +52,7 @@ export type FormState =
   | { readonly kind: 'eternamax' }
   | { readonly kind: 'ultra-burst' }
   | { readonly kind: 'terastal'; readonly teraType: TeraType }
-  | { readonly kind: 'battle-mode' }
+  | { readonly kind: 'battle-mode'; readonly trigger?: StateTrigger }
   | { readonly kind: 'move-look' }
   | { readonly kind: 'ride' };
 export type StateKind = FormState['kind'];
@@ -51,23 +64,33 @@ export type Obtain = 'standard' | 'event-only' | 'story-only' | 'spinoff-only' |
 /** Every fact a form owns today. A non-default form states only what differs from its base. */
 export interface FormFacts {
   readonly types: Types;
+  readonly abilities: Abilities;
   readonly baseStats: BaseStats;
+  /** Decimeters, as the games store it. A Gigantamax height is the games' lower bound ("24.0+ m"). */
+  readonly heightDm: number;
+  /** Hectograms, as the games store it. Null where the games show "????.? kg": Gigantamax and Eternamax. */
+  readonly weightHg: number | null;
   readonly color: ColorId;
   readonly shape: ShapeId;
   readonly eggGroups: readonly EggGroupId[];
   readonly debut: GameId;
   readonly obtain: Obtain;
+  readonly shiny: Shiny;
 }
 export type FactKey = keyof FormFacts;
-export const FACT_KEYS = ['types', 'baseStats', 'color', 'shape', 'eggGroups', 'debut', 'obtain'] as const satisfies readonly FactKey[];
+export const FACT_KEYS = ['types', 'abilities', 'baseStats', 'heightDm', 'weightHg', 'color', 'shape', 'eggGroups', 'debut', 'obtain', 'shiny'] as const satisfies readonly FactKey[];
+/** The facts that change how a form plays. A form that matches its default form on all of them differs only in looks or availability. */
+export const MECHANICAL_FACT_KEYS = ['types', 'abilities', 'baseStats', 'heightDm', 'weightHg', 'eggGroups'] as const satisfies readonly FactKey[];
 
 export const TOOLS = ['picker', 'dex', 'league'] as const;
 export type ToolId = (typeof TOOLS)[number];
 /**
  * A structural reason is a claim the checker proves on the resolved form, so a wrong reason fails
- * the build. A decision cites a record in data/ontology/decisions.json.
+ * the build. A decision cites a record in data/ontology/decisions.json. mergedInto marks one of two
+ * records with one look, such as the Megas of male and female Meowstic: the tool shows the target
+ * instead, so it never draws the same Pokémon twice. Both records keep their own facts.
  */
-export type OutReason = 'battle-state' | 'spinoff-only' | 'look-only' | { readonly decision: DecisionId };
+export type OutReason = 'battle-state' | 'spinoff-only' | 'look-only' | { readonly decision: DecisionId } | { readonly mergedInto: FormId };
 export type ToolVerdict = 'in' | { readonly out: OutReason };
 export type ToolInclusion = { readonly [T in ToolId]: ToolVerdict };
 
@@ -133,6 +156,10 @@ export interface ResolvedSpecies {
   readonly generation: number;
   readonly captureRate: number;
   readonly growthRate: string;
+  readonly genderRatio: GenderRatio;
+  readonly hatchCycles: number;
+  readonly baseFriendship: number;
+  readonly genus: LocalizedText;
   readonly legendaryClass: LegendaryClass;
   readonly tags: readonly string[];
   readonly standIn: { readonly [T in ToolId]?: FormId };

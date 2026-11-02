@@ -5,22 +5,30 @@
     "nationalDex": 525,
     "captureRate": 120,
     "growthRate": "medium-slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 70,
+    "genus": { "en": "Ore Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "boldore",
       "types": ["rock"],
+      "abilities": { "first": "sturdy", "second": "weak-armor", "hidden": "sand-force" },
       "baseStats": { "hp": 70, "atk": 105, "def": 105, "spe": 20, "spa": 50, "spd": 40 },
+      "heightDm": 9,
+      "weightHg": 1020,
       "color": "blue",
       "shape": "tentacles",
       "eggGroups": ["mineral"],
       "debut": "black-white",
       "sprite": "525",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

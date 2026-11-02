@@ -5,32 +5,43 @@
     "nationalDex": 103,
     "captureRate": 45,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 70,
+    "genus": { "en": "Coconut Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "exeggutor",
       "types": ["grass", "psychic"],
+      "abilities": { "first": "chlorophyll", "hidden": "harvest" },
       "baseStats": { "hp": 95, "atk": 95, "def": 85, "spe": 55, "spa": 125, "spd": 75 },
+      "heightDm": 20,
+      "weightHg": 1200,
       "color": "yellow",
       "shape": "legs",
       "eggGroups": ["plant"],
       "debut": "red-blue",
       "sprite": "103",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "exeggutor-alola",
       "region": "alola",
       "types": ["grass", "dragon"],
+      "abilities": { "first": "frisk", "hidden": "harvest" },
       "baseStats": { "hp": 95, "atk": 105, "def": 85, "spe": 45, "spa": 125, "spd": 75 },
+      "heightDm": 109,
+      "weightHg": 4156,
       "debut": "sun-moon",
       "sprite": "10114",
       "tools": { "picker": "in", "dex": "in", "league": "in" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

@@ -5,23 +5,31 @@
     "nationalDex": 648,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 100,
+    "genus": { "en": "Melody Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "meloetta",
       "types": ["normal", "psychic"],
+      "abilities": { "first": "serene-grace" },
       "baseStats": { "hp": 100, "atk": 77, "def": 77, "spe": 90, "spa": 128, "spd": 128 },
+      "heightDm": 6,
+      "weightHg": 65,
       "color": "white",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "black-white",
       "sprite": "648",
       "externalIds": { "pokeapiForm": "meloetta-aria" },
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "meloetta-pirouette",

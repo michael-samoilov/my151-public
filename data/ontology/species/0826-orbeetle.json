@@ -5,22 +5,30 @@
     "nationalDex": 826,
     "captureRate": 45,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 15,
+    "baseFriendship": 50,
+    "genus": { "en": "Seven Spot Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "orbeetle",
       "types": ["bug", "psychic"],
+      "abilities": { "first": "swarm", "second": "frisk", "hidden": "telepathy" },
       "baseStats": { "hp": 60, "atk": 45, "def": 110, "spe": 90, "spa": 80, "spd": 120 },
+      "heightDm": 4,
+      "weightHg": 408,
       "color": "red",
       "shape": "wings",
       "eggGroups": ["bug"],
       "debut": "sword-shield",
       "sprite": "826",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "orbeetle-gmax",
@@ -28,13 +36,16 @@
         "kind": "gigantamax",
         "from": ["orbeetle"]
       },
+      "heightDm": 140,
+      "weightHg": null,
       "sprite": "10213",
       "tools": {
         "picker": "in",
         "dex": { "out": "battle-state" },
         "league": "in"
       },
-      "source": "legacy:src/league/data/powerupForms.json"
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

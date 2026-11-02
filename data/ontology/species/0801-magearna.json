@@ -5,6 +5,10 @@
     "nationalDex": 801,
     "captureRate": 3,
     "growthRate": "slow",
+    "genderRatio": { "kind": "genderless" },
+    "hatchCycles": 120,
+    "baseFriendship": 0,
+    "genus": { "en": "Artificial Pokémon" },
     "legendaryClass": "mythical",
     "tags": [],
     "varietyAxes": [
@@ -13,19 +17,23 @@
         "values": ["original"]
       }
     ],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "magearna",
       "types": ["steel", "fairy"],
+      "abilities": { "first": "soul-heart" },
       "baseStats": { "hp": 80, "atk": 95, "def": 115, "spe": 65, "spa": 130, "spd": 115 },
+      "heightDm": 10,
+      "weightHg": 805,
       "color": "gray",
       "shape": "humanoid",
       "eggGroups": ["no-eggs"],
       "debut": "sun-moon",
       "sprite": "801",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "magearna-original",
@@ -49,6 +57,8 @@
         "from": ["magearna"]
       },
       "baseStats": { "hp": 80, "atk": 125, "def": 115, "spe": 95, "spa": 170, "spd": 115 },
+      "heightDm": 13,
+      "weightHg": 2481,
       "debut": "legends-za",
       "sprite": "10317",
       "tools": {
@@ -57,7 +67,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "magearna-original-mega",
@@ -66,6 +76,8 @@
         "from": ["magearna-original"]
       },
       "baseStats": { "hp": 80, "atk": 125, "def": 115, "spe": 95, "spa": 170, "spd": 115 },
+      "heightDm": 13,
+      "weightHg": 2481,
       "debut": "legends-za",
       "obtain": "standard",
       "sprite": "10318",
@@ -75,7 +87,7 @@
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "abilities": "inherited:unsourced", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 1024,
     "captureRate": 255,
     "growthRate": "slow",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 5,
+    "baseFriendship": 50,
+    "genus": { "en": "Tera Pokémon" },
     "legendaryClass": "restricted",
     "tags": [],
     "varietyAxes": [],
-    "standIn": { "dex": "terapagos-terastal" }
+    "standIn": { "dex": "terapagos-terastal" },
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "terapagos",
       "types": ["normal"],
+      "abilities": { "first": "tera-shift" },
       "baseStats": { "hp": 90, "atk": 65, "def": 85, "spe": 60, "spa": 65, "spd": 85 },
+      "heightDm": 2,
+      "weightHg": 65,
       "color": "blue",
       "shape": "quadruped",
       "eggGroups": ["no-eggs"],
       "debut": "scarlet-violet",
       "sprite": "1024",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "terapagos-terastal",
@@ -28,7 +36,10 @@
         "kind": "battle-mode",
         "from": ["terapagos"]
       },
+      "abilities": { "first": "tera-shell" },
       "baseStats": { "hp": 95, "atk": 95, "def": 110, "spe": 85, "spa": 105, "spd": 110 },
+      "heightDm": 3,
+      "weightHg": 160,
       "shape": "ball",
       "sprite": "10276",
       "tools": {
@@ -37,7 +48,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "terapagos-stellar",
@@ -46,7 +57,10 @@
         "teraType": "stellar",
         "from": ["terapagos-terastal"]
       },
+      "abilities": { "first": "teraform-zero" },
       "baseStats": { "hp": 160, "atk": 105, "def": 110, "spe": 85, "spa": 130, "spd": 110 },
+      "heightDm": 17,
+      "weightHg": 770,
       "sprite": "10277",
       "tools": {
         "picker": "in",
@@ -54,7 +68,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -5,22 +5,30 @@
     "nationalDex": 952,
     "captureRate": 75,
     "growthRate": "medium",
+    "genderRatio": { "kind": "ratio", "femaleEighths": 4 },
+    "hatchCycles": 20,
+    "baseFriendship": 50,
+    "genus": { "en": "Spicy Pepper Pokémon" },
     "legendaryClass": "none",
     "tags": [],
     "varietyAxes": [],
-    "standIn": {}
+    "standIn": {},
+    "sourceOf": { "genderRatio": "pokeapi@bc92d3b6", "hatchCycles": "pokeapi@bc92d3b6", "baseFriendship": "pokeapi@bc92d3b6", "genus": "pokeapi@bc92d3b6" }
   },
   "forms": [
     {
       "id": "scovillain",
       "types": ["grass", "fire"],
+      "abilities": { "first": "chlorophyll", "second": "insomnia", "hidden": "moody" },
       "baseStats": { "hp": 65, "atk": 108, "def": 65, "spe": 75, "spa": 108, "spd": 65 },
+      "heightDm": 9,
+      "weightHg": 150,
       "color": "green",
       "shape": "upright",
       "eggGroups": ["plant"],
       "debut": "scarlet-violet",
       "sprite": "952",
-      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     },
     {
       "id": "scovillain-mega",
@@ -28,7 +36,10 @@
         "kind": "mega",
         "from": ["scovillain"]
       },
+      "abilities": { "first": "spicy-spray" },
       "baseStats": { "hp": 65, "atk": 138, "def": 85, "spe": 75, "spa": 138, "spd": 85 },
+      "heightDm": 12,
+      "weightHg": 220,
       "debut": "legends-za",
       "sprite": "10320",
       "tools": {
@@ -37,7 +48,7 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
-      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [
