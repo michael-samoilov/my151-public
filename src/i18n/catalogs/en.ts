@@ -403,8 +403,6 @@ export const enUi = {
   'footer.disclaimer': 'Not affiliated with or endorsed by Nintendo.',
   'footer.report': 'Report a problem',
   'header.tagline': ' — make your own custom Pokédex',
-  'header.toolNameCore': 'Pokédex Maker',
-  'header.toolNameQualifier': 'Custom',
   'home.dex.blurb': 'Make a dex from regional dex archetypes',
   'home.dex.buildAlt': 'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
   'home.dex.exportAlt': 'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',

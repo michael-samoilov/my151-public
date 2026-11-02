@@ -63,8 +63,6 @@
   "common.skipToMain": "본문 바로가기",
   "dex.national": "전국도감",
   "header.tagline": " — 나만의 포켓몬 도감을 만들어 보세요",
-  "header.toolNameCore": "도감 만들기",
-  "header.toolNameQualifier": "나만의 포켓몬",
   "intro.body": "나만의 지방 도감을 구성하고, 자세한 통계를 분석한 다음, 이미지로 내보내 저장하고 공유해 보세요.",
   "intro.dismiss": "소개 닫기",
   "intro.headline": "나만의 {count}마리를 만들어 보세요",

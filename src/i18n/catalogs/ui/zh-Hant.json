@@ -63,8 +63,6 @@
   "common.skipToMain": "跳到主要內容",
   "dex.national": "全國圖鑑",
   "header.tagline": " — 製作你自己的寶可夢圖鑑",
-  "header.toolNameCore": "寶可夢圖鑑製作器",
-  "header.toolNameQualifier": "自訂",
   "intro.body": "打造你的地區圖鑑，分析詳細統計，再匯出為圖片，儲存副本並分享。",
   "intro.dismiss": "關閉簡介",
   "intro.headline": "打造你自己的{count}隻",
