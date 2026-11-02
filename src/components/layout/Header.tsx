@@ -54,7 +54,7 @@ function useFitTitle() {
       const style = getComputedStyle(row);
       const room = (row.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 2 * parseFloat(style.columnGap) - base - shown) / 2;
       for (const el of [fullName.current, shortName.current]) {
-        if (!el?.offsetWidth) continue;
+        if (!el?.offsetWidth || (el.parentElement?.clientWidth ?? 0) < 2) continue;
         const k = Math.min(1, room / el.offsetWidth);
         el.style.transform = k < 1 ? `scaleX(${k})` : '';
       }
@@ -66,6 +66,8 @@ function useFitTitle() {
   });
   return { nav, fullName, shortName };
 }
+
+const TOOL_NAME = 'm-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground';
 
 function tabTriggerClass(selected: boolean) {
   return cn(
@@ -132,10 +134,14 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
         style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}
       >
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-          <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            <span ref={fullName} className="inline-block origin-left leading-none max-[680px]:hidden">{t('home.dex.title')}</span>
-            <span ref={shortName} className="inline-block origin-left leading-none min-[681px]:hidden">{t('tools.dex')}</span>
+          {/* The heading always holds the full name, for search and screen
+              readers. Phones see the Tools menu name in its place. */}
+          <h1 className={cn(TOOL_NAME, 'max-[680px]:sr-only')}>
+            <span ref={fullName} className="inline-block origin-left leading-none">{t('home.dex.title')}</span>
           </h1>
+          <span aria-hidden className={cn(TOOL_NAME, 'min-[681px]:hidden')}>
+            <span ref={shortName} className="inline-block origin-left leading-none">{t('tools.dex')}</span>
+          </span>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
             <span className="font-extrabold text-primary">{count}</span>
             <span className="text-foreground">/151</span>
