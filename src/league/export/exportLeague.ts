@@ -8,6 +8,7 @@ import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 import { localeUppercase, pokemonLabel, t } from '@/i18n';
+import { moveCategorySpriteUrl } from '@/lib/spriteUrl';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember, type CardCell } from '../model/engine';
@@ -127,7 +128,7 @@ function cardImageUrls(card: GymCard): string[] {
     }
   }
   const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-  if (move) urls.push(`/sprites/moves/${move.category}.png`);
+  if (move) urls.push(moveCategorySpriteUrl(move.category));
   return urls;
 }
 
@@ -149,7 +150,7 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
   cards.forEach((card, index) => {
     if (layout.showTmReward) {
       const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-      if (move) urls.push(`/sprites/moves/${move.category}.png`);
+      if (move) urls.push(moveCategorySpriteUrl(move.category));
     }
     if (card.lines.length === 0) return;
     for (const row of homeRowsForCard(index, view, layout)) {
@@ -619,7 +620,7 @@ function drawTmSlot(
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2 * L.K;
   ctx.stroke();
-  const icon = images.get(`/sprites/moves/${move.category}.png`);
+  const icon = images.get(moveCategorySpriteUrl(move.category));
   if (icon) {
     const iw = L.TM_CHIP_W * 0.62;
     const ih = (icon.naturalHeight / (icon.naturalWidth || 1)) * iw;
@@ -1060,7 +1061,7 @@ function homeDetailLines(
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1.2 * L.K2;
         ctx.stroke();
-        const catIcon = images.get(`/sprites/moves/${move.category}.png`);
+        const catIcon = images.get(moveCategorySpriteUrl(move.category));
         if (catIcon) {
           const iw = L.HOME_DETAIL_CHIP_W * 0.62;
           const ih = (catIcon.naturalHeight / (catIcon.naturalWidth || 1)) * iw;

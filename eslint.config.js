@@ -6,6 +6,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import my151 from './scripts/eslint/plugin.mjs'
+import { writtenRulesConfig } from './scripts/eslint/writtenRules.mjs'
 
 const sharedRules = {
   'no-empty': ['error', { allowEmptyCatch: true }],
@@ -90,4 +91,6 @@ export default defineConfig([
     plugins: { my151 },
     rules: { 'my151/no-comments': 'error' },
   },
+
+  ...writtenRulesConfig,
 ])

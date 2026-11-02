@@ -1,6 +1,8 @@
+import { revisedSprite } from '@/lib/spriteUrl';
+
 export const FAVORITE_ORNAMENTS = {
-  leaf: '/sprites/export/shiny-leaf.png',
-  crown: '/sprites/export/leaf-crown.png',
+  leaf: revisedSprite('/sprites/export/shiny-leaf.png'),
+  crown: revisedSprite('/sprites/export/leaf-crown.png'),
   crownX: 1007, crownY: 681, crownWidth: 93, crownHeight: 54,
   halfHeight: 98, depth: 32.5, centerY: 840, midpointX: 819.5,
   mirrorAxisX: 1053, stations: 11, visibleLeaves: 10, lowerTail: 12,

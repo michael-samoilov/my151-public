@@ -6,6 +6,10 @@ export function revisedSprite(path: string): string {
   return revision ? `${path}?v=${revision}` : path;
 }
 
+export function moveCategorySpriteUrl(category: string): string {
+  return revisedSprite(`/sprites/moves/${category}.png`);
+}
+
 export function pokemonSpriteUrl(id: number | string): string {
   return revisedSprite(`/sprites/pokemon/${id}.png`);
 }

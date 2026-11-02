@@ -67,13 +67,13 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
 
   use: {
     baseURL: `http://localhost:${PREVIEW_PORT}`,
-    trace: 'on-first-retry',
+    trace: 'off',
 
     launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {},
     // platform: Playwright's default chrome-headless-shell snaps glyph advances to whole pixels, so pinning the chromium channel matches full Chromium.
