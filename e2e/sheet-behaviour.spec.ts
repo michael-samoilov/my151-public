@@ -1,18 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * **Focusing a field must not zoom the page.** iOS Safari zooms the whole
- * viewport when a field with a font smaller than 16px takes focus. The app's
- * root font size floors at 16px, so `text-sm` lands at 14 — and the feedback
- * textarea is autofocused, so the zoom fired on open rather than on tap. The
- * shared `Input` component already carried `text-base md:text-sm` for exactly
- * this reason; the raw `<textarea>` had not followed it.
- *
- * The zoom itself is a WebKit behaviour that Chromium does not reproduce, so
- * asserting on a zoom level here would prove nothing. The *cause* is testable
- * and deterministic: the computed font size of the focused field. That is what
- * this checks, on the real element, at a mobile width.
- */
+// Focusing a field must not zoom the page.
+// platform: iOS Safari zooms the page when a field under 16px takes focus; Chromium does not, so the test checks the computed font size.
 
 test.describe('mobile sheet', () => {
   test.use({ viewport: { width: 390, height: 844 } });
@@ -66,14 +55,7 @@ test.describe('mobile sheet', () => {
   });
 
   test('the whole form stays above the on-screen keyboard', async ({ page }) => {
-    // `position: fixed` anchors to the layout viewport, which does not shrink
-    // when the keyboard opens — so a bottom-anchored sheet keeps its bottom
-    // edge underneath it, hiding the tail of the textarea, the disclosure and
-    // the submit button. On the one surface whose entire purpose is typing.
-    //
-    // Chromium has no keyboard to raise, so the keyboard is simulated the way
-    // iOS reports one: the visual viewport gets shorter while the layout
-    // viewport does not. That is exactly the signal the fix reads.
+    // platform: position: fixed anchors to the layout viewport, which keeps its size when the iOS keyboard opens; only the visual viewport shrinks.
     await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();
     const dialog = page.getByRole('dialog');
@@ -84,11 +66,7 @@ test.describe('mobile sheet', () => {
     await page.evaluate((visible) => {
       const vv = window.visualViewport!;
       Object.defineProperty(vv, 'height', { value: visible, configurable: true });
-      // Report a *fractional* scale, the way iOS Safari does. Chromium hands
-      // back exactly 1, and the first version of this fix compared with
-      // `!== 1` — so it worked in the test and did nothing on a real phone,
-      // where the sheet stayed behind the keyboard. Simulating the tidy number
-      // is simulating the engine that never had the bug.
+      // platform: iOS Safari reports a fractional visual viewport scale where Chromium reports exactly 1.
       Object.defineProperty(vv, 'scale', { value: 0.9999999403953552, configurable: true });
       vv.dispatchEvent(new Event('resize'));
     }, KEYBOARD_LEAVES);

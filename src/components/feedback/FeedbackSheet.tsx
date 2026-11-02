@@ -103,6 +103,7 @@ function FeedbackForm({
   // Both returns render this node first, so React keeps it when the thanks
   // replaces the form. Screen readers announce text added to a status region
   // they already track more reliably than a region inserted with its text.
+  // platform: Screen readers announce text added to a tracked status region more reliably than a new region that arrives with its text.
   const sent = state === 'sent';
   const status = (
     <div role="status" className={sent ? 'px-4 py-8 flex flex-col items-center gap-2 text-center' : undefined}>
@@ -198,6 +199,8 @@ function FeedbackForm({
           // font size floors at 16px, so `text-sm` lands at 14. The field is
           // also autofocused, so the zoom fires on open rather than on tap.
           // Same rule the shared `Input` component already follows.
+          // platform: At a scroll end, iOS hands a textarea drag to the nearest scrollable ancestor; overscroll-contain stops that.
+          // platform: iOS Safari zooms the page when a field under 16px takes focus, so the field uses text-base below md.
           className={`w-full min-h-14 flex-1 overscroll-contain rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y ${
             tight ? '-mt-0.5' : '-mt-2'
           }`}

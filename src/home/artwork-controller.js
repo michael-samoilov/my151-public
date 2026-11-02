@@ -64,8 +64,7 @@ export function installHomeArtwork(poses) {
     committed = next;
     slot = nextSlot;
   }
-  // Freeze the parser's selected media before any viewport change can replace
-  // an outgoing image. Keep native AVIF/WebP selection for the first request.
+  // platform: A <picture> re-selects its <source> when a media query changes, so freeze pins each media query to the parser's choice.
   function freeze() {
     document.querySelectorAll('[data-home-picture] source').forEach(source => {
       const query = source.getAttribute('media');
@@ -177,8 +176,7 @@ export function installHomeArtwork(poses) {
     try {
       await stage(next, nextSlot, token);
       if (token !== generation || !same(next, target())) return;
-      // React reads a resource snapshot on its first render. Avoid committing
-      // a different snapshot while those existing nodes are being hydrated.
+      // platform: React hydration expects the resource snapshot it read on first render, so nothing new commits while nodes hydrate.
       if (root.classList.contains('p151-hub-hydrating')) return;
       expose(next, nextSlot);
       keys.forEach(key => {

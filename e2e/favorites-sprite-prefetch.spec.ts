@@ -9,14 +9,14 @@ interface Requests { bulk: string[]; cells: string[]; files: string[]; firstBulk
  * Requests that reach the server, by kind. A request the service worker
  * answers from its cache does not count; one it passes to the network does.
  */
-function countRequests(target: Page | BrowserContext): Requests {
+function countServerRequests(target: Page | BrowserContext): Requests {
   const seen: Requests = { bulk: [], cells: [], files: [], firstBulkCount: null };
   let firstBulk: string | null = null;
   target.on('request', (request) => {
     if (request.url().includes('/sprites/packs/picker-sprites-')) firstBulk ??= request.url();
   });
   target.on('requestfinished', async (request) => {
-    // A request can finish after its page closes.
+    // platform: Playwright can finish a request after its page closes, and request.response() then rejects.
     const response = await request.response().catch(() => null);
     if (!response || response.fromServiceWorker()) return;
     const url = request.url();
@@ -45,7 +45,7 @@ async function expectSelectorDrawn(page: Page) {
 test('a desktop loads only Normal / Gen I until a cell is hovered, then that cell, and the rest after it opens', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...DESKTOP, serviceWorkers: 'block' });
   const page = await context.newPage();
-  const requests = countRequests(page);
+  const requests = countServerRequests(page);
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-water-1').waitFor();
   await expect.poll(() => requests.bulk.length).toBeGreaterThan(0);
@@ -81,7 +81,7 @@ test('a desktop loads only Normal / Gen I until a cell is hovered, then that cel
 test('a touch screen at desktop width loads only Normal / Gen I before a tap', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
   const page = await context.newPage();
-  const requests = countRequests(page);
+  const requests = countServerRequests(page);
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-water-1').waitFor();
   await expect.poll(() => requests.bulk.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ test('a touch screen at desktop width loads only Normal / Gen I before a tap', a
 test('a touch screen loads Normal / Gen I first, then the packs of the cells in view, before a tap', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, serviceWorkers: 'block' });
   const page = await context.newPage();
-  const requests = countRequests(page);
+  const requests = countServerRequests(page);
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-water-1').waitFor();
   await expect.poll(() => requests.bulk.length).toBeGreaterThan(1);
@@ -116,7 +116,7 @@ test('when the packs fail, a selector fills from single files', async ({ browser
   const context = await browser.newContext({ baseURL, ...DESKTOP, serviceWorkers: 'block' });
   await context.route('**/sprites/packs/**', (route) => route.abort());
   const page = await context.newPage();
-  const requests = countRequests(page);
+  const requests = countServerRequests(page);
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-water-1').click();
   const drawn = await expectSelectorDrawn(page);
@@ -154,7 +154,7 @@ test('a returning visitor’s picks draw from the service worker, with no reques
   })).toBeGreaterThan(0);
   await page.waitForTimeout(500);
 
-  const requests = countRequests(context);
+  const requests = countServerRequests(context);
   const again = await context.newPage();
   await again.goto('/favorite-pokemon-picker?lang=en');
   const returned = again.getByTestId('favorites-cell-water-1').locator('img[alt]:not([alt=""])');

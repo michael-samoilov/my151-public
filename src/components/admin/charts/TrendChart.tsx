@@ -340,7 +340,7 @@ function TrendChart({
               const overflow = Math.max(0, (bottom?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2 + (bottom?.growth ? growthFontSize(numSize) + 4 : 0));
               for (const label of gutterLabels) label.y -= overflow;
               const children = gutterLabels.map(label => countLabel(label.name, label.end, label.color, x, label.y, numSize, label.growth));
-              // Labels reorder as lines toggle; match windows by name to preserve their transforms.
+              // platform: ECharts merges custom-series children by index; byName keeps each label's transform when lines toggle.
               return { type: 'group', $mergeChildren: 'byName', children };
             },
           },

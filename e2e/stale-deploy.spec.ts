@@ -36,8 +36,7 @@ test('a tab opened before a deploy reloads when it opens Export, keeps the picks
   const reloaded = page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame());
   await page.getByTestId('favorites-export-open').click();
   await reloaded;
-  // Removing interception at navigation commit can strand the new stylesheet.
-  // Wait for the reloaded app before removing the missing-chunk routes.
+  // platform: Removing a Playwright route at navigation commit can strand the new stylesheet, so the routes stay until the app reloads.
   await expect(page.getByTestId('favorites-export-open')).toBeVisible();
   await page.unrouteAll();
   await expect(crashScreen(page)).toHaveCount(0);

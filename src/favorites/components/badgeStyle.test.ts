@@ -5,7 +5,7 @@ import { GEN_BADGE_FILL, generationOutlined } from './badgeStyle';
 import type { GenNumber } from '../model/cells';
 
 // WCAG 2 contrast of white text on a fill.
-function onWhite(hex: string): number {
+function whiteTextWcagContrast(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255;
     return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
@@ -14,9 +14,9 @@ function onWhite(hex: string): number {
 }
 
 it('reads every unoutlined gen badge segment at least as well as the palest type badge', () => {
-  const floor = Math.min(...Object.values(TYPE_COLORS).map(onWhite));
+  const floor = Math.min(...Object.values(TYPE_COLORS).map(whiteTextWcagContrast));
   const short = Object.entries(GEN_BADGE_FILL)
     .filter(([gen]) => !generationOutlined(Number(gen) as GenNumber))
-    .flatMap(([gen, stops]) => stops.filter(([, color]) => onWhite(color) < floor).map(([, color]) => `Gen ${gen} ${color}`));
+    .flatMap(([gen, stops]) => stops.filter(([, color]) => whiteTextWcagContrast(color) < floor).map(([, color]) => `Gen ${gen} ${color}`));
   expect(short).toEqual([]);
 });

@@ -102,7 +102,7 @@ function digest(lhr) {
   const categoryOf = {};
   for (const [id, category] of Object.entries(lhr.categories)) for (const ref of category.auditRefs) categoryOf[ref.id] ??= id;
   const scored = (a) => a.score !== null && ['binary', 'numeric', 'metricSavings'].includes(a.scoreDisplayMode);
-  // Lighthouse 13 reports the LCP element in the LCP breakdown insight.
+  // platform: Lighthouse 13 reports the LCP element in the LCP breakdown insight.
   const lcpNode = audits['lcp-breakdown-insight']?.details?.items?.find((item) => item.type === 'node');
   const observed = audits.metrics?.details?.items?.[0] ?? {};
   return {
@@ -138,14 +138,12 @@ async function snapshot(browser, url, profile) {
     images: [...document.images]
       .filter((img) => img.offsetWidth > 0 && img.complete && img.naturalWidth > 0)
       .map((img) => {
-        // For a `srcset` image, naturalWidth is the width `sizes` declares,
-        // whichever copy loaded. The file's own pixel width is in the
-        // descriptor of the copy that loaded.
+        // platform: For a `srcset` image, naturalWidth is the `sizes` width, so the file's pixel width comes from the loaded descriptor.
         const [, descriptor = ''] = img.srcset.split(',').map((c) => c.trim().split(/\s+/))
           .find(([url]) => new URL(url, location.href).href === img.currentSrc) ?? [];
         const filePixels = descriptor.endsWith('w') ? parseFloat(descriptor)
           : descriptor.endsWith('x') ? img.naturalWidth * parseFloat(descriptor) : img.naturalWidth;
-        // offsetWidth is the layout width, before rotation or scale.
+        // platform: offsetWidth is the layout width, before rotation or scale.
         return { name: img.alt || img.currentSrc.split('/').pop(), sharpness: filePixels / (img.offsetWidth * devicePixelRatio) };
       }),
   }));
@@ -206,8 +204,7 @@ holdBrowserLock();
   fs.mkdirSync(out);
   const servers = [];
   const tls = URL_TARGET ? null : selfSignedTls(work);
-  // Trust the lab's own certificate, and only it. A certificate error would
-  // also stop the service worker, which Lighthouse reports as a console error.
+  // platform: A certificate error stops the service worker, which Lighthouse reports as a console error, so the lab key is trusted.
   const trust = tls ? [`--ignore-certificate-errors-spki-list=${tls.spki}`] : [];
   const chrome = await lh.launch({ chromePath: chromiumPath(), chromeFlags: ['--headless=new', '--no-sandbox', ...trust] });
   const browser = await chromium.launch({ executablePath: chromiumPath(), args: trust });

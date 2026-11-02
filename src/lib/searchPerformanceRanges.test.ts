@@ -29,7 +29,7 @@ function daysBetween(start: string, end: string): string[] {
   return days;
 }
 
-/** Search Console keys hours in Pacific time; September is PDT. */
+// platform: Search Console keys hours in Pacific time, and September is PDT.
 function pacificHourKey(ms: number): string {
   return `${new Date(ms - 7 * HOUR_MS).toISOString().slice(0, 19)}-07:00`;
 }

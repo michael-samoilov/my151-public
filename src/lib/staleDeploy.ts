@@ -35,8 +35,7 @@ function reloadForNewerDeploy(): Promise<boolean> {
   return check;
 }
 
-// After a dropped connection, Chrome and Firefox fetch the module again on the next
-// import(). WebKit answers with the cached failure and sends no request.
+// platform: After a dropped connection, WebKit answers a repeat import() with the cached failure; Chrome and Firefox fetch again.
 const RETRY_DELAYS_MS = [1_000, 3_000];
 
 export function loadChunk<T>(load: () => Promise<T>, retryDelays = RETRY_DELAYS_MS): Promise<T> {

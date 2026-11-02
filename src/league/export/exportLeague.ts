@@ -1,18 +1,4 @@
-/**
- * The league's two exports, drawn on a canvas.
- *
- * `exportGymCard` renders one trainer's card; `exportLeagueHome` renders the
- * league summary at the layout's team mode, which the export pane starts at
- * the team toggle on screen. Both return a PNG blob
- * for `shareOrDownload`, which is the dex export's own platform path: the iOS
- * share sheet saves to Photos, Android takes the download so the gallery scans
- * it, and desktop gets a file.
- *
- * Nothing is rasterized from the DOM. The dex export settled that: an
- * html-to-image pass needs an SVG `<foreignObject>`, which hangs on iOS WebKit.
- * So the picture is redrawn from the same geometry the components lay out
- * with, and `layout.ts` holds the numbers both agree on.
- */
+// platform: Rasterizing the DOM needs SVG `<foreignObject>`, which hangs on iOS WebKit, so the export redraws on a canvas.
 
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -73,14 +59,7 @@ const GREY = '#a3a3a3';
 const NO_TYPE = '#9CA3AF';
 const HOME_LINE = '#f0f0f1';
 
-/**
- * The backing store's ceiling, in device pixels.
- *
- * iOS Safari refuses a canvas past roughly 16.7M pixels: `toBlob` never fires
- * its callback and the export spinner hangs. The dex export caps at the same
- * number; neither league page is near it at 1×, so this only ever matters if
- * the card grows.
- */
+// platform: iOS Safari refuses a canvas over about 16.7M pixels, and `toBlob` then never calls back.
 const MAX_CANVAS_AREA = 16_000_000;
 
 export function showcasePair(card: GymCard): { ace: number | null; partner: number | null } {
@@ -327,7 +306,7 @@ function layoutCaption(
     ctx.font = font(run.px, 800);
     const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(ctx, run.mark, run.px);
     const x = align === 'center' ? anchor - w / 2 : anchor - w;
-    // Tracking follows the last letter too, as in CSS, but it is not ink.
+    // platform: CSS letter-spacing also follows the last letter, so the tracked width includes space that is not ink.
     const ink = Math.max(0, w - run.track);
     const lineTop = top + i * L.HEAD_LINE;
     return {
@@ -657,9 +636,7 @@ function drawTmSlot(
 
   ctx.fillStyle = moveShades.band;
   if (nameScale < 1) ctx.font = font(L.NAME_PX * nameScale, 800);
-  // The cap height on every engine. WebKit's `emHeightAscent` is the font
-  // ascent (15px here, against a 12px cap), so it dropped the name 3px in the
-  // iPhone PNG. Blink has no `emHeightAscent` and always took the cap height.
+  // platform: WebKit's `emHeightAscent` is the font ascent and Blink has none, so the cap height is used on every engine.
   const ascent = capHeight(ctx);
   ctx.textBaseline = 'alphabetic';
   lines.forEach((line, i) => {
@@ -1371,8 +1348,7 @@ async function render(
   paint(ctx);
 
   return new Promise<Blob>((resolve, reject) => {
-    // iOS occasionally never invokes the callback, which would hang the export
-    // spinner for good. The dex export guards the same way.
+    // platform: iOS occasionally never calls the `toBlob` callback, so a timeout keeps the export spinner from hanging.
     const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
     canvas.toBlob((blob) => {
       window.clearTimeout(timer);

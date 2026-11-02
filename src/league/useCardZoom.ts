@@ -38,12 +38,10 @@ interface Settle {
 const FIT: CardZoom = { kind: 'fit' };
 const ZOOM_RANGE = { mobile: { min: 1, max: 4 }, desktop: { min: 1, max: 2.5 } };
 /** A pinch that ends below this returns the card to its fit. */
-const SNAP = 1.05;
+const MIN_KEPT_PINCH_ZOOM = 1.05;
 
 function frameStyle(state: CardZoom): CSSProperties {
-  // The browser never pinch-zooms the page over the card: this frame takes
-  // the pinch. A finger on a cell then always reaches the drag, which a
-  // zoomed page took for its own pan.
+  // platform: `touch-action: pan-x pan-y` stops the browser pinch-zooming the page over the card, so this frame takes the pinch.
   if (state.kind === 'fit') return { touchAction: 'pan-x pan-y' };
   return {
     touchAction: 'pan-x pan-y',
@@ -131,9 +129,7 @@ export function useCardZoom(
       const { state: now } = live.current;
       const startZoom = now.kind === 'zoomed' ? now.zoom : 1;
       const box = content.getBoundingClientRect();
-      // Clipped rather than scrolled while the content is transformed: a
-      // scroller clamps its scroll to content that shrinks under a pinch, and
-      // the clip also keeps the growing card off the toolbar above it.
+      // platform: A scroller clamps its scroll to content that shrinks under a transform, so the frame clips while a pinch transforms the content.
       frame.style.overflow = 'clip';
       const clipped = content.getBoundingClientRect();
       content.style.transformOrigin = '0 0';
@@ -155,7 +151,7 @@ export function useCardZoom(
       content.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
     };
     const commit = (p: Pinch) => {
-      const zoomed = p.zoom >= SNAP;
+      const zoomed = p.zoom >= MIN_KEPT_PINCH_ZOOM;
       const next: CardZoom = zoomed
         ? { kind: 'zoomed', zoom: p.zoom, windowPx: windowHeight(frame) }
         : { kind: 'fit' };
@@ -182,8 +178,7 @@ export function useCardZoom(
       commit(pinch);
       pinch = null;
     };
-    // iOS reports a touch pinch as gesture events too, and zooms the page on
-    // them unless they are cancelled. A trackpad pinch is left to the page.
+    // platform: iOS reports a touch pinch as gesture events too and zooms the page unless they are cancelled.
     const onGesture = (event: Event) => {
       if (pinch) event.preventDefault();
     };

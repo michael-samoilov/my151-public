@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
  * only where the pointer can hover, so a tap never leaves it showing. A control with no `--fill`
  * shows no hover.
  */
+// platform: Tailwind hover: applies only where the pointer can hover, so a tap never leaves the layer showing.
 export const HOVER_LAYER = cn(
   'relative isolate',
   "before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:content-['']",

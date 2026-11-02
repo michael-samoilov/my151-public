@@ -8,8 +8,7 @@ test.describe('intro format selection @viewport', () => {
       if (format === 'webp') {
         const cdp = await page.context().newCDPSession(page);
         await cdp.send('Emulation.setDisabledImageTypes', { imageTypes: ['avif'] });
-        // CDP disables picture selection, but still considers AVIF preloads supported.
-        // Model that missing MIME capability too; this is not a native old-browser test.
+        // platform: CDP disables picture source selection but still reports AVIF preloads as supported, so the test models the missing MIME support.
         await page.route('**/pokedex-builder?notme', async route => {
           const response = await route.fetch();
           const html = await response.text();

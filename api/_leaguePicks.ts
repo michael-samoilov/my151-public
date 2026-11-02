@@ -1,7 +1,7 @@
 import { LEAGUE_BOSS_ROW, type LeagueCardShape, type LeagueLineShape, type LeagueRecord } from './_leagueRecord.js';
 
 /** `[pokemonId, leagues]`, most leagues first, then lowest id. */
-export type LeaguePickRows = [string, number][];
+export type LeaguePickRows = [pokemonId: string, leagues: number][];
 
 export interface LeaguePicks {
   ace: LeaguePickRows;

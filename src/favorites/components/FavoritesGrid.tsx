@@ -191,16 +191,14 @@ function ZoomFrame({
   useZoomFrame({ frameRef, ref, mapRef, windowRef, cueRef }, desktop, fitFrame, () => {
     setShowScrollCue(false);
     try { sessionStorage.setItem('favorites-scroll-cue-seen', '1'); }
-    catch { /* Storage can be unavailable in private browsing. */ }
+    catch { /* platform: Storage access can throw in private browsing. */ }
   });
 
   return (
     <div ref={frameRef} className="relative h-full min-h-0 w-full">
       <div
         ref={ref}
-        // A sideways swipe stops at the grid's edge, so a trackpad cannot
-        // swipe the page back. Vertical scroll past the grid's top or bottom
-        // moves the page, so the footer stays reachable.
+        // platform: Without `overscroll-x-contain`, a sideways trackpad swipe past the grid's edge navigates the page back.
         className="isolate h-full w-full overflow-auto overscroll-x-contain bg-background"
         style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--head-row, var(--head))', scrollPaddingLeft: 'var(--head)' }}
         data-testid="favorites-grid-scroll"
@@ -508,9 +506,7 @@ function useZoomFrame(
       pinch = null;
       commit();
     };
-    // Safari reports trackpad and touch pinches as gesture events too. Touch
-    // events already drive a touch pinch, so these drive only a trackpad
-    // pinch. Cancelling them keeps Safari from zooming the page.
+    // platform: Safari reports trackpad and touch pinches as gesture events and zooms the page unless they are cancelled. Touch events drive the touch pinch.
     const onGestureStart = (event: Event) => {
       event.preventDefault();
       const gesture = event as GestureEventLike;
@@ -528,13 +524,11 @@ function useZoomFrame(
       pinch = null;
       commit();
     };
-    // Chromium and Firefox report a trackpad pinch as a ctrl+wheel event.
-    // Chromium sets deltaY to -100 * ln(scale). A mouse wheel step is larger,
-    // so cap each event. The grid lays out once the events pause.
+    // platform: Chromium and Firefox report a trackpad pinch as ctrl+wheel; Chromium sets deltaY to -100 * ln(scale). The cap limits larger mouse wheel steps.
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
-      // A Safari trackpad pinch already zooms through gesture events.
+      // platform: A Safari trackpad pinch already zooms through gesture events, so its ctrl+wheel events are ignored.
       if (pinch?.source === 'gesture') return;
       const delta = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * 33;
       const factor = Math.exp(-Math.max(-50, Math.min(50, delta)) / 100);
@@ -863,12 +857,10 @@ function BodyCell({
       data-row-banded={banded}
       className={cn(
         'relative min-h-0 min-w-0 overflow-visible border-[0.5px] border-neutral-200 p-0',
-        // Off-screen empty cells skip layout while a zoom resizes every
-        // cell. Filled cells cannot, because skipping clips their sprites.
+        // platform: `content-visibility: auto` lets off-screen empty cells skip layout during a zoom. It would clip a filled cell's sprite.
         !mon && !locked && '[content-visibility:auto]',
         locked
-          // A browser sends no click from a disabled button, so a locked cell
-          // lets clicks through to the grid, where they close an open selector.
+          // platform: A disabled button sends no click, so a locked cell lets clicks through to the grid, which closes an open selector.
           ? 'pointer-events-none bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
           : mon ? 'cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
         !locked && kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
@@ -959,7 +951,7 @@ function HoverControls({ children, name, mark, onShiny, onRemove }: {
           <ShinyDisc mark={mark} />
         </button>
       ) : null}
-      {/* No translateZ(0), unlike the Dex tile: a compositing layer per filled cell changes how the open selector's edges paint. */}
+      {/* platform: A compositing layer per filled cell, such as `translateZ(0)`, changes how the open selector's edges paint. */}
       <button
         type="button"
         aria-label={t('builder.remove', { name })}
@@ -1039,8 +1031,7 @@ function Filled({ mon, shiny, desktop }: { mon: PickerMon; shiny: boolean; deskt
   const pokemon = { types: mon.types } as Pokemon;
   const size = gridSpriteSizePercent(mon.sprite);
   const src = usePickerSprite((shiny ? pickerShinySprite(mon.id) : null) ?? mon.sprite, true);
-  // The ball behind the sprite skips layout off screen during a zoom. The
-  // sprite stays outside it, because skipping clips overflow.
+  // platform: `content-visibility: auto` clips overflow, so only the ball behind the sprite skips layout off screen during a zoom.
   return (
     <>
       <span className="pointer-events-none absolute inset-0 [content-visibility:auto]">

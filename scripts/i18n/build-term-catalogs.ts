@@ -38,7 +38,7 @@ const MOVES_DIR = 'src/i18n/moves';
  * The word HOME's box list adds after a region name ("Unova Region",
  * イッシュ地方). A name that differs only by it is the same name.
  */
-const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+const HOME_REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };
 
@@ -87,9 +87,7 @@ async function main(): Promise<void> {
     const missing: string[] = [];
     for (const { prefix, ids, rows } of sources) {
       for (const [key, id] of Object.entries(ids)) {
-        // region_names.csv has no Spanish rows at all. Region names are proper
-        // nouns that fr/de/it render identically to English, so English is a
-        // faithful stand-in rather than an untranslated gap.
+        // platform: PokeAPI region_names.csv has no Spanish rows, so the English proper noun stands in.
         const value = rows.get(`${id}:${langId}`) ?? rows.get(`${id}:${LANGUAGE_IDS.en}`);
         if (value) out[`${prefix}.${key}`] = value;
         else missing.push(`${prefix}.${key}`);
@@ -101,7 +99,7 @@ async function main(): Promise<void> {
       const key = `region.${id}`;
       const ours = out[key];
       const theirs = home.text[locale];
-      const suffix = REGION_SUFFIX[locale] ?? '';
+      const suffix = HOME_REGION_SUFFIX[locale] ?? '';
       if (!theirs || theirs === ours || theirs === `${ours}${suffix}`) continue;
       if (suffix && theirs.endsWith(suffix)) {
         throw new Error(`${locale} ${key}: PokeAPI says ${ours}, ${home.qid} says ${theirs}; decide which by hand`);

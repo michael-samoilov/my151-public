@@ -43,6 +43,7 @@ import { brotliCompressSync, constants } from 'node:zlib';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const budgetsFile = join(root, 'scripts/performance/budgets.json');
 const HEADROOM = 1.05;
+const VERCEL_BROTLI_QUALITY = 11;
 const IMAGE = new Set(['.avif', '.gif', '.jpg', '.jpeg', '.png', '.svg', '.webp']);
 
 const distFlag = process.argv.indexOf('--dist');
@@ -63,13 +64,10 @@ const budgets = JSON.parse(readFileSync(budgetsFile, 'utf8'));
 
 const brotli = (file) =>
   brotliCompressSync(readFileSync(join(dist, file)), {
-    params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
+    params: { [constants.BROTLI_PARAM_QUALITY]: VERCEL_BROTLI_QUALITY },
   }).length;
 
-/** Rolldown may merge a dynamic catalog into a shared chunk with no source key.
- * Resolve its emitted glob loader instead of dropping that startup download.
- * Require one destination, since guessing by chunk name could select UI copy.
- */
+// platform: Rolldown can merge a dynamic catalog into a shared chunk with no source key, so this resolves its emitted glob loader.
 function manifestChunk(key) {
   if (manifest[key]) return manifest[key];
   const catalog = /^src\/i18n\/(names|picker-names)\/(.+)$/.exec(key);

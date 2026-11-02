@@ -19,7 +19,7 @@ type ToolId = (typeof TOOLS)[number]['id'];
 /** `hover` closes when the mouse leaves; `pinned` (a click or tap) waits for a click elsewhere. */
 type MenuState = 'closed' | 'hover' | 'pinned';
 
-const OPEN_DELAY = 100;
+const MOUSE_REST_OPEN_DELAY_MS = 100;
 const CLOSE_DELAY = 100;
 const AIM_GRACE = 400;
 
@@ -151,7 +151,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
         if (menuRef.current?.parentElement?.querySelector('[aria-expanded="true"]')) return;
         // Opens once the mouse stops on the button, so a mouse that crosses
         // it on the way to the toolbar below never opens the menu over it.
-        openTimer.current = window.setTimeout(() => setMenu('hover'), OPEN_DELAY);
+        openTimer.current = window.setTimeout(() => setMenu('hover'), MOUSE_REST_OPEN_DELAY_MS);
       }}
       onPointerLeave={() => window.clearTimeout(openTimer.current)}
       onClick={() => {
@@ -184,6 +184,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
               // Radix mirrors the content into a hidden copy for screen
               // readers; with a label it mirrors only the words, not the
               // close button.
+              // platform: Radix mirrors popover content into a hidden copy for screen readers; an aria-label limits the copy to the words.
               aria-label={callout.text}
               className={cn('z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary', callout.allowThrough && 'pointer-events-none')}
             >

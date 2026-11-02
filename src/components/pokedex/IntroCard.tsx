@@ -81,6 +81,7 @@ const SHOT_AVIFS = [shot45Avif, shot95Avif, shot151Avif] as const;
  *  332px. Width/height attributes give the ratio up front, so the cards hold
  *  their final size from first paint. Keep in sync with the files in
  *  src/assets/intro/ if they are ever re-exported. */
+// platform: Without width and height attributes, a w-auto image has no aspect ratio until it decodes, so the card collapses to a sliver.
 const SHOT_DIMS = [
   { width: 390, height: 620 },
   { width: 348, height: 620 },
@@ -112,6 +113,7 @@ const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.comp
  *  stops at the card's box, so those notches showed as white wedges inside the
  *  shadow. A drop shadow follows the image's own outline. Tuned by eye to
  *  match `shadow-lg` on the other two cards. */
+// platform: A CSS box shadow stops at the element's box, but a drop-shadow filter follows the image's transparent outline.
 const EXPORT_SHOT_SHADOW = 'drop-shadow(0 8px 8px rgb(0 0 0 / 0.1)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.08))';
 
 function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean }) {

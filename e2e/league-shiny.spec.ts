@@ -90,13 +90,13 @@ test('picks made with Shiny on are shiny on the card, its ace, partner, and lege
     ctx.drawImage(img, 0, 0);
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
     // Pixels on the star's fill gradient, within rounding.
-    let stars = 0;
+    let starFillPixels = 0;
     for (let i = 0; i < data.length; i += 4) {
       const t = (from[1] - data[i + 1]) / (from[1] - to[1]);
       if (t < 0 || t > 1) continue;
-      if (Math.abs(data[i] - (from[0] + (to[0] - from[0]) * t)) <= 4 && Math.abs(data[i + 2] - (from[2] + (to[2] - from[2]) * t)) <= 6) stars++;
+      if (Math.abs(data[i] - (from[0] + (to[0] - from[0]) * t)) <= 4 && Math.abs(data[i + 2] - (from[2] + (to[2] - from[2]) * t)) <= 6) starFillPixels++;
     }
-    return { width: canvas.width, height: canvas.height, starPixels: stars };
+    return { width: canvas.width, height: canvas.height, starPixels: starFillPixels };
   }, STAR_FILL);
   await page.keyboard.press('Escape');
   await testInfo.attach('card-export.json', { body: JSON.stringify(exported, null, 2), contentType: 'application/json' });

@@ -127,9 +127,7 @@ test.describe('a Retina desktop', () => {
     const cdp = await context.newCDPSession(page);
     const moveTo = async (deviceScaleFactor: number) => {
       await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 790, deviceScaleFactor, mobile: false });
-      // Emulation changes the ratio without the notice a real move between
-      // monitors sends (the resolution media query's change event), so send
-      // the resize the app listens for as well.
+      // platform: Device-scale emulation sends no resolution media query change event, so the test also dispatches the resize the app listens for.
       await page.evaluate(() => window.dispatchEvent(new Event('resize')));
       await settle(page);
       return summary(page);

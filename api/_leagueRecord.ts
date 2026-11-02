@@ -69,9 +69,9 @@ export interface LeagueCardShape {
   /** The card's TM move. */
   tm?: number;
   /** Legendaries on the endgame row, as [seat, pokemonId], with a third element of 1 when shiny. */
-  lg?: [number, number, 1?][];
+  lg?: [seat: number, pokemonId: number, shiny?: 1][];
   /** Powerups, as [row, seat, formIndex, 0 for mega or 1 for dynamax]. */
-  pw?: [number, number, number, number][];
+  pw?: [row: number, seat: number, formIndex: number, isDynamax: number][];
 }
 
 export interface LeagueSessionEntry {

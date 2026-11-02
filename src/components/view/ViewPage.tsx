@@ -109,6 +109,7 @@ function useTileSize(colFactor: number, rowFactor: number, reserveH: number = 0)
 /** True once web fonts have finished loading, so canvas text measurement (used
  *  to fit section names) reflects the real Inter metrics rather than a fallback.
  *  Flips state on load to trigger a re-measure/re-render. */
+// platform: Canvas text measurement uses a fallback font until web fonts load, so labels re-measure once fonts are ready.
 function useFontsReady(): boolean {
   const [ready, setReady] = useState(
     () => typeof document !== 'undefined' && (document as Document).fonts?.status === 'loaded',
@@ -538,6 +539,8 @@ export function ViewPage() {
   // BEFORE the browser paints — otherwise the panel briefly paints at scale 1
   // (full natural size, oversized text) for one frame before shrinking, which
   // reads as a flicker when arriving on the View page.
+  // platform: ResizeObserver reports the layout box, which a CSS transform does not change.
+  // platform: React runs useLayoutEffect before the browser paints, so the first scale applies without a one-frame flicker.
   useLayoutEffect(() => {
     const el = statsContentRef.current;
     if (!el) return;

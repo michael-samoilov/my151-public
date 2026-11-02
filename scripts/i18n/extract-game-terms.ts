@@ -60,7 +60,7 @@ interface SourceBlock {
 }
 
 /** The files read, newest game first. Masters has no Simplified Chinese. */
-const FILES = [
+const CORPUS_FILES_NEWEST_FIRST = [
   ['Champions', 'ms'],
   ['LegendsZA', 'common'],
   ['HOME', 'megaturtle_nx'],
@@ -95,7 +95,7 @@ async function readGz(game: string, file: string, lang: string): Promise<string[
   const want = PINS[`${game}/${file}`]?.[lang];
   if (want && want !== hash) throw new Error(`${path}: SHA-256 ${hash} differs from the pinned ${want}`);
   (sha256[`${game}/${file}`] ??= {})[lang] = hash;
-  // CRLF dumps: a bare "\n" split would leave a carriage return on every value.
+  // platform: The poke-corpus dumps use CRLF line endings, so a bare "\n" split leaves a carriage return on each value.
   return gunzipSync(bytes).toString('utf8').split(/\r?\n/);
 }
 
@@ -103,7 +103,7 @@ type Table = Map<string, Text>;
 const tables = new Map<string, Table>();
 
 async function load(): Promise<void> {
-  for (const [game, file] of FILES) {
+  for (const [game, file] of CORPUS_FILES_NEWEST_FIRST) {
     const ids = await readGz(game, file, 'qid');
     if (!ids) throw new Error(`${game}/${file}: no qid file`);
     const table: Table = new Map(ids.map((id) => [id, {}]));
@@ -124,8 +124,7 @@ function message(game: string, file: string, qid: string): Sourced {
   const text = tables.get(`${game}/${file}`)?.get(qid);
   if (!text?.en) throw new Error(`${game}/${file}: no ${qid}`);
   for (const [locale, value] of Object.entries(text)) {
-    // A control code means the game composes the label at runtime, so the
-    // line is not the literal a player reads.
+    // platform: A game text control code means the game composes the label at runtime, so the line is no literal.
     if (/\[VAR |\[~ |\[Name:/.test(value)) throw new Error(`${qid} ${locale} is not a literal: ${value}`);
   }
   return { game, file, qid, text };
@@ -262,8 +261,7 @@ function title(id: string, locale: Locale): { value: string; from: Sourced } | u
   const from = message(def.game, def.file, def.qid);
   const line = from.text[locale];
   if (!line) return undefined;
-  // Bank shows the Japanese title to its Chinese players for the games that
-  // never came out in Chinese. That is not a Chinese name for them.
+  // platform: Pokémon Bank shows Chinese players the Japanese title for games with no Chinese release; that is no Chinese name.
   if (locale.startsWith('zh') && JAPANESE_SCRIPT.test(line)) return undefined;
   if (!def.brand) return { value: line, from };
   if (!BRAND[locale].test(line)) throw new Error(`${def.qid} ${locale}: ${JSON.stringify(line)} does not open with the series name`);
@@ -279,7 +277,7 @@ function title(id: string, locale: Locale): { value: string; from: Sourced } | u
  * Chinese release), the Totem and Titan Pokémon as a group. A localized label
  * names only the titles the games give it; `english` lists what it leaves out.
  */
-const SUBLABELS: Record<string, { titles: string[]; omits?: string }> = {
+const GAME_TITLE_SUBLABELS: Record<string, { titles: string[]; omits?: string }> = {
   'archetype.gift-pokemon.sub.0': { titles: ['red', 'blue'], omits: 'Yellow: the Champions series list names Red and Blue (Red and Green in Japanese) only.' },
   'archetype.gift-pokemon.sub.1': { titles: ['gold', 'silver'] },
   'archetype.gift-pokemon.sub.2': { titles: ['ruby', 'sapphire', 'emerald'] },
@@ -304,7 +302,7 @@ const SUBLABELS: Record<string, { titles: string[]; omits?: string }> = {
 };
 
 function gameTitleTerms(): GameTerm[] {
-  return Object.entries(SUBLABELS).map(([key, { titles, omits }]) => {
+  return Object.entries(GAME_TITLE_SUBLABELS).map(([key, { titles, omits }]) => {
     const text: Text = {};
     const english: Partial<Record<Locale, string>> = {};
     const from = new Map<string, Sourced>();
@@ -374,11 +372,8 @@ const PEOPLE: Record<string, [game: string, file: string, qid: string]> = {
   penny: ['ScarletViolet', 'common', 'sv.trname.TRNAME_BOTAN'],
 };
 
-// Japanese trainer classes before Scarlet/Violet spell the team in kana
-// (アクアだん), as children's-mode text does. Pokémon Masters EX writes every
-// team in kanji (#アクア団), like Scarlet/Violet's スター団. Its profile hashtags
-// name the teams; `villainTerms` drops the #.
-const JA_TEAMS: Record<string, [game: string, file: string, qid: string]> = {
+// platform: Japanese trainer classes before Scarlet/Violet spell teams in kana; Pokémon Masters EX hashtags spell them in kanji with a leading #.
+const JAPANESE_KANJI_TEAM_SOURCES: Record<string, [game: string, file: string, qid: string]> = {
   rocket: ['Masters', 'messages', 'masters.speaker_name.speaker_109'],
   magma: ['Masters', 'messages', 'masters.profile_hash_tag_name.280001000'],
   aqua: ['Masters', 'messages', 'masters.profile_hash_tag_name.280002000'],
@@ -415,10 +410,9 @@ function villainTerms(): GameTerm[] {
         from.set(source.qid, source);
         return source.text[locale];
       };
-      // The trainer class is the team name plus the possessive 的 ("Team
-      // Aqua's", as in "Team Aqua's Grunt"). The label names the team itself.
+      // platform: The game's trainer class is the team name plus the possessive 的, so the label drops it to name the team.
       const teamNames = teams.map((id) =>
-        locale === 'ja' && JA_TEAMS[id] ? pick(id, JA_TEAMS)?.replace(/^#/, '') : pick(id)?.replace(/的$/, ''));
+        locale === 'ja' && JAPANESE_KANJI_TEAM_SOURCES[id] ? pick(id, JAPANESE_KANJI_TEAM_SOURCES)?.replace(/^#/, '') : pick(id)?.replace(/的$/, ''));
       const names = people.map((id) => pick(id));
       // N is the same letter in every script, and Masters has every other language.
       const missing = people.filter((_, i) => !names[i]);
@@ -515,7 +509,7 @@ async function main(): Promise<void> {
   const used = new Set(terms.flatMap((t) => t.from.map((f) => `${f.game}/${f.file}`)));
   used.add('HOME/megaturtle_nx');
   const fixture: GameTermsFixture = {
-    source: source(FILES.map(([g, f]) => `${g}/${f}`).filter((k) => used.has(k))),
+    source: source(CORPUS_FILES_NEWEST_FIRST.map(([g, f]) => `${g}/${f}`).filter((k) => used.has(k))),
     note: 'Sourced values for catalog keys (src/i18n/catalogs/terms) and Tauros form names (src/i18n/names). `npm run i18n:terms` and `npm run i18n:names` copy them in; `npm run i18n:verify` holds the catalogs to them.',
     terms,
     regions: regions(),

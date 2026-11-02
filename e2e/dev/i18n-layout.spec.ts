@@ -45,10 +45,7 @@ test.describe('pseudo-locale layout', () => {
             if (!text.startsWith('[')) continue;
             const r = el.getBoundingClientRect();
             if (r.width <= 1 || r.height <= 1) continue;
-            // Text nobody can see cannot be clipped: the FAQ under the footer
-            // sits in a closed <details>, whose content keeps a box but is not
-            // rendered (content-visibility), so its paragraphs report a
-            // zero client width against a real scroll width.
+            // platform: A closed <details> keeps its content's boxes but renders nothing, so its text reports zero client width.
             if (!(el as HTMLElement).checkVisibility()) continue;
             if (getComputedStyle(el).textOverflow === 'ellipsis') continue;
             if (el.scrollWidth > el.clientWidth + 1) bad.push(text.slice(0, 40));
@@ -73,7 +70,7 @@ test.describe('section outline labels in every language', () => {
   // full name stays even when squeezed to about 60% of its width (Evil Team,
   // Domestic). Below 54% it is too long, and its one-cell form keeps the same
   // words (Legend for Legendary), never a different word (Pets, Lava).
-  const FLOOR = 0.54;
+  const MIN_FULL_NAME_SCALE = 0.54;
   const CELL_EM = 0.86 / 0.26;
 
   async function labels(page: Page, lang: string) {
@@ -113,7 +110,7 @@ test.describe('section outline labels in every language', () => {
       const found = await labels(page, lang);
       results[lang] = found;
       for (const l of found) {
-        if (l.scale < FLOOR) bad.push(`${lang} "${l.text}" squashed to ${l.scale.toFixed(2)}`);
+        if (l.scale < MIN_FULL_NAME_SCALE) bad.push(`${lang} "${l.text}" squashed to ${l.scale.toFixed(2)}`);
         if (l.widthEm > CELL_EM + 0.05) bad.push(`${lang} "${l.text}" is ${l.widthEm.toFixed(2)}em wide in a ${CELL_EM.toFixed(2)}em cell`);
       }
     }

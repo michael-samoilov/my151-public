@@ -96,6 +96,7 @@ export function PokemonTileContent({
         their sprite at first paint; off-screen tiles defer until scrolled
         into view.
       */}
+      {/* platform: A CSS background-image ignores loading="lazy", so the sprite is an img element to defer off-screen requests. */}
       <div
         style={{
           width: `${imagePx}px`,
@@ -116,6 +117,7 @@ export function PokemonTileContent({
           draggable={false}
           // Tailwind's reset constrains img to `max-width: 100%`; override
           // so the 2× sprite can overflow its narrower flex parent.
+          // platform: The Tailwind reset sets img max-width to 100%, so maxWidth none lets the 2x sprite overflow its parent.
           style={{ imageRendering: 'pixelated', maxWidth: 'none', ...spriteStyle }}
         />
         {spriteOverlay}

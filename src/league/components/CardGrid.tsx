@@ -211,18 +211,7 @@ const bossRowByColumn: CollisionDetection = (args) => {
   return best ? [{ id: best.id, data: { droppableContainer: best, value: bestDistance } }] : [];
 };
 
-/**
- * The face a drag lifts off the card: the grabbed cell, as it paints.
- *
- * The copy in hand is portalled out of the card's CSS `zoom`, so it has to be
- * sized from what the cell paints rather than from what it declares. dnd-kit's
- * own rect cannot answer that twice over: it is the unzoomed layout box, and
- * it is still null while `onDragStart` runs.
- *
- * The corner is read off the cell rather than restated, because `rounded-md`
- * is a theme token whose value moves with the root font size — hard-coding it
- * gave a 5px corner where the desktop card paints 8px.
- */
+// platform: dnd-kit's rect is the unzoomed layout box and is null during `onDragStart`, so the lifted face is sized from the cell's painted rect.
 function grabbedCellFace(activatorEvent: Event): {
   width: number;
   height: number;
@@ -362,9 +351,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
       <button
         type="button"
         ref={setDragRef}
-        // Drag listeners and ARIA only where a drag is actually offered — a
-        // disabled draggable spreads aria-disabled, which reads (and tests)
-        // as an unclickable control.
+        // platform: A disabled dnd-kit draggable still spreads `aria-disabled`, so drag listeners and attributes go only on cells that offer a drag.
         {...(datum.filled ? listeners : undefined)}
         {...(datum.filled ? attributes : undefined)}
         data-testid={`card-cell-${datum.row}-${datum.seat}`}
@@ -383,17 +370,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
             : columnHovered
               ? `linear-gradient(var(--lg-hover), var(--lg-hover)), var(--lg-slot)`
               : 'var(--lg-slot)',
-          // A cell with a line in it keeps the touch it is given. `pan-y`
-          // let the page scroll under the very gesture that is supposed to
-          // move a line up a row, so a drag begun with a moving finger
-          // scrolled the card away instead; dropping the pan leaves that
-          // touch to the drag, which is what a filled cell is for. The
-          // browser's pinch goes too: on a page it had zoomed, a drag panned
-          // the page instead. The card zooms itself (`useCardZoom`).
-          //
-          // An empty cell has no drag to offer — it opens a picker on a tap —
-          // so it hands the pan back rather than swallowing it. See
-          // `useGridDragSensors`.
+          // platform: `touch-action: pan-y` lets the page scroll under a drag that starts with a moving finger, so a filled cell takes `touch-action: none`.
           touchAction: datum.filled ? 'none' : 'pan-x pan-y',
           ...(held
             ? {
@@ -405,11 +382,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
         }}
       >
         {pokemon ? (
-          // Keyed by its own source. Without that React keeps the element and
-          // swaps the `src`, and the browser keeps painting the frame it
-          // already decoded — so opening a second gym showed the first gym's
-          // team under the second gym's name and colours until the new
-          // sprites arrived. A new element paints nothing instead.
+          // platform: A browser keeps painting the decoded frame when `src` changes, so the image is keyed by its source and remounts instead.
           <img
             key={sprite}
             src={sprite}
@@ -454,41 +427,11 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, shiny, shinyButton, po
             e.stopPropagation();
             onReset();
           }}
-          // The top centre, away from the remove X, so the destructive control
-          // and the undo one never sit under the same thumb.
-          //
-          // No paint containment, unlike the cross and the powerup discs.
-          // Containment was what kept a span's `rounded-full` round; an svg
-          // circle is round on its own. And containment clips the button to
-          // a box snapped to the device grid, while the disc below is drawn
-          // to the very edge of that box -- so at some sub-pixel positions
-          // the clip shaved a device pixel off one side of the disc, and the
-          // disc read as off-centre by half of it.
+          // platform: Paint containment clips to a box snapped to the device grid, which shaves a device pixel off a disc drawn to the box's edge.
           className="absolute z-[15] cursor-pointer touch-manipulation"
           style={markBox('center', 0.175, markSize)}
         >
-          {/* One svg for the disc and the arrow, the way `RedXIcon` draws
-              its disc and its cross. They used to be two layers -- a
-              rounded span for the disc and a lucide svg over it -- and two
-              layers are two rasterisations. The card scales itself with CSS
-              `zoom`, so each control sits at a fractional device pixel, and
-              the disc's edge and the arrow's strokes snapped to the grid
-              independently: measured at dpr 3, the arrow sat 0.6px up-left
-              of the disc's centre on one row and 1.1px on the next, and the
-              eye read the two resets on one card as one centred and one not.
-              Drawn together they share a phase, so whatever the origin does
-              to one it does to the other.
-
-              The 38-unit box is lucide's 24-unit icon inset by 7 on each
-              side, with the origin pulled a further half unit up and left:
-              the arrow carries its head outside the ring on that corner, so
-              its painted ink sits 1.3% up and left of the box it is drawn
-              in, and the half unit -- measured, not guessed -- is what puts
-              the ink's centre on the disc's. The disc is centred on the box,
-              at (11.5, 11.5), with a radius that fills it. `strokeWidth` is
-              in viewBox units, so it scales with the inset. The two paths
-              are lucide's `rotate-ccw` (ISC), copied so they can share the
-              disc's svg. */}
+          {/* platform: Under CSS `zoom`, separate layers snap to the device grid independently, so one svg draws both disc and arrow. Paths are lucide `rotate-ccw` (ISC). */}
           <svg viewBox="-7.5 -7.5 38 38" className="block aspect-square w-full" aria-hidden="true">
             <circle cx="11.5" cy="11.5" r="19" fill="#2563eb" />
             <g fill="none" stroke="#ffffff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round">
@@ -530,17 +473,7 @@ const DISC_REM = 1;
 
 const MARK_REM = DISC_REM;
 const MARK_PAD_REM = 0.1875;
-/**
- * How far the paint keeps off the corner it sits in.
- *
- * A pixel, and it is not decoration. The cross used to be flush: its top edge
- * on its box's top edge and its right edge on its box's right, measured at
- * every phone width. A round shape whose outermost pixels land exactly on a
- * boundary is a shape the renderer may shave, and under the card's CSS `zoom`
- * — where every edge is a fraction of a device pixel — one did: the cross
- * came back with its top-right quadrant squared off. A pixel of ground is
- * enough that the rounding has somewhere to go.
- */
+// platform: Under CSS `zoom`, a renderer may shave a round shape whose outermost pixels land on its box edge, so the paint keeps a pixel off.
 const MARK_EDGE_REM = 0.0625;
 
 /**
@@ -560,8 +493,7 @@ function markBox(side: 'left' | 'center' | 'right', inset: number, size = `${MAR
     paddingBottom: pad,
   };
   if (side === 'center') {
-    // Centred by auto margins. Under the card's zoom, WebKit placed `left: calc(50% - …rem)` off
-    // centre: 0.6px right in a 600px frame, measured, while the corner discs stayed put.
+    // platform: Under CSS `zoom`, WebKit places `left: calc(50% - …rem)` off centre, so auto margins centre the disc.
     return { ...box, left: 0, right: 0, marginInline: 'auto', width: `calc(${size} + 2 * ${pad})`, paddingLeft: pad, paddingRight: pad };
   }
   const inner = side === 'right' ? 'paddingLeft' : 'paddingRight';
@@ -641,29 +573,10 @@ function PowerupButton({ kind, symbol, active, onPress, side }: {
         paddingBottom: `${HIT_DOWN_REM}rem`,
       }}
     >
-      {/* Always a white disc: the symbols are fine art at poster size and
-          mush at 15px on top of a sprite. The disc gives them a ground, and
-          the ring — not the opacity — carries the on state, so an available
-          powerup stays legible while an active one is unmistakable.
-
-          `contain:paint` is what keeps the disc round. The card scales itself
-          with CSS `zoom`, so a 1rem box is a fractional number of CSS pixels
-          and the painted rect snaps its edges independently: this disc
-          measured 15px wide by 16px tall and `rounded-full` drew that as an
-          ellipse. Paint containment gives the element its own paint context,
-          which rasterises at subpixel precision. Measured, both ways: 240x256
-          without it, 256x256 with it. */}
+      {/* platform: Under CSS `zoom`, a fractional box snaps each edge independently and `rounded-full` draws an ellipse, so `contain: paint` keeps the disc round. */}
       <span
         data-powerup-disc
-        // No transition on the ring or the symbol. A press used to ease the
-        // ring's shadow and the symbol's opacity over 150ms, and for exactly
-        // those nine frames the crosses and resets on the row below sat one
-        // to two device pixels up and to the side, then dropped back: WebKit
-        // composites an element while it transitions, and the discs whose
-        // boxes overlap it get rasterised on layers of their own, snapped to
-        // a different grid. Measured on a phone recording at 60fps, disc by
-        // disc; a cross on a row with no powerup never moved. The state
-        // change is instant now, so nothing is composited and nothing moves.
+        // platform: WebKit composites a transitioning element and moves overlapping discs onto their own snapped layers, so the ring and symbol change without a transition.
         className={cn(
           'flex items-center justify-center rounded-full bg-white [contain:paint]',
           active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
@@ -1197,12 +1110,7 @@ const MARK_TRAIL = '0.0625rem';
 const MARK_GLYPH = '72%';
 const MARK_COL = `min(2.75rem, 26cqw / var(${CQ_ZOOM_VAR}, 1))`;
 const MARK_LABEL_ROOM = `(${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem)`;
-// The line height is a length, not 1.4. WebKit raises text that the card's
-// zoom takes below 9px back up to 9px, and a unitless line height grew with
-// it: at zoom 0.652 the label computed 13.8px against 10.2px, the column
-// stretched, and its gaps above and below the move came out 3.7px apart. A
-// length keeps the line box the size the layout math assumes. Where nothing
-// raises the text, it computes to the same value as 1.4.
+// platform: WebKit raises text that `zoom` takes below 9px back to 9px, and a unitless line height grows with it, so this uses a length.
 const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[calc(var(--mark-label)*1.4)]';
 const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
 
@@ -1359,20 +1267,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ transform: `translateY(${tmBodyShiftRem()}rem)` }}
         >
           <span className="flex min-w-0 items-center gap-[3px]">
-            {/* `overflow-visible`: the badge's pill fills its viewBox to the
-                edge, and an outer svg clips to its own box by default. This
-                svg's width is fractional, so its right edge falls inside a
-                device pixel, and WebKit clips that pixel away: the pill's
-                last antialiased column on the right is never painted and
-                the end reads as a wall while the left end stays round --
-                what a phone showed. Measured on WebKitGTK (AppleWebKit 605,
-                the harness's iOS lane) at scale 3, same build and layout,
-                only this class toggled: without it the right end's outermost
-                column is 49% covered against the left's 28%; with it, 29%.
-                The two renders differ in nothing else. Letting the svg paint
-                past its box costs nothing -- there is nothing outside the
-                viewBox to paint -- and the text column's own clip still
-                bounds it. */}
+            {/* platform: WebKit clips the partial right-edge pixel of a fractional-width svg, which squares the pill's end, so the svg paints with `overflow-visible`. */}
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
@@ -1402,22 +1297,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   );
 }
 
-/**
- * The badge slot: a hexagon and the badge's name.
- *
- * "Badge" is part of the text, not a caption under it, so a name reads as the
- * phrase it is — "Thunder Badge" — and the word follows the name onto the
- * second line when the name is long. That rules an `<input>` out: an input is
- * a replaced element, so its text neither wraps nor flows with a sibling
- * word. A contenteditable span does both, in one text flow, which is also why
- * there is nothing here to keep in sync with a mirror.
- *
- * The length limit is the box, not a guessed number of characters: 40 wide
- * letters and 40 narrow ones do not occupy the same space, so a single cap is
- * either too tight for one or lets the other overflow. Every edit is measured
- * against the room the slot has and rejected if it does not fit, with a hard
- * ceiling behind it so a paste cannot put a novel in the store.
- */
+// platform: An `<input>` is a replaced element whose text cannot wrap or flow with a sibling word, so the badge name is a contenteditable span.
 const BADGE_NAME_CEILING = 60;
 
 function badgeAffix(): { before: string; after: string } {
@@ -1499,10 +1379,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     height: `${MARK_ROWS * ROW_H - 2 * INSET_Y}rem`,
   };
 
-  // The field owns its own text, so React never re-renders it — that would
-  // drop the caret on every keystroke. Writing to it while it has focus is
-  // the same bug by another route, so this only ever catches the field up to
-  // a change made elsewhere: opening a different card, or a reset.
+  // platform: Rewriting a contenteditable field's text moves its caret, so React never renders it and this syncs only while the field is unfocused.
   useLayoutEffect(() => {
     const el = fieldRef.current;
     const box = textRef.current;
@@ -1539,17 +1416,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       next = badgeNameFromField(el);
     }
     if (!next && badgeSuffixEl(el)) writeBadgeField(el, '', badgeSuffix);
-    // Stored exactly as the field holds it. Normalizing here — collapsing
-    // runs of space, say — makes the store and the DOM disagree on the very
-    // next render, and the only way to reconcile that is to rewrite the
-    // field, which throws the caret back to the start. A browser inserts a
-    // non-breaking space for a trailing one, so a normalizing field
-    // scrambles its own text the moment you type two words.
-    // The suffix is already in the box by the second character, so the box
-    // measures the phrase the reader will see, not just the name.
-    // A shorter name always goes through. A saved name can overflow the box
-    // it was fitted to, when it was measured at another zoom or before the
-    // web font loaded, and refusing to shorten it locks the field for good.
+    // platform: A contenteditable field turns a trailing space into a non-breaking space, so the store keeps the text exactly as the field holds it.
     const fits = next.length <= BADGE_NAME_CEILING && badgeSuffixVisible(box, el);
     if (!fits && next.length >= accepted.current.length) {
       writeBadgeField(el, accepted.current, badgeSuffix);
@@ -1627,9 +1494,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           spellCheck={false}
           onInput={onInput}
           onFocus={putCaretAtEnd}
-          // The placeholder is the field's own `::before` rather than a
-          // sibling: an empty inline span is zero-wide, which leaves nothing
-          // to tap and nowhere obvious for the caret to sit.
+          // platform: An empty inline span is zero wide, so the placeholder is the field's own `::before`, which keeps a tap target and a caret spot.
           data-badge-field
           data-placeholder={localeUppercase(t('league.badge.placeholder'))}
           className={cn('outline-none', !name && MARK_LABEL_CLASS)}
@@ -1691,19 +1556,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
 
   const sensors = useGridDragSensors();
 
-  // Every sprite this card can put in a cell, warmed while the card is idle.
-  //
-  // A drag swaps `src` on cells that are already on screen, and a cell whose
-  // new sprite is not in the browser yet keeps painting the old one — so the
-  // column under the pointer reads as its previous tenant for as long as the
-  // fetch takes. Measured on the built preview: a reorder revealed up to six
-  // sprites the card had never shown, each one a cold cell.
-  //
-  // The set is every member of every line, not the ones the rows show today:
-  // moving a line to a deeper seat, or dragging an evolution boundary, brings
-  // in stages no row showed before. Powerup forms come too, because the
-  // powerup rides its seat and a reorder hands it to another line. The
-  // legendaries come with theirs, because a press swaps their sprite too.
+  // platform: A browser keeps painting a cell's old sprite until its new `src` loads, so idle time warms every sprite the card can show.
   const warmable = cardSprites(card, false);
   const warmedSprites = useRef<HTMLImageElement[]>([]);
   useEffect(() => {
@@ -1722,10 +1575,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
   const [stageDrag, setStageDrag] = useState<{ seat: number; stage: number } | null>(null);
   const travelRef = usePointerTravel();
   const pendingHeld = useRef<typeof held>(null);
-  // What the pointer carries, and how big to draw it. Every size is measured
-  // from the cell it was lifted from, in client pixels, because the card sits
-  // under a CSS `zoom` and the overlay is portalled out of it — a rem in the
-  // portal is the root's rem, not the card's.
+  // platform: The overlay portals out of the card's CSS `zoom`, where a rem is the root's, so its sizes come from the cell in client pixels.
   const [held, setHeld] = useState<{
     ids: number[];
     form?: PowerupForm | null;
@@ -1741,10 +1591,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
       const cell = grabbedCellFace(e.activatorEvent);
       const rem = cell?.rem ?? 16;
       const sprite = SPRITE_REM * rem;
-      // The same face a lifted cell wears: white, the cell's own corner, and
-      // the lift shadow, so a copy in hand and a column in hand read as one
-      // gesture. White is spelled out rather than read from `--lg-slot`,
-      // which is set on the card and does not reach a portal.
+      // platform: A CSS variable set on the card does not reach a portal, so the face spells out white instead of reading `--lg-slot`.
       const face = {
         width: cell?.width ?? sprite,
         height: cell?.height ?? sprite,
@@ -1964,23 +1811,9 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
     <DndContext
       accessibility={dndAccessibility}
       sensors={sensors}
-      // The compensation is dnd-kit answering a layout shift that is not one.
-      // A held cell lifts by `CELL_LIFT_REM`, so its rect moves the moment the
-      // drag starts; dnd-kit reads that as the page having shifted under the
-      // finger and scrolls the pane by the same amount to put it back. What
-      // the user sees is the card jumping three pixels every time they press
-      // and hold. Measured on the built preview: the pane went 56 -> 59 on a
-      // press, and stays put with this off. Both dex builder grids already
-      // carry the same line.
+      // platform: dnd-kit reads the held cell's lift as a layout shift and scrolls the pane to compensate, so that compensation is off.
       autoScroll={{ layoutShiftCompensation: false }}
-      // The overlay is measured where it was placed, not where it has moved
-      // to. dnd-kit prefers the overlay's rect to the cell's for collisions,
-      // and measures it once, when it mounts -- with its transform. A drag
-      // that begins on movement mounts the overlay after the first move,
-      // so it was measured a move too high, and every row it was over from
-      // then on was one above the finger. A press and hold mounts it at
-      // rest and never saw this. Ignoring the transform reads the rect the
-      // overlay was positioned at, which is the cell's, whenever it mounts.
+      // platform: dnd-kit measures the overlay once when it mounts, transform included, so the measure ignores the transform.
       measuring={OVERLAY_MEASURING}
       collisionDetection={legendDrag ? bossRowByColumn : rectIntersection}
       onDragStart={onDragStart}
@@ -2025,9 +1858,7 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
                 <GlyphCell row={row} span={span} cell={shades.cell} />
                 {cells.map((cell) => {
                   const line = renderLines[cell.seat - 1];
-                  // The lifted legendary's own cell stays draggable even when
-                  // nothing sits under it: dnd-kit ends a drag whose source
-                  // draggable turns disabled mid-gesture.
+                  // platform: dnd-kit ends a drag whose source draggable becomes disabled mid-gesture, so the lifted legendary's cell stays draggable.
                   const legendSource =
                     legendDrag !== null && row === BOSS_ROW && legendAt(card, cell.seat) !== null;
                   const datum: CellDatum = {

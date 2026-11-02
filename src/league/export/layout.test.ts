@@ -7,9 +7,7 @@ import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from './exportOptions';
 
 describe('export layout', () => {
   it('puts every team sprite on a whole pixel', () => {
-    // A sprite centred on a half pixel is resampled one device pixel off the
-    // browser's own placement of the same sprite, which reads as hatching.
-    // The title block above the grid is a whole height for the same reason.
+    // platform: A canvas sprite centred on a half pixel resamples one device pixel off the browser's placement, which reads as hatching.
     expect(Number.isInteger(L.TITLE_BLOCK_H)).toBe(true);
     expect(Number.isInteger(L.FRAME)).toBe(true);
     for (let i = 0; i < 7; i++) {

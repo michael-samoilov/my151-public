@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// The file's URL comes in its own chunk. Imported here directly, the 21 KB
-// outline would count as part of the builder's first load, though only the
-// card's info menu shows it.
+// platform: A dynamic Vite `?url` import puts the 21 KB outline in its own chunk, out of the builder's first load.
 let loaded: string | null = null;
 const load = () => import('../icons/arceus-crest.svg?url').then((m) => (loaded = `url(${m.default})`));
 

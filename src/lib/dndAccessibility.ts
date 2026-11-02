@@ -2,16 +2,7 @@ import { useMemo } from 'react';
 import type { Announcements, ScreenReaderInstructions, UniqueIdentifier } from '@dnd-kit/core';
 import { useT } from '@/i18n';
 
-/**
- * dnd-kit's screen reader text in the active locale, for `DndContext`'s
- * `accessibility` prop.
- *
- * Its defaults are English whatever the page language: the instructions
- * that describe every draggable tile, and the live announcements during a
- * drag. The English catalog values repeat those defaults word for word. The
- * role description each draggable carries is `dnd.roleDescription`, passed
- * to `useDraggable` where the tile is.
- */
+// platform: dnd-kit's default screen reader instructions and drag announcements are English, whatever the page language.
 export function useDndAccessibility(): {
   announcements: Announcements;
   screenReaderInstructions: ScreenReaderInstructions;

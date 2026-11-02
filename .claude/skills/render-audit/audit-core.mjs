@@ -59,8 +59,8 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
   };
   const isVisual = (el) => (el.tagName === 'IMG' || (el.tagName === 'svg' && !el.parentElement.closest('svg')) || isTextLeaf(el) || isPainted(el)) && isVisible(el);
   // A scroll region bounds what is visible but hides nothing for good; only hidden/clip cuts content off.
-  const bounds = (el) => { const o = getComputedStyle(el); return /hidden|clip|scroll|auto/.test(o.overflowX + o.overflowY); };
-  const hides = (el) => { const o = getComputedStyle(el); return /hidden|clip/.test(o.overflowX + o.overflowY); };
+  const limitsVisibleArea = (el) => { const o = getComputedStyle(el); return /hidden|clip|scroll|auto/.test(o.overflowX + o.overflowY); };
+  const cutsOffContent = (el) => { const o = getComputedStyle(el); return /hidden|clip/.test(o.overflowX + o.overflowY); };
 
   // Frame.
   const root = document.querySelector('x-dc > :not(helmet)') ?? document.body.firstElementChild ?? document.body;
@@ -85,7 +85,7 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
     let r = rectOf(el);
     let box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
-      if (!bounds(a)) continue;
+      if (!limitsVisibleArea(a)) continue;
       const ar = rectOf(a);
       box = { left: Math.max(box.left, ar.left), top: Math.max(box.top, ar.top), right: Math.min(box.right, ar.right), bottom: Math.min(box.bottom, ar.bottom) };
       if (box.right - box.left < 1 || box.bottom - box.top < 1) return null;
@@ -102,7 +102,7 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
       add('truncated', 'error', el, \`\${el.scrollWidth - el.clientWidth}px of the text is cut and replaced by an ellipsis\`);
     }
     // Text cut by a height clip on the element itself.
-    if (isTextLeaf(el) && hides(el) && el.scrollHeight > el.clientHeight + 1 && el.getAttribute('data-audit-clip') !== 'intended' && (cs.webkitLineClamp === 'none' || !cs.webkitLineClamp)) {
+    if (isTextLeaf(el) && cutsOffContent(el) && el.scrollHeight > el.clientHeight + 1 && el.getAttribute('data-audit-clip') !== 'intended' && (cs.webkitLineClamp === 'none' || !cs.webkitLineClamp)) {
       add('text-cut', 'error', el, \`\${el.scrollHeight - el.clientHeight}px of text hidden below the box\`);
     }
     // Clipped by an ancestor, judged per axis: overflow-x hidden says nothing
@@ -123,8 +123,8 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
             left: ar.left + parseFloat(acs.borderLeftWidth), top: ar.top + parseFloat(acs.borderTopWidth),
             right: ar.right - parseFloat(acs.borderRightWidth), bottom: ar.bottom - parseFloat(acs.borderBottomWidth),
           };
-          const wholly = r.right <= box.left || r.left >= box.right || r.bottom <= box.top || r.top >= box.bottom;
-          const offCanvas = wholly && (transformed || cfg.offCanvasOk === true);
+          const whollyOutside = r.right <= box.left || r.left >= box.right || r.bottom <= box.top || r.top >= box.bottom;
+          const offCanvas = whollyOutside && (transformed || cfg.offCanvasOk === true);
           const over = [];
           if (needX && ox !== 'visible') {
             if (/hidden|clip/.test(ox) && !intended && !offCanvas) {
@@ -166,12 +166,12 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
         // Device pixels per source pixel. Pixel art is crisp at a whole
         // number of device pixels, so a 96px sprite drawn 48 CSS px wide on
         // a 2x screen is 1x, not 0.5x.
-        const scale = (r.width * (window.devicePixelRatio || 1)) / el.naturalWidth;
+        const devicePixelsPerSourcePixel = (r.width * (window.devicePixelRatio || 1)) / el.naturalWidth;
         const pixel = /pixelated|crisp-edges/.test(cs.imageRendering);
-        if (pixel && Math.abs(scale - Math.round(scale)) > 0.01) {
-          add('image-scale', 'error', el, \`pixel art drawn at \${scale.toFixed(2)}× device pixels (\${Math.round(r.width)}px from \${el.naturalWidth}px); use an integer scale\`);
-        } else if (!pixel && scale > 2.05) {
-          add('image-scale', 'warning', el, \`upscaled \${scale.toFixed(2)}× from \${el.naturalWidth}px\`);
+        if (pixel && Math.abs(devicePixelsPerSourcePixel - Math.round(devicePixelsPerSourcePixel)) > 0.01) {
+          add('image-scale', 'error', el, \`pixel art drawn at \${devicePixelsPerSourcePixel.toFixed(2)}× device pixels (\${Math.round(r.width)}px from \${el.naturalWidth}px); use an integer scale\`);
+        } else if (!pixel && devicePixelsPerSourcePixel > 2.05) {
+          add('image-scale', 'warning', el, \`upscaled \${devicePixelsPerSourcePixel.toFixed(2)}× from \${el.naturalWidth}px\`);
         }
       }
     }
@@ -270,6 +270,7 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
     .map((el) => ({ el, vis: visibleRect(el) }))
     .filter((t) => t.vis)
     .sort((p, q) => p.vis.top - q.vis.top);
+  const LAYOUT_ROUNDING_PX = 0.5;
   // A sweep by top edge: once a later element starts below this one's bottom,
   // nothing after it can overlap either, so the scan stops. Without it a page
   // of 151 tiles is a quarter of a million rect comparisons.
@@ -288,7 +289,7 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
       // meet and was under a two-pixel floor. Boxes laid out side by side
       // should share no pixels at all; the half-pixel allowance is for
       // fractional layout rounding, nothing more.
-      if (ox > 0.5 && oy > 0.5) {
+      if (ox > LAYOUT_ROUNDING_PX && oy > LAYOUT_ROUNDING_PX) {
         const what = textOf(b) || pathOf(b);
         add('overlap', 'warning', a, \`overlaps "\${what}" by \${ox.toFixed(1)}×\${oy.toFixed(1)}px, and neither is positioned\`);
       }

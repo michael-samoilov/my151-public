@@ -66,7 +66,7 @@ export function NoShinyGlyph({ className, style, strokeWidth = 2 }: { className?
 }
 
 /** A ring 1 CSS px wide on a 1rem disc, in the disc's 38-unit box. */
-const RING = 2.4;
+const RING_STROKE_UNITS = 2.4;
 
 /**
  * The gym card's shiny button: the Shiny glyph in a disc the size of the card's reset and remove
@@ -79,11 +79,11 @@ export function ShinyDisc({ mark }: { mark: ShinyMark }) {
     <svg viewBox="-7 -7 38 38" className="block aspect-square w-full" aria-hidden="true">
       {mark === 'on' ? (
         <>
-          <circle cx={12} cy={12} r={19 - RING / 2} fill="#ffffff" strokeWidth={RING} stroke={SHINY_ON.color} />
+          <circle cx={12} cy={12} r={19 - RING_STROKE_UNITS / 2} fill="#ffffff" strokeWidth={RING_STROKE_UNITS} stroke={SHINY_ON.color} />
           <OnStars />
         </>
       ) : (
-        <circle cx={12} cy={12} r={19 - RING / 2} fill="#ffffff" strokeWidth={RING}
+        <circle cx={12} cy={12} r={19 - RING_STROKE_UNITS / 2} fill="#ffffff" strokeWidth={RING_STROKE_UNITS}
           stroke={mark === 'off' ? 'rgba(0,0,0,0.15)' : NO_SHINY.ring} />
       )}
       {mark === 'off' ? (

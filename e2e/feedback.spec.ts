@@ -126,9 +126,7 @@ test.describe('feedback', () => {
       await page.waitForTimeout(400);
 
       const buttons = page.locator('[data-feedback-open]');
-      // Only the ones a person can reach. On mobile both panes stay mounted
-      // and the one off screen is `inert` — its button is not hidden, so
-      // Playwright counts it visible, and the pane track swallows the click.
+      // platform: Playwright counts a button in an inert pane as visible, so the test keeps only buttons a person can reach.
       const reachable = await buttons.evaluateAll((els) =>
         els.flatMap((el, i) => {
           const r = el.getBoundingClientRect();

@@ -27,33 +27,8 @@ if (PREVIEW_PORT === DEV_PORT) {
   throw new Error('PLAYWRIGHT_PREVIEW_PORT and PLAYWRIGHT_DEV_PORT must differ');
 }
 
-/**
- * Find a Chromium this machine actually has, without assuming a revision.
- *
- * An image that preinstalls browsers under PLAYWRIGHT_BROWSERS_PATH pins one
- * revision, and the pinned @playwright/test revision moves independently of it.
- * The moment the two diverge, Playwright's own resolution fails on a path that
- * was never installed, and the usual repair is unavailable because the browser
- * CDN is blocked. So never name a revision. Ask, in order:
- *
- *   1. PLAYWRIGHT_CHROMIUM_PATH, for a machine that keeps Chromium elsewhere.
- *   2. A system Chrome or Chromium installed by the Cloud engine setup.
- *   3. The unversioned `chromium` symlink the image maintains beside the
- *      revision directories. This is the one name that survives an image bump.
- *   4. The highest `chromium-<digits>` directory present. That pattern matches
- *      neither chromium_headless_shell-* nor chromium-tip-of-tree-*, which are
- *      a different binary and a different browser.
- *   5. Nothing, which leaves Playwright to resolve its own. That is correct
- *      wherever `npx playwright install` has run, CI included.
- *
- * Setting executablePath also opts out of the separate headless-shell binary,
- * whose absent revision is what the failure names first.
- *
- * `.claude/skills/verify-my151/harness/lib/engines.ts` and
- * `scripts/generate-og-image.mjs` carry the same lookup for the same reason.
- * The three stay separate on purpose: the harness ships as a self-contained
- * skill, and the og-image script is plain ESM that cannot import either.
- */
+// platform: A preinstalled browser image pins its own Chromium revision, which drifts from @playwright/test's, so this lookup never names a revision.
+// Keep in sync with .claude/skills/verify-my151/harness/lib/engines.ts and scripts/generate-og-image.mjs, which carry the same lookup.
 const CHROMIUM_LAYOUTS = [
   ['chrome-linux', 'chrome'],
   ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
@@ -102,12 +77,7 @@ export default defineConfig({
     trace: 'on-first-retry',
 
     launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {},
-    // Without an explicit path, Playwright's default headless browser is the
-    // separate chrome-headless-shell binary, which snaps glyph advances to
-    // whole pixels where full Chromium does not. CI has no PLAYWRIGHT_BROWSERS_PATH
-    // and so took that default while every local run used full Chromium; the
-    // two disagreed on sub-pixel layout (0.59 px in the league card slots).
-    // Pinning the channel makes both run the same binary.
+    // platform: Playwright's default chrome-headless-shell snaps glyph advances to whole pixels, so pinning the chromium channel matches full Chromium.
     ...(CHROMIUM_PATH ? {} : { channel: 'chromium' as const }),
   },
 

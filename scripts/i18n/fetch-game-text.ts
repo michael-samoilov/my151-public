@@ -23,15 +23,7 @@ const CORPUS_LANG: Record<Locale, string> = {
   fr: 'fr', de: 'de', es: 'es', it: 'it',
 };
 
-/**
- * The app's type slugs against the game's table index.
- *
- * Not a plain array, because the table skips 009 and 019: the game's internal
- * type enum reserves those slots (`_020` is Stellar, the Terastal-only type
- * that has no Pokémon and so no badge here). Writing the identifier out means
- * a re-run against a re-indexed dump fails rather than silently shifting every
- * name by one.
- */
+// platform: The game's type table skips indexes 009 and 019, so each slug names its index and a re-indexed dump fails.
 const TYPES: [slug: string, id: string][] = [
   ['normal', '000'], ['fighting', '001'], ['flying', '002'], ['poison', '003'],
   ['ground', '004'], ['rock', '005'], ['bug', '006'], ['ghost', '007'],
@@ -61,9 +53,7 @@ async function fetchLines(lang: string): Promise<{ lines: string[]; sha256: stri
   if (!res.ok) throw new Error(`fetch ${url} failed: ${res.status}`);
   const gz = Buffer.from(await res.arrayBuffer());
   return {
-    // The dumps are CRLF. Splitting on "\n" alone leaves a trailing carriage
-    // return on every value, which is invisible in a console and would be
-    // baked straight into the badge labels.
+    // platform: The poke-corpus dumps use CRLF line endings, so a bare "\n" split leaves a carriage return on each value.
     lines: gunzipSync(gz).toString('utf8').split(/\r?\n/),
     sha256: createHash('sha256').update(gz).digest('hex'),
   };
@@ -74,11 +64,11 @@ async function main(): Promise<void> {
 
   // The identifier file. Every language file is line-aligned against it, which
   // is what makes a single line number mean the same message in all nine.
-  const ids = await fetchLines('qid');
-  sha256['qid'] = ids.sha256;
+  const qidFile = await fetchLines('qid');
+  sha256['qid'] = qidFile.sha256;
 
   const rowOf = new Map<string, number>();
-  ids.lines.forEach((id, i) => {
+  qidFile.lines.forEach((id, i) => {
     if (id.startsWith('sv.typename.')) rowOf.set(id.slice('sv.typename.'.length), i);
   });
 
@@ -86,16 +76,14 @@ async function main(): Promise<void> {
   for (const locale of LOCALES) {
     const { lines, sha256: hash } = await fetchLines(CORPUS_LANG[locale]);
     sha256[CORPUS_LANG[locale]] = hash;
-    if (lines.length !== ids.lines.length) {
-      throw new Error(`${locale}: ${lines.length} lines vs ${ids.lines.length} in qid — not aligned`);
+    if (lines.length !== qidFile.lines.length) {
+      throw new Error(`${locale}: ${lines.length} lines vs ${qidFile.lines.length} in qid — not aligned`);
     }
     for (const [slug, id] of TYPES) {
       const row = rowOf.get(`TYPENAME_${id}`);
       if (row === undefined) throw new Error(`no TYPENAME_${id} (${slug}) in the dump`);
       const value = lines[row];
-      // A control code here would mean the badge composes its label at runtime
-      // rather than painting a literal, which would invalidate the whole
-      // premise that one string is what the player sees.
+      // platform: A [VAR control code means the game composes the label at runtime, so the line is no literal.
       if (!value || value.includes('[VAR ')) throw new Error(`TYPENAME_${id} in ${locale} is not a literal: ${value}`);
       (types[`term.type.${slug}`] ??= {})[locale] = value;
     }

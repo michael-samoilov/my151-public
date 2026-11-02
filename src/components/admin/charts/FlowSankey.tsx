@@ -198,6 +198,7 @@ function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: 
   return offsets;
 }
 
+// platform: ECharts lays out the Sankey before any series renders, and a node's localX share overrides its laid-out x.
 /**
  * A node's count chip, drawn by a custom series in the same pass as the
  * Sankey, so every frame that shows the bars shows their counts. echarts lays
@@ -300,7 +301,7 @@ function referrerSourceLabels(nodes: SankeyNode[], links: SankeyLink[], width: n
   const chip = Math.max(0, ...sources.map((n) =>
     measure(String(Math.round(links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0)))))) + 4;
   const distance = base.compact ? Math.max(LABEL_DISTANCE, Math.ceil(chip / 2 - base.nodeWidth / 2) + 3) : LABEL_DISTANCE;
-  // ECharts truncates a few pixels before the box edge, so the box gets that much slack.
+  // platform: ECharts truncates a label a few pixels before the box edge, so the box gets that much slack.
   const labelWidth = Math.min(Math.ceil(Math.max(0, ...sources.map((n) => measure(n.name)))) + REFERRER_LABEL_SLACK, Math.floor(width * REFERRER_LABEL_MAX_SHARE));
   return {
     names: new Set(sources.map((n) => n.name)),

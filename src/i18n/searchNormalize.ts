@@ -31,13 +31,10 @@ export function normalizeSearch(text: string): string {
     // Applied to the query and the index alike, so both spellings match.
     .replace(/ß/g, 'ss')
     .normalize('NFD')
+    // platform: Unicode classes the kana voicing marks U+3099 and U+309A as diacritics, so the strip covers only U+0300–U+036F.
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC')
-    // Hiragana → katakana: the kana equivalent of case-folding. The +0x60 shift
-    // is exact across U+3041–U+3096, and the range stops at ゖ so it never
-    // touches ゛ ゜ ゝ ゞ or the prolonged-sound mark ー, which katakana shares
-    // unchanged. Runs after NFKC has already turned half-width ﾋﾟｶﾁｭｳ into
-    // katakana, so every form converges on one key by a different route.
+    // platform: An IME commits hiragana first; each hiragana in U+3041–U+3096 sits exactly 0x60 below its katakana, and the range leaves ゛ ゜ ゝ ゞ ー unchanged.
     .replace(/[ぁ-ゖ]/g, (ch) => String.fromCodePoint(ch.codePointAt(0)! + 0x60))
     .trim();
 }

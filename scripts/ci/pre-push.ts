@@ -9,6 +9,7 @@ import { dropTypecheckStateAfterDependencyChange, eslintCacheArgs } from './cach
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const SHOWN_LINES = 100;
+const CHECK_FAILED_EXIT_CODE = 2;
 
 interface Result { name: string; passed: boolean; output: string; seconds: string }
 
@@ -33,4 +34,4 @@ for (const { name, passed, output, seconds } of results) {
   console.log(`${passed ? 'passed' : 'FAILED'}: ${name} (${seconds}s)`);
   if (!passed) console.log(output.trimEnd().split('\n').slice(-SHOWN_LINES).join('\n'));
 }
-if (results.some(result => !result.passed)) process.exitCode = 2;
+if (results.some(result => !result.passed)) process.exitCode = CHECK_FAILED_EXIT_CODE;

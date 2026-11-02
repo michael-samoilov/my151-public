@@ -80,8 +80,7 @@ export function UsageCard({ token }: { token: string }) {
     bytes: s.bandwidths?.[i]?.y ?? 0,
     usd: s.dailybilling?.[i]?.y ?? 0,
   }));
-  // Upstash fills in a day's total after the day ends, so today reads 0
-  // until then; today's commands so far are in the list below.
+  // platform: Upstash fills in a day's total only after the day ends, so today reads 0 until then.
   if (days.at(-1)?.commands === 0) days.pop();
   const maxDay = Math.max(0, ...days.map((d) => d.commands));
   const today = (s.command_counts ?? [])

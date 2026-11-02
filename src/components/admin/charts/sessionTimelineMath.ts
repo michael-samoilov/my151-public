@@ -63,11 +63,11 @@ export function midnightBoundaries(t0: number, t1: number, tz?: string): number[
   }
   // 15-minute steps catch offsets like IST (UTC+5:30), not only whole hours.
   const out: number[] = [];
-  const step = 15 * 60_000;
-  let t = Math.floor(t0 / step) * step;
-  const end = t1 + step;
+  const zoneOffsetStepMs = 15 * 60_000;
+  let t = Math.floor(t0 / zoneOffsetStepMs) * zoneOffsetStepMs;
+  const end = t1 + zoneOffsetStepMs;
   let prevMidnight = false;
-  for (; t <= end; t += step) {
+  for (; t <= end; t += zoneOffsetStepMs) {
     const { hour, minute } = zonedClock(t, tz);
     const isMidnight = hour === 0 && minute === 0;
     if (isMidnight && !prevMidnight && t >= t0 && t <= t1) out.push(t);

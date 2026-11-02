@@ -5,6 +5,8 @@ import { getClientId, isOptedOut } from '@/lib/clientId';
 import { AUTOMATED } from '@/lib/automation';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 
+const HOURLY_CAP_RETRY_SECONDS = 3600;
+
 export interface FeedbackContext {
   route: string;
   locale: string;
@@ -97,7 +99,7 @@ export async function sendFeedback(body: FeedbackSubmission): Promise<FeedbackSe
   if (res.ok) return { ok: true };
   if (res.status === 429) {
     // The hourly cap for everyone sends no Retry-After.
-    const seconds = Number(res.headers.get('Retry-After')) || 3600;
+    const seconds = Number(res.headers.get('Retry-After')) || HOURLY_CAP_RETRY_SECONDS;
     return { ok: false, reason: 'busy', retryMinutes: Math.max(1, Math.ceil(seconds / 60)) };
   }
   return { ok: false, reason: res.status >= 500 ? 'server' : 'rejected' };

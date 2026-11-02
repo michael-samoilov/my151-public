@@ -12,17 +12,7 @@ import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 
 const GLYPHS: Record<TypeName, readonly string[]> = GLYPH_PATHS;
 
-/**
- * Fills a type's white glyph so that its shared 44-unit frame spans `frame`
- * pixels around (cx, cy). The paths come from the glyph SVGs, so each type
- * keeps its game size (see `scripts/type-icons/BUILD.md`).
- *
- * A path rather than the SVG file: the browser rasterizes an SVG image drawn
- * into a canvas, and exports from Samsung Internet and from Chrome on Windows
- * showed that glyph faint, or between two thin lines. Each call builds new
- * `Path2D` objects: Chrome drew a reused one with slightly different edges,
- * so a second render of the same export did not match the first.
- */
+// platform: A canvas draws an SVG image faint on Samsung Internet and Chrome on Windows, and Chrome draws a reused Path2D with different edges.
 export function fillTypeGlyph(
   ctx: CanvasRenderingContext2D,
   type: TypeName,

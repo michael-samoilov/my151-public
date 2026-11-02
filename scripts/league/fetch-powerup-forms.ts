@@ -11,17 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon.csv';
 const SPRITES = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
 
-/**
- * Suffix → which powerup the form belongs to, and how it reads in the UI.
- *
- * The lettered suffixes are their own entries because `-mega-z` does not end
- * with `-mega`: dropping them lost Absol, Garchomp and Lucario's second Mega
- * without a word.
- *
- * `-eternamax` is left out on purpose. Eternamax Eternatus is a raid boss,
- * not a form a trainer takes, and Eternatus can only reach a card through
- * the legendary slot, which carries no powerup buttons.
- */
+// platform: PokeAPI names a lettered Mega such as `-mega-z`, which does not end with `-mega`, so each letter has its own entry.
 const SUFFIXES: { suffix: string; kind: PowerupKind; label: (species: string) => string }[] = [
   { suffix: '-mega-x', kind: 'mega', label: (s) => `Mega ${s} X` },
   { suffix: '-mega-y', kind: 'mega', label: (s) => `Mega ${s} Y` },
@@ -74,9 +64,7 @@ async function main() {
       continue;
     }
 
-    // A form with no sprite cannot be drawn, so it is not a form this app
-    // has. PokeAPI's `zygarde-mega` row has no sprite; the app ships its own
-    // 10301.png, which the existence check below keeps.
+    // platform: PokeAPI's `zygarde-mega` row has no sprite, so the app ships its own 10301.png and the existence check keeps it.
     const dest = join(dir, `${id}.png`);
     if (!existsSync(dest)) {
       const sprite = await fetch(`${SPRITES}/${id}.png`);

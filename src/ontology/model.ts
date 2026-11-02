@@ -66,9 +66,9 @@ export interface FormFacts {
   readonly types: Types;
   readonly abilities: Abilities;
   readonly baseStats: BaseStats;
-  /** Decimeters, as the games store it. A Gigantamax height is the games' lower bound ("24.0+ m"). */
+  // platform: The games store height in decimeters and show a Gigantamax height as a lower bound, such as "24.0+ m".
   readonly heightDm: number;
-  /** Hectograms, as the games store it. Null where the games show "????.? kg": Gigantamax and Eternamax. */
+  // platform: The games store weight in hectograms and show "????.? kg" for Gigantamax and Eternamax forms, so their weight is null.
   readonly weightHg: number | null;
   readonly color: ColorId;
   readonly shape: ShapeId;

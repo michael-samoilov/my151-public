@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * Touch is dispatched through CDP because Playwright's own touch helpers do
- * not hold a contact still for a timed activation.
- */
+// platform: Playwright's touch helpers cannot hold a contact still for a timed activation, so touch goes through CDP.
 
 test.describe('holding a league row', { tag: '@viewport' }, () => {
   test('picks it up, keeps it under the thumb, and previews the slot it is over',

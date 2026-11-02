@@ -12,7 +12,7 @@ export interface PokeapiSpeciesRow {
   readonly color: string;
   readonly shape: string;
   readonly eggGroups: readonly string[];
-  /** -1 genderless, else the female share in eighths. */
+  // platform: PokeAPI encodes genderRate as -1 for genderless, else as the female share in eighths.
   readonly genderRate: number;
   readonly captureRate: number;
   readonly baseHappiness: number;
@@ -42,7 +42,7 @@ export interface PokeapiPokemonRow {
   readonly weight: number;
   readonly types: readonly string[];
   readonly stats: { readonly hp: number; readonly atk: number; readonly def: number; readonly spa: number; readonly spd: number; readonly spe: number };
-  /** Empty for the nine Legends: Z-A Megas PokeAPI has no abilities for at this commit. */
+  // platform: PokeAPI has no abilities for the nine Legends: Z-A Megas at this commit, so this is empty for them.
   readonly abilities: PokeapiAbilities;
 }
 
@@ -89,11 +89,7 @@ export interface ExternalIds {
   readonly pokeapiPokemon?: string;
 }
 
-/**
- * A form names its PokeAPI form in externalIds when the identifiers differ, or its PokeAPI pokemon
- * when PokeAPI has the record but no form of its own (a cosmetic female). Otherwise a PokeAPI form
- * with the form's own id is the identity, and no match means PokeAPI does not know the form.
- */
+// platform: PokeAPI keeps a cosmetic female on its species' pokemon record with no form of its own, so externalIds names that pokemon.
 export function pokeapiIdentityOf(formId: string, externalIds: ExternalIds | undefined, extract: PokeapiExtract): PokeapiIdentity | { readonly error: string } {
   const formIdentifier = externalIds?.pokeapiForm ?? (externalIds?.pokeapiPokemon ? null : formId);
   if (externalIds?.pokeapiPokemon) {

@@ -71,7 +71,7 @@ const moveNames = readJson<MoveNamesFixture>(MOVE_NAMES_PATH);
 const SOURCED_KEYS = new Set(gameTerms.terms.map((t) => t.key).filter((k) => !k.startsWith('form.')));
 
 /** HOME's box list adds this after a region name; see build-term-catalogs.ts. */
-const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+const HOME_REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };
 
@@ -97,7 +97,7 @@ function sourcedGameText(): void {
       const key = `region.${id}`;
       const got = catalog[key];
       const theirs = home.text[locale];
-      if (theirs && got !== theirs && theirs !== `${got}${REGION_SUFFIX[locale] ?? ''}`) {
+      if (theirs && got !== theirs && theirs !== `${got}${HOME_REGION_SUFFIX[locale] ?? ''}`) {
         fail('game-text', `catalog says ${JSON.stringify(got)}, ${home.qid} says ${JSON.stringify(theirs)}`, locale, key);
       }
     }
@@ -188,7 +188,8 @@ const asciiLetters = (s: string) => (s.match(/[A-Za-z]/g) ?? []).length;
  * whether or not it happens to match English, because those scripts have no
  * reason to be.
  */
-const COPY_THRESHOLD = 0.6;
+const ENGLISH_COPY_SHARE_LIMIT = 0.6;
+const CJK_LATIN_SHARE_LIMIT = 0.6;
 
 function untranslatedLeftovers(): void {
   const english = termCatalogs.get('en') ?? {};
@@ -199,7 +200,7 @@ function untranslatedLeftovers(): void {
     const entries = Object.entries(catalog);
     const substantive = entries.filter(([, v]) => asciiLetters(v) >= 2);
     const identical = substantive.filter(([k, v]) => v === english[k]);
-    if (substantive.length && identical.length / substantive.length > COPY_THRESHOLD) {
+    if (substantive.length && identical.length / substantive.length > ENGLISH_COPY_SHARE_LIMIT) {
       const pct = Math.round((identical.length / substantive.length) * 100);
       fail(
         'untranslated',
@@ -212,7 +213,7 @@ function untranslatedLeftovers(): void {
       // Sourced game text is held to the games themselves: "X／Y" and
       // "Pokémon LEGENDS アルセウス" are what the Chinese and Japanese games say.
       if (SOURCED_KEYS.has(key)) continue;
-      if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > 0.6) {
+      if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > CJK_LATIN_SHARE_LIMIT) {
         fail('untranslated', `${JSON.stringify(value)} is mostly ASCII in a CJK locale`, locale, key);
       }
     }
@@ -462,12 +463,7 @@ function lengthBudgets(): void {
 
 //#region Duplicate keys
 
-/**
- * A locale file that lists a key twice still parses: `JSON.parse` keeps the
- * last value and drops the first without a word. Two branches that each
- * translate the same key merge into exactly that, so the gate reads the raw
- * text. The files are flat objects with one key per line.
- */
+// platform: JSON.parse keeps the last value of a duplicate key without an error, so this gate reads the raw text.
 function duplicateKeys(): void {
   for (const dir of [UI_DIR, TERMS_DIR]) {
     for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {

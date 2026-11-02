@@ -24,7 +24,7 @@ function chunks(png: Buffer): Map<string, Buffer[]> {
 
 const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
 const CHANNELS: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
-/** Adam7 passes as [first column, first row, column step, row step]. */
+// platform: PNG Adam7 passes, each as [first column, first row, column step, row step].
 const ADAM7 = [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]];
 
 /** Reverses the scanline filters of one `height`-row image of `stride` bytes per row, read from `raw` at `start`. */
@@ -147,7 +147,7 @@ export function maskDifference(a: Raster, b: Raster): number | null {
   return count;
 }
 
-/** Whether every chunk's CRC is right. A browser skips a damaged chunk, but Pillow and other tools refuse the file. */
+// platform: A browser skips a damaged PNG chunk, but Pillow and other tools refuse the file.
 export function intact(png: Buffer): boolean {
   for (let pos = 8; pos + 12 <= png.length;) {
     const length = png.readUInt32BE(pos);

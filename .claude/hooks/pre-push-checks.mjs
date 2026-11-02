@@ -16,11 +16,12 @@ const HEREDOC = /<<-?[ \t]*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$
 const QUOTED = /'[^']*'|"(?:[^"\\]|\\.)*"/g;
 const SEPARATOR = /&&|\|\||[;|&\n()]/;
 const OPTION_WITH_VALUE = new Set(['-C', '-c']);
+const CHECKS_FAILED_STATUS = 2;
 
 // Quoted text and heredoc bodies hold commit messages, so a message that mentions a push is not a push.
 export function isGitPush(command) {
-  const text = command.replace(HEREDOC, ' ').replace(QUOTED, ' ');
-  for (const segment of text.split(SEPARATOR)) {
+  const unquotedCommand = command.replace(HEREDOC, ' ').replace(QUOTED, ' ');
+  for (const segment of unquotedCommand.split(SEPARATOR)) {
     const words = segment.trim().split(/\s+/);
     let next = words.findIndex((word) => word === 'git' || word.endsWith('/git'));
     if (next === -1) continue;
@@ -47,7 +48,7 @@ function main() {
   if (!root || !existsSync(join(root, 'scripts', 'ci', 'pre-push.ts'))) return 0;
   const result = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/ci/pre-push.ts'], { cwd: root, encoding: 'utf8', timeout: 270_000 });
   // The checker exits 2 only when a check fails. Any other failure is the checker's own, so the push goes ahead.
-  if (result.status !== 2) return 0;
+  if (result.status !== CHECKS_FAILED_STATUS) return 0;
   process.stderr.write(`${result.stdout}${result.stderr}`.trim()
     + '\n\nPush blocked: fix the errors above, then push again. Run `npm run ci:pre-push` to recheck.\n');
   return 2;

@@ -12,9 +12,10 @@ import { SHINY_ON } from './shinyMarks';
  * the inner half of a 3 px stroke on the border edge. A CSS mask or an inset box snaps to whole
  * pixels at fractional positions, and drew the ring 2 px wide on one side and 1 px on the other.
  */
+// platform: Browsers round a border to whole pixels and snap masks and inset boxes at fractional positions, so the ring is an SVG stroke.
 function Ring({ stroke, badgePx }: { stroke: string; badgePx?: number }) {
   const clip = useId();
-  // A percentage `ry` with no `rx` rounds both radii to half the height, as `rounded-full` does.
+  // platform: An SVG rect with a percentage ry and no rx rounds both radii to half the height.
   const ry = badgePx != null ? badgePillRadius(badgePx) : '50%';
   return (
     <svg aria-hidden className="pointer-events-none absolute -top-px -left-px h-[calc(100%+2px)] w-[calc(100%+2px)] overflow-visible">

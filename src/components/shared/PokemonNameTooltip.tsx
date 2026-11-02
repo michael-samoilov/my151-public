@@ -26,6 +26,7 @@ interface PokemonNameTooltipProps {
  * The shared tooltip uses the light popover colors, so this one sets dark
  * colors itself. It sits above the desktop popover and the phone sheet.
  */
+// platform: Radix Tooltip ignores touch pointers, so a finger hold opens the tip itself.
 export function PokemonNameTooltip({ enabled = true, ...props }: PokemonNameTooltipProps) {
   return enabled ? <ActiveNameTooltip {...props} /> : props.children;
 }

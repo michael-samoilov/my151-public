@@ -15,6 +15,7 @@ const LazySheet = lazy(() => loadSheet().then((FeedbackSheet) => ({ default: Fee
 // its text field takes focus there and iOS opens the keyboard; loaded on the
 // tap, the focus came after the download and the first report after a reload
 // opened without a keyboard (October 2026).
+// platform: iOS opens the keyboard only when focus happens inside the tap, so the form code preloads once the page is idle.
 if (typeof document !== 'undefined') {
   const prefetch = () => whenIdle(() => { void loadSheet().catch(() => {}); });
   if (document.readyState === 'complete') prefetch();

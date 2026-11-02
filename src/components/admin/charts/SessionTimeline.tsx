@@ -328,8 +328,7 @@ export function SessionTimeline({
                 const next = Number(e.currentTarget.value);
                 playheadRef.current = next;
                 applyPlayhead(next);
-                // Keyboard and Playwright fill() have no pointer-down. Only a
-                // held pointer skips the snapshot so a drag cannot rebuild.
+                // platform: Keyboard input and Playwright fill() fire no pointerdown, so only a held pointer skips the snapshot.
                 if (dragging.current) return;
                 setPlayhead(next);
                 queueSnapshot(next);

@@ -95,7 +95,7 @@ if(typeof window!=='undefined'){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist();});
 }
 
-/** Keep optional history below the browser's shared keepalive body limit. */
+// platform: Browsers cap the combined body of pending keepalive requests at 64 KiB.
 export function encodeActivityBeacon(payload:Record<string,unknown>):string{
  const activity=payload.activity as MinuteActivityPayload|undefined;
  if(!activity)return JSON.stringify(payload);

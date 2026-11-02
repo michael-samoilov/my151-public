@@ -21,7 +21,7 @@ type Table =
   | 'version_groups';
 type Row = Readonly<Record<string, string>>;
 
-/** RFC 4180: quoted fields may hold commas, quotes (doubled), and newlines. */
+// platform: PokeAPI CSV fields can hold commas, doubled quotes, and newlines, as RFC 4180 allows.
 function parseCsv(text: string): Row[] {
   const records: string[][] = [];
   let field = '';

@@ -127,17 +127,12 @@ function measureContext(): CanvasRenderingContext2D | null {
   if (typeof document === 'undefined') return null;
   if (!ctx) ctx = document.createElement('canvas').getContext('2d');
   if (!fontStack) {
-    // Single-sourced from the document so it cannot drift from index.css. The
-    // CJK fallback is the part that matters: it is whatever the platform
-    // resolves, and measuring the same declared stack in canvas resolves it
-    // the same way the DOM does.
+    // platform: Canvas resolves the declared font stack, CJK fallback included, the same way the DOM does.
     fontStack = getComputedStyle(document.body).fontFamily || 'sans-serif';
   }
   if (!fontsReadyHooked && document.fonts) {
     fontsReadyHooked = true;
-    // Anything measured before the webfont resolved was measured against a
-    // fallback. Throw it away rather than live with badges sized for a font
-    // that is no longer on screen.
+    // platform: Canvas measureText reports fallback metrics until the web font loads, and a canvas never starts that load.
     void document.fonts.ready.then(() => {
       cache = new Map();
       bandCache = new Map();
@@ -151,6 +146,8 @@ interface ScriptBand {
   baseline: number;
 }
 
+// platform: measureText's actualBoundingBox values are true ink extents; browsers disagree about fontBoundingBox values.
+// platform: Kana and Hangul glyphs reach different ink extents, so one band per language comes from all its labels' envelope.
 function scriptBand(c: CanvasRenderingContext2D, cohort: readonly string[]): ScriptBand {
   const latin: ScriptBand = {
     fontSize: typeBadgeFontSize(),
@@ -213,18 +210,7 @@ export function typeBadgeFit(
       baseline = TYPE_BADGE.textCenterY + (baseline - TYPE_BADGE.textCenterY) * shrink;
     }
 
-    // Re-measure at the size actually chosen, and clamp.
-    //
-    // The step above assumes advance width scales linearly with font size. It
-    // very nearly does, and the residual is not noise to be shrugged at: text
-    // is laid out in whole units at a given px size, so a word measured at 33px
-    // and scaled to 30.7px is not exactly what the same word measures at 30.7px.
-    // How far off depends on the platform's rasterizer, which is why Italian
-    // `COLEOTTERO` fitted on one machine and came out at 101% on CI — a real
-    // overflow that only one of the two Chromiums showed.
-    //
-    // So the width is not predicted, it is checked. One extra `measureText`
-    // makes the fit exact on whatever engine is actually running.
+    // platform: Text width does not scale exactly with font size, and the error depends on the rasterizer, so the chosen size is measured again.
     c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
     const painted = c.measureText(label).width + extraEm * fontSize;
     if (painted * scaleX > textWidth) scaleX = textWidth / painted;

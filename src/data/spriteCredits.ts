@@ -80,7 +80,7 @@ export interface BundleCredit {
   sprites: number;
   unconfirmed: number;
   /** [artist, files], most files first, ties by name. */
-  artists: [string, number][];
+  artists: [artist: string, files: number][];
 }
 
 /** The shown files that PokéAPI delivers: Game Freak's, the Smogon Sprite Project's, and its own. */
@@ -104,9 +104,9 @@ export const pokeapiDelivery = (): PokeApiDelivery => BUNDLES.pokeapi;
 export const artistProfile = (name: string): string | undefined => BUNDLES.links[name];
 
 /** The bundles that credit an artist, most files first. */
-export function bundlesCrediting(name: string, ids: readonly string[]): [string, number][] {
+export function bundlesCrediting(name: string, ids: readonly string[]): [bundle: string, files: number][] {
   return ids
-    .flatMap((id): [string, number][] => {
+    .flatMap((id): [bundle: string, files: number][] => {
       const files = BUNDLES.entries[id]?.artists.find(([artist]) => artist === name)?.[1];
       return files ? [[id, files]] : [];
     })

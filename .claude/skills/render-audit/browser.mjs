@@ -42,6 +42,7 @@ function runCli(bin, env, args) {
       if (!line) { reject(new Error(`agent-browser ${args[0]}: no JSON in output: ${stdout.slice(0, 300)}`)); return; }
       let parsed;
       try { parsed = JSON.parse(line); } catch { reject(new Error(`agent-browser ${args[0]}: bad JSON: ${line.slice(0, 300)}`)); return; }
+      // platform: agent-browser exits 0 when a command fails, so judge each command by its JSON success field.
       if (!parsed.success) { reject(new Error(`agent-browser ${args[0]}: ${parsed.error ?? 'failed'}`)); return; }
       resolve(parsed.data ?? {});
     });
@@ -72,6 +73,7 @@ function agentBrowserPage(bin, env, session) {
     async fontsReady(timeoutMs = 10_000) {
       // `eval` returns the expression, and never awaits a promise, so poll the
       // status that document.fonts.ready resolves on.
+      // platform: agent-browser eval never awaits a promise, so poll the status that document.fonts.ready resolves on.
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
         const done = await this.evalJson(`document.fonts.status === 'loaded'`);
@@ -118,6 +120,7 @@ export async function openAuditBrowser({ chromiumPath } = {}) {
   const bin = forced === 'playwright' ? null : resolveAgentBrowser();
   if (forced === 'agent-browser' && !bin) throw new Error('RENDER_AUDIT_DRIVER=agent-browser but the CLI is not installed');
   if (bin) {
+    // platform: agent-browser reads flags only when its daemon starts, so configure it through AGENT_BROWSER_* variables, never flags.
     const env = { ...process.env, AGENT_BROWSER_ARGS: '--no-sandbox' };
     if (chromiumPath) env.AGENT_BROWSER_EXECUTABLE_PATH = chromiumPath;
     const session = `render-audit-${process.pid}-${Math.random().toString(36).slice(2, 10)}`;

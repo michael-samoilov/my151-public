@@ -8,6 +8,7 @@
 // 1,068 entries and grows with every entry; an IndexedDB read stays near
 // constant (docs/performance.md, "iPhone home page wait"). Any storage error
 // falls back to the network, so a sprite always loads.
+// platform: On iOS, the first Cache Storage read after idle grows with every entry, so sprites live in IndexedDB.
 const DB_NAME = 'p151-sprites';
 const STORE = 'sprites';
 
@@ -48,6 +49,7 @@ function run(mode, action) {
   }));
 }
 // Each record is { type, bytes }: WebKit does not store a Blob from a worker.
+// platform: WebKit does not store a Blob from a worker, so each record holds { type, bytes }.
 const read = (url) => run('readonly', (store) => store.get(url));
 const keep = (url, type, bytes) => run('readwrite', (store) => store.put({ type, bytes }, url));
 

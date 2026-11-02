@@ -1,15 +1,7 @@
 import type { Pokemon } from '@/types/pokemon';
 import { LEVEL_CURVE, ROW_COUNT } from './constants';
 
-/**
- * The implied-level model, as pure functions over data handed in.
- *
- * `impliedLevels.ts` is the app's door to this: it reads the dataset and
- * memoizes one fit. The math lives here instead so a script, a test, or the
- * diagnostic page can run it over any set of Pokémon without pulling in the
- * data layer — which drags in the i18n catalogs, and those load through
- * `import.meta.glob`, so they only resolve inside Vite.
- */
+// platform: The i18n catalogs load through `import.meta.glob`, which resolves only inside Vite, so this math stays free of the data layer.
 
 export interface LevelFit {
   slope: number;

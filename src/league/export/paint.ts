@@ -1,12 +1,4 @@
-/**
- * Canvas primitives and the card's glyphs.
- *
- * Everything the export draws is drawn here, natively. The dex export learned
- * this the hard way: rasterizing the DOM needs an SVG `<foreignObject>`, which
- * hangs the export on iOS WebKit, so a picture of the app is redrawn rather
- * than screenshotted. The shapes below are the same path data the components
- * use, so the PNG and the screen cannot drift apart.
- */
+// platform: Rasterizing the DOM needs SVG `<foreignObject>`, which hangs on iOS WebKit, so the export draws natively with the components' path data.
 
 export const FONT_STACK = '"Inter Variable", system-ui, -apple-system, sans-serif';
 
@@ -26,27 +18,13 @@ export function roundRect(
   ctx.roundRect(x, y, w, h, r);
 }
 
-/**
- * Width of a tracked run.
- *
- * Tracking is applied by hand rather than through `ctx.letterSpacing`, which
- * lands in Safari only from 17.4 — a silent no-op on older iPhones would make
- * every label narrower in the PNG than the layout allowed for. CSS adds the
- * space after the last character too, so this does the same.
- */
+// platform: `ctx.letterSpacing` arrives in Safari only in 17.4, so tracking is applied by hand, with space after the last character as CSS adds.
 export function trackedWidth(ctx: CanvasRenderingContext2D, text: string, track: number): number {
   if (track === 0) return ctx.measureText(text).width;
   return ctx.measureText(text).width + track * [...text].length;
 }
 
-/**
- * Draw a tracked run from `x`, honouring the current `textBaseline`.
- *
- * Each character is placed at the measured width of the run *before* it, not
- * at a running total of single-character widths. Summing characters throws
- * away kerning and rounds once per glyph, which walked the end of a tracked
- * word about two pixels off the line the browser draws.
- */
+// platform: Summing single-character canvas widths drops kerning and rounds per glyph, so each character sits at the measured width of the run before it.
 export function fillTracked(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -195,13 +173,7 @@ function inBox(
   ctx.restore();
 }
 
-/**
- * The glyph outlines, built on first use.
- *
- * `Path2D` exists only in a browser, and this module is imported by the unit
- * tests through the layout it shares with them. Building at import time made
- * `import` itself throw under Node.
- */
+// platform: `Path2D` exists only in a browser, and unit tests import this module under Node, so the glyphs build on first use.
 const PATHS: Record<string, string> = {
   diamondFilled: 'M6 0 L12 6 L6 12 L0 6 Z',
   diamondOpen: 'M6 1 L11 6 L6 11 L1 6 Z',

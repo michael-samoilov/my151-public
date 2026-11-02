@@ -24,16 +24,7 @@ async function countBeacons(page: Page): Promise<string[]> {
   return seen;
 }
 
-/**
- * Load each tool and let it report.
- *
- * The flush has to be dispatched on `window`: that is where the beacon
- * scheduler listens, and a plain `new Event('pagehide')` does not bubble, so
- * dispatching it on `document` reaches nothing. With the wrong target this
- * helper silently never flushed a build beacon, and the spec was only ever
- * watching the funnel events — which are once-per-browser, so whichever page
- * set the flag consumed its own and left nothing to detect.
- */
+// platform: A synthetic pagehide does not bubble, so the flush is dispatched on window, where the beacon scheduler listens.
 async function visitEveryTool(page: Page): Promise<void> {
   for (const path of TOOL_PAGES) {
     await page.goto(path);

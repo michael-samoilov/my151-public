@@ -42,11 +42,7 @@ export async function ensureCsvs(force = false): Promise<void> {
   }
 }
 
-/**
- * Minimal RFC-4180 reader. PokeAPI's dumps do use quoted fields containing
- * commas (a German growth-rate name is "langsam, dann sehr schnell"), so
- * splitting on commas would corrupt rows.
- */
+// platform: PokeAPI CSV dumps quote fields that contain commas, so this reader follows RFC 4180.
 function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -79,11 +75,7 @@ export function readCsv(name: CsvName): Record<string, string>[] {
   return parseCsv(readFileSync(join(CACHE_DIR, `${name}.csv`), 'utf8'));
 }
 
-/**
- * PokeAPI language ids for the nine locales the app ships. Japanese uses 1
- * (ja-Hrkt, kana) rather than 11 (kanji): it is what the games display, and 11
- * has gaps in egg groups and stat names.
- */
+// platform: PokeAPI language 11 (Japanese kanji) has gaps in egg groups and stat names, so Japanese uses 1 (ja-Hrkt).
 export const LANGUAGE_IDS = {
   en: 9,
   ja: 1,

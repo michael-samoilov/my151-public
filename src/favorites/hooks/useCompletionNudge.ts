@@ -11,7 +11,7 @@ function readCelebrated(): boolean {
 
 function markCelebrated() {
   try { window.localStorage.setItem(NUDGE_STORAGE_KEY, '1'); }
-  catch { /* Storage can be unavailable in private browsing. */ }
+  catch { /* platform: Storage access can throw in private browsing. */ }
 }
 
 function isComplete(fills: Readonly<Record<string, number>>): boolean {

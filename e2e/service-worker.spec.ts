@@ -11,10 +11,7 @@ for (const path of ['/', '/pokedex-builder', '/favorite-pokemon-picker', '/custo
   });
 }
 
-// The worker keeps sprites in IndexedDB and leaves built files to the HTTP
-// cache. WebKit reopens Cache Storage on the first request after the app has
-// been idle, at a cost that grows with every entry, so an older worker's caches
-// go on update and nothing is cached there again.
+// platform: WebKit reopens Cache Storage after idle at a cost that grows with each entry, so the worker keeps sprites in IndexedDB.
 test('the service worker keeps sprites in IndexedDB, and nothing in Cache Storage', async ({ page }, testInfo) => {
   await page.goto('/robots.txt');
   await page.evaluate(async () => {

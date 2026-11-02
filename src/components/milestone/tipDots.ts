@@ -41,7 +41,7 @@ function readDots(): Dots {
 function writeDots(dots: Dots) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dots));
-  } catch { /* Storage can be unavailable in private browsing. */ }
+  } catch { /* platform: Storage access can throw in private browsing. */ }
 }
 
 const useTipDots = create<{ dots: Dots }>(() => ({ dots: readDots() }));

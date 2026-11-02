@@ -71,8 +71,7 @@ export async function recordToolExport(
   }
   try {
     const unique = [...new Set(pokemonIds.filter((id) => Number.isInteger(id) && id > 0 && id < 100_000))];
-    // One SMISMEMBER and one SADD for the whole export, not one per Pokémon:
-    // Upstash bills every command, pipelined or not.
+    // platform: Upstash bills every command, pipelined or not, so the export sends one SMISMEMBER and one SADD.
     const [ordinal, flags] = await Promise.all([
       redis.hincrby(EXPORT_COUNTS_KEY, tool, 1),
       unique.length === 0 ? [] : redis.smismember(EXPORT_SEEN_KEY, unique.map(String)),

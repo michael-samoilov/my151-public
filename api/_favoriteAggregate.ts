@@ -56,9 +56,9 @@ export interface FavoritePicks {
   /** Charts with at least one filled cell. */
   charts: number;
   /** Per cell key, each Pokémon a chart holds there and how many charts hold it. Never a count of 0. */
-  cells: Record<string,[number,number][]>;
+  cells: Record<string,[pokemonId: number, charts: number][]>;
   /** The nine Pokémon the most charts hold in any cell, each chart counted once. */
-  top: [number,number][];
+  top: [pokemonId: number, charts: number][];
 }
 export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
   const cells = new Map<string,Map<number,number>>();

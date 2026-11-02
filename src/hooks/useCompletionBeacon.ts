@@ -154,11 +154,7 @@ export function useCompletionBeacon() {
     if(ids.length>=MIN_PROGRESS_IDS)debouncer.schedule(()=>postBeacon(ids,'progress',current,undefined,Date.now()));
   }),[debouncer]);
 
-  // Deliver the pending beacon at the moments a page can vanish. On iOS,
-  // unload/beforeunload are unreliable or never fire; visibilitychange→hidden
-  // plus pagehide is the supported pair, and fetch keepalive (already used by
-  // postBeacon) lets the request outlive the page. This is what makes a short
-  // mobile session — edit, admire, swipe away — actually reach the server.
+  // platform: iOS does not reliably fire unload or beforeunload; visibilitychange to hidden plus pagehide is the supported pair.
   useEffect(() => {
     const flushIfHidden = () => {
       if (document.visibilityState === 'hidden') debouncer.flush();

@@ -13,33 +13,7 @@ interface Point {
 const preventDefault = (e: Event) => e.preventDefault();
 const stopPropagation = (e: Event) => e.stopPropagation();
 
-/**
- * A touch sensor that begins the drag on a hold *or* on movement.
- *
- * dnd-kit's own `TouchSensor` offers one or the other. A `delay` waits out
- * a hold, and movement before it either stands the sensor down or, under
- * an infinite tolerance, is ignored until the hold is up; a `distance`
- * begins on movement and never waits. The gym card needs both from one
- * finger. A still press picks the column up, so the hold has to be there.
- * A moving press is aiming at an evolution boundary, and under the delay
- * alone a quick flick was lost twice over: a finger lifted inside the hold
- * never began a drag, and one that stopped inside it began at the cell it
- * started from, because the sensor samples nothing before it begins.
- *
- * So: a timer for the hold and a distance for the move, whichever comes
- * first. The distance is the pressed node's own half-height, the same line
- * the card draws between the two gestures -- stay inside the thing you
- * pressed and you are holding it, leave it and you are dragging.
- *
- * Movement never stands the sensor down. The cells ask for
- * `touch-action: none`, so there is no pan for the browser to start.
- * A second finger ends the gesture early, held column or not: it is
- * a pinch, and the card's zoom takes it (`useCardZoom`). No `touchcancel`
- * comes, so a sensor that waited for one followed the first finger through
- * the zoom and dropped it as a drag, and a pinch swapped two lines. The rest
- * mirrors the stock sensor: a click after a begun drag is stopped before it
- * reaches the cell, text selection is kept off, and Escape cancels.
- */
+// platform: dnd-kit's TouchSensor begins a drag on a hold or on movement, never on whichever comes first.
 export class HoldOrMoveTouchSensor implements SensorInstance {
   static activators: Activators<HoldOrMoveOptions> = [
     {
@@ -48,7 +22,7 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     },
   ];
 
-  /** The stock sensor's iOS `touchmove` workaround, which this one needs too. */
+  // platform: dnd-kit's TouchSensor.setup holds the iOS touchmove workaround, which this sensor needs too.
   static setup = TouchSensor.setup;
 
   autoScrollEnabled = true;
@@ -67,9 +41,7 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     const event = props.event as TouchEvent;
     const touch = event.touches[0];
     this.initial = { x: touch.clientX, y: touch.clientY };
-    // Listeners go on the pressed element, as the stock sensor's do: touch
-    // events keep targeting the element the touch began on, even after it
-    // leaves the document.
+    // platform: Touch events keep targeting the element the touch began on, even after it leaves the document.
     this.target = event.target as HTMLElement;
     this.doc = this.target.ownerDocument ?? document;
     this.win = this.doc.defaultView ?? window;
@@ -132,6 +104,7 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     onEnd();
   };
 
+  // platform: A second finger raises no touchcancel, so a touchstart with two touches ends the gesture as a pinch.
   private onTouchStart = (e: TouchEvent) => {
     if (e.touches.length > 1) this.onCancel();
   };
@@ -164,8 +137,7 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    // The click a release raises arrives after the touch has ended, so the
-    // document's listeners outlive the gesture by a beat, as in dnd-kit.
+    // platform: The click a release raises arrives after touchend, so the document listeners stay 50 ms longer, as in dnd-kit.
     const { doc, clearSelection, onKeydown } = this;
     setTimeout(() => {
       doc.removeEventListener('click', stopPropagation, { capture: true });

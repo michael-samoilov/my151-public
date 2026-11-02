@@ -53,6 +53,7 @@ const SEGMENTED: readonly Locale[] = ['ja', 'zh-Hans', 'zh-Hant'];
  * between phrases: a word with the punctuation and Japanese particles that follow it.
  * The text that holds it keeps all, so it breaks nowhere else.
  */
+// platform: Browsers may break Japanese and Chinese lines inside a word, and WebKit has no phrase-aware breaking for Chinese.
 function phrases(text: string, locale: Locale): ReactNode {
   if (!SEGMENTED.includes(locale) || typeof Intl.Segmenter !== 'function') return text;
   const units: string[] = [];

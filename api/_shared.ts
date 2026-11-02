@@ -148,8 +148,8 @@ export function getClientIp(req: VercelRequest): string {
 }
 
 /** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
- *  deliberately skip city + lat/long to keep this low-sensitivity. Vercel's
- *  'XX' placeholder for an unknown country is normalized to undefined. */
+ *  deliberately skip city + lat/long to keep this low-sensitivity. */
+// platform: Vercel sends the placeholder 'XX' as the country when it does not know it.
 export function getGeo(req: VercelRequest) {
   const country = headerValue(req, 'x-vercel-ip-country');
   return {
@@ -208,11 +208,7 @@ export function parseReferrerHost(v: unknown): string | undefined {
   return s;
 }
 
-/**
- * Timing-safe token compare. Hashing both sides to a fixed-length digest before
- * `timingSafeEqual` means the comparison never short-circuits on length, so it
- * leaks neither content nor the token's length.
- */
+// platform: Node's timingSafeEqual throws on unequal lengths, so both sides hash to fixed-length digests and the length never leaks.
 function tokenEqual(provided: string, expected: string): boolean {
   const a = createHash('sha256').update(provided).digest();
   const b = createHash('sha256').update(expected).digest();
@@ -258,7 +254,7 @@ export async function requireAdmin(req: VercelRequest, res: VercelResponse): Pro
   return true;
 }
 
-/** Parse a hash field value that may already be auto-parsed by the SDK. */
+// platform: The Upstash SDK may already parse a hash field value from JSON.
 export function parseRecord(raw: unknown): ClientRecord | null {
   if (raw == null) return null;
   if (typeof raw === 'string') {

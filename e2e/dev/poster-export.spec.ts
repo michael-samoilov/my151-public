@@ -12,8 +12,7 @@ test.describe('poster export', () => {
     await expect(page.getByRole('button', { name: 'View settings' })).toBeVisible();
 
     const result = await page.evaluate(async () => {
-      // Non-literal specifiers so TypeScript doesn't try to resolve these —
-      // they are Vite dev-server URLs, not module paths on disk.
+      // platform: Non-literal import specifiers stop TypeScript from resolving Vite dev-server URLs as files on disk.
       const exportPath = '/src/lib/exportImage.ts';
       const dataPath = '/src/hooks/usePokemonData.ts';
       const mod = await import(/* @vite-ignore */ exportPath);

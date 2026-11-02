@@ -62,7 +62,7 @@ export interface BundleEntry {
   sprites: number;
   unconfirmed: number;
   /** [artist, files], most files first, ties by name. */
-  artists: [string, number][];
+  artists: [artist: string, files: number][];
 }
 /** The shown files that PokéAPI delivers. */
 export interface PokeApiDelivery {
@@ -100,7 +100,7 @@ const OUR_OWN = 'my151';
  * sprite lab's credit sheet measured both (Michael, 2026-10-12: the
  * Overdrive forms get no separate credit).
  */
-const GAME_FREAK: Record<string, string> = {
+const GAME_FREAK_ANIMATION_FRAMES: Record<string, string> = {
   '11107': "Black Kyurem Overdrive: Game Freak's frame 0 of PokéAPI's 10022.gif, cropped",
   '11108': "White Kyurem Overdrive: Game Freak's frames 0, 76 and 120 of PokéAPI's 10023.gif",
 };
@@ -139,7 +139,7 @@ const entryOf = new Map<string, string>();
 for (const row of panelFiles) {
   const id = fileId(row.file);
   const credit = attribution[id];
-  if (row.evidenceType === 'official-game-freak' || GAME_FREAK[id] || credit?.via === OUR_OWN) continue;
+  if (row.evidenceType === 'official-game-freak' || GAME_FREAK_ANIMATION_FRAMES[id] || credit?.via === OUR_OWN) continue;
   const entry = credit
     ? credit.via === OWN_UPLOAD ? credit.artists.map((name) => `artist:${name}`).join('+') : ENTRY_BY_VIA[credit.via]
     : fromPokeApi(row) ? 'pokeapi-sprites' : undefined;
@@ -186,7 +186,7 @@ const pokeapi: PokeApiDelivery = { official: 0, smogon: 0, own: 0 };
 const DELIVERY_COUNT: Record<string, keyof PokeApiDelivery> = { 'smogon-sprite-project': 'smogon', 'pokeapi-sprites': 'own' };
 for (const row of panelFiles) {
   const id = fileId(row.file);
-  const count = row.evidenceType === 'official-game-freak' || GAME_FREAK[id] ? 'official' : DELIVERY_COUNT[entryOf.get(id) ?? ''];
+  const count = row.evidenceType === 'official-game-freak' || GAME_FREAK_ANIMATION_FRAMES[id] ? 'official' : DELIVERY_COUNT[entryOf.get(id) ?? ''];
   if (!count || attribution[id]?.changedBy === OUR_OWN) continue;
   const delivered = delivery[row.file];
   if (delivered?.sha256 !== row.sha256) {
@@ -195,7 +195,7 @@ for (const row of panelFiles) {
   }
   // The four Overdrive stills are frames of PokéAPI's animated GIFs: their
   // ledger rows and GAME_FREAK say so.
-  if (delivered.pokeapi || (count === 'official' && (fromPokeApi(row) || GAME_FREAK[id]))) pokeapi[count] += 1;
+  if (delivered.pokeapi || (count === 'official' && (fromPokeApi(row) || GAME_FREAK_ANIMATION_FRAMES[id]))) pokeapi[count] += 1;
 }
 
 const credits: BundleCredits = {
@@ -208,14 +208,14 @@ const credits: BundleCredits = {
 // The partition: every fan-made file under one entry, and the totals add up.
 const fanFiles = panelFiles.filter((row) => {
   const id = fileId(row.file);
-  return row.evidenceType !== 'official-game-freak' && !GAME_FREAK[id] && attribution[id]?.via !== OUR_OWN;
+  return row.evidenceType !== 'official-game-freak' && !GAME_FREAK_ANIMATION_FRAMES[id] && attribution[id]?.via !== OUR_OWN;
 });
 const counted = Object.values(entries).reduce((sum, entry) => sum + entry.sprites, 0);
 if (counted !== fanFiles.length) problems.push(`The entries count ${counted} files, but ${fanFiles.length} shown files are fan-made.`);
 const gaps = fanFiles.filter((row) => !entryOf.has(fileId(row.file)));
 for (const row of gaps) problems.push(`${row.file}: fan-made, but counts under no entry.`);
 
-const gameFreak = panelFiles.filter((row) => row.evidenceType === 'official-game-freak' || GAME_FREAK[fileId(row.file)]).length;
+const gameFreak = panelFiles.filter((row) => row.evidenceType === 'official-game-freak' || GAME_FREAK_ANIMATION_FRAMES[fileId(row.file)]).length;
 const ours = panelFiles.filter((row) => attribution[fileId(row.file)]?.via === OUR_OWN).length;
 console.log(`bundle-credits: ${ledger.length} shown files = ${covered.size} shinies their normal sprite covers + ${gameFreak} Game Freak + ${ours} my151 + ${fanFiles.length} fan-made`);
 console.log('entry'.padEnd(28), 'files'.padStart(6), 'confirmed'.padStart(10), 'not conf.'.padStart(10), 'artists'.padStart(8), 'linked'.padStart(7));

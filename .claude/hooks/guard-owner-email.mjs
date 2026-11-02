@@ -21,6 +21,7 @@ const GUARDED = new Set([...OWNER_EMAIL_SHA256, ...EXTRA_SHA256]);
 
 // The scan starts at each `@`. A pattern that starts at the local part retries
 // every position of a long token and takes seconds on a large Write.
+// platform: A JS regex retries every start position, so a pattern that starts at the local part takes seconds on a large Write.
 const DOMAIN = /@[a-z0-9-]{1,63}(?:\.[a-z0-9-]{1,63})+/g;
 const LOCAL_PART = /[a-z0-9._%+-]{1,64}$/;
 
@@ -37,6 +38,7 @@ export function containsOwnerEmail(text, hashes = GUARDED) {
     for (const { 0: domain, index } of lower.matchAll(DOMAIN)) {
       const local = LOCAL_PART.exec(lower.slice(Math.max(0, index - 64), index))?.[0] ?? '';
       // The local part can start with the tail of an escape such as `\n`, so test every suffix of it.
+      // platform: JSON.stringify escapes such as `\n` put a letter before the address, so test every suffix of the local part.
       for (let start = 0; start < local.length; start++) {
         if (hashes.has(sha256(local.slice(start) + domain))) return true;
       }

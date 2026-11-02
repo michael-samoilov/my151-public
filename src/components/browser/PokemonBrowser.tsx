@@ -88,6 +88,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
    * Holding the pre-composition text keeps the previous results on screen until
    * the word is committed, and searches once instead of eleven times.
    */
+  // platform: An IME fires an input event for each intermediate state, so the search holds the pre-composition text until compositionend.
   const [composingFrom, setComposingFrom] = useState<string | null>(null);
   const searchInput = composingFrom ?? searchQuery;
   const setSearchQuery = useBrowserStore((s) => s.setSearchQuery);
@@ -853,6 +854,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               * controlled value stale, and the next unrelated re-render would
               * overwrite the IME's buffer mid-word. Only `composingFrom` decides
               * what gets *searched*. */}
+            {/* platform: A stale controlled value lets React overwrite the IME buffer mid-word, so value keeps tracking searchQuery during composition. */}
             <Input
               value={searchQuery}
               onCompositionStart={() => setComposingFrom(searchQuery)}
@@ -860,7 +862,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
               aria-label={t('browser.search.placeholder')}
-              // Phone autocorrect turns Pokémon names into dictionary words.
+              // platform: Phone autocorrect turns Pokémon names into dictionary words.
               autoCorrect="off"
               autoCapitalize="none"
               spellCheck={false}

@@ -40,8 +40,7 @@ test('the static shell paints the app\'s header and tool bar', { tag: '@viewport
   const scripts = await browser.newContext({ ...info.project.use, viewport, javaScriptEnabled: false });
   const shellPage = await scripts.newPage();
   await shellPage.goto(`${baseURL}/custom-gym-leader`, { waitUntil: 'domcontentloaded' });
-  // Tracing and protocol delays can outlast the reveal delay. Sample the real
-  // CSS animation timeline so host scheduling cannot change the measured state.
+  // platform: Tracing and protocol delays can outlast the reveal delay, so the page samples the CSS animation timeline itself.
   const shell = await shellPage.evaluate(MEASURE, 80);
   expect(shell.copyOpacity, 'the copy is held back in the first 80ms').toBe('0');
   const revealed = await shellPage.evaluate(MEASURE, 1500);

@@ -42,10 +42,7 @@ const carries = (state: { held: number; opacity: number | null }, what: string) 
 };
 
 test.describe('drag hold', () => {
-  // Desktop only, and for a harness reason rather than a product one: the
-  // touch projects arm dnd-kit's TouchSensor, which wants real touch events,
-  // and Playwright's `mouse` API emits mouse events. The dex surfaces drag
-  // fine on a phone — this is the one way to grab them that the harness has.
+  // platform: dnd-kit's TouchSensor needs real touch events and Playwright's mouse API sends mouse events, so this test runs on desktop only.
   test('the dex builder and the view page hold the same way', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
     await page.goto(TUNE_URL);
@@ -146,11 +143,7 @@ test.describe('drag hold', () => {
   });
 
   test('a press and hold picks things up, it does not select them', async ({ page }) => {
-    // On iOS a long press is both "pick this up" and "start a selection", and
-    // the selection wins: the league summary answered a press-and-hold with a
-    // Copy / Search callout across two rows. The callout itself is device-only
-    // — what a browser here can be asked is whether the surface is selectable
-    // at all, which is the property that decides it.
+    // platform: On iOS a long press also starts a text selection, which wins over a pickup, so the test checks that the surface is not selectable.
     const audit = () =>
       page.evaluate(() => {
         const bad: string[] = [];
@@ -221,10 +214,7 @@ test.describe('drag hold', () => {
         background: fs?.backgroundColor ?? null,
         shadow: fs?.boxShadow ?? null,
         radius: fs ? parseFloat(fs.borderTopLeftRadius) : null,
-        // The card scales itself with CSS `zoom` and the copy is portalled
-        // out of it, so matching the cell means matching what it PAINTS. A
-        // computed style is the unzoomed value, so the cell's own corner has
-        // to be scaled by the zoom the same two numbers reveal.
+        // platform: A computed style ignores CSS zoom, so the cell's corner is scaled by the zoom to match what the copy paints.
         widthGap: f ? Math.abs(f.width - c.width) : null,
         heightGap: f ? Math.abs(f.height - c.height) : null,
         cellRadius:
@@ -247,12 +237,7 @@ test.describe('drag hold', () => {
   });
 
   test('a column reorder paints the line it carries, not the seat it lands on', async ({ page }) => {
-    // A reorder swaps `src` on cells that are already on screen, and a
-    // browser that does not have the new bitmap keeps painting the old one.
-    // Moving a line to a deeper seat reveals stages no row showed before, so
-    // the column under the pointer read as its previous tenant until each
-    // sprite arrived. Measured on the built preview, seven cards showed 19
-    // such cells before the card started warming every member it can draw.
+    // platform: A browser keeps painting the old bitmap after an img src changes, until the new image arrives.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');

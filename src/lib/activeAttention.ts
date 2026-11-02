@@ -4,10 +4,10 @@ import {isOptedOut} from '@/lib/clientId';
 import type {AttentionPayload,AttentionSegment} from '../../api/_attention';
 const GAP=5*60_000,MAX_SPAN=24*60*60_000,DAY=86_400_000;
 // Google Analytics' engaged-session threshold, in milliseconds on screen.
-const ENGAGED_ON_SCREEN_MS=10_000;
+const GA_ENGAGED_SESSION_MS=10_000;
 // Google Analytics ends a session after 30 minutes without input. On-screen
 // time stops there too, so a tab left on screen overnight adds no new day.
-const IDLE_MS=30*60_000;
+const GA_SESSION_IDLE_MS=30*60_000;
 const dayOf=(ms:number)=>Math.floor(ms/DAY)*DAY;
 type Tool='dex'|'league'|'favorites';
 class AttentionTracker {
@@ -39,13 +39,13 @@ class AttentionTracker {
  private pause(){if(this.span){this.accrue();this.endSpan();}}
  // Credits the span up to now, or up to the idle cap, where timing stops.
  private accrue(){
-  const mono=performance.now(),cap=this.engagedAt+IDLE_MS;
+  const mono=performance.now(),cap=this.engagedAt+GA_SESSION_IDLE_MS;
   let from=this.span!.wall,crossed=false;
   const end=from+Math.min(mono,cap)-this.span!.mono;
   while(from<end){
    const day=dayOf(from),until=Math.min(end,day+DAY),ms=(this.onScreen.get(day)??0)+until-from;
    this.onScreen.set(day,ms);from=until;
-   if(ms>=ENGAGED_ON_SCREEN_MS&&!this.seen.has(day)&&this.allowed()){this.seen.add(day);crossed=true;}
+   if(ms>=GA_ENGAGED_SESSION_MS&&!this.seen.has(day)&&this.allowed()){this.seen.add(day);crossed=true;}
   }
   if(mono<cap)this.span={mono,wall:Date.now()};else this.endSpan();
   if(crossed&&canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();
@@ -53,13 +53,13 @@ class AttentionTracker {
  private arm(){
   clearTimeout(this.timer);
   const now=Date.now(),day=dayOf(now),ms=this.onScreen.get(day)??0;
-  const crossing=ms>=ENGAGED_ON_SCREEN_MS?day+DAY-now+ENGAGED_ON_SCREEN_MS:ENGAGED_ON_SCREEN_MS-ms;
-  this.timer=setTimeout(()=>{this.accrue();if(this.span)this.arm();},Math.min(crossing,this.engagedAt+IDLE_MS-performance.now()));
+  const crossing=ms>=GA_ENGAGED_SESSION_MS?day+DAY-now+GA_ENGAGED_SESSION_MS:GA_ENGAGED_SESSION_MS-ms;
+  this.timer=setTimeout(()=>{this.accrue();if(this.span)this.arm();},Math.min(crossing,this.engagedAt+GA_SESSION_IDLE_MS-performance.now()));
  }
  // Input moves the idle cap. Time between the old cap and this input stays uncredited.
  private engage(){
   const mono=performance.now();
-  if(this.span&&mono>=this.engagedAt+IDLE_MS)this.accrue();
+  if(this.span&&mono>=this.engagedAt+GA_SESSION_IDLE_MS)this.accrue();
   this.engagedAt=mono;this.resume();
  }
  private stop=()=>{this.pause();this.current=undefined;this.run=undefined;if(this.dirty){this.dirty=false;if(canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();}};

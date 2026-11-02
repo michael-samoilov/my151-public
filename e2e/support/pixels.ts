@@ -150,21 +150,7 @@ export async function discMark(page: Page, disc: Locator, discInk: Coverage, mar
   `);
 }
 
-/**
- * Whether a mark stays put in its disc as the disc moves across a pixel.
- *
- * This is the test for the fault itself rather than for one instance of
- * it. A disc and a mark painted as two layers each snap to the device grid
- * on their own, so their relative position depends on which fraction of a
- * pixel the control happens to sit at -- and one card shows only a few of
- * those fractions. Sliding one control through eight of them shows all of
- * them: a single raster keeps its mark within measurement noise of the same
- * offset at every step, two layers wander by up to a device pixel.
- *
- * The control is moved with a margin, which is layout: the button ends up
- * at a fractional position exactly as the card's own scaling leaves it, and
- * no compositing layer is created that could snap it whole.
- */
+// platform: Two painted layers snap to the device grid separately, so their offset depends on the control's sub-pixel position.
 export async function phaseSweep(
   page: Page, button: Locator, discInk: Coverage, markInk: Coverage, steps = 8,
 ): Promise<PhaseSweep> {

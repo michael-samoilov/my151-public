@@ -113,7 +113,7 @@ export function incrementLeagueExportCount(): number {
   try {
     localStorage.setItem(EXPORT_COUNT_KEY, String(next));
   } catch {
-    /* quota or private mode */
+    // platform: Storage writes can throw on quota or in private mode.
   }
   return next;
 }

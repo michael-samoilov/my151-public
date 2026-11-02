@@ -9,6 +9,7 @@ function Input({ className, type, ref, ...props }: React.ComponentProps<"input">
         // text-base (≥16px) on mobile so iOS Safari doesn't auto-zoom the page
         // when the field is focused (it zooms any input under 16px); md:text-sm
         // restores the compact size on desktop, where focus-zoom doesn't apply.
+        // platform: iOS Safari zooms the page when an input under 16px takes focus, so the field uses text-base below md.
         "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}

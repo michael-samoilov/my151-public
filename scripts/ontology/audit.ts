@@ -20,15 +20,15 @@ import { resolveOntology, type Ontology } from './resolve';
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /** One row of docs/favorite-picker-work/form-metadata-audit/inventory.json: the PKHeX game record each Picker identity was checked against. */
-interface InventoryRow {
+interface PkhexInventoryRow {
   readonly id: number;
   readonly gamePersonal?: { readonly game: string; readonly stats?: unknown; readonly color?: string; readonly captureRate?: number; readonly growthRate?: string; readonly eggGroups?: readonly string[] };
 }
-const INVENTORY = 'docs/favorite-picker-work/form-metadata-audit/inventory.json';
+const PKHEX_INVENTORY_PATH = 'docs/favorite-picker-work/form-metadata-audit/inventory.json';
 /** The inventory record field that holds each audited fact. */
-const PKHEX_FACT: Readonly<Record<string, keyof NonNullable<InventoryRow['gamePersonal']>>> = { baseStats: 'stats', color: 'color', captureRate: 'captureRate', growthRate: 'growthRate', eggGroups: 'eggGroups' };
+const INVENTORY_FIELD_OF_FACT: Readonly<Record<string, keyof NonNullable<PkhexInventoryRow['gamePersonal']>>> = { baseStats: 'stats', color: 'color', captureRate: 'captureRate', growthRate: 'growthRate', eggGroups: 'eggGroups' };
 /** The PKHeX personal table each inventory record names. */
-const PKHEX_GAME: Readonly<Record<string, string>> = {
+const PKHEX_GAME_TITLE: Readonly<Record<string, string>> = {
   sv: 'Scarlet and Violet', swsh: 'Sword and Shield', la: 'Legends: Arceus', uu: 'Ultra Sun and Ultra Moon', ao: 'Omega Ruby and Alpha Sapphire',
   za: 'Legends: Z-A', hgss: 'HeartGold and SoulSilver',
 };
@@ -49,7 +49,7 @@ const NOTES: Record<AuditKind, readonly string[]> = {
   ],
 };
 
-function rules(ontology: Ontology, inventory: ReadonlyMap<number, InventoryRow>): (row: Disagreement) => Review | null {
+function rules(ontology: Ontology, inventory: ReadonlyMap<number, PkhexInventoryRow>): (row: Disagreement) => Review | null {
   const entries = new Map(ontology.authored.species.flatMap(({ data }) => data.forms.map((entry) => [entry.id, entry] as const)));
   /** The source of the entry that states a fact: the form's own, or the first base up the inheritance chain that states it. */
   const sourceOfStated = (formId: string, fact: 'shape'): string | undefined => {
@@ -80,11 +80,11 @@ function rules(ontology: Ontology, inventory: ReadonlyMap<number, InventoryRow>)
       return kept('form-shape-review-2026-10-06', 'PokeAPI gives one shape per species; the form shape review set this form\'s own shape from Bulbapedia.');
     }
     const record = inventory.get(pickerId(row.form))?.gamePersonal;
-    const key = PKHEX_FACT[row.fact];
+    const key = INVENTORY_FIELD_OF_FACT[row.fact];
     if (record && key && key in record) {
       const game = record[key];
       const value = row.fact === 'eggGroups' ? [...(game as string[])].sort() : game;
-      if (same(value, row.app)) return kept('form-metadata-audit-2026-10-20', `The ${PKHEX_GAME[record.game] ?? record.game} personal record in ${INVENTORY} gives this value for the form; PokeAPI states the species' value.`);
+      if (same(value, row.app)) return kept('form-metadata-audit-2026-10-20', `The ${PKHEX_GAME_TITLE[record.game] ?? record.game} personal record in ${PKHEX_INVENTORY_PATH} gives this value for the form; PokeAPI states the species' value.`);
     }
     return null;
   };
@@ -118,8 +118,8 @@ export function auditReports(root: string): Record<AuditKind, AuditReport> {
   if (!loaded.ontology) throw new Error(loaded.problems.map((problem) => `${problem.file} ${problem.path}: ${problem.message}`).join('\n'));
   const resolution = resolveOntology(loaded.ontology);
   if (!resolution.ok) throw new Error(resolution.problems.map((problem) => `${problem.file} ${problem.path}: ${problem.message}`).join('\n'));
-  const inventoryPath = join(root, INVENTORY);
-  const inventory = new Map<number, InventoryRow>(existsSync(inventoryPath) ? (JSON.parse(readFileSync(inventoryPath, 'utf8')) as InventoryRow[]).map((row) => [row.id, row]) : []);
+  const inventoryPath = join(root, PKHEX_INVENTORY_PATH);
+  const inventory = new Map<number, PkhexInventoryRow>(existsSync(inventoryPath) ? (JSON.parse(readFileSync(inventoryPath, 'utf8')) as PkhexInventoryRow[]).map((row) => [row.id, row]) : []);
   const rule = rules(resolution.ontology, inventory);
   return { classification: report('classification', resolution.ontology, root, rule), fact: report('fact', resolution.ontology, root, rule) };
 }

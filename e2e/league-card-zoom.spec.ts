@@ -244,9 +244,7 @@ test.describe('one finger keeps its gestures on a zoomed card', () => {
     await zoomToTwo(page);
     const zoomed = await frameState(page);
 
-    // A spot on the card a finger's width from every cell and control, with
-    // room above it and to its left for the swipe. The browser targets a
-    // touch that lands just outside a cell at that cell.
+    // platform: The browser targets a touch that lands just outside a cell at that cell.
     const start = await page.evaluate(() => {
       const frame = document.querySelector<HTMLElement>('[data-testid="card-zoom-frame"]')!;
       const f = frame.getBoundingClientRect();
@@ -266,7 +264,7 @@ test.describe('one finger keeps its gestures on a zoomed card', () => {
 
     const cdp = await page.context().newCDPSession(page);
     await touch(cdp, 'touchStart', [start!]);
-    // Diagonal, so the browser does not lock the pan to one axis.
+    // platform: A diagonal swipe stops the browser from locking the pan to one axis.
     for (let i = 1; i <= 12; i += 1) {
       await touch(cdp, 'touchMove', [{ x: start!.x - (120 * i) / 12, y: start!.y - (120 * i) / 12 }]);
       await page.waitForTimeout(16);

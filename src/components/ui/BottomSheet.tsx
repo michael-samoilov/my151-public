@@ -10,6 +10,7 @@ const DISMISS_THRESHOLD = 120;
 // A finger held still drifts a few pixels in no set direction. Below this
 // distance a touch has no axis yet.
 const AXIS_SLOP_PX = 10;
+const UNZOOMED_SCALE_TOLERANCE = 0.05;
 
 type Axis = 'x' | 'y' | 'either';
 
@@ -48,6 +49,7 @@ interface BottomSheetProps {
  * which needs a focus trap this does not implement. `role="dialog"` plus
  * Escape and a labelled control is what is actually true here.
  */
+// platform: aria-modal promises an inert page, which needs a focus trap, so the sheet uses role dialog without aria-modal.
 export function BottomSheet({
   onClose,
   onHeaderClick,
@@ -116,6 +118,7 @@ export function BottomSheet({
   // A released swipe finishes its slide before the sheet unmounts.
   // `transitionend` can be skipped (a hidden tab, an interrupted transition),
   // so a timer closes the sheet regardless.
+  // platform: Browsers can skip transitionend in a hidden tab or after an interrupted transition, so a timer also closes the sheet.
   useEffect(() => {
     if (!leaving) return;
     const el = dialogRef.current;
@@ -181,6 +184,8 @@ export function BottomSheet({
    * silently ignored. The sheet's own scrollable content is exempted so a long
    * form still scrolls.
    */
+  // platform: Chromium makes the pane the implicit root scroller, and a fixed overlay's scroll chain ends at the viewport.
+  // platform: React registers onWheel and onTouchMove as passive, so preventDefault needs a native capture listener on document.
   const overlayRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -201,6 +206,7 @@ export function BottomSheet({
    * `scale` is not 1, so a pinch changes nothing here, and the listener only
    * exists while a sheet is open rather than for the life of the page.
    */
+  // platform: position fixed and 100dvh ignore the on-screen keyboard; only the visual viewport reports it.
   const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
   const [textFocus, setTextFocus] = useState(false);
   useEffect(() => {
@@ -216,7 +222,8 @@ export function BottomSheet({
       // keyboard is there. That is precisely the bug this block was written to
       // fix, and it survived because the test runs on the engine that reports
       // the tidy number.
-      if (Math.abs(vv.scale - 1) > 0.05) return;
+      // platform: iOS Safari reports an unzoomed visualViewport.scale as values such as 0.9999999, not exactly 1.
+      if (Math.abs(vv.scale - 1) > UNZOOMED_SCALE_TOLERANCE) return;
       setViewport({ height: vv.height, top: vv.offsetTop });
     };
     sync();
@@ -255,6 +262,7 @@ export function BottomSheet({
    * also why moving from one field to the next never collapses at all: the
    * `focus` follows the `blur` in the same task.
    */
+  // platform: Focus moves at mousedown, a release and its click share one task, and a touch tap synthesizes mousedown after pointerup.
   const collapsePending = useRef(false);
   const pressing = useRef(false);
   const collapseFrame = useRef(0);
@@ -329,11 +337,13 @@ export function BottomSheet({
         // page cancels its touchmove, so the handle froze after a long press
         // had made the selection. Most handle drags run sideways along a line,
         // where no scroller takes them, so this walk cancelled them all.
+        // platform: iOS WebKit drops a selection-handle drag when the page cancels its touchmove.
         const selection = document.getSelection();
         if (selection && !selection.isCollapsed && overlay.contains(selection.focusNode)) return;
         // On a press-and-hold of a list's scroll thumb, the first move is
         // that drift. A sideways guess cancelled it, and iOS then froze the
         // thumb drag that followed.
+        // platform: iOS freezes a scroll-thumb drag when the page cancels its first touchmove.
         const dx = Math.abs(t.clientX - startX);
         const dy = Math.abs(t.clientY - startY);
         axis = Math.max(dx, dy) < AXIS_SLOP_PX ? 'either' : dx > dy ? 'x' : 'y';
@@ -381,6 +391,7 @@ export function BottomSheet({
    * ancestor a caller happens to sit under can move it. React context still
    * reaches through, which is what `SheetKeyboardContext` needs.
    */
+  // platform: A transformed ancestor becomes the containing block of a position fixed element, so the sheet portals to the body.
   return createPortal(
     <div
       ref={overlayRef}
@@ -434,6 +445,7 @@ export function BottomSheet({
           // space available — a percentage height needs a definite ancestor, and
           // with `maxHeight` alone the chain stays `auto` and the form can only
           // overflow and scroll, which is the fold the tail was hiding behind.
+          // platform: 100dvh ignores the on-screen keyboard, and a percentage height needs an ancestor with a definite height.
           height:
             exportChrome && !fitContent && maxHeightPx != null
               ? `${maxHeightPx}px`

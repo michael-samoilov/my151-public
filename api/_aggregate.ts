@@ -8,6 +8,7 @@ const ROLLING_24H_MS = 24 * HOUR_MS;
 const ROLLING_7D_MS = 7 * DAY_MS;
 const ROLLING_30D_MS = 30 * DAY_MS;
 const HOURLY_WINDOW_DAYS = 7;
+const QUOTA_OUTAGE_END_MS = Date.UTC(2026, 8, 26);
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -305,7 +306,7 @@ export function activityGrowth(
     return { ...dates, status: 'unavailable', reason: 'incomplete history' };
   }
   // The quota outage before September 26 cannot be reconstructed from records.
-  if (previousStart < Date.UTC(2026, 8, 26)
+  if (previousStart < QUOTA_OUTAGE_END_MS
     || coverage.outages?.some(outage => !Number.isFinite(outage.start) || !Number.isFinite(outage.end)
       || outage.start < end && outage.end > previousStart)) {
     return { ...dates, status: 'unavailable', reason: 'recording outage' };

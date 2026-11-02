@@ -16,7 +16,7 @@ async function boot(page:Page,tool:typeof tools[number],mode:{ack:boolean;paused
   await route.fulfill({json:{ok:true,...(mode.ack?{activityAck:{accepted:mode.paused?[]:post.activity?.batches.map(b=>b.id)??[],status:mode.paused?'paused':'recorded',...(mode.paused?{retryAt:start+10*60_000}:{})}}:{})}});
  });
  await page.route('**/api/event',route=>route.fulfill({json:{ok:true}}));
- // The installed clock runs until paused; starting early keeps pauseAt(start) in the future on a slow machine.
+ // platform: Playwright's installed clock runs until paused, so it installs a minute early to keep pauseAt(start) in the future.
  await page.clock.install({time:start-60_000});await page.clock.pauseAt(start);
  await page.goto(tool.path+(optedOut?'?notme':''));await expect(page.locator('main').first()).toBeVisible();await page.bringToFront();
  if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(0);

@@ -49,7 +49,7 @@ async function chooseType(page: Page, name: string) {
 }
 
 /** How long each picker tile on screen waited for its sprite after it appeared. */
-async function openPicker(page: Page) {
+async function openPickerTimingTileWaits(page: Page) {
   await page.evaluate((watchMs) => {
     const waits: { sprite: string; waitedMs: number }[] = [];
     const appeared = new Map<HTMLImageElement, number>();
@@ -92,7 +92,7 @@ test.describe('league picker preload', () => {
     const before = await spriteRequests(page);
     await chooseType(page, 'Water');
     const preloaded = (await settled(page)) - before;
-    const waits = await openPicker(page);
+    const waits = await openPickerTimingTileWaits(page);
     const slowest = Math.max(...waits.map((w) => w.waitedMs));
     await testInfo.attach('picker-sprite-waits.json', {
       body: JSON.stringify({ latencyMs: LATENCY_MS, preloaded, tiles: waits.length, slowestMs: slowest, waits }, null, 1),
@@ -117,7 +117,7 @@ test.describe('league picker preload', () => {
     const before = await spriteRequests(page);
     await chooseType(page, 'Water');
     const preloaded = (await settled(page)) - before;
-    const waits = await openPicker(page);
+    const waits = await openPickerTimingTileWaits(page);
     const slowest = Math.max(...waits.map((w) => w.waitedMs));
     await testInfo.attach('picker-sprite-waits.json', {
       body: JSON.stringify({ latencyMs: LATENCY_MS, preloaded, tiles: waits.length, slowestMs: slowest, waits }, null, 1),

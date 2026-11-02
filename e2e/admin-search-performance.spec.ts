@@ -4,6 +4,9 @@ import { buildDashboard } from '../api/_dashboard';
 import type { SearchProviderSnapshot, SearchSeriesPoint } from '../src/lib/searchPerformance';
 import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView';
 
+const MIN_WIDTH_FOR_BADGE_BESIDE_FIGURE = 360;
+const IPHONE_16_VIEWPORT = { width: 393, height: 852 };
+
 function searchPanel(page: import('@playwright/test').Page) {
   return page.getByTestId('search-performance');
 }
@@ -76,7 +79,7 @@ test.describe('admin search performance', () => {
     // The count changes stack their two parts.
     expect(chips.filter((chip) => chip.kpi === 'clicks' || chip.kpi === 'impressions').map((chip) => chip.parts)).toEqual([2, 2]);
     // Only the narrowest phones lack room beside the figure.
-    if (page.viewportSize()!.width >= 360) {
+    if (page.viewportSize()!.width >= MIN_WIDTH_FOR_BADGE_BESIDE_FIGURE) {
       for (const chip of chips) expect(chip, JSON.stringify(chip)).toMatchObject({ beside: true, sameSpan: true });
     }
   });
@@ -113,7 +116,7 @@ test.describe('admin search performance', () => {
     // Desktop has room, so the counts stay whole.
     await expect.poll(tile).toEqual({ figure: '8,764', badge: ['+4,319', '+97%'], beside: true });
     // An iPhone 16 is 393px wide: whole counts would push the change below, so they shorten.
-    await page.setViewportSize({ width: 393, height: 852 });
+    await page.setViewportSize(IPHONE_16_VIEWPORT);
     await expect.poll(tile).toEqual({ figure: '8.8K', badge: ['+4.3K', '+97%'], beside: true });
     // Back on desktop, the counts are whole again.
     await page.setViewportSize({ width: 1280, height: 800 });

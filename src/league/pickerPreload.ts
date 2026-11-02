@@ -40,8 +40,7 @@ export function usePickerPreload(cardIndex: number): void {
   const sections = usePokedexStore((s) => s.sections);
   useEffect(() => {
     if (!open) return;
-    // React runs this effect inside the tap that opened the card, so the
-    // filtering waits for idle time instead of delaying that tap's frame.
+    // platform: React runs this effect inside the tap that opened the card, so the filtering waits for idle time.
     let live = true;
     whenIdle(() => {
       if (live) warmSprites(pickerPageSprites(cardIndex), true);

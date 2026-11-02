@@ -130,7 +130,7 @@ export function useECharts(
 
       const gridRect = (): PlotRect | null => {
         try {
-          // getModel is internal, so reach it through an untyped view.
+          // platform: ECharts getModel is internal and untyped, so the code reaches it through an untyped view.
           const model = (chart as unknown as { getModel(): { getComponent(t: string, i: number): unknown } }).getModel();
           const cs = (
             model.getComponent('grid', 0) as
@@ -193,7 +193,7 @@ export function useECharts(
       const onDown = (e: PointerEvent) => {
         pressed = true;
         hovering = e.pointerType === 'mouse';
-        try { el.setPointerCapture(e.pointerId); } catch { /* Pointer capture rejects inactive pointers. */ }
+        try { el.setPointerCapture(e.pointerId); } catch { /* platform: setPointerCapture throws for a pointer that is no longer active. */ }
         showAt(e.clientX, e.clientY);
       };
       const onMove = (e: PointerEvent) => {

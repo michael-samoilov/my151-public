@@ -32,12 +32,15 @@ function chunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([head, data, crc]);
 }
 
+const PNG_BIT_DEPTH = 8;
+const PNG_COLOR_RGBA = 6;
+
 function encode({ width, height, data }: Raster): Buffer {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
+  ihdr[8] = PNG_BIT_DEPTH; // bit depth
+  ihdr[9] = PNG_COLOR_RGBA; // RGBA
 
   const stride = width * 4;
   const raw = Buffer.alloc(height * (stride + 1));

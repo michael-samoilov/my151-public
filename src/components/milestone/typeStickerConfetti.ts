@@ -19,6 +19,7 @@ const GLYPHS: Record<TypeName, readonly string[]> = GLYPH_PATHS;
  * through `matrix`. With `scalar = 1 / SUPERSAMPLE` and a matrix that only
  * centers the bitmap, that square is the sticker's own box.
  */
+// platform: canvas-confetti fills a square of side bitmap.width * scalar around each piece and maps the bitmap into it through matrix.
 async function stickerShapes(dpr: number): Promise<Map<TypeName, confetti.BitmapShape>> {
   const framePx = FRAME_PX * dpr * SUPERSAMPLE;
   const side = Math.ceil(framePx * PAD);
@@ -57,6 +58,7 @@ function evenMix(count: number): Map<TypeName, number> {
  * when the last piece has faded. Browsers without `OffscreenCanvas` (Safari
  * before 16.4) cannot draw bitmap pieces, so they get the plain pieces.
  */
+// platform: Safari before 16.4 has no OffscreenCanvas and cannot draw bitmap pieces, so it gets the plain pieces.
 export async function burstTypeStickers(): Promise<void> {
   if (typeof OffscreenCanvas === 'undefined' || typeof createImageBitmap !== 'function') {
     await confetti({ ...BURST, ...PLAIN_PIECES });

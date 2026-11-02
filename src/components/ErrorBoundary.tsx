@@ -10,9 +10,6 @@ import { sendCrashReport } from '@/lib/feedbackContext';
  * it had. Now each crash a boundary catches sends a report by itself, and the
  * screen offers one thing to do: reload.
  *
- * Still a class, because React 19 has no hook equivalent for
- * `componentDidCatch`.
- *
  * Wrap each `<Suspense>` separately as well as the app: the locale and route
  * chunks are fetched lazily, chunk-load failure on a flaky mobile connection is
  * the most likely error here, and one failed chunk should cost one page rather
@@ -39,6 +36,7 @@ interface State {
   error: Error | null;
 }
 
+// platform: React 19 has no hook equivalent for componentDidCatch, so the boundary stays a class.
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 

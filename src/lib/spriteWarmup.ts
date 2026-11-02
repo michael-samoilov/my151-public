@@ -74,16 +74,12 @@ export function spriteWarmupPlan(sections: Readonly<Record<string, readonly numb
 
 let queue: string[] = [];
 const started = new Set<string>();
-/** Held until each load settles: an unreferenced Image can be collected mid-load and never report back. */
+// platform: The browser can collect an unreferenced Image mid-load, and that Image then fires neither load nor error.
 const inFlight = new Set<HTMLImageElement>();
 let paused = false;
 let pumpScheduled = false;
 
-/**
- * Starts the next loads when the main thread is idle, so a tap is never queued
- * behind them. The 200 ms cap matters on Safari, which has no idle callback
- * and falls back to a timer of that length.
- */
+// platform: Safari has no requestIdleCallback, so whenIdle waits the full 200 ms cap there.
 function schedulePump() {
   if (pumpScheduled) return;
   pumpScheduled = true;

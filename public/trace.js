@@ -7,6 +7,8 @@
   const HUB_IMAGES = 'img[data-card-scene], [data-artwork] img';
   const GIVE_UP_MS = 15000;
   const TAIL_MS = 2000;
+  const SPRITES_STILL_MS = 1000;
+  const NO_SPRITES_END_MS = 5000;
   const isSprite = (src) => /\/sprites\//.test(src) || src.startsWith('blob:');
   const html = document.documentElement;
   const worker = navigator.serviceWorker;
@@ -114,6 +116,7 @@
   let frames = 0;
   // Computed visibility first: it needs style only, and a hidden element then
   // skips the layout that getClientRects forces.
+  // platform: getClientRects forces layout, so check computed visibility first and let a hidden element skip it.
   const visible = (node) => Boolean(node) && getComputedStyle(node).visibility === 'visible' && node.getClientRects().length > 0;
 
   // Sprites inside the viewport, and how many of them are drawn. Logged on change.
@@ -141,6 +144,7 @@
     lastFrame = timestamp;
     // Forcing layout while the HTML still streams can change when an engine
     // first paints. The hub stays hidden until this end marker exists anyway.
+    // platform: Forcing layout while the HTML still streams can change when an engine first paints, so wait for the end marker.
     if (document.getElementById('p151-end')) {
       if (!seen.title && Array.from(document.querySelectorAll('.hub-grid [data-card-title]')).some(visible)) {
         seen.title = true;
@@ -181,8 +185,8 @@
   // sprites ends 5 s after it starts.
   function spritesSettled() {
     const now = performance.now();
-    const drawn = sprites.shown > 0 && sprites.drawn === sprites.shown && now - sprites.changedAt > 1000;
-    return loaded && (drawn || (sprites.shown === 0 && now > 5000));
+    const drawn = sprites.shown > 0 && sprites.drawn === sprites.shown && now - sprites.changedAt > SPRITES_STILL_MS;
+    return loaded && (drawn || (sprites.shown === 0 && now > NO_SPRITES_END_MS));
   }
 
   const round = (value) => (typeof value === 'number' ? Math.round(value) : value);
@@ -227,6 +231,7 @@
     // Last, so the storage reads cannot compete with the load they describe.
     // The sprite database is opened only when it exists: opening a missing
     // one would create it without the store the service worker expects.
+    // platform: indexedDB.open creates a missing database without the service worker's store, so open the sprite database only when listed.
     try {
       const since = performance.now();
       const listed = indexedDB.databases ? (await indexedDB.databases()).some((db) => db.name === SPRITE_DB) : false;
@@ -410,6 +415,7 @@
   function table(runs) {
     const wrap = el('div', 'display:block;overflow-x:auto;max-width:100%;margin:2px 0');
     // Separate borders: WebKit drops collapsed borders on sticky cells.
+    // platform: WebKit drops collapsed borders on sticky cells, so the table uses separate borders.
     const grid = el('table', 'border-collapse:separate;border-spacing:0;font:inherit;color:inherit');
     const row = (label, cells, bold) => {
       const tr = el('tr');

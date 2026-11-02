@@ -144,12 +144,12 @@ const DECISIONS = [
 ];
 
 /** PokeAPI forms the legacy identity maps name wrongly or not at all. */
-const POKEAPI_FORM: Record<string, { form: string; why: string }> = {
+const POKEAPI_FORM_OVERRIDES: Record<string, { form: string; why: string }> = {
   xerneas: { form: 'xerneas-active', why: 'The app shows Xerneas as Active Mode (sprite 716) and lists Neutral Mode as its own form; the legacy map picked PokeAPI\'s default form, Neutral Mode.' },
   'vivillon-pokeball': { form: 'vivillon-poke-ball', why: 'The app spells the pattern "pokeball"; PokeAPI spells it "poke-ball".' },
 };
 /** Cosmetic females that PokeAPI keeps on the species' pokemon record, with no form of their own. */
-const POKEAPI_POKEMON: Record<string, string> = { 'combee-female': 'combee', 'hippopotas-female': 'hippopotas', 'hippowdon-female': 'hippowdon', 'unfezant-female': 'unfezant' };
+const COSMETIC_FEMALE_POKEAPI_POKEMON: Record<string, string> = { 'combee-female': 'combee', 'hippopotas-female': 'hippopotas', 'hippowdon-female': 'hippowdon', 'unfezant-female': 'unfezant' };
 const heldShiny = (shinySources as { held: Record<string, string> }).held;
 
 // ── Games ────────────────────────────────────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ const REGION_GAME: Record<string, string> = { alola: 'SM', galar: 'SwSh', hisui:
 const OBTAIN: Record<string, Obtain | null> = { 'spin-off': 'spinoff-only', event: 'event-only', story: 'story-only', state: null };
 
 /** The two tables in src/favorites/model that no module exports, read from the source text. */
-function readTables() {
+function readUnexportedPickerTables() {
   const debutText = readFileSync(join(root, 'src/favorites/model/debut.ts'), 'utf8');
   const laterDebuts = [...debutText.matchAll(/\[(\d+), (\d+), '(\w+)'\]/g)].map((m) => [Number(m[1]), Number(m[2]), m[3]] as const);
   if (laterDebuts.length !== 24) throw new Error(`expected 24 LATER_DEBUTS rows, found ${laterDebuts.length}`);
@@ -211,7 +211,7 @@ function readTables() {
   if (sources.size !== 38) throw new Error(`expected 38 FORM_SOURCES rows, found ${sources.size}`);
   return { laterDebuts, sources };
 }
-const tables = readTables();
+const tables = readUnexportedPickerTables();
 
 function debutByDebutTs(mon: Mon): string {
   const listed = tables.laterDebuts.find(([first, last]) => mon.id >= first && mon.id <= last);
@@ -244,7 +244,7 @@ const FORME = (value: string): Coordinates => ({ variety: { forme: value } });
 const LOOK = (value: string): Coordinates => ({ variety: { look: value } });
 
 /** Permanent forms whose slug does not follow a pattern rule. */
-const COORDINATES: Record<string, Coordinates> = {
+const IRREGULAR_COORDINATES: Record<string, Coordinates> = {
   'deoxys-attack': FORME('attack'), 'deoxys-defense': FORME('defense'), 'deoxys-speed': FORME('speed'),
   'wormadam-sandy': { variety: { cloak: 'sandy' } }, 'wormadam-trash': { variety: { cloak: 'trash' } },
   'shaymin-sky': FORME('sky'), 'giratina-origin': FORME('origin'), 'dialga-origin': FORME('origin'), 'palkia-origin': FORME('origin'),
@@ -325,7 +325,7 @@ function classify(formId: string, species: string, mon: Mon): Classification {
     return { kind: 'state', state: { kind, from: POWERUP_FROM[formId], ...(letter ? { letter } : {}) } };
   }
   if (STATES[formId]) return { kind: 'state', state: STATES[formId] };
-  if (COORDINATES[formId]) return { kind: 'permanent', coordinates: COORDINATES[formId] };
+  if (IRREGULAR_COORDINATES[formId]) return { kind: 'permanent', coordinates: IRREGULAR_COORDINATES[formId] };
   if (formId === species) return { kind: 'permanent', coordinates: DEFAULT_COORDINATES[species] ?? {} };
   const rest = formId.startsWith(`${species}-`) ? formId.slice(species.length + 1) : null;
   if (rest === null) throw new Error(`"${formId}" is not named after its species "${species}" and no rule covers it`);
@@ -374,8 +374,8 @@ interface Identity {
 }
 
 function externalIdsOf(formId: string, legacyForm: string | undefined): ExternalIds | undefined {
-  if (POKEAPI_POKEMON[formId]) return { pokeapiPokemon: POKEAPI_POKEMON[formId] };
-  const form = POKEAPI_FORM[formId]?.form ?? legacyForm ?? (pokeapi.forms[formId] ? formId : undefined);
+  if (COSMETIC_FEMALE_POKEAPI_POKEMON[formId]) return { pokeapiPokemon: COSMETIC_FEMALE_POKEAPI_POKEMON[formId] };
+  const form = POKEAPI_FORM_OVERRIDES[formId]?.form ?? legacyForm ?? (pokeapi.forms[formId] ? formId : undefined);
   if (form && !pokeapi.forms[form]) throw new Error(`${formId}: PokeAPI form "${form}" is not in ${pokeapiExtractPath(POKEAPI_COMMIT)}`);
   return form && form !== formId ? { pokeapiForm: form } : undefined;
 }
@@ -396,9 +396,7 @@ function formIdOf(mon: Mon, dexRow: Pokemon | undefined): string {
     const identifier = provenanceById.get(mon.id)?.identifier;
     const suffix = identifier && /-(mega(?:-[xyz])?|primal|gmax)$/.exec(identifier)?.[1];
     if (!suffix) throw new Error(`power-up ${mon.id} has no identifier with a known suffix in form-types/provenance.json`);
-    // PokeAPI names a power-up after the pokemon it enters from, which can be a default variety such as
-    // "urshifu-single-strike". The ontology names it after the species, like the default form itself.
-    // Gigantamax Rapid Strike Urshifu enters from a non-default form, so it keeps the form's name.
+    // platform: PokeAPI names a power-up after the pokemon it enters from; the ontology uses the species, except Gigantamax Rapid Strike Urshifu (10227).
     return mon.id === 10227 ? identifier : `${speciesSlug.get(speciesDexOfMon(mon))}-${suffix}`;
   }
   return mon.name;
@@ -473,7 +471,7 @@ for (const identity of identities) {
   if (formId === 'floette-mega') disagree('state.from', formId, { 'powerupForms.json': 'floette', 'spec risk 5': 'floette-eternal' }, ['floette-eternal'], 'In Legends: Z-A only Eternal Floette Mega Evolves; the League and Picker keep offering it on plain Floette until phase 2.');
   const chosenPokeapiForm = identity.externalIds?.pokeapiForm ?? (identity.pokeapi.kind === 'form' ? formId : undefined);
   if (identity.legacyPokeapiForm && identity.legacyPokeapiForm !== chosenPokeapiForm) {
-    disagree('externalIds.pokeapiForm', formId, { [dexRow ? 'scripts/i18n/pokemon-id-map.json' : 'form-types/provenance.json']: identity.legacyPokeapiForm, 'PokeAPI snapshot': chosenPokeapiForm }, chosenPokeapiForm, POKEAPI_FORM[formId].why);
+    disagree('externalIds.pokeapiForm', formId, { [dexRow ? 'scripts/i18n/pokemon-id-map.json' : 'form-types/provenance.json']: identity.legacyPokeapiForm, 'PokeAPI snapshot': chosenPokeapiForm }, chosenPokeapiForm, POKEAPI_FORM_OVERRIDES[formId].why);
   }
 }
 const leagueParentOverrides: Record<number, number | null> = FORM_PARENT_IDS;

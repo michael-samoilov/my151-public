@@ -397,6 +397,7 @@ function GroupBox({
     // (transitionend never fires under display:none), so returning to the tab
     // would show every section as a 1px line. Animating from 0 on show would
     // cascade every section back to full height on every tab switch.
+    // platform: Under display:none, scrollHeight reports 0 and transitionend never fires, so a hidden section skips the animation.
     const newHeight = el.scrollHeight;
     if (newHeight === 0) return;
 
@@ -466,6 +467,7 @@ function GroupBox({
         {/* The count is an element, not a bare text node: a browser's page
             translation replaces text nodes, and React then crashes removing
             one when the section empties (20 October). */}
+        {/* platform: Browser page translation replaces bare text nodes, and React then crashes when it removes one, so the count is an element. */}
         {sectionName(group.id)}{pokemonIds.length > 0 && <span>{` (${pokemonIds.length})`}</span>}
       </div>
 

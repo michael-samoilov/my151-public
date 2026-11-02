@@ -9,7 +9,7 @@ import { INHERITED_UNSOURCED, type FormEntry, type SpeciesFile } from '../author
 import type { Ontology } from '../resolve';
 import { appGrowthRate, pokeapiIdentityOf, type PokeapiFormRow, type PokeapiIdentity } from './source';
 
-/** Which PokeAPI table states the fact. PokeAPI gives color, shape, and egg groups per species, so a form's own value has no counterpart of its own. */
+// platform: PokeAPI states color, shape, and egg groups per species, so a form's own value has no PokeAPI counterpart.
 export type Level = 'form' | 'pokemon' | 'species';
 
 export interface Disagreement {
@@ -76,7 +76,7 @@ export function linkedForms(ontology: Ontology): Linked[] {
 
 const unsourced = (entry: Linked['entry'], fact: string): boolean => (entry.sourceOf as Record<string, string> | undefined)?.[fact] === INHERITED_UNSOURCED;
 
-/** The form a Mega, Primal, or Gigantamax enters from, as PokeAPI names it: the identifier minus the step suffix. */
+// platform: PokeAPI names a Mega, Primal, or Gigantamax after the form it enters from, plus a step suffix.
 export const POWER_UP_SUFFIX = /-(mega(?:-[xyz])?|primal|gmax)$/;
 export const powerUpEntryIdentifier = (identifier: string): string | null => (POWER_UP_SUFFIX.test(identifier) ? identifier.replace(POWER_UP_SUFFIX, '') : null);
 
@@ -142,8 +142,7 @@ export function factDisagreements(ontology: Ontology): Disagreement[] {
     const resolved = ontology.species.get(form.species)!;
     row('captureRate', 'species', resolved.captureRate, species.captureRate);
     row('growthRate', 'species', resolved.growthRate, appGrowthRate(species.growthRate));
-    // PokeAPI has one legendary flag; the app splits it into sub-legendary and restricted, and
-    // tags Ultra Beasts from its own list, so only the flag is compared.
+    // platform: PokeAPI has one legendary flag, so only that flag is compared with the app's sub-legendary and restricted classes.
     const legendaryFlag = resolved.legendaryClass === 'sub-legendary' || resolved.legendaryClass === 'restricted' ? 'legendary' : resolved.legendaryClass === 'mythical' ? 'mythical' : 'none';
     row('legendaryClass', 'species', legendaryFlag, species.isMythical ? 'mythical' : species.isLegendary ? 'legendary' : 'none');
     row('baby', 'species', resolved.tags.includes('baby'), species.isBaby);

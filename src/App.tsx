@@ -83,13 +83,7 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
 /** Hidden content renders at the lowest priority, after everything else; 5 s covers the lab phone. */
 const PRACTICE_RENDER_MS = 5000;
 
-/**
- * Builds a hidden Starters picker once while the page is idle, so the first
- * picker a visitor opens runs on warm code: on the lab phone, the first
- * Starters open fell from about 680 to 459 ms. Hidden `<Activity>` content
- * renders without effects or layout and yields to any input. It renders into
- * an element that is never attached, so no selector or screen reader finds it.
- */
+// platform: React renders hidden <Activity> content at the lowest priority, without effects or layout, and yields it to any input.
 function PickerPracticeRender({ onDone }: { onDone: () => void }) {
   const [host] = useState(() => document.createElement('div'));
   const [store] = useState(() => create<BrowserStoreState>()(() => ({

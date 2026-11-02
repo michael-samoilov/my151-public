@@ -317,13 +317,7 @@ export function nodeDepth(name: string, links: FunnelLink[]): number {
   return 1 + Math.max(...incoming.map((l) => nodeDepth(l.source, links)));
 }
 
-/** Vertical order inside a Sankey column. Kept private (Not exported on
- *  the Picker) sits above
- *  success so its last-hop ribbon stays on top and does not cross the
- *  bucket stack. Then success, through, other private, drop-offs.
- *  Outgoing export links do not promote a size bucket into the through
- *  rank, or exporting 1–30 would sit next to Completed. echarts with
- *  `layoutIterations: 0` stacks a column in node-list order. */
+// platform: ECharts with layoutIterations: 0 stacks a Sankey column in node-list order.
 const ROLE_STACK: Record<FunnelRole, number> = {
   success: 0,
   neutral: 1,

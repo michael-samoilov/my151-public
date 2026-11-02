@@ -10,8 +10,7 @@ import { raw, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { ArceusCrestIcon } from './ArceusCrestIcon';
 
-// align-middle centres the disc on Inter's x-height. Its cap height sits
-// 0.09em higher, so the lift centres it on the capitals and the text box.
+// platform: Inter's cap height sits 0.09em above the x-height centre that `align-middle` uses, so the disc lifts to centre on the capitals.
 function ResetDisc() {
   return (
     <span

@@ -5,8 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-// User-agent and API markers of speed tests and automated browsers.
-// `ptst` is WebPageTest's user-agent token.
+// platform: `ptst` is WebPageTest's user-agent token.
 const MARKERS = /lighthouse|pagespeed|page speed|headless|webdriver|\bptst\b|gtmetrix/i;
 const TEXT = /\.(tsx?|jsx?|mjs|cjs|html|css|json|txt|xml|webmanifest)$/;
 // The one allowed mention. src/lib/automation.ts reads the standard automation

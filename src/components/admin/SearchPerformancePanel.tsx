@@ -240,7 +240,7 @@ function SearchTrend({
         yAxis: drawn.length
           ? drawn.map(({ kpi }, i) => {
               const bounds = kpi.inverse ? { inverse: true, min: 1 } : { min: 0 };
-              // containLabel still reserves room for a hidden axis's labels, so hide them too.
+              // platform: ECharts containLabel reserves room for a hidden axis's labels, so the labels are hidden too.
               if (!labeled) {
                 return { type: 'value' as const, ...bounds, max: 'dataMax', show: false, axisLabel: { show: false } };
               }
@@ -253,7 +253,7 @@ function SearchTrend({
                 splitNumber: 3,
                 minInterval: kpi.minInterval,
                 name: kpi.label,
-                // An inverted axis starts at the top.
+                // platform: On an inverted ECharts axis, the start location is the top.
                 nameLocation: kpi.inverse ? ('start' as const) : ('end' as const),
                 nameGap: font,
                 nameTextStyle: { color: kpi.color, fontSize: font, fontWeight: 700, align: side },

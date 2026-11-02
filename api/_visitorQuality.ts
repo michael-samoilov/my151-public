@@ -52,7 +52,7 @@ export function suspectReasons(browsers: SuspectInput[]): Map<string, SuspectRea
   };
   const groups = new Map<string, SuspectInput[]>();
   for (const b of browsers) {
-    // Every real browser sends Accept-Language.
+    // platform: Every real browser sends an Accept-Language header.
     if (!b.lang) add(b.cid, 'no-language');
     if (b.activeMs >= BURST_MAX_ACTIVE_MS) continue;
     const key = [b.country, b.region, b.device, b.os, b.browser, b.lang].join('|');

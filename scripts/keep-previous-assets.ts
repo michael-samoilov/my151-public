@@ -98,7 +98,7 @@ async function readLive(site: string, pages: string[]): Promise<DeployFiles> {
 
 async function main(dist: string, site: string) {
   const now = new Date();
-  // index.html is served at /, and cleanUrls serves name.html at /name.
+  // platform: Vercel serves index.html at /, and cleanUrls serves name.html at /name.
   const pages = fs.readdirSync(dist).filter((file) => file.endsWith('.html') && file !== '404.html')
     .map((file) => (file === 'index.html' ? '/' : `/${file.slice(0, -'.html'.length)}`));
   const { next, keep } = planKept(await readLive(site, pages), filesUnder(path.join(dist, 'assets'), 'assets/'), now);
