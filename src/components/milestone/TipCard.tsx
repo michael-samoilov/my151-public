@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { useT } from '@/i18n';
+import { useLocale, useT, type Locale } from '@/i18n';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { cn } from '@/lib/utils';
 import { showTipDot, type TipTarget } from './tipDots';
@@ -45,12 +45,32 @@ function reducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+const SEGMENTED: readonly Locale[] = ['ja', 'zh-Hans', 'zh-Hant'];
+
+/**
+ * Japanese and Chinese have no spaces, so a browser may break a line inside a word
+ * (WebKit and Chinese have no phrase-aware breaking). This puts the only break points
+ * between phrases: a word with the punctuation and Japanese particles that follow it.
+ * The text that holds it keeps all, so it breaks nowhere else.
+ */
+function phrases(text: string, locale: Locale): ReactNode {
+  if (!SEGMENTED.includes(locale) || typeof Intl.Segmenter !== 'function') return text;
+  const units: string[] = [];
+  for (const { segment } of new Intl.Segmenter(locale, { granularity: 'word' }).segment(text)) {
+    const attaches = /^[\p{P}\s]/u.test(segment) || (locale === 'ja' && /^[\u3041-\u309F]+$/u.test(segment));
+    if (attaches && units.length) units[units.length - 1] += segment;
+    else units.push(segment);
+  }
+  return units.map((unit, i) => <Fragment key={i}>{i > 0 && <wbr />}{unit}</Fragment>);
+}
+
 /**
  * The tip's card: a copy of the target's glyph, a one-line title, then a red action line
  * or a body. The target gets its dot as the card mounts. The card never times out.
  */
 export function TipCard({ id, target, then, title, onDismiss, anchor, notch, className, style, ...content }: TipCardProps) {
   const t = useT();
+  const locale = useLocale();
   const cardRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLSpanElement>(null);
 
@@ -84,9 +104,9 @@ export function TipCard({ id, target, then, title, onDismiss, anchor, notch, cla
   );
   const text = (
     <span className="flex min-w-0 flex-col">
-      <span data-tip-title className="whitespace-nowrap text-sm font-semibold leading-5 text-foreground">{title}</span>
+      <span data-tip-title className="whitespace-nowrap text-sm font-semibold leading-5 text-foreground [word-break:auto-phrase] [&:lang(ko)]:break-keep">{title}</span>
       {content.body !== undefined && (
-        <span className="max-w-[17rem] text-[0.8125rem] leading-[1.125rem] text-muted-foreground text-pretty">{content.body}</span>
+        <span data-tip-body className="max-w-[17rem] text-[0.8125rem] leading-[1.125rem] text-muted-foreground text-pretty [word-break:auto-phrase] [&:lang(ja)]:break-keep [&:lang(ko)]:break-keep [&:lang(zh)]:break-keep">{phrases(content.body, locale)}</span>
       )}
       {content.action !== undefined && (
         <span data-tip-action className="whitespace-nowrap text-[0.8125rem] font-semibold leading-[1.125rem] text-primary">
