@@ -35,6 +35,7 @@
       "id": "aegislash-blade",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "stance-change" },
         "from": ["aegislash"]
       },
       "baseStats": { "hp": 60, "atk": 140, "def": 50, "spe": 60, "spa": 140, "spd": 50 },

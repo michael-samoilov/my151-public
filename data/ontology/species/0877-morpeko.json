@@ -35,6 +35,7 @@
       "id": "morpeko-hangry",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "hunger-switch" },
         "from": ["morpeko"]
       },
       "color": "purple",

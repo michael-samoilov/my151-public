@@ -35,6 +35,7 @@
       "id": "cherrim-sunshine",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "flower-gift" },
         "from": ["cherrim"]
       },
       "sprite": "11128",
