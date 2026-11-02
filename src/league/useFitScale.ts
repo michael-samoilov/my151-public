@@ -51,11 +51,18 @@ interface Compact {
  */
 const EXTRA_EPS = 2;
 
+/**
+ * `held` keeps the last fit and measures nothing while it is set. A card
+ * zoomed past its fit moves the block's rects with the zoom and with its
+ * frame's scroll, and the fit must not follow either. It measures once more
+ * when `held` clears.
+ */
 export function useFitScale(
   ref: React.RefObject<HTMLDivElement | null>,
   floor = 0.55,
   grow?: Grow,
   compact?: Compact,
+  held = false,
 ): Fit {
   const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity, gutterPx: 0, tail: true });
   const scaleRef = useRef(1);
@@ -82,7 +89,7 @@ export function useFitScale(
   };
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || held) return;
     const viewport = el.closest('[data-lg-viewport]');
     const compute = () => {
       // Unzoomed layout height — not getBoundingClientRect()/scale. Zoomed
@@ -245,6 +252,7 @@ export function useFitScale(
     roomiestRem,
     shortestRem,
     compact?.holds,
+    held,
   ]);
   return fit;
 }
@@ -276,14 +284,16 @@ function containerUnitsZoomed(): boolean {
   return cqUnitsZoomed;
 }
 
-export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto'): React.CSSProperties {
+/** `cardZoom` is the card's own zoom on top of its fit (`useCardZoom`). */
+export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto', cardZoom = 1): React.CSSProperties {
+  const zoom = fit.scale * cardZoom;
   return {
-    zoom: fit.scale,
-    [CQ_ZOOM_VAR as string]: containerUnitsZoomed() ? fit.scale : 1,
+    zoom,
+    [CQ_ZOOM_VAR as string]: containerUnitsZoomed() ? zoom : 1,
     width: fit.width || undefined,
     marginInline: 'auto',
     // The margin sits on the zoomed block, so it is zoomed too.
-    ...(fit.gutterPx ? { marginBottom: -fit.gutterPx / fit.scale } : null),
+    ...(fit.gutterPx ? { marginBottom: -fit.gutterPx / zoom } : null),
     ...(rendering ? { [SPRITE_RENDERING_VAR]: rendering } : null),
   };
 }

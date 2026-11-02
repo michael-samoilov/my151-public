@@ -32,14 +32,13 @@ const stopPropagation = (e: Event) => e.stopPropagation();
  * pressed and you are holding it, leave it and you are dragging.
  *
  * Movement never stands the sensor down. The cells ask for
- * `touch-action: pinch-zoom`, so there is no pan for the browser to start.
+ * `touch-action: none`, so there is no pan for the browser to start.
  * A second finger ends the gesture early, held column or not: it is
- * a pinch, and the browser takes it. Blink fires no `touchcancel` when it
- * does. It keeps sending the moves, uncancelable, so a sensor that waited
- * for one followed the first finger through the zoom and dropped it as a
- * drag, and a pinch swapped two lines. The rest mirrors the stock sensor: a
- * click after a begun drag is stopped before it reaches the cell, text
- * selection is kept off, and Escape cancels.
+ * a pinch, and the card's zoom takes it (`useCardZoom`). No `touchcancel`
+ * comes, so a sensor that waited for one followed the first finger through
+ * the zoom and dropped it as a drag, and a pinch swapped two lines. The rest
+ * mirrors the stock sensor: a click after a begun drag is stopped before it
+ * reaches the cell, text selection is kept off, and Escape cancels.
  */
 export class HoldOrMoveTouchSensor implements SensorInstance {
   static activators: Activators<HoldOrMoveOptions> = [
