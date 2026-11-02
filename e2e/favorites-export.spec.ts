@@ -1,4 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
+
+async function waitForSheetToFinishRising(dialog: Locator) {
+  await dialog.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)));
+}
 
 test.describe('full favorite chart export', () => {
   test('partial chart uses shared PNG geometry and preserves saved settings', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
@@ -110,6 +114,7 @@ test.describe('full favorite chart export', () => {
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
     const dialog = page.locator('[role="dialog"][data-export-chrome]');
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    await waitForSheetToFinishRising(dialog);
     const bounds = await dialog.boundingBox();
     const viewport = page.viewportSize()!;
     expect(bounds).not.toBeNull();
