@@ -57,8 +57,11 @@ const MINIMAP_HOVER_MS = 200;
 const WHEEL_SETTLE_MS = 120;
 const MINIMAP_LINGER_MS = 1200;
 const MINIMAP_PAD = 3;
-function minimapRight(base: number, mapWidth: number): number {
-  return Math.max(0, Math.round(2.57 * base - 0.67 * (mapWidth + 2 * MINIMAP_PAD)));
+// On desktop, the minimap centers on favorite × legendary and favorite ×
+// gimmick, the two disabled cells beside favorite × favorite.
+function minimapRight(base: number, mapWidth: number, desktop: boolean): number {
+  const outer = mapWidth + 2 * MINIMAP_PAD;
+  return Math.max(0, Math.round(desktop ? 2 * base - outer / 2 : 2.57 * base - 0.67 * outer));
 }
 function overlapsPane(map: HTMLElement, scroller: HTMLElement): boolean {
   const pane = scroller.querySelector('[data-testid="favorites-picker"]')?.getBoundingClientRect();
@@ -307,7 +310,7 @@ function useZoomFrame(
       // covers the disabled cells beside favorite × favorite. A centered grid
       // narrower than the frame leaves a gap on its right.
       const gap = desktop || fitFrame ? Math.max(0, (el.clientWidth - base * COLS) / 2) : 0;
-      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + Math.round(gap) + minimapRight(base, box.width)}px`;
+      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + Math.round(gap) + minimapRight(base, box.width, desktop)}px`;
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop}px`;
       const sx = box.width / (TYPE_AXIS.length * cell);
       const sy = box.height / (GEN_AXIS.length * cell);

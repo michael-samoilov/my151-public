@@ -57,7 +57,7 @@ export function BuildDepthChart({
           {
             type: 'line',
             data: pts,
-            step: 'end',
+            step: 'start',
             smooth: false,
             symbol: 'none',
             lineStyle: { color: ink, width: 2 },
