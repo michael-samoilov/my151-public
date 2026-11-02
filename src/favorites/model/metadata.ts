@@ -1,5 +1,6 @@
 import pokemonData from '@/data/pokemon.json';
 import type { Pokemon } from '@/types/pokemon';
+import { pokemonShape } from '@/data/pokemonShape';
 import favoritesMetadata from '@/data/generated/favorites-metadata.json';
 import { pickerDexId, type PickerMon } from './catalog';
 
@@ -15,7 +16,8 @@ function biologicalMetadata(mon: PickerMon) {
 export function pickerPokemonMetadata(mon: PickerMon): Pokemon | undefined {
   const biological = biologicalMetadata(mon);
   return biological ? { ...biological, ...PICKER_METADATA[mon.id], id: mon.id, name: mon.name,
-    types: mon.types, sprite: mon.sprite, generation: mon.generation } : undefined;
+    types: mon.types, sprite: mon.sprite, generation: mon.generation,
+    shape: pokemonShape(mon.id, PICKER_METADATA[mon.id]?.shape ?? biological.shape) } : undefined;
 }
 
 export function pickerEvolutionRole(mon: PickerMon) {
