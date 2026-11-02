@@ -16,6 +16,7 @@ import { NO_TYPE_STAR_RADIUS } from '../theme';
 import { useCardView } from '../useCardView';
 import { usePickerPreload } from '../pickerPreload';
 import { fitStyle, useFitScale } from '../useFitScale';
+import { useCardZoom } from '../useCardZoom';
 import { SPRITE_REM } from '../slotLayout';
 import { spriteRendering, spriteScreen } from '../spriteScale';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
@@ -24,7 +25,6 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
 import { CardHelpButton } from './CardHelp';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
-import { LeagueTipSlot } from './LeagueFunnelNudge';
 import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
 import { confirmOnEnter } from './confirmOnEnter';
@@ -263,14 +263,17 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const fitRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
   const dpr = useDevicePixelRatio();
+  const { zoom, frameProps } = useCardZoom(cardIndex, fitRef, isDesktop);
   const fit = useFitScale(
     fitRef,
     0.55,
     isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96, dpr, tail: true } : undefined,
+    undefined,
+    zoom > 1,
   );
   const rendering = spriteRendering(
     spriteScreen(isDesktop, dpr),
-    SPRITE_REM * getAppliedRootFontSizePx() * fit.scale,
+    SPRITE_REM * getAppliedRootFontSizePx() * fit.scale * zoom,
     dpr,
   );
 
@@ -285,10 +288,13 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
           <CardActions cardIndex={cardIndex} />
         </div>
       )}
-      {withBar && <LeagueTipSlot pane="card" />}
-      <div className="px-3 pt-2.5">
-        <div ref={fitRef} style={fitStyle(fit, rendering)}>
-          <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />
+      <div className="px-3">
+        {/* The fit measures its parent, so the top gap it keeps below the
+            card is this frame's padding. */}
+        <div {...frameProps} className="pt-2.5">
+          <div ref={fitRef} style={fitStyle(fit, rendering, zoom)}>
+            <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />
+          </div>
         </div>
       </div>
       {/* Both pickers are `position: fixed`, and a transformed ancestor
