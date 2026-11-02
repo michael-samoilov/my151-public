@@ -11,6 +11,7 @@ It does not replace the rules or decisions in those records.
 | How do the tools, saved data, and server interact? | [Architecture](architecture.md) |
 | What performance targets and measurement methods apply? | [Performance](performance.md) |
 | Where do sprites and their permissions come from? | [Credits and provenance](credits/README.md) |
+| How should species, forms, sprites, games, moves, and encounters connect? | [Pokémon data model spec](data-model/pokemon-ontology.md) (proposal) |
 
 ## Make a change
 

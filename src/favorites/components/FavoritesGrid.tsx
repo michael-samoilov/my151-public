@@ -303,7 +303,11 @@ function useZoomFrame(
       if (!map || !view) return;
       map.style.display = overflows ? '' : 'none';
       if (!overflows) return;
-      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + minimapRight(base, box.width)}px`;
+      // The offset counts from the grid's right edge at zoom 1, so the minimap
+      // covers the disabled cells beside favorite × favorite. A centered grid
+      // narrower than the frame leaves a gap on its right.
+      const gap = desktop || fitFrame ? Math.max(0, (el.clientWidth - base * COLS) / 2) : 0;
+      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + Math.round(gap) + minimapRight(base, box.width)}px`;
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop}px`;
       const sx = box.width / (TYPE_AXIS.length * cell);
       const sy = box.height / (GEN_AXIS.length * cell);
