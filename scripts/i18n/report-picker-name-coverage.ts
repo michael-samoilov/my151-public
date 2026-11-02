@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { allPickerMons, pickerNameId } from '../../src/favorites/model/catalog';
+import { allPickerMons } from '../../src/favorites/model/catalog';
 import { LOCALES } from '../../src/i18n/config';
 
 const species = JSON.parse(readFileSync('src/i18n/alt-form-species.json', 'utf8')) as Record<number, number>;
@@ -10,9 +10,9 @@ const report = LOCALES.map(locale => {
   const overlay = JSON.parse(readFileSync(`src/i18n/picker-names/${locale}.json`, 'utf8'));
   Object.assign(catalog.forms, overlay.forms);
   Object.assign(species, overlay.species);
-  const missingSpecies = allPickerMons().filter(mon => !catalog.species[(species[pickerNameId(mon)] ?? pickerNameId(mon)) - 1]);
+  const missingSpecies = allPickerMons().filter(mon => !catalog.species[(species[mon.id] ?? mon.id) - 1]);
   const missingDescriptors = allPickerMons().filter(mon => mon.id > 10_000
-    && !catalog.forms[mon.id === 10227 ? 'picker:10227' : pickerNameId(mon)]
+    && !catalog.forms[mon.id]
     && !mon.name.endsWith('-female')).map(mon => ({ id: mon.id, name: mon.name }));
   return { locale, sprites: allPickerMons().length, missingSpecies, missingDescriptors };
 });

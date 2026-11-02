@@ -39,13 +39,9 @@ function readLeague(): ToolProgress {
 }
 
 async function readFavorites(): Promise<ToolProgress> {
-  const savedFills = readSavedState('favorite-picker')?.fills;
-  if (!savedFills || typeof savedFills !== 'object' || Array.isArray(savedFills)) {
-    return { count: 0, total: FAVORITES_TOTAL };
-  }
-  const fills = Object.fromEntries(Object.entries(savedFills).filter(
-    (entry): entry is [string, number] => typeof entry[1] === 'number',
-  ));
+  const { savedFavoriteFills } = await import('@/favorites/model/savedNumbers');
+  const fills = savedFavoriteFills(localStorage.getItem('favorite-picker'));
+  if (!fills) return { count: 0, total: FAVORITES_TOTAL };
   const { buildFavoritesSnapshot } = await import('@/favorites/export/snapshot');
   const { filled, total } = buildFavoritesSnapshot(fills).completion;
   return { count: filled, total };

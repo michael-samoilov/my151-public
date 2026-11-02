@@ -750,8 +750,8 @@ for(const [key,cell] of Object.entries(favoriteCells)) {
 const pickerNow=Date.UTC(2026,9,4,18);
 const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
   const fills=Object.fromEntries(Object.entries(fullFills).slice(0,depth));
-  const initial=parseFavoriteSnapshot({v:1,fills:{}})!;
-  const selected=parseFavoriteSnapshot({v:1,fills})!;
+  const initial=parseFavoriteSnapshot({v:2,fills:{}})!;
+  const selected=parseFavoriteSnapshot({v:2,fills})!;
   const cid=`demo-picker-${i+1}`;
   let r=mergeFavoriteRecord(null,{cid,id:`open-${i}`,now:pickerNow-86400000,kind:'progress',snapshot:initial,events:['favorites-open'],country:i%2?'GB':'US',device:i%2?'desktop':'mobile',os:i%2?'Windows':'iOS',browser:i%2?'Chrome':'Safari',tz:'America/New_York',locale:'en',lang:'en-US'});
   r=mergeFavoriteRecord(r,{cid,id:`pick-${i}`,now:pickerNow,kind:'progress',snapshot:selected,events:[]});

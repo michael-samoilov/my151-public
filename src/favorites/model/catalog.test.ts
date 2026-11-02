@@ -20,7 +20,7 @@ describe('alternate picker forms', () => {
       const file = spriteFile(mon!.sprite);
       expect(existsSync(file), String(form.id)).toBe(true);
       expect(statSync(file).size, String(form.id)).toBeGreaterThan(100);
-      if (form.id !== 10191) expect(dexIds.has(form.id), String(form.id)).toBe(false);
+      expect(dexIds.has(form.id), String(form.id)).toBe(false);
     }
     expect(new Set(allPickerMons().map((m) => m.id)).size).toBe(allPickerMons().length);
     expect(allPickerMons().filter((mon) => /shiny/i.test(mon.name) || /\/shiny\//i.test(mon.sprite))).toEqual([]);
@@ -28,12 +28,12 @@ describe('alternate picker forms', () => {
 
   it('separates regular and Gigantamax Urshifu forms by ID and cell', () => {
     expect(getPickerMon(892)?.name).toBe('urshifu-single-strike');
-    expect(getPickerMon(10191)?.name).toBe('urshifu-rapid-strike');
+    expect(getPickerMon(10227)?.name).toBe('urshifu-rapid-strike');
     expect(getPickerMon(10226)?.source).toBe('powerup');
-    expect(getPickerMon(10227)?.name).toBe('Gigantamax Urshifu Rapid Strike');
-    expect(eligibleFor('water', 8).some((m) => m.id === 10191)).toBe(true);
-    expect(eligibleFor('water', 8).some((m) => m.id === 10227)).toBe(false);
-    expect(eligibleFor('gimmick', 8).some((m) => m.id === 10227)).toBe(true);
+    expect(getPickerMon(20001)?.name).toBe('Gigantamax Urshifu Rapid Strike');
+    expect(eligibleFor('water', 8).some((m) => m.id === 10227)).toBe(true);
+    expect(eligibleFor('water', 8).some((m) => m.id === 20001)).toBe(false);
+    expect(eligibleFor('gimmick', 8).some((m) => m.id === 20001)).toBe(true);
     expect(eligibleFor('gimmick', 8).some((m) => m.id === 10228)).toBe(false);
   });
 
@@ -131,7 +131,7 @@ describe('alternate picker forms', () => {
     together(ids('poison', 8), [10235, 903]);
     together(ids('normal', 5), [585, 11008, 11009, 11010, 586, 11011, 11012, 11013]);
     together(ids('water', 7), [746, 10127]);
-    expect(ids('fighting', 8).indexOf(10191)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
+    expect(ids('fighting', 8).indexOf(10227)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
     expect(getPickerMon(1017)?.sprite).toMatch(/^\/sprites\/pokemon\/1017\.png(\?|$)/);
     for (const id of [11014, 11015, 11016, 11017]) expect(getPickerMon(id)).toBeUndefined();
     together(ids('fairy', 8), [888, 10188]);

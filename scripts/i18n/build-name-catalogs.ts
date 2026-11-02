@@ -10,6 +10,7 @@ import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms
 
 const OUT_DIR = 'src/i18n/names';
 const PICKER_OUT_DIR = 'src/i18n/picker-names';
+const RAPID_STRIKE_GMAX = 20001;
 const COSMETIC_MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
@@ -315,8 +316,8 @@ async function main(): Promise<void> {
     const styleDescriptor = catalog.forms[10227];
     if (rapidDescriptor && styleDescriptor) {
       const complete = rapidDescriptor.includes(styleDescriptor);
-      catalog.forms['picker:10227'] = complete ? rapidDescriptor : `${rapidDescriptor} — ${styleDescriptor}`;
-      catalog.formSource['picker:10227'] = complete ? 'official' : 'official-composed';
+      catalog.forms[RAPID_STRIKE_GMAX] = complete ? rapidDescriptor : `${rapidDescriptor} — ${styleDescriptor}`;
+      catalog.formSource[RAPID_STRIKE_GMAX] = complete ? 'official' : 'official-composed';
     }
     for (const [variantId, megaId, formId] of COSMETIC_MEGA_VARIANTS) {
       const mega = catalog.forms[megaId];
@@ -422,6 +423,7 @@ async function main(): Promise<void> {
       delete catalog.forms[key];
       delete catalog.formSource[key];
     }
+    if (overlay.forms[RAPID_STRIKE_GMAX]) overlay.species[RAPID_STRIKE_GMAX] = 892;
     mkdirSync(PICKER_OUT_DIR, { recursive: true });
     writeFileSync(`${PICKER_OUT_DIR}/${locale}.json`, `${JSON.stringify(overlay)}\n`);
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);

@@ -4,19 +4,19 @@ import type { ResolvedForm } from '../../../src/ontology/model';
 import type { Ontology } from '../resolve';
 import { dexRows, type DexRow } from './dex';
 import { differingFields } from './diff';
-import { isPowerUp, pickerId, pickerOwner } from './owner';
+import { isPowerUp, pickerOwner } from './owner';
 
 export function pickerRecord(ontology: Ontology, form: ResolvedForm): PickerMon {
   const owner = pickerOwner(ontology, form);
   const powerup = isPowerUp(form);
   return {
-    id: pickerId(ontology, form),
+    id: form.appId,
     name: ontology.authored.legacy.picker.names[form.id] ?? form.id,
     types: [...form.facts.types] as PickerMon['types'],
     generation: (powerup ? ontology.species.get(form.species)!.generation : form.generation) as PickerMon['generation'],
     sprite: spritePath(form.sprite),
     source: powerup ? 'powerup' : 'dex',
-    ownerId: pickerId(ontology, owner),
+    ownerId: owner.appId,
   };
 }
 
@@ -46,7 +46,7 @@ export function pickerMetadata(ontology: Ontology, form: ResolvedForm): Pokemon 
 const biologicalRow = (ontology: Ontology, form: ResolvedForm): Pokemon =>
   dexRowsByAppId(ontology).get(pickerOwner(ontology, form).appId)! as unknown as Pokemon;
 
-type DexRecordFields = Partial<Pick<PickerMon, 'id' | 'name' | 'types' | 'generation' | 'source' | 'ownerId'>> & { spriteStem?: string };
+type DexRecordFields = Partial<Pick<PickerMon, 'name' | 'types' | 'generation' | 'source' | 'ownerId'>> & { spriteStem?: string };
 
 export interface PickerForm extends Partial<Pick<PickerMon, 'types' | 'generation' | 'source'>> {
   readonly id: number;
@@ -70,10 +70,11 @@ export function favoritesProjection(ontology: Ontology): FavoritesProjection {
     const form = byAppId.get(row.id)!;
     if (form.tools.picker !== 'in') throw new Error(`${form.id}: the Dex lists it and the Picker does not, so the Picker catalog would show it.`);
     const record = pickerRecord(ontology, form);
+    if (record.id !== row.id) throw new Error(`${form.id}: Picker number ${record.id} differs from its Dex number ${row.id}.`);
     records.set(record.id, record);
     const { sprite, ...fields } = differingFields(record, {
       id: row.id, name: row.name, types: row.types, generation: row.generation, sprite: row.sprite!, source: 'dex', ownerId: record.id,
-    } as PickerMon, []);
+    } as PickerMon, ['id']);
     if (sprite) Object.assign(fields, { spriteStem: form.sprite });
     if (Object.keys(fields).length) dexOverrides[row.id] = fields;
   }
@@ -108,6 +109,13 @@ export function favoritesMetadataProjection(ontology: Ontology): Record<string, 
   return metadata;
 }
 
+export function pickerV1Numbers(ontology: Ontology): Record<string, number> {
+  return Object.fromEntries(Object.entries(ontology.authored.legacy.picker.v1Ids)
+    .map(([form, v1]) => [String(v1), ontology.forms.get(form as never)!.appId as number])
+    .sort(([a], [b]) => Number(a) - Number(b)));
+}
+
+export const pickerV1NumbersJson = (ontology: Ontology): string => `${JSON.stringify(pickerV1Numbers(ontology))}\n`;
 export const favoritesJson = (ontology: Ontology): string => `${JSON.stringify(favoritesProjection(ontology))}\n`;
 export const favoritesMetadataJson = (ontology: Ontology): string => `${JSON.stringify(favoritesMetadataProjection(ontology))}\n`;
 

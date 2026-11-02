@@ -109,7 +109,6 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 10188, ownerId: 888, name: 'zacian-crowned', types: ['fairy', 'steel'], generation: 8 },
   { id: 10189, ownerId: 889, name: 'zamazenta-crowned', types: ['fighting', 'steel'], generation: 8 },
   { id: 10190, ownerId: 890, name: 'eternatus-eternamax', types: ['poison', 'dragon'], generation: 8 },
-  { id: 10191, ownerId: 892, name: 'urshifu-rapid-strike', types: ['fighting', 'water'], generation: 8 },
   { id: 10192, ownerId: 893, name: 'zarude-dada', types: ['dark', 'grass'], generation: 8 },
   { id: 10193, ownerId: 898, name: 'calyrex-ice', types: ['psychic', 'ice'], generation: 8 },
   { id: 10194, ownerId: 898, name: 'calyrex-shadow', types: ['psychic', 'ghost'], generation: 8 },

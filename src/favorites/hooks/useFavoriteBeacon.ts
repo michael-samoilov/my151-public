@@ -30,7 +30,7 @@ function post(snapshot: FavoritesSnapshot, shinyPicks: ShinyPicks, report?: Favo
   delivery.send({cid:getClientId(),tool:'favorites',page:currentPage(),
     kind:report?.kind ?? (snapshot.completion.filled===snapshot.completion.total?'completion':'progress'),
     exportKind:exported?.exportKind,stats:exported?.stats||undefined,
-    snapshot:{v:1,fills,...(Object.keys(shiny).length?{shiny}:{})},attention,seen,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined,auto:AUTOMATED||undefined},content,!!report);
+    snapshot:{v:2,fills,...(Object.keys(shiny).length?{shiny}:{})},attention,seen,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined,auto:AUTOMATED||undefined},content,!!report);
 }
 export function useFavoriteBeacon() {
   const fills=useFavoritesStore(state=>state.fills);

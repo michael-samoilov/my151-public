@@ -13,8 +13,9 @@ const powerupKeys = [...new Set([
   ...Object.values(powerupForms as Record<string, Record<string, { id: number }[]>>)
     .flatMap(kinds => Object.values(kinds).flat().map(form => String(form.id))),
   ...ALTERNATE_PICKER_FORMS.filter(form => form.source === 'powerup').map(form => String(form.id)),
-  'picker:10227',
 ])];
+const LEAGUE_RAPID_STRIKE_GMAX_KEY = 'picker:10227';
+const PICKER_RAPID_STRIKE_GMAX = '20001';
 const files: [string, string][] = [];
 for (const filename of fs.readdirSync(namesRoot).filter(name => name.endsWith('.json'))) {
   const catalog: Record<string, Record<string, unknown>> = JSON.parse(fs.readFileSync(`${namesRoot}/${filename}`, 'utf8'));
@@ -24,11 +25,14 @@ for (const filename of fs.readdirSync(namesRoot).filter(name => name.endsWith('.
   const scoped: Record<string, Record<string, unknown>> = Object.fromEntries(['forms', 'formSource', 'formCompact'].map(key => [
     key, Object.fromEntries(Object.entries(catalog[key]).filter(([id]) => formIds.has(id) || (key === 'forms' && powerupKeys.includes(id)))),
   ]));
-  scoped.powerupSpecies = Object.fromEntries(powerupKeys.map(id => {
-    const species = id === 'picker:10227' ? 892 : catalog.species[id];
+  const rapidStrikeGmax = catalog.forms[PICKER_RAPID_STRIKE_GMAX];
+  if (typeof rapidStrikeGmax !== 'string') throw new Error(`League powerup name missing: ${filename}, ${PICKER_RAPID_STRIKE_GMAX}`);
+  scoped.forms[LEAGUE_RAPID_STRIKE_GMAX_KEY] = rapidStrikeGmax;
+  scoped.powerupSpecies = Object.fromEntries([...powerupKeys.map(id => {
+    const species = catalog.species[id];
     if (typeof species !== 'number' || !catalog.forms[id]) throw new Error(`League powerup name missing: ${filename}, ${id}`);
     return [id, species];
-  }));
+  }), [LEAGUE_RAPID_STRIKE_GMAX_KEY, catalog.species[PICKER_RAPID_STRIKE_GMAX]]]);
   files.push([`${scopedRoot}/${filename}`, `${JSON.stringify(scoped, null, 2)}\n`]);
 }
 if (process.argv.includes('--check')) {

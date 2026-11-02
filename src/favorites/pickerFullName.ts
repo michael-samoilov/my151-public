@@ -1,6 +1,6 @@
 import type { Locale } from '@/i18n/config';
 import { formatFullPokemonName, pokemonNameContext } from '@/i18n/fullPokemonName';
-import { getPickerMon, pickerNameId, type PickerMon } from './model/catalog';
+import { getPickerMon, type PickerMon } from './model/catalog';
 
 export interface PickerNameTables {
   locale: Locale;
@@ -10,13 +10,12 @@ export interface PickerNameTables {
 }
 
 export function pickerFullName(mon: PickerMon, tables: PickerNameTables): string {
-  const id = pickerNameId(mon);
-  const owner = getPickerMon(mon.ownerId);
-  const ownerId = owner ? pickerNameId(owner) : mon.ownerId;
+  const id = mon.id;
+  const ownerId = mon.ownerId;
+  const owner = getPickerMon(ownerId);
   const speciesId = tables.speciesIds[id] ?? (id <= 1025 ? id : tables.speciesIds[ownerId] ?? ownerId);
   const species = tables.species[speciesId - 1] ?? 'Pokémon';
-  const key = mon.id === 10227 ? 'picker:10227' : id;
-  let descriptor = tables.descriptors[key];
+  let descriptor = tables.descriptors[id];
   const context = pokemonNameContext(id, mon.name, tables.descriptors, tables.locale);
   if (!descriptor && id > 1025 && !mon.name.endsWith('-female')) {
     const ownerSlug = owner?.name;

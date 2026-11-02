@@ -4,8 +4,6 @@ import type { Ontology } from '../resolve';
 const POWER_UP: ReadonlySet<StateKind> = new Set(['mega', 'primal', 'gigantamax']);
 export const isPowerUp = (form: ResolvedForm): boolean => form.states.some((state) => POWER_UP.has(state.kind));
 
-export const pickerId = (ontology: Ontology, form: ResolvedForm): number => ontology.authored.legacy.picker.ids[form.id] ?? form.appId;
-
 function regionOf(ontology: Ontology, form: ResolvedForm): string | null {
   return form.states.length ? regionOf(ontology, ontology.forms.get(form.enteredFrom[0])!) : form.coordinates.region;
 }

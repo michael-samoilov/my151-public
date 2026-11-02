@@ -3,6 +3,25 @@ import { describe, expect, it } from 'vitest';
 import { parseFavoriteSnapshot, mergeFavoriteRecord, parseFavoriteRecord } from '../../api/_favoriteRecord';
 const snapshot = () => parseFavoriteSnapshot({v:1,fills:{'water|1':7,'favorite|1':7}})!;
 const input = (id:string,now=1_000_000) => ({cid:'browser-0001',id,kind:'progress' as const,now,snapshot:snapshot(),events:[]});
+describe('favorite snapshots from before the ledger numbers',()=>{
+ const oldPicks={'ghost|8':10179,'steel|8':10180,'water|8':10191,'gimmick|8':10227};
+ const ledgerPicks={'ghost|8':10178,'steel|8':10179,'water|8':10227,'gimmick|8':20001};
+ it('reads a version 1 snapshot as the same Pokémon under ledger numbers',()=>{
+  const parsed=parseFavoriteSnapshot({v:1,fills:oldPicks,shiny:{'ghost|8':10179}})!;
+  expect(parsed.fills).toEqual(ledgerPicks);
+  expect(parsed.shiny).toEqual({'ghost|8':10178});
+ });
+ it('keeps ledger numbers in a version 2 snapshot',()=>{
+  expect(parseFavoriteSnapshot({v:2,fills:ledgerPicks})!.fills).toEqual(ledgerPicks);
+ });
+ it('decodes a stored record whose snapshots were written before the ledger numbers',()=>{
+  const stored=mergeFavoriteRecord(null,{...input('first-000001'),snapshot:parseFavoriteSnapshot({v:2,fills:ledgerPicks})!});
+  const old={...stored,latest:{...stored.latest,v:1,fills:oldPicks},sessionLog:stored.sessionLog.map(session=>({...session,snapshot:{...session.snapshot,v:1,fills:oldPicks}}))};
+  const parsed=parseFavoriteRecord(JSON.stringify(old))!;
+  expect(parsed.latest.fills).toEqual(ledgerPicks);
+  expect(parsed.sessionLog.map(session=>session.snapshot.fills)).toEqual([ledgerPicks]);
+ });
+});
 describe('favorite record failure guards',()=>{
  it('normalizes stored snapshots and rejects nonfinite or negative counters',()=>{
   const r=mergeFavoriteRecord(null,input('first-000001'));
@@ -13,7 +32,7 @@ describe('favorite record failure guards',()=>{
   expect(parseFavoriteRecord({...r,sessionLog:[{...r.sessionLog[0],endTs:NaN}]} )!.sessionLog).toEqual([]);
  });
  it('rejects unknown snapshot versions and discards forged totals, invalid picks, and orphaned pointers',()=>{
-  expect(parseFavoriteSnapshot({v:2,fills:{}})).toBeNull();
+  expect(parseFavoriteSnapshot({v:3,fills:{}})).toBeNull();
   const s=parseFavoriteSnapshot({v:1,filled:257,fills:{'water|1':7,'fire|1':7,'favorite|1':4,'Bad|1':25}})!;
   expect(s.filled).toBe(1);expect(s.fills).toEqual({'water|1':7});
  });

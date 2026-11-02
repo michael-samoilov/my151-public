@@ -11,6 +11,7 @@ const saved = vi.hoisted(() => {
   return items;
 });
 
+import { getPickerMon } from '../model/catalog';
 import { migrateFavoriteFills, useFavoritesStore } from './useFavoritesStore';
 
 describe('favorite picker saved-form migration', () => {
@@ -70,7 +71,7 @@ describe('favorite picker saves from before shiny picks', () => {
   }
 
   it('loads a current save with its picks and no shiny picks, so a tap cannot read a missing map', async () => {
-    const store = await load({ state: { fills: { 'fire|1': 6, 'favorite|1': 6 } }, version: 4 });
+    const store = await load({ state: { fills: { 'fire|1': 6, 'favorite|1': 6 } }, version: 5 });
     expect(store.getState().fills).toEqual({ 'fire|1': 6, 'favorite|1': 6 });
     expect(store.getState().shiny).toEqual({});
     store.getState().place('water', 1, 131, true);
@@ -88,5 +89,25 @@ describe('favorite picker saves from before shiny picks', () => {
     expect(store.getState().shiny).toEqual({ 'fire|1': 6, 'grass|1': 3 });
     store.getState().place('fire', 1, 4);
     expect(JSON.parse(saved.get('favorite-picker')!).state.shiny).toEqual({ 'grass|1': 3 });
+  });
+
+  it('keeps the same four Pokémon when a save from before the ledger numbers loads', async () => {
+    const store = await load({
+      state: {
+        fills: { 'ghost|8': 10179, 'steel|8': 10180, 'water|8': 10191, 'gimmick|8': 10227 },
+        shiny: { 'ghost|8': 10179, 'gimmick|8': 10227 },
+      },
+      version: 4,
+    });
+    const { fills, shiny } = store.getState();
+    expect(fills).toEqual({ 'ghost|8': 10178, 'steel|8': 10179, 'water|8': 10227, 'gimmick|8': 20001 });
+    expect(Object.values(fills).map((id) => getPickerMon(id)?.name)).toEqual(
+      ['yamask-galar', 'stunfisk-galar', 'urshifu-rapid-strike', 'Gigantamax Urshifu Rapid Strike']);
+    expect(shiny).toEqual({ 'ghost|8': 10178, 'gimmick|8': 20001 });
+  });
+
+  it('leaves ledger numbers alone in a current save', async () => {
+    const store = await load({ state: { fills: { 'ghost|8': 10178, 'steel|8': 10179, 'water|8': 10227 } }, version: 5 });
+    expect(store.getState().fills).toEqual({ 'ghost|8': 10178, 'steel|8': 10179, 'water|8': 10227 });
   });
 });

@@ -102,7 +102,7 @@ export type DataSourceEntry =
   | { readonly id: DataSourceId; readonly kind: 'statement'; readonly by: string; readonly date: string; readonly quote: string; readonly where: string };
 
 export interface LegacyPicker {
-  readonly ids: { readonly [form: string]: number };
+  readonly v1Ids: { readonly [form: string]: number };
   readonly names: { readonly [form: string]: string };
   readonly owners: { readonly [form: string]: FormId };
 }
