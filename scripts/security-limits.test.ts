@@ -29,9 +29,22 @@ const fixture = vi.hoisted(() => {
       return count;
     },
   } as Record<string, unknown>;
-  for (const method of ['hincrby', 'hset', 'rpush', 'lpush', 'expire', 'ltrim']) {
+  const writeMethods = ['hincrby', 'hset', 'rpush', 'lpush', 'expire', 'ltrim'];
+  for (const method of writeMethods) {
     redis[method] = async (...args: unknown[]) => { writes.push({ method, args }); return 1; };
   }
+  redis.pipeline = () => {
+    const queued: [string, unknown[]][] = [];
+    const chain: Record<string, unknown> = {
+      exec: async () => {
+        const results: unknown[] = [];
+        for (const [method, args] of queued) results.push(await (redis[method] as (...a: unknown[]) => Promise<unknown>)(...args));
+        return results;
+      },
+    };
+    for (const method of writeMethods) chain[method] = (...args: unknown[]) => { queued.push([method, args]); return chain; };
+    return chain;
+  };
   return { redis, counters, hashes, writes };
 });
 

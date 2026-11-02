@@ -61,8 +61,11 @@ function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCondition
 export async function renderChartWithStats(snapshot:FavoritesSnapshot,layout:'full'|'simplified'):Promise<Blob>{
  const stats=pickerConditionalStats(snapshot);
  const urls=stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`);
- const images=new Map(await Promise.all(urls.map(async url=>[url,await image(url)] as const)));
- const base=await(layout==='full'?renderFullChart(snapshot):renderSimplifiedChart(snapshot));
+ const [entries,base]=await Promise.all([
+  Promise.all(urls.map(async url=>[url,await image(url)] as const)),
+  layout==='full'?renderFullChart(snapshot):renderSimplifiedChart(snapshot),
+ ]);
+ const images=new Map(entries);
  const measure = document.createElement('canvas').getContext('2d')!;
  const title=t(layout==='full'?'export.detailedStatsTitle':'favorites.export.summaryStatsTitle');
  return composeStatsExport(base,pickerStatsPanelSize(measure, stats),title,ctx=>drawPickerStatsPanel(ctx,stats,images),{prefix:t('tools.favorites')});

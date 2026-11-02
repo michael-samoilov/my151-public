@@ -69,9 +69,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (from > to) return res.status(400).json({ error: 'from is after to' });
 
     const days = dayRange(from, to);
-    const [lists, archivedRaw] = await Promise.all([
+    const [lists, archivedRaw, dexAll, leagueAll, favoriteAll] = await Promise.all([
       Promise.all(days.map((d) => redis.lrange<unknown>(`${JOURNAL_PREFIX}:${d}`, 0, -1))),
       redis.smembers(ARCHIVED_KEY),
+      redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      redis.hkeys(LEAGUE_CLIENTS_KEY),
+      redis.hkeys(FAVORITE_CLIENTS_KEY),
     ]);
     const archived = asArchivedSet(archivedRaw);
 
@@ -94,11 +97,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     entries.sort((a, b) => a.t - b.t);
 
     const seen = new Set(entries.map((e) => e.cid));
-    const [dexAll, leagueAll, favoriteAll] = await Promise.all([
-      redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
-      redis.hkeys(LEAGUE_CLIENTS_KEY),
-      redis.hkeys(FAVORITE_CLIENTS_KEY),
-    ]);
     const membership: Record<string, number> = {};
     for (const raw of Object.values(dexAll ?? {})) {
       const rec = parseRecord(raw) as ClientRecord | null;

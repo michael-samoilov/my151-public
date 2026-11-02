@@ -95,11 +95,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(exportTool ? { exportTool } : {}),
       ...(skipFields ? { reason: skipFields.reason } : {}),
     });
-    const writes: Promise<unknown>[] = [
-      redis.hincrby(FUNNEL_KEY, body.event, 1),
-      redis.hincrby(dailyKey, body.event, 1),
-      redis.rpush(journalKey, entry),
-    ];
+    // A pipeline runs its commands in order, in one request: each key exists
+    // before its EXPIRE, and RPUSH lands before LTRIM.
+    const writes = redis
+      .pipeline()
+      .hincrby(FUNNEL_KEY, body.event, 1)
+      .hincrby(dailyKey, body.event, 1)
+      .rpush(journalKey, entry);
     if (skipFields) {
       const prev = parseExportSurveySkipList(await redis.hget(EXPORT_SURVEY_SKIPS_KEY, body.cid));
       const next = appendExportSurveySkip(prev, {
@@ -107,14 +109,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tool: skipFields.tool,
         reason: skipFields.reason,
       });
-      writes.push(redis.hset(EXPORT_SURVEY_SKIPS_KEY, { [body.cid]: JSON.stringify(next) }));
+      writes.hset(EXPORT_SURVEY_SKIPS_KEY, { [body.cid]: JSON.stringify(next) });
     }
-    await Promise.all(writes);
-    await Promise.all([
-      redis.expire(dailyKey, FUNNEL_DAY_TTL_S),
-      redis.expire(journalKey, JOURNAL_TTL_S),
-      redis.ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1),
-    ]);
+    await writes
+      .expire(dailyKey, FUNNEL_DAY_TTL_S)
+      .expire(journalKey, JOURNAL_TTL_S)
+      .ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1)
+      .exec();
 
     return res.status(200).json({ ok: true });
   } catch (err) {

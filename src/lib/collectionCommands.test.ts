@@ -36,12 +36,12 @@ async function send(handler: typeof dexHandler, body: Record<string,unknown>, st
 }
 
 describe('checkpoints use the existing atomic write',()=>{
-  it('records Dex checkpoints in the same six commands and preserves country record separation',async()=>{
+  it('records Dex checkpoints in seven commands across a country split and preserves country record separation',async()=>{
     const cid='checkpoint-browser';
     const sent=await send(dexHandler,{cid,kind:'progress',ids:[7],ts:start+20*minute},
       {[cid]:JSON.stringify(record(cid)),[`${cid}::JP`]:JSON.stringify(record(`${cid}::JP`,[7],'JP'))},{'x-vercel-ip-country':'JP'});
     expect(sent.status).toBe(200);
-    expect(sent.commands.map(c=>c[0].toLowerCase())).toEqual(['evalsha','evalsha','hget','hget','hget','eval']);
+    expect(sent.commands.map(c=>c[0].toLowerCase())).toEqual(['evalsha','evalsha','hget','hget','hget','hget','eval']);
     expect(sent.records[0]).toMatchObject({cid:`${cid}::JP`,recording:{v:1,totalMs:20*minute,checkpointFrom:start+20*minute}});
     expect(sent.records[0].activityCoverageFrom).toBe(start+20*minute);
   });
