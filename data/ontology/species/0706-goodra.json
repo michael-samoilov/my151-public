@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "goodra",
+    "nationalDex": 706,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "goodra",
+      "types": ["dragon"],
+      "baseStats": { "hp": 90, "atk": 100, "def": 70, "spe": 80, "spa": 110, "spd": 150 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["dragon"],
+      "debut": "x-y",
+      "sprite": "706",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "goodra-hisui",
+      "region": "hisui",
+      "types": ["steel", "dragon"],
+      "baseStats": { "hp": 80, "atk": 100, "def": 100, "spe": 60, "spa": 110, "spd": 150 },
+      "debut": "legends-arceus",
+      "sprite": "10242",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sliggoo",
+      "to": "goodra",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 50 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "sliggoo-hisui",
+      "to": "goodra-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 50 }
+          ]
+        }
+      ]
+    }
+  ]
+}

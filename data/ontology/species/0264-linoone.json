@@ -1,0 +1,63 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "linoone",
+    "nationalDex": 264,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "linoone",
+      "types": ["normal"],
+      "baseStats": { "hp": 78, "atk": 70, "def": 61, "spe": 100, "spa": 50, "spd": 61 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "264",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "linoone-galar",
+      "region": "galar",
+      "types": ["dark", "normal"],
+      "debut": "sword-shield",
+      "sprite": "10175",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "zigzagoon",
+      "to": "linoone",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "zigzagoon-galar",
+      "to": "linoone-galar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

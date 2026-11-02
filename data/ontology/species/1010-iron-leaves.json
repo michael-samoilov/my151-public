@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "iron-leaves",
+    "nationalDex": 1010,
+    "captureRate": 5,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "iron-leaves",
+      "types": ["grass", "psychic"],
+      "baseStats": { "hp": 90, "atk": 130, "def": 88, "spe": 104, "spa": 70, "spd": 108 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1010",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

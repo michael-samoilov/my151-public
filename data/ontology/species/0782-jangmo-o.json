@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "jangmo-o",
+    "nationalDex": 782,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "jangmo-o",
+      "types": ["dragon"],
+      "baseStats": { "hp": 45, "atk": 55, "def": 65, "spe": 45, "spa": 45, "spd": 45 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["dragon"],
+      "debut": "sun-moon",
+      "sprite": "782",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

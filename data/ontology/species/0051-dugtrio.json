@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dugtrio",
+    "nationalDex": 51,
+    "captureRate": 50,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dugtrio",
+      "types": ["ground"],
+      "baseStats": { "hp": 35, "atk": 100, "def": 50, "spe": 120, "spa": 50, "spd": 70 },
+      "color": "brown",
+      "shape": "heads",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "51",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "dugtrio-alola",
+      "region": "alola",
+      "types": ["ground", "steel"],
+      "baseStats": { "hp": 35, "atk": 100, "def": 60, "spe": 110, "spa": 50, "spd": 70 },
+      "debut": "sun-moon",
+      "sprite": "10106",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "diglett",
+      "to": "dugtrio",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "diglett-alola",
+      "to": "dugtrio-alola",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}

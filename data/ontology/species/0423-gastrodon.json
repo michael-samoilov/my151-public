@@ -1,0 +1,75 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gastrodon",
+    "nationalDex": 423,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "side",
+        "values": ["west", "east"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gastrodon",
+      "variety": { "side": "west" },
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 111, "atk": 83, "def": 68, "spe": 39, "spa": 92, "spd": 82 },
+      "color": "purple",
+      "shape": "squiggle",
+      "eggGroups": ["water1", "indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "423",
+      "externalIds": { "pokeapiForm": "gastrodon-west" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gastrodon-east",
+      "variety": { "side": "east" },
+      "color": "blue",
+      "sprite": "11066",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shellos",
+      "to": "gastrodon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "shellos-east",
+      "to": "gastrodon-east",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

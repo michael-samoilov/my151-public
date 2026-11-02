@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zeraora",
+    "nationalDex": 807,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zeraora",
+      "types": ["electric"],
+      "baseStats": { "hp": 88, "atk": 112, "def": 75, "spe": 143, "spa": 102, "spd": 80 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "807",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zeraora-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["zeraora"]
+      },
+      "baseStats": { "hp": 88, "atk": 157, "def": 75, "spe": 153, "spa": 147, "spd": 80 },
+      "debut": "legends-za",
+      "sprite": "10319",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

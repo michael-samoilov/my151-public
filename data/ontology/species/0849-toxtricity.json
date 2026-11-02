@@ -1,0 +1,89 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "toxtricity",
+    "nationalDex": 849,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["amped", "low-key"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "toxtricity",
+      "variety": { "forme": "amped" },
+      "types": ["electric", "poison"],
+      "baseStats": { "hp": 75, "atk": 98, "def": 70, "spe": 75, "spa": 114, "spd": 70 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "sword-shield",
+      "sprite": "849",
+      "externalIds": { "pokeapiForm": "toxtricity-amped" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "toxtricity-low-key",
+      "variety": { "forme": "low-key" },
+      "sprite": "10184",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "toxtricity-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["toxtricity", "toxtricity-low-key"]
+      },
+      "sprite": "10219",
+      "externalIds": { "pokeapiForm": "toxtricity-amped-gmax" },
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "toxel",
+      "to": "toxtricity",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "toxel",
+      "to": "toxtricity-low-key",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "drifloon",
+    "nationalDex": 425,
+    "captureRate": 125,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "drifloon",
+      "types": ["ghost", "flying"],
+      "baseStats": { "hp": 90, "atk": 50, "def": 34, "spe": 70, "spa": 60, "spd": 44 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "425",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

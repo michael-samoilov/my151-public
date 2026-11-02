@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mienfoo",
+    "nationalDex": 619,
+    "captureRate": 180,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mienfoo",
+      "types": ["fighting"],
+      "baseStats": { "hp": 45, "atk": 85, "def": 50, "spe": 65, "spa": 55, "spd": 50 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "black-white",
+      "sprite": "619",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

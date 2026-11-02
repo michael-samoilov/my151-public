@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "throh",
+    "nationalDex": 538,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "throh",
+      "types": ["fighting"],
+      "baseStats": { "hp": 120, "atk": 100, "def": 85, "spe": 45, "spa": 30, "spd": 85 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "538",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

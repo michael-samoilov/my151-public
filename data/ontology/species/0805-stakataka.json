@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "stakataka",
+    "nationalDex": 805,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "stakataka",
+      "types": ["rock", "steel"],
+      "baseStats": { "hp": 61, "atk": 131, "def": 211, "spe": 13, "spa": 53, "spd": 101 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "805",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

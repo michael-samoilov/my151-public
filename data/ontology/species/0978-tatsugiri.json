@@ -1,0 +1,113 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tatsugiri",
+    "nationalDex": 978,
+    "captureRate": 100,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["curly", "droopy", "stretchy"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tatsugiri",
+      "variety": { "forme": "curly" },
+      "types": ["dragon", "water"],
+      "baseStats": { "hp": 68, "atk": 50, "def": 60, "spe": 82, "spa": 120, "spd": 95 },
+      "color": "red",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "scarlet-violet",
+      "sprite": "978",
+      "externalIds": { "pokeapiForm": "tatsugiri-curly" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tatsugiri-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["tatsugiri"]
+      },
+      "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "shape": "heads",
+      "debut": "legends-za",
+      "sprite": "10322",
+      "externalIds": { "pokeapiForm": "tatsugiri-curly-mega" },
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tatsugiri-droopy-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["tatsugiri-droopy"]
+      },
+      "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "debut": "legends-za",
+      "sprite": "10323",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tatsugiri-stretchy-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["tatsugiri-stretchy"]
+      },
+      "baseStats": { "hp": 68, "atk": 65, "def": 90, "spe": 92, "spa": 135, "spd": 125 },
+      "debut": "legends-za",
+      "sprite": "10324",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tatsugiri-droopy",
+      "variety": { "forme": "droopy" },
+      "color": "pink",
+      "sprite": "11006",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "tatsugiri-stretchy",
+      "variety": { "forme": "stretchy" },
+      "color": "yellow",
+      "sprite": "11007",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

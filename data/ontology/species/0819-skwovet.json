@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "skwovet",
+    "nationalDex": 819,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "skwovet",
+      "types": ["normal"],
+      "baseStats": { "hp": 70, "atk": 55, "def": 55, "spe": 25, "spa": 35, "spd": 35 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "819",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

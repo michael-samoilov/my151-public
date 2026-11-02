@@ -1,0 +1,57 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "butterfree",
+    "nationalDex": 12,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "butterfree",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 60, "atk": 45, "def": 50, "spe": 70, "spa": 90, "spd": 80 },
+      "color": "white",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "12",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "butterfree-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["butterfree"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10198",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "metapod",
+      "to": "butterfree",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 10 }
+          ]
+        }
+      ]
+    }
+  ]
+}

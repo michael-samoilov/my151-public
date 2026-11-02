@@ -1,0 +1,16 @@
+[
+  { "id": "ball" },
+  { "id": "squiggle" },
+  { "id": "fish" },
+  { "id": "arms" },
+  { "id": "blob" },
+  { "id": "upright" },
+  { "id": "legs" },
+  { "id": "quadruped" },
+  { "id": "wings" },
+  { "id": "tentacles" },
+  { "id": "heads" },
+  { "id": "humanoid" },
+  { "id": "bug-wings" },
+  { "id": "armor" }
+]

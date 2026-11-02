@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "comfey",
+    "nationalDex": 764,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "comfey",
+      "types": ["fairy"],
+      "baseStats": { "hp": 51, "atk": 52, "def": 90, "spe": 100, "spa": 82, "spd": 110 },
+      "color": "green",
+      "shape": "ball",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "764",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

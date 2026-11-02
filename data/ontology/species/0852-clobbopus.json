@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clobbopus",
+    "nationalDex": 852,
+    "captureRate": 180,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clobbopus",
+      "types": ["fighting"],
+      "baseStats": { "hp": 50, "atk": 68, "def": 60, "spe": 32, "spa": 50, "spd": 50 },
+      "color": "brown",
+      "shape": "tentacles",
+      "eggGroups": ["water1", "humanshape"],
+      "debut": "sword-shield",
+      "sprite": "852",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spidops",
+    "nationalDex": 918,
+    "captureRate": 120,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spidops",
+      "types": ["bug"],
+      "baseStats": { "hp": 60, "atk": 79, "def": 92, "spe": 35, "spa": 52, "spd": 86 },
+      "color": "green",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "scarlet-violet",
+      "sprite": "918",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tarountula",
+      "to": "spidops",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 15 }
+          ]
+        }
+      ]
+    }
+  ]
+}

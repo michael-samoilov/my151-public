@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rookidee",
+    "nationalDex": 821,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rookidee",
+      "types": ["flying"],
+      "baseStats": { "hp": 38, "atk": 47, "def": 35, "spe": 57, "spa": 33, "spd": 35 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "sword-shield",
+      "sprite": "821",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

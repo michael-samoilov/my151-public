@@ -1,0 +1,42 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zekrom",
+    "nationalDex": 644,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zekrom",
+      "types": ["dragon", "electric"],
+      "baseStats": { "hp": 100, "atk": 150, "def": 120, "spe": 90, "spa": 120, "spd": 100 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "644",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zekrom-overdrive",
+      "state": {
+        "kind": "move-look",
+        "from": ["zekrom"]
+      },
+      "sprite": "11106",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

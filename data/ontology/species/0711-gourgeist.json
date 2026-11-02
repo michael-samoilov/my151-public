@@ -1,0 +1,34 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gourgeist",
+    "nationalDex": 711,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gourgeist",
+      "types": ["ghost", "grass"],
+      "baseStats": { "hp": 65, "atk": 90, "def": 122, "spe": 84, "spa": 58, "spd": 75 },
+      "color": "brown",
+      "shape": "blob",
+      "eggGroups": ["indeterminate"],
+      "debut": "x-y",
+      "sprite": "711",
+      "externalIds": { "pokeapiForm": "gourgeist-average" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pumpkaboo",
+      "to": "gourgeist",
+      "methods": []
+    }
+  ]
+}

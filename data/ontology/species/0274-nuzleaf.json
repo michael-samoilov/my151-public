@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nuzleaf",
+    "nationalDex": 274,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nuzleaf",
+      "types": ["grass", "dark"],
+      "baseStats": { "hp": 70, "atk": 70, "def": 40, "spe": 60, "spa": 60, "spd": 40 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["ground", "plant"],
+      "debut": "ruby-sapphire",
+      "sprite": "274",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "seedot",
+      "to": "nuzleaf",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 14 }
+          ]
+        }
+      ]
+    }
+  ]
+}

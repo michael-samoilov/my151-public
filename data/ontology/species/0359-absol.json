@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "absol",
+    "nationalDex": 359,
+    "captureRate": 30,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "absol",
+      "types": ["dark"],
+      "baseStats": { "hp": 65, "atk": 130, "def": 60, "spe": 75, "spa": 75, "spd": 60 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "359",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "absol-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["absol"]
+      },
+      "baseStats": { "hp": 65, "atk": 150, "def": 60, "spe": 115, "spa": 115, "spd": 60 },
+      "debut": "x-y",
+      "sprite": "10057",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "absol-mega-z",
+      "state": {
+        "kind": "mega",
+        "letter": "z",
+        "from": ["absol"]
+      },
+      "types": ["dark", "ghost"],
+      "baseStats": { "hp": 65, "atk": 154, "def": 60, "spe": 151, "spa": 75, "spd": 60 },
+      "color": "black",
+      "debut": "legends-za",
+      "sprite": "10307",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

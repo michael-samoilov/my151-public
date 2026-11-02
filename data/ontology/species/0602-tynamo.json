@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tynamo",
+    "nationalDex": 602,
+    "captureRate": 190,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tynamo",
+      "types": ["electric"],
+      "baseStats": { "hp": 35, "atk": 55, "def": 40, "spe": 60, "spa": 45, "spd": 40 },
+      "color": "white",
+      "shape": "fish",
+      "eggGroups": ["indeterminate"],
+      "debut": "black-white",
+      "sprite": "602",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

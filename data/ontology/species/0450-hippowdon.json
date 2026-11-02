@@ -1,0 +1,68 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hippowdon",
+    "nationalDex": 450,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hippowdon",
+      "sex": "male",
+      "types": ["ground"],
+      "baseStats": { "hp": 108, "atk": 112, "def": 118, "spe": 47, "spa": 68, "spd": 72 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "450",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "hippowdon-female",
+      "sex": "female",
+      "sprite": "11068",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "hippopotas",
+      "to": "hippowdon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "hippopotas-female",
+      "to": "hippowdon-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

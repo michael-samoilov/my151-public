@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "togekiss",
+    "nationalDex": 468,
+    "captureRate": 30,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "togekiss",
+      "types": ["fairy", "flying"],
+      "baseStats": { "hp": 85, "atk": 50, "def": 95, "spe": 80, "spa": 120, "spd": 115 },
+      "color": "white",
+      "shape": "wings",
+      "eggGroups": ["flying", "fairy"],
+      "debut": "diamond-pearl",
+      "sprite": "468",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "togetic",
+      "to": "togekiss",
+      "methods": []
+    }
+  ]
+}

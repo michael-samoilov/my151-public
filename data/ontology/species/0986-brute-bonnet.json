@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "brute-bonnet",
+    "nationalDex": 986,
+    "captureRate": 50,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "brute-bonnet",
+      "types": ["grass", "dark"],
+      "baseStats": { "hp": 111, "atk": 127, "def": 99, "spe": 55, "spa": 79, "spd": 99 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "986",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

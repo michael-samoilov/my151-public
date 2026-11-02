@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "poliwhirl",
+    "nationalDex": 61,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "poliwhirl",
+      "types": ["water"],
+      "baseStats": { "hp": 65, "atk": 65, "def": 65, "spe": 90, "spa": 50, "spd": 50 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "red-blue",
+      "sprite": "61",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "poliwag",
+      "to": "poliwhirl",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

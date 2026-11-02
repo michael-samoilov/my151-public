@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spritzee",
+    "nationalDex": 682,
+    "captureRate": 200,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spritzee",
+      "types": ["fairy"],
+      "baseStats": { "hp": 78, "atk": 52, "def": 60, "spe": 23, "spa": 63, "spd": 65 },
+      "color": "pink",
+      "shape": "arms",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "682",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

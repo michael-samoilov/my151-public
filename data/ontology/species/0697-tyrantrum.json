@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tyrantrum",
+    "nationalDex": 697,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tyrantrum",
+      "types": ["rock", "dragon"],
+      "baseStats": { "hp": 82, "atk": 121, "def": 119, "spe": 71, "spa": 69, "spd": 59 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "x-y",
+      "sprite": "697",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tyrunt",
+      "to": "tyrantrum",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 39 }
+          ]
+        }
+      ]
+    }
+  ]
+}

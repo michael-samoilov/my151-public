@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shroomish",
+    "nationalDex": 285,
+    "captureRate": 255,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shroomish",
+      "types": ["grass"],
+      "baseStats": { "hp": 60, "atk": 40, "def": 60, "spe": 35, "spa": 40, "spd": 60 },
+      "color": "brown",
+      "shape": "legs",
+      "eggGroups": ["fairy", "plant"],
+      "debut": "ruby-sapphire",
+      "sprite": "285",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

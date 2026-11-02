@@ -3,7 +3,9 @@
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
-    "lib": ["ES2023"],
+    /* scripts/ontology/parity.test.ts imports the League catalog, which reaches src/i18n/provider.tsx. */
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "module": "ESNext",
     "types": ["node"],
     "skipLibCheck": true,

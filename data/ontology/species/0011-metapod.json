@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "metapod",
+    "nationalDex": 11,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "metapod",
+      "types": ["bug"],
+      "baseStats": { "hp": 50, "atk": 20, "def": 55, "spe": 30, "spa": 25, "spd": 25 },
+      "color": "green",
+      "shape": "squiggle",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "11",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "caterpie",
+      "to": "metapod",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 7 }
+          ]
+        }
+      ]
+    }
+  ]
+}

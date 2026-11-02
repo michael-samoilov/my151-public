@@ -1,0 +1,68 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "unfezant",
+    "nationalDex": 521,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "unfezant",
+      "sex": "male",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 80, "atk": 115, "def": 80, "spe": 93, "spa": 65, "spd": 55 },
+      "color": "gray",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "black-white",
+      "sprite": "521",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "unfezant-female",
+      "sex": "female",
+      "sprite": "11095",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tranquill",
+      "to": "unfezant",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "tranquill",
+      "to": "unfezant-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dudunsparce",
+    "nationalDex": 982,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["two-segment", "three-segment"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dudunsparce",
+      "variety": { "forme": "two-segment" },
+      "types": ["normal"],
+      "baseStats": { "hp": 125, "atk": 100, "def": 80, "spe": 55, "spa": 85, "spd": 75 },
+      "color": "yellow",
+      "shape": "squiggle",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "982",
+      "externalIds": { "pokeapiForm": "dudunsparce-two-segment" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "dudunsparce-three-segment",
+      "variety": { "forme": "three-segment" },
+      "sprite": "11003",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dunsparce",
+      "to": "dudunsparce",
+      "methods": []
+    },
+    {
+      "from": "dunsparce",
+      "to": "dudunsparce-three-segment",
+      "methods": [],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

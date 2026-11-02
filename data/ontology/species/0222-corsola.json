@@ -1,0 +1,38 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "corsola",
+    "nationalDex": 222,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "corsola",
+      "types": ["water", "rock"],
+      "baseStats": { "hp": 65, "atk": 55, "def": 95, "spe": 35, "spa": 65, "spd": 95 },
+      "color": "pink",
+      "shape": "armor",
+      "eggGroups": ["water1", "water3"],
+      "debut": "gold-silver",
+      "sprite": "222",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "corsola-galar",
+      "region": "galar",
+      "types": ["ghost"],
+      "baseStats": { "hp": 60, "atk": 55, "def": 100, "spe": 30, "spa": 65, "spd": 100 },
+      "color": "white",
+      "debut": "sword-shield",
+      "sprite": "10173",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

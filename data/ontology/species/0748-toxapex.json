@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "toxapex",
+    "nationalDex": 748,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "toxapex",
+      "types": ["poison", "water"],
+      "baseStats": { "hp": 50, "atk": 63, "def": 152, "spe": 35, "spa": 53, "spd": 142 },
+      "color": "blue",
+      "shape": "tentacles",
+      "eggGroups": ["water1"],
+      "debut": "sun-moon",
+      "sprite": "748",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mareanie",
+      "to": "toxapex",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 38 }
+          ]
+        }
+      ]
+    }
+  ]
+}

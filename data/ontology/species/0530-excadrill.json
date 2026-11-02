@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "excadrill",
+    "nationalDex": 530,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "excadrill",
+      "types": ["ground", "steel"],
+      "baseStats": { "hp": 110, "atk": 135, "def": 60, "spe": 88, "spa": 50, "spd": 65 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "530",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "excadrill-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["excadrill"]
+      },
+      "baseStats": { "hp": 110, "atk": 165, "def": 100, "spe": 103, "spa": 65, "spd": 65 },
+      "debut": "legends-za",
+      "sprite": "10287",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "drilbur",
+      "to": "excadrill",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 31 }
+          ]
+        }
+      ]
+    }
+  ]
+}

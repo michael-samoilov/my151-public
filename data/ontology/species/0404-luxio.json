@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "luxio",
+    "nationalDex": 404,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "luxio",
+      "types": ["electric"],
+      "baseStats": { "hp": 60, "atk": 85, "def": 49, "spe": 60, "spa": 60, "spd": 49 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "404",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shinx",
+      "to": "luxio",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 15 }
+          ]
+        }
+      ]
+    }
+  ]
+}

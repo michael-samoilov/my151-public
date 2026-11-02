@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ducklett",
+    "nationalDex": 580,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ducklett",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 62, "atk": 44, "def": 50, "spe": 55, "spa": 44, "spd": 50 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "black-white",
+      "sprite": "580",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "whismur",
+    "nationalDex": 293,
+    "captureRate": 190,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "whismur",
+      "types": ["normal"],
+      "baseStats": { "hp": 64, "atk": 51, "def": 23, "spe": 28, "spa": 51, "spd": 23 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "293",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

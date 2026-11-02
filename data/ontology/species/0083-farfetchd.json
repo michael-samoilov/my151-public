@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "farfetchd",
+    "nationalDex": 83,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "farfetchd",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 52, "atk": 90, "def": 55, "spe": 60, "spa": 58, "spd": 62 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying", "ground"],
+      "debut": "red-blue",
+      "sprite": "83",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "farfetchd-galar",
+      "region": "galar",
+      "types": ["fighting"],
+      "baseStats": { "hp": 52, "atk": 95, "def": 55, "spe": 55, "spa": 58, "spd": 62 },
+      "debut": "sword-shield",
+      "sprite": "10166",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

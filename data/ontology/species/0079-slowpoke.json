@@ -1,0 +1,36 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "slowpoke",
+    "nationalDex": 79,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "slowpoke",
+      "types": ["water", "psychic"],
+      "baseStats": { "hp": 90, "atk": 65, "def": 65, "spe": 15, "spa": 40, "spd": 40 },
+      "color": "pink",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "water1"],
+      "debut": "red-blue",
+      "sprite": "79",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "slowpoke-galar",
+      "region": "galar",
+      "types": ["psychic"],
+      "debut": "sword-shield",
+      "sprite": "10164",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

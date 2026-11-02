@@ -1,0 +1,77 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "greninja",
+    "nationalDex": 658,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "greninja",
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 72, "atk": 95, "def": 67, "spe": 122, "spa": 103, "spd": 71 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "x-y",
+      "sprite": "658",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "greninja-ash",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["greninja"]
+      },
+      "baseStats": { "hp": 72, "atk": 145, "def": 67, "spe": 132, "spa": 153, "spd": 71 },
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "obtain": "event-only",
+      "sprite": "10117",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "greninja-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["greninja"]
+      },
+      "baseStats": { "hp": 72, "atk": 125, "def": 77, "spe": 142, "spa": 133, "spd": 81 },
+      "debut": "legends-za",
+      "sprite": "10294",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "frogadier",
+      "to": "greninja",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

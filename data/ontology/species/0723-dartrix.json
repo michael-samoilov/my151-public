@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dartrix",
+    "nationalDex": 723,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dartrix",
+      "types": ["grass", "flying"],
+      "baseStats": { "hp": 78, "atk": 75, "def": 75, "spe": 52, "spa": 70, "spd": 70 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "sun-moon",
+      "sprite": "723",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rowlet",
+      "to": "dartrix",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 17 }
+          ]
+        }
+      ]
+    }
+  ]
+}

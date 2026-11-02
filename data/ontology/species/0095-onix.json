@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "onix",
+    "nationalDex": 95,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "onix",
+      "types": ["rock", "ground"],
+      "baseStats": { "hp": 35, "atk": 45, "def": 160, "spe": 70, "spa": 30, "spd": 45 },
+      "color": "gray",
+      "shape": "squiggle",
+      "eggGroups": ["mineral"],
+      "debut": "red-blue",
+      "sprite": "95",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

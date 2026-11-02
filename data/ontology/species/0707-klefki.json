@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "klefki",
+    "nationalDex": 707,
+    "captureRate": 75,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "klefki",
+      "types": ["steel", "fairy"],
+      "baseStats": { "hp": 57, "atk": 80, "def": 91, "spe": 75, "spa": 80, "spd": 87 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "x-y",
+      "sprite": "707",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

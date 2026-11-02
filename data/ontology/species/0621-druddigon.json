@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "druddigon",
+    "nationalDex": 621,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "druddigon",
+      "types": ["dragon"],
+      "baseStats": { "hp": 77, "atk": 120, "def": 90, "spe": 48, "spa": 60, "spd": 90 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["dragon", "monster"],
+      "debut": "black-white",
+      "sprite": "621",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

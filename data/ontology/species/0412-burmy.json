@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "burmy",
+    "nationalDex": 412,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "burmy",
+      "types": ["bug"],
+      "baseStats": { "hp": 40, "atk": 29, "def": 45, "spe": 36, "spa": 29, "spd": 45 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "412",
+      "externalIds": { "pokeapiForm": "burmy-plant" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

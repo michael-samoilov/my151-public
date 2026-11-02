@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "baxcalibur",
+    "nationalDex": 998,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "baxcalibur",
+      "types": ["dragon", "ice"],
+      "baseStats": { "hp": 115, "atk": 145, "def": 92, "spe": 87, "spa": 75, "spd": 86 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["dragon", "mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "998",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "baxcalibur-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["baxcalibur"]
+      },
+      "baseStats": { "hp": 115, "atk": 175, "def": 117, "spe": 87, "spa": 105, "spd": 101 },
+      "debut": "legends-za",
+      "sprite": "10325",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "arctibax",
+      "to": "baxcalibur",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 54 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clawitzer",
+    "nationalDex": 693,
+    "captureRate": 55,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clawitzer",
+      "types": ["water"],
+      "baseStats": { "hp": 71, "atk": 73, "def": 88, "spe": 59, "spa": 120, "spd": 89 },
+      "color": "blue",
+      "shape": "squiggle",
+      "eggGroups": ["water1", "water3"],
+      "debut": "x-y",
+      "sprite": "693",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "clauncher",
+      "to": "clawitzer",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

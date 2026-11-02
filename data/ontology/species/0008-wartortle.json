@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wartortle",
+    "nationalDex": 8,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wartortle",
+      "types": ["water"],
+      "baseStats": { "hp": 59, "atk": 63, "def": 80, "spe": 58, "spa": 65, "spd": 80 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "red-blue",
+      "sprite": "8",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "squirtle",
+      "to": "wartortle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hariyama",
+    "nationalDex": 297,
+    "captureRate": 200,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hariyama",
+      "types": ["fighting"],
+      "baseStats": { "hp": 144, "atk": 120, "def": 60, "spe": 50, "spa": 40, "spd": 60 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "ruby-sapphire",
+      "sprite": "297",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "makuhita",
+      "to": "hariyama",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

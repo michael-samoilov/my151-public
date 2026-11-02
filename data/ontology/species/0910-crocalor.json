@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crocalor",
+    "nationalDex": 910,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crocalor",
+      "types": ["fire"],
+      "baseStats": { "hp": 81, "atk": 55, "def": 78, "spe": 49, "spa": 90, "spd": 58 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "910",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "fuecoco",
+      "to": "crocalor",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

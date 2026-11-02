@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "aipom",
+    "nationalDex": 190,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "aipom",
+      "types": ["normal"],
+      "baseStats": { "hp": 55, "atk": 70, "def": 55, "spe": 85, "spa": 40, "spd": 55 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "190",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

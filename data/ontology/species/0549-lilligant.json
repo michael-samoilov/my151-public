@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lilligant",
+    "nationalDex": 549,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lilligant",
+      "types": ["grass"],
+      "baseStats": { "hp": 70, "atk": 60, "def": 75, "spe": 90, "spa": 110, "spd": 75 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["plant"],
+      "debut": "black-white",
+      "sprite": "549",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "lilligant-hisui",
+      "region": "hisui",
+      "types": ["grass", "fighting"],
+      "baseStats": { "hp": 70, "atk": 105, "def": 75, "spe": 105, "spa": 50, "spd": 75 },
+      "shape": "humanoid",
+      "debut": "legends-arceus",
+      "sprite": "10237",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "petilil",
+      "to": "lilligant",
+      "methods": []
+    },
+    {
+      "from": "petilil",
+      "to": "lilligant-hisui",
+      "methods": []
+    }
+  ]
+}

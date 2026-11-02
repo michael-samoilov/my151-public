@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gyarados",
+    "nationalDex": 130,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gyarados",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 95, "atk": 125, "def": 79, "spe": 81, "spa": 60, "spd": 100 },
+      "color": "blue",
+      "shape": "squiggle",
+      "eggGroups": ["water2", "dragon"],
+      "debut": "red-blue",
+      "sprite": "130",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gyarados-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["gyarados"]
+      },
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 95, "atk": 155, "def": 109, "spe": 81, "spa": 70, "spd": 130 },
+      "debut": "x-y",
+      "sprite": "10041",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "magikarp",
+      "to": "gyarados",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

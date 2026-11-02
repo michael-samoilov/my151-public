@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "eelektross",
+    "nationalDex": 604,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "eelektross",
+      "types": ["electric"],
+      "baseStats": { "hp": 85, "atk": 115, "def": 80, "spe": 50, "spa": 105, "spd": 80 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["indeterminate"],
+      "debut": "black-white",
+      "sprite": "604",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "eelektross-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["eelektross"]
+      },
+      "baseStats": { "hp": 85, "atk": 145, "def": 80, "spe": 80, "spa": 135, "spd": 90 },
+      "debut": "legends-za",
+      "sprite": "10290",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "eelektrik",
+      "to": "eelektross",
+      "methods": []
+    }
+  ]
+}

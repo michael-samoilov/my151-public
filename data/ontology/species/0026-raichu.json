@@ -1,0 +1,85 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "raichu",
+    "nationalDex": 26,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "raichu",
+      "types": ["electric"],
+      "baseStats": { "hp": 60, "atk": 90, "def": 55, "spe": 110, "spa": 90, "spd": 80 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "red-blue",
+      "sprite": "26",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "raichu-mega-x",
+      "state": {
+        "kind": "mega",
+        "letter": "x",
+        "from": ["raichu"]
+      },
+      "baseStats": { "hp": 60, "atk": 135, "def": 95, "spe": 110, "spa": 90, "spd": 95 },
+      "debut": "legends-za",
+      "sprite": "10304",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "raichu-mega-y",
+      "state": {
+        "kind": "mega",
+        "letter": "y",
+        "from": ["raichu"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 55, "spe": 130, "spa": 160, "spd": 80 },
+      "debut": "legends-za",
+      "sprite": "10305",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "raichu-alola",
+      "region": "alola",
+      "types": ["electric", "psychic"],
+      "baseStats": { "hp": 60, "atk": 85, "def": 50, "spe": 110, "spa": 95, "spd": 85 },
+      "color": "brown",
+      "debut": "sun-moon",
+      "sprite": "10100",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pikachu",
+      "to": "raichu",
+      "methods": []
+    },
+    {
+      "from": "pikachu",
+      "to": "raichu-alola",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "avalugg",
+    "nationalDex": 713,
+    "captureRate": 55,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "avalugg",
+      "types": ["ice"],
+      "baseStats": { "hp": 95, "atk": 117, "def": 184, "spe": 28, "spa": 44, "spd": 46 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "mineral"],
+      "debut": "x-y",
+      "sprite": "713",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "avalugg-hisui",
+      "region": "hisui",
+      "types": ["ice", "rock"],
+      "baseStats": { "hp": 95, "atk": 127, "def": 184, "spe": 38, "spa": 34, "spd": 36 },
+      "debut": "legends-arceus",
+      "sprite": "10243",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bergmite",
+      "to": "avalugg",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "bergmite",
+      "to": "avalugg-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

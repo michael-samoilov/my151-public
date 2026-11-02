@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vanilluxe",
+    "nationalDex": 584,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vanilluxe",
+      "types": ["ice"],
+      "baseStats": { "hp": 71, "atk": 95, "def": 85, "spe": 79, "spa": 110, "spd": 95 },
+      "color": "white",
+      "shape": "heads",
+      "eggGroups": ["mineral"],
+      "debut": "black-white",
+      "sprite": "584",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "vanillish",
+      "to": "vanilluxe",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 47 }
+          ]
+        }
+      ]
+    }
+  ]
+}

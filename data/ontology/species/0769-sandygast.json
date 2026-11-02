@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandygast",
+    "nationalDex": 769,
+    "captureRate": 140,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandygast",
+      "types": ["ghost", "ground"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 80, "spe": 15, "spa": 70, "spd": 45 },
+      "color": "brown",
+      "shape": "squiggle",
+      "eggGroups": ["indeterminate"],
+      "debut": "sun-moon",
+      "sprite": "769",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,126 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sawsbuck",
+    "nationalDex": 586,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "season",
+        "values": ["spring", "summer", "autumn", "winter"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sawsbuck",
+      "variety": { "season": "spring" },
+      "types": ["normal", "grass"],
+      "baseStats": { "hp": 80, "atk": 100, "def": 70, "spe": 95, "spa": 60, "spd": 70 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "586",
+      "externalIds": { "pokeapiForm": "sawsbuck-spring" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sawsbuck-summer",
+      "variety": { "season": "summer" },
+      "sprite": "11011",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "sawsbuck-autumn",
+      "variety": { "season": "autumn" },
+      "sprite": "11012",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "sawsbuck-winter",
+      "variety": { "season": "winter" },
+      "sprite": "11013",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "deerling",
+      "to": "sawsbuck",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "deerling-summer",
+      "to": "sawsbuck-summer",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "deerling-autumn",
+      "to": "sawsbuck-autumn",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "deerling-winter",
+      "to": "sawsbuck-winter",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

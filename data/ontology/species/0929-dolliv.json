@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dolliv",
+    "nationalDex": 929,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dolliv",
+      "types": ["grass", "normal"],
+      "baseStats": { "hp": 52, "atk": 53, "def": 60, "spe": 33, "spa": 78, "spd": 78 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "scarlet-violet",
+      "sprite": "929",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "smoliv",
+      "to": "dolliv",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "applin",
+    "nationalDex": 840,
+    "captureRate": 255,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "applin",
+      "types": ["grass", "dragon"],
+      "baseStats": { "hp": 40, "atk": 40, "def": 80, "spe": 20, "spa": 40, "spd": 40 },
+      "color": "green",
+      "shape": "squiggle",
+      "eggGroups": ["plant", "dragon"],
+      "debut": "sword-shield",
+      "sprite": "840",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

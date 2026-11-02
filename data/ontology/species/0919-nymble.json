@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nymble",
+    "nationalDex": 919,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nymble",
+      "types": ["bug"],
+      "baseStats": { "hp": 33, "atk": 46, "def": 40, "spe": 45, "spa": 21, "spd": 25 },
+      "color": "gray",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "scarlet-violet",
+      "sprite": "919",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

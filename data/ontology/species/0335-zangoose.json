@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zangoose",
+    "nationalDex": 335,
+    "captureRate": 90,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zangoose",
+      "types": ["normal"],
+      "baseStats": { "hp": 73, "atk": 115, "def": 60, "spe": 90, "spa": 60, "spd": 60 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "335",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hydrapple",
+    "nationalDex": 1019,
+    "captureRate": 10,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hydrapple",
+      "types": ["grass", "dragon"],
+      "baseStats": { "hp": 106, "atk": 80, "def": 110, "spe": 44, "spa": 120, "spd": 80 },
+      "color": "green",
+      "shape": "heads",
+      "eggGroups": ["plant", "dragon"],
+      "debut": "scarlet-violet",
+      "sprite": "1019",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dipplin",
+      "to": "hydrapple",
+      "methods": []
+    }
+  ]
+}

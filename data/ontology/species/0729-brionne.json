@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "brionne",
+    "nationalDex": 729,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "brionne",
+      "types": ["water"],
+      "baseStats": { "hp": 60, "atk": 69, "def": 69, "spe": 50, "spa": 91, "spd": 81 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water1", "ground"],
+      "debut": "sun-moon",
+      "sprite": "729",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "popplio",
+      "to": "brionne",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 17 }
+          ]
+        }
+      ]
+    }
+  ]
+}

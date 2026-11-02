@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bellsprout",
+    "nationalDex": 69,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bellsprout",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 50, "atk": 75, "def": 35, "spe": 40, "spa": 70, "spd": 30 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "red-blue",
+      "sprite": "69",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

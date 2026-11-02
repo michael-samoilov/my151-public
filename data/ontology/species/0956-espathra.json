@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "espathra",
+    "nationalDex": 956,
+    "captureRate": 60,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "espathra",
+      "types": ["psychic"],
+      "baseStats": { "hp": 95, "atk": 60, "def": 60, "spe": 105, "spa": 101, "spd": 60 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["flying"],
+      "debut": "scarlet-violet",
+      "sprite": "956",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "flittle",
+      "to": "espathra",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

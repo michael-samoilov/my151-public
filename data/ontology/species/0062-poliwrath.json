@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "poliwrath",
+    "nationalDex": 62,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "poliwrath",
+      "types": ["water", "fighting"],
+      "baseStats": { "hp": 90, "atk": 95, "def": 95, "spe": 70, "spa": 70, "spd": 90 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "red-blue",
+      "sprite": "62",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "poliwhirl",
+      "to": "poliwrath",
+      "methods": []
+    }
+  ]
+}

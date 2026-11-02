@@ -1,0 +1,66 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gengar",
+    "nationalDex": 94,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gengar",
+      "types": ["ghost", "poison"],
+      "baseStats": { "hp": 60, "atk": 65, "def": 60, "spe": 110, "spa": 130, "spd": 75 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["indeterminate"],
+      "debut": "red-blue",
+      "sprite": "94",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gengar-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["gengar"]
+      },
+      "baseStats": { "hp": 60, "atk": 65, "def": 80, "spe": 130, "spa": 170, "spd": 95 },
+      "debut": "x-y",
+      "sprite": "10038",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gengar-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["gengar"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10202",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "haunter",
+      "to": "gengar",
+      "methods": []
+    }
+  ]
+}

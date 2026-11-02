@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "axew",
+    "nationalDex": 610,
+    "captureRate": 75,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "axew",
+      "types": ["dragon"],
+      "baseStats": { "hp": 46, "atk": 87, "def": 60, "spe": 57, "spa": 30, "spd": 40 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "black-white",
+      "sprite": "610",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

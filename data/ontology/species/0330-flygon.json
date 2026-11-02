@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "flygon",
+    "nationalDex": 330,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "flygon",
+      "types": ["ground", "dragon"],
+      "baseStats": { "hp": 80, "atk": 100, "def": 80, "spe": 100, "spa": 80, "spd": 80 },
+      "color": "green",
+      "shape": "wings",
+      "eggGroups": ["bug", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "330",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "vibrava",
+      "to": "flygon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 45 }
+          ]
+        }
+      ]
+    }
+  ]
+}

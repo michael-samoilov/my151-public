@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sudowoodo",
+    "nationalDex": 185,
+    "captureRate": 65,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sudowoodo",
+      "types": ["rock"],
+      "baseStats": { "hp": 70, "atk": 100, "def": 115, "spe": 30, "spa": 30, "spd": 65 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["mineral"],
+      "debut": "gold-silver",
+      "sprite": "185",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bonsly",
+      "to": "sudowoodo",
+      "methods": []
+    }
+  ]
+}

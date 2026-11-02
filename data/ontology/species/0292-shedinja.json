@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shedinja",
+    "nationalDex": 292,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shedinja",
+      "types": ["bug", "ghost"],
+      "baseStats": { "hp": 1, "atk": 90, "def": 45, "spe": 40, "spa": 30, "spd": 30 },
+      "color": "brown",
+      "shape": "blob",
+      "eggGroups": ["mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "292",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nincada",
+      "to": "shedinja",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

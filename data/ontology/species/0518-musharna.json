@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "musharna",
+    "nationalDex": 518,
+    "captureRate": 75,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "musharna",
+      "types": ["psychic"],
+      "baseStats": { "hp": 116, "atk": 55, "def": 85, "spe": 29, "spa": 107, "spd": 95 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "518",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "munna",
+      "to": "musharna",
+      "methods": []
+    }
+  ]
+}

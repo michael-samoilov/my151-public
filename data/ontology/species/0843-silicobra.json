@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "silicobra",
+    "nationalDex": 843,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "silicobra",
+      "types": ["ground"],
+      "baseStats": { "hp": 52, "atk": 57, "def": 75, "spe": 46, "spa": 35, "spd": 50 },
+      "color": "green",
+      "shape": "squiggle",
+      "eggGroups": ["ground", "dragon"],
+      "debut": "sword-shield",
+      "sprite": "843",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

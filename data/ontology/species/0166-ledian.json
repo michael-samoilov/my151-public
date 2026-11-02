@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ledian",
+    "nationalDex": 166,
+    "captureRate": 90,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ledian",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 55, "atk": 35, "def": 50, "spe": 85, "spa": 55, "spd": 110 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "166",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ledyba",
+      "to": "ledian",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ]
+    }
+  ]
+}

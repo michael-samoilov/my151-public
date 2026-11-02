@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crawdaunt",
+    "nationalDex": 342,
+    "captureRate": 155,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crawdaunt",
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 63, "atk": 120, "def": 85, "spe": 55, "spa": 90, "spd": 55 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["water1", "water3"],
+      "debut": "ruby-sapphire",
+      "sprite": "342",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "corphish",
+      "to": "crawdaunt",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

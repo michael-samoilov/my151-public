@@ -1,0 +1,38 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "articuno",
+    "nationalDex": 144,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "articuno",
+      "types": ["ice", "flying"],
+      "baseStats": { "hp": 90, "atk": 85, "def": 100, "spe": 85, "spa": 95, "spd": 125 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "144",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "articuno-galar",
+      "region": "galar",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 90, "atk": 85, "def": 85, "spe": 95, "spa": 125, "spd": 100 },
+      "color": "purple",
+      "debut": "sword-shield",
+      "sprite": "10169",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

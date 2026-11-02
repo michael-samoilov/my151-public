@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "aromatisse",
+    "nationalDex": 683,
+    "captureRate": 140,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "aromatisse",
+      "types": ["fairy"],
+      "baseStats": { "hp": 101, "atk": 72, "def": 72, "spe": 29, "spa": 99, "spd": 89 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "683",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "spritzee",
+      "to": "aromatisse",
+      "methods": []
+    }
+  ]
+}

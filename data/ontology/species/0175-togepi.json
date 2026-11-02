@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "togepi",
+    "nationalDex": 175,
+    "captureRate": 190,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "togepi",
+      "types": ["fairy"],
+      "baseStats": { "hp": 35, "atk": 20, "def": 65, "spe": 20, "spa": 40, "spd": 65 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "175",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

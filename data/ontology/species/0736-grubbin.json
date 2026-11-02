@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grubbin",
+    "nationalDex": 736,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grubbin",
+      "types": ["bug"],
+      "baseStats": { "hp": 47, "atk": 62, "def": 45, "spe": 46, "spa": 55, "spd": 45 },
+      "color": "gray",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "sun-moon",
+      "sprite": "736",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

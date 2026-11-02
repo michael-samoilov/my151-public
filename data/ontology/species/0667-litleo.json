@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "litleo",
+    "nationalDex": 667,
+    "captureRate": 220,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "litleo",
+      "types": ["fire", "normal"],
+      "baseStats": { "hp": 62, "atk": 50, "def": 58, "spe": 72, "spa": 73, "spd": 54 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "667",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

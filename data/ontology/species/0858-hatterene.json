@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hatterene",
+    "nationalDex": 858,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hatterene",
+      "types": ["psychic", "fairy"],
+      "baseStats": { "hp": 57, "atk": 90, "def": 95, "spe": 29, "spa": 136, "spd": 103 },
+      "color": "pink",
+      "shape": "blob",
+      "eggGroups": ["fairy"],
+      "debut": "sword-shield",
+      "sprite": "858",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "hatterene-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["hatterene"]
+      },
+      "sprite": "10221",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "hattrem",
+      "to": "hatterene",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

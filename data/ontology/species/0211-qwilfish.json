@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "qwilfish",
+    "nationalDex": 211,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "qwilfish",
+      "types": ["water", "poison"],
+      "baseStats": { "hp": 65, "atk": 95, "def": 85, "spe": 85, "spa": 55, "spd": 55 },
+      "color": "gray",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "gold-silver",
+      "sprite": "211",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "qwilfish-hisui",
+      "region": "hisui",
+      "types": ["dark", "poison"],
+      "color": "black",
+      "debut": "legends-arceus",
+      "sprite": "10234",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

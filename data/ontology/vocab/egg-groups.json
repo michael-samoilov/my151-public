@@ -1,0 +1,17 @@
+[
+  { "id": "monster" },
+  { "id": "water1" },
+  { "id": "water2" },
+  { "id": "water3" },
+  { "id": "bug" },
+  { "id": "flying" },
+  { "id": "ground" },
+  { "id": "fairy" },
+  { "id": "plant" },
+  { "id": "humanshape" },
+  { "id": "mineral" },
+  { "id": "indeterminate" },
+  { "id": "ditto" },
+  { "id": "dragon" },
+  { "id": "no-eggs" }
+]

@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "orbeetle",
+    "nationalDex": 826,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "orbeetle",
+      "types": ["bug", "psychic"],
+      "baseStats": { "hp": 60, "atk": 45, "def": 110, "spe": 90, "spa": 80, "spd": 120 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["bug"],
+      "debut": "sword-shield",
+      "sprite": "826",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "orbeetle-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["orbeetle"]
+      },
+      "sprite": "10213",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dottler",
+      "to": "orbeetle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

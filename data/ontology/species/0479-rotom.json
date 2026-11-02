@@ -1,0 +1,132 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rotom",
+    "nationalDex": 479,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "appliance",
+        "values": ["heat", "wash", "frost", "fan", "mow", "stereo"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rotom",
+      "types": ["electric", "ghost"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 77, "spe": 91, "spa": 95, "spd": 77 },
+      "color": "red",
+      "shape": "ball",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "479",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "rotom-heat",
+      "variety": { "appliance": "heat" },
+      "types": ["electric", "fire"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 107, "spe": 86, "spa": 105, "spd": 107 },
+      "debut": "platinum",
+      "sprite": "10008",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "rotom-wash",
+      "variety": { "appliance": "wash" },
+      "types": ["electric", "water"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 107, "spe": 86, "spa": 105, "spd": 107 },
+      "debut": "platinum",
+      "sprite": "10009",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "rotom-frost",
+      "variety": { "appliance": "frost" },
+      "types": ["electric", "ice"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 107, "spe": 86, "spa": 105, "spd": 107 },
+      "debut": "platinum",
+      "sprite": "10010",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "rotom-fan",
+      "variety": { "appliance": "fan" },
+      "types": ["electric", "flying"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 107, "spe": 86, "spa": 105, "spd": 107 },
+      "debut": "platinum",
+      "sprite": "10011",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "rotom-mow",
+      "variety": { "appliance": "mow" },
+      "types": ["electric", "grass"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 107, "spe": 86, "spa": 105, "spd": 107 },
+      "debut": "platinum",
+      "sprite": "10012",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "rotom-dj",
+      "variety": { "appliance": "stereo" },
+      "types": ["electric", "normal"],
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11112",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

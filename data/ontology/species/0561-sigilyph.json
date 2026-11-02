@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sigilyph",
+    "nationalDex": 561,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sigilyph",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 72, "atk": 58, "def": 80, "spe": 97, "spa": 103, "spd": 80 },
+      "color": "black",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "black-white",
+      "sprite": "561",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

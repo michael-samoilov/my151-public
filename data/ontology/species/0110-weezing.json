@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "weezing",
+    "nationalDex": 110,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "weezing",
+      "types": ["poison"],
+      "baseStats": { "hp": 65, "atk": 90, "def": 120, "spe": 60, "spa": 85, "spd": 70 },
+      "color": "purple",
+      "shape": "heads",
+      "eggGroups": ["indeterminate"],
+      "debut": "red-blue",
+      "sprite": "110",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "weezing-galar",
+      "region": "galar",
+      "types": ["poison", "fairy"],
+      "color": "gray",
+      "debut": "sword-shield",
+      "sprite": "10167",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "koffing",
+      "to": "weezing",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "koffing",
+      "to": "weezing-galar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

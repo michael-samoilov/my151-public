@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scyther",
+    "nationalDex": 123,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scyther",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 70, "atk": 110, "def": 80, "spe": 105, "spa": 55, "spd": 80 },
+      "color": "green",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "123",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

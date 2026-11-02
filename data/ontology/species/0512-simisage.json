@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "simisage",
+    "nationalDex": 512,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "simisage",
+      "types": ["grass"],
+      "baseStats": { "hp": 75, "atk": 98, "def": 63, "spe": 101, "spa": 98, "spd": 63 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "512",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pansage",
+      "to": "simisage",
+      "methods": []
+    }
+  ]
+}

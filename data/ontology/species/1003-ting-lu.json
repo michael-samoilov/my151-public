@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ting-lu",
+    "nationalDex": 1003,
+    "captureRate": 6,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ting-lu",
+      "types": ["dark", "ground"],
+      "baseStats": { "hp": 155, "atk": 110, "def": 125, "spe": 45, "spa": 55, "spd": 80 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1003",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

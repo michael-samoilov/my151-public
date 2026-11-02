@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ambipom",
+    "nationalDex": 424,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ambipom",
+      "types": ["normal"],
+      "baseStats": { "hp": 75, "atk": 100, "def": 66, "spe": 115, "spa": 60, "spd": 66 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "424",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "aipom",
+      "to": "ambipom",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lycanroc",
+    "nationalDex": 745,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["midday", "midnight", "dusk"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lycanroc",
+      "variety": { "forme": "midday" },
+      "types": ["rock"],
+      "baseStats": { "hp": 75, "atk": 115, "def": 65, "spe": 112, "spa": 55, "spd": 65 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "745",
+      "externalIds": { "pokeapiForm": "lycanroc-midday" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "lycanroc-midnight",
+      "variety": { "forme": "midnight" },
+      "baseStats": { "hp": 85, "atk": 115, "def": 75, "spe": 82, "spa": 55, "spd": 75 },
+      "color": "red",
+      "shape": "upright",
+      "sprite": "10126",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "lycanroc-dusk",
+      "variety": { "forme": "dusk" },
+      "baseStats": { "hp": 75, "atk": 117, "def": 65, "spe": 110, "spa": 55, "spd": 65 },
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "10152",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rockruff",
+      "to": "lycanroc",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "rockruff",
+      "to": "lycanroc-midnight",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "rockruff",
+      "to": "lycanroc-dusk",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nidorino",
+    "nationalDex": 33,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nidorino",
+      "types": ["poison"],
+      "baseStats": { "hp": 61, "atk": 72, "def": 57, "spe": 65, "spa": 55, "spd": 55 },
+      "color": "purple",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "ground"],
+      "debut": "red-blue",
+      "sprite": "33",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nidoran-m",
+      "to": "nidorino",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

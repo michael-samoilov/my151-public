@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "larvitar",
+    "nationalDex": 246,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "larvitar",
+      "types": ["rock", "ground"],
+      "baseStats": { "hp": 50, "atk": 64, "def": 50, "spe": 41, "spa": 45, "spd": 50 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "gold-silver",
+      "sprite": "246",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

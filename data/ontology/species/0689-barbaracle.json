@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "barbaracle",
+    "nationalDex": 689,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "barbaracle",
+      "types": ["rock", "water"],
+      "baseStats": { "hp": 72, "atk": 105, "def": 115, "spe": 68, "spa": 54, "spd": 86 },
+      "color": "brown",
+      "shape": "heads",
+      "eggGroups": ["water3"],
+      "debut": "x-y",
+      "sprite": "689",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "barbaracle-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["barbaracle"]
+      },
+      "types": ["rock", "fighting"],
+      "baseStats": { "hp": 72, "atk": 140, "def": 130, "spe": 88, "spa": 64, "spd": 106 },
+      "debut": "legends-za",
+      "sprite": "10298",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "binacle",
+      "to": "barbaracle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 39 }
+          ]
+        }
+      ]
+    }
+  ]
+}

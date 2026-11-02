@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "groudon",
+    "nationalDex": 383,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "groudon",
+      "types": ["ground"],
+      "baseStats": { "hp": 100, "atk": 150, "def": 140, "spe": 90, "spa": 100, "spd": 90 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "ruby-sapphire",
+      "sprite": "383",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "groudon-primal",
+      "state": {
+        "kind": "primal",
+        "from": ["groudon"]
+      },
+      "types": ["ground", "fire"],
+      "baseStats": { "hp": 100, "atk": 180, "def": 160, "spe": 90, "spa": 150, "spd": 90 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10078",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

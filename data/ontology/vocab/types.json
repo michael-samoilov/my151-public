@@ -1,0 +1,20 @@
+[
+  { "id": "normal" },
+  { "id": "fire" },
+  { "id": "water" },
+  { "id": "electric" },
+  { "id": "grass" },
+  { "id": "ice" },
+  { "id": "fighting" },
+  { "id": "poison" },
+  { "id": "ground" },
+  { "id": "flying" },
+  { "id": "psychic" },
+  { "id": "bug" },
+  { "id": "rock" },
+  { "id": "ghost" },
+  { "id": "dragon" },
+  { "id": "dark" },
+  { "id": "steel" },
+  { "id": "fairy" }
+]

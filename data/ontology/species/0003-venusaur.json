@@ -1,0 +1,74 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "venusaur",
+    "nationalDex": 3,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "venusaur",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 80, "atk": 82, "def": 83, "spe": 80, "spa": 100, "spd": 100 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "plant"],
+      "debut": "red-blue",
+      "sprite": "3",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "venusaur-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["venusaur"]
+      },
+      "baseStats": { "hp": 80, "atk": 100, "def": 123, "spe": 80, "spa": 122, "spd": 120 },
+      "debut": "x-y",
+      "sprite": "10033",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "venusaur-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["venusaur"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10195",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ivysaur",
+      "to": "venusaur",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

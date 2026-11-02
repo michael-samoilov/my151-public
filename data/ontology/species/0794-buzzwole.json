@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "buzzwole",
+    "nationalDex": 794,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "buzzwole",
+      "types": ["bug", "fighting"],
+      "baseStats": { "hp": 107, "atk": 139, "def": 139, "spe": 79, "spa": 53, "spd": 53 },
+      "color": "red",
+      "shape": "tentacles",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "794",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

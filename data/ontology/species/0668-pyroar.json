@@ -1,0 +1,86 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pyroar",
+    "nationalDex": 668,
+    "captureRate": 65,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pyroar",
+      "sex": "male",
+      "types": ["fire", "normal"],
+      "baseStats": { "hp": 86, "atk": 68, "def": 72, "spe": 106, "spa": 109, "spd": 66 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "668",
+      "externalIds": { "pokeapiForm": "pyroar-male" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "pyroar-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["pyroar"]
+      },
+      "baseStats": { "hp": 86, "atk": 88, "def": 92, "spe": 126, "spa": 129, "spd": 86 },
+      "debut": "legends-za",
+      "sprite": "10295",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "pyroar-female",
+      "sex": "female",
+      "sprite": "11071",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "litleo",
+      "to": "pyroar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "litleo",
+      "to": "pyroar-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

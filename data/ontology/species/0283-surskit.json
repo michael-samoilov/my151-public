@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "surskit",
+    "nationalDex": 283,
+    "captureRate": 200,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "surskit",
+      "types": ["bug", "water"],
+      "baseStats": { "hp": 40, "atk": 30, "def": 32, "spe": 65, "spa": 50, "spd": 52 },
+      "color": "blue",
+      "shape": "armor",
+      "eggGroups": ["water1", "bug"],
+      "debut": "ruby-sapphire",
+      "sprite": "283",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kadabra",
+    "nationalDex": 64,
+    "captureRate": 100,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kadabra",
+      "types": ["psychic"],
+      "baseStats": { "hp": 40, "atk": 35, "def": 30, "spe": 105, "spa": 120, "spd": 70 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "64",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "abra",
+      "to": "kadabra",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

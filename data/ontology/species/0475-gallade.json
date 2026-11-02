@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gallade",
+    "nationalDex": 475,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gallade",
+      "types": ["psychic", "fighting"],
+      "baseStats": { "hp": 68, "atk": 125, "def": 65, "spe": 80, "spa": 65, "spd": 115 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape", "indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "475",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "gallade-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["gallade"]
+      },
+      "baseStats": { "hp": 68, "atk": 165, "def": 95, "spe": 110, "spa": 65, "spd": 115 },
+      "eggGroups": ["indeterminate"],
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10068",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kirlia",
+      "to": "gallade",
+      "methods": []
+    }
+  ]
+}

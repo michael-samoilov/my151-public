@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "swampert",
+    "nationalDex": 260,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "swampert",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 100, "atk": 110, "def": 90, "spe": 60, "spa": 85, "spd": 90 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "ruby-sapphire",
+      "sprite": "260",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "swampert-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["swampert"]
+      },
+      "baseStats": { "hp": 100, "atk": 150, "def": 110, "spe": 70, "spa": 95, "spd": 110 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10064",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "marshtomp",
+      "to": "swampert",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

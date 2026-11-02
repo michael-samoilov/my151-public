@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "maractus",
+    "nationalDex": 556,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "maractus",
+      "types": ["grass"],
+      "baseStats": { "hp": 75, "atk": 86, "def": 67, "spe": 60, "spa": 106, "spd": 67 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["plant"],
+      "debut": "black-white",
+      "sprite": "556",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

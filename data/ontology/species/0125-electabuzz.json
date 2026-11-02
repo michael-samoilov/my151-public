@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "electabuzz",
+    "nationalDex": 125,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "electabuzz",
+      "types": ["electric"],
+      "baseStats": { "hp": 65, "atk": 83, "def": 57, "spe": 105, "spa": 95, "spd": 85 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "125",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "elekid",
+      "to": "electabuzz",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

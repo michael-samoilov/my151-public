@@ -1,0 +1,43 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mimikyu",
+    "nationalDex": 778,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mimikyu",
+      "types": ["ghost", "fairy"],
+      "baseStats": { "hp": 55, "atk": 90, "def": 80, "spe": 96, "spa": 50, "spd": 105 },
+      "color": "yellow",
+      "shape": "squiggle",
+      "eggGroups": ["indeterminate"],
+      "debut": "sun-moon",
+      "sprite": "778",
+      "externalIds": { "pokeapiForm": "mimikyu-disguised" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "mimikyu-busted",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["mimikyu"]
+      },
+      "sprite": "10143",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

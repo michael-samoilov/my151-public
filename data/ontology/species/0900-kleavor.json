@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kleavor",
+    "nationalDex": 900,
+    "captureRate": 115,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kleavor",
+      "types": ["bug", "rock"],
+      "baseStats": { "hp": 70, "atk": 135, "def": 95, "spe": 85, "spa": 45, "spd": 70 },
+      "color": "brown",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "legends-arceus",
+      "sprite": "900",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "scyther",
+      "to": "kleavor",
+      "methods": []
+    }
+  ]
+}

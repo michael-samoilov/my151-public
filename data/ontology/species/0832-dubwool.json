@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dubwool",
+    "nationalDex": 832,
+    "captureRate": 127,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dubwool",
+      "types": ["normal"],
+      "baseStats": { "hp": 72, "atk": 80, "def": 100, "spe": 88, "spa": 60, "spd": 90 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "832",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wooloo",
+      "to": "dubwool",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "alcremie",
+    "nationalDex": 869,
+    "captureRate": 100,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "cream",
+        "values": ["vanilla"]
+      },
+      {
+        "axis": "sweet",
+        "values": ["strawberry", "berry", "love", "star", "clover", "flower", "ribbon"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "alcremie",
+      "variety": { "cream": "vanilla", "sweet": "strawberry" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 65, "atk": 60, "def": 75, "spe": 64, "spa": 110, "spd": 121 },
+      "color": "white",
+      "shape": "blob",
+      "eggGroups": ["fairy", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "alcremie-strawberry",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-strawberry-sweet" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "alcremie-gmax",
+      "state": { "kind": "gigantamax", "from": "any" },
+      "sprite": "10223",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    },
+    {
+      "id": "alcremie-berry",
+      "variety": { "cream": "vanilla", "sweet": "berry" },
+      "sprite": "alcremie-berry",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-berry-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "alcremie-love",
+      "variety": { "cream": "vanilla", "sweet": "love" },
+      "sprite": "alcremie-love",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-love-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "alcremie-star",
+      "variety": { "cream": "vanilla", "sweet": "star" },
+      "sprite": "alcremie-star",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-star-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "alcremie-clover",
+      "variety": { "cream": "vanilla", "sweet": "clover" },
+      "sprite": "alcremie-clover",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-clover-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "alcremie-flower",
+      "variety": { "cream": "vanilla", "sweet": "flower" },
+      "sprite": "alcremie-flower",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-flower-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "alcremie-ribbon",
+      "variety": { "cream": "vanilla", "sweet": "ribbon" },
+      "sprite": "alcremie-ribbon",
+      "externalIds": { "pokeapiForm": "alcremie-vanilla-cream-ribbon-sweet" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "milcery",
+      "to": "alcremie",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-berry",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-love",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-star",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-clover",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-flower",
+      "methods": []
+    },
+    {
+      "from": "milcery",
+      "to": "alcremie-ribbon",
+      "methods": []
+    }
+  ]
+}

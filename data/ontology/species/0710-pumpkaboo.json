@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pumpkaboo",
+    "nationalDex": 710,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pumpkaboo",
+      "types": ["ghost", "grass"],
+      "baseStats": { "hp": 49, "atk": 66, "def": 70, "spe": 51, "spa": 44, "spd": 55 },
+      "color": "brown",
+      "shape": "ball",
+      "eggGroups": ["indeterminate"],
+      "debut": "x-y",
+      "sprite": "710",
+      "externalIds": { "pokeapiForm": "pumpkaboo-average" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

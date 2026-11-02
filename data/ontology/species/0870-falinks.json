@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "falinks",
+    "nationalDex": 870,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "falinks",
+      "types": ["fighting"],
+      "baseStats": { "hp": 65, "atk": 100, "def": 100, "spe": 75, "spa": 70, "spd": 60 },
+      "color": "yellow",
+      "shape": "heads",
+      "eggGroups": ["fairy", "mineral"],
+      "debut": "sword-shield",
+      "sprite": "870",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "falinks-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["falinks"]
+      },
+      "baseStats": { "hp": 65, "atk": 135, "def": 135, "spe": 100, "spa": 70, "spd": 65 },
+      "debut": "legends-za",
+      "sprite": "10303",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

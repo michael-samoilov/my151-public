@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "primeape",
+    "nationalDex": 57,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "primeape",
+      "types": ["fighting"],
+      "baseStats": { "hp": 65, "atk": 105, "def": 60, "spe": 95, "spa": 60, "spd": 70 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "57",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mankey",
+      "to": "primeape",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    }
+  ]
+}

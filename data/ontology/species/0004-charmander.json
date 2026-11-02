@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "charmander",
+    "nationalDex": 4,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "charmander",
+      "types": ["fire"],
+      "baseStats": { "hp": 39, "atk": 52, "def": 43, "spe": 65, "spa": 60, "spd": 50 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "red-blue",
+      "sprite": "4",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

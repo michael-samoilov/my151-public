@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dragalge",
+    "nationalDex": 691,
+    "captureRate": 55,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dragalge",
+      "types": ["poison", "dragon"],
+      "baseStats": { "hp": 65, "atk": 75, "def": 90, "spe": 44, "spa": 97, "spd": 123 },
+      "color": "brown",
+      "shape": "blob",
+      "eggGroups": ["water1", "dragon"],
+      "debut": "x-y",
+      "sprite": "691",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "dragalge-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["dragalge"]
+      },
+      "baseStats": { "hp": 65, "atk": 85, "def": 105, "spe": 44, "spa": 132, "spd": 163 },
+      "debut": "legends-za",
+      "sprite": "10299",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "skrelp",
+      "to": "dragalge",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 48 }
+          ]
+        }
+      ]
+    }
+  ]
+}

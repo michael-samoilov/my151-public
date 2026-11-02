@@ -1,0 +1,38 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandshrew",
+    "nationalDex": 27,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandshrew",
+      "types": ["ground"],
+      "baseStats": { "hp": 50, "atk": 75, "def": 85, "spe": 40, "spa": 20, "spd": 30 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "27",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sandshrew-alola",
+      "region": "alola",
+      "types": ["ice", "steel"],
+      "baseStats": { "hp": 50, "atk": 75, "def": 90, "spe": 40, "spa": 10, "spd": 35 },
+      "color": "white",
+      "debut": "sun-moon",
+      "sprite": "10101",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

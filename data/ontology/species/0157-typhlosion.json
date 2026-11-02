@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "typhlosion",
+    "nationalDex": 157,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "typhlosion",
+      "types": ["fire"],
+      "baseStats": { "hp": 78, "atk": 84, "def": 78, "spe": 100, "spa": 109, "spd": 85 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "157",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "typhlosion-hisui",
+      "region": "hisui",
+      "types": ["fire", "ghost"],
+      "baseStats": { "hp": 73, "atk": 84, "def": 78, "spe": 95, "spa": 119, "spd": 85 },
+      "debut": "legends-arceus",
+      "sprite": "10233",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "quilava",
+      "to": "typhlosion",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "quilava",
+      "to": "typhlosion-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

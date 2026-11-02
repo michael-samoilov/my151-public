@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nihilego",
+    "nationalDex": 793,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nihilego",
+      "types": ["rock", "poison"],
+      "baseStats": { "hp": 109, "atk": 53, "def": 47, "spe": 103, "spa": 127, "spd": 131 },
+      "color": "white",
+      "shape": "tentacles",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "793",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

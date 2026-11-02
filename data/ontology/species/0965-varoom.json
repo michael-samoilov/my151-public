@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "varoom",
+    "nationalDex": 965,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "varoom",
+      "types": ["steel", "poison"],
+      "baseStats": { "hp": 45, "atk": 70, "def": 63, "spe": 47, "spa": 30, "spd": 45 },
+      "color": "gray",
+      "shape": "legs",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "965",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

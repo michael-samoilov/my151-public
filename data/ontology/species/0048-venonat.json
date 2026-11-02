@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "venonat",
+    "nationalDex": 48,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "venonat",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 60, "atk": 55, "def": 50, "spe": 45, "spa": 40, "spd": 55 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "48",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

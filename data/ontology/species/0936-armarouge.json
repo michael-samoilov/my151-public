@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "armarouge",
+    "nationalDex": 936,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "armarouge",
+      "types": ["fire", "psychic"],
+      "baseStats": { "hp": 85, "atk": 60, "def": 100, "spe": 75, "spa": 125, "spd": 80 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "scarlet-violet",
+      "sprite": "936",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "charcadet",
+      "to": "armarouge",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "frogadier",
+    "nationalDex": 657,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "frogadier",
+      "types": ["water"],
+      "baseStats": { "hp": 54, "atk": 63, "def": 52, "spe": 97, "spa": 83, "spd": 56 },
+      "color": "blue",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "x-y",
+      "sprite": "657",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "froakie",
+      "to": "frogadier",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 16 }
+          ]
+        }
+      ]
+    }
+  ]
+}

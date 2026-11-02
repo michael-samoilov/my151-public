@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fletchling",
+    "nationalDex": 661,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fletchling",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 45, "atk": 50, "def": 43, "spe": 62, "spa": 40, "spd": 38 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "x-y",
+      "sprite": "661",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

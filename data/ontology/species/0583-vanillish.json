@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vanillish",
+    "nationalDex": 583,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vanillish",
+      "types": ["ice"],
+      "baseStats": { "hp": 51, "atk": 65, "def": 65, "spe": 59, "spa": 80, "spd": 75 },
+      "color": "white",
+      "shape": "blob",
+      "eggGroups": ["mineral"],
+      "debut": "black-white",
+      "sprite": "583",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "vanillite",
+      "to": "vanillish",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

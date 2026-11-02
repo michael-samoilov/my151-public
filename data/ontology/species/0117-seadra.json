@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "seadra",
+    "nationalDex": 117,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "seadra",
+      "types": ["water"],
+      "baseStats": { "hp": 55, "atk": 65, "def": 95, "spe": 85, "spa": 95, "spd": 45 },
+      "color": "blue",
+      "shape": "blob",
+      "eggGroups": ["water1", "dragon"],
+      "debut": "red-blue",
+      "sprite": "117",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "horsea",
+      "to": "seadra",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

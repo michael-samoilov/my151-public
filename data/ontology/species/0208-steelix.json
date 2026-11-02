@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "steelix",
+    "nationalDex": 208,
+    "captureRate": 25,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "steelix",
+      "types": ["steel", "ground"],
+      "baseStats": { "hp": 75, "atk": 85, "def": 200, "spe": 30, "spa": 55, "spd": 65 },
+      "color": "gray",
+      "shape": "squiggle",
+      "eggGroups": ["mineral"],
+      "debut": "gold-silver",
+      "sprite": "208",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "steelix-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["steelix"]
+      },
+      "baseStats": { "hp": 75, "atk": 125, "def": 230, "spe": 30, "spa": 55, "spd": 95 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10072",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "onix",
+      "to": "steelix",
+      "methods": []
+    }
+  ]
+}

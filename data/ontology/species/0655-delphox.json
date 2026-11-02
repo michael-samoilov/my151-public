@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "delphox",
+    "nationalDex": 655,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "delphox",
+      "types": ["fire", "psychic"],
+      "baseStats": { "hp": 75, "atk": 69, "def": 72, "spe": 104, "spa": 114, "spd": 100 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "655",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "delphox-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["delphox"]
+      },
+      "baseStats": { "hp": 75, "atk": 69, "def": 72, "spe": 134, "spa": 159, "spd": 125 },
+      "debut": "legends-za",
+      "sprite": "10293",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "braixen",
+      "to": "delphox",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

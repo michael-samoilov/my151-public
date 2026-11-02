@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "medicham",
+    "nationalDex": 308,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "medicham",
+      "types": ["fighting", "psychic"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 75, "spe": 80, "spa": 60, "spd": 75 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "ruby-sapphire",
+      "sprite": "308",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "medicham-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["medicham"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 85, "spe": 100, "spa": 80, "spd": 85 },
+      "debut": "x-y",
+      "sprite": "10054",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "meditite",
+      "to": "medicham",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

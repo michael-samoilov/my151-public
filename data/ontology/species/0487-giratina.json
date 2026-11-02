@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "giratina",
+    "nationalDex": 487,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["altered", "origin"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "giratina",
+      "variety": { "forme": "altered" },
+      "types": ["ghost", "dragon"],
+      "baseStats": { "hp": 150, "atk": 100, "def": 120, "spe": 90, "spa": 100, "spd": 120 },
+      "color": "black",
+      "shape": "tentacles",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "487",
+      "externalIds": { "pokeapiForm": "giratina-altered" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "giratina-origin",
+      "variety": { "forme": "origin" },
+      "baseStats": { "hp": 150, "atk": 120, "def": 100, "spe": 90, "spa": 120, "spd": 100 },
+      "shape": "squiggle",
+      "debut": "platinum",
+      "sprite": "10007",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

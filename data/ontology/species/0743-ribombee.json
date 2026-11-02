@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ribombee",
+    "nationalDex": 743,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ribombee",
+      "types": ["bug", "fairy"],
+      "baseStats": { "hp": 60, "atk": 55, "def": 60, "spe": 124, "spa": 95, "spd": 70 },
+      "color": "yellow",
+      "shape": "bug-wings",
+      "eggGroups": ["bug", "fairy"],
+      "debut": "sun-moon",
+      "sprite": "743",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cutiefly",
+      "to": "ribombee",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

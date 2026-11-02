@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wooloo",
+    "nationalDex": 831,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wooloo",
+      "types": ["normal"],
+      "baseStats": { "hp": 42, "atk": 40, "def": 55, "spe": 48, "spa": 40, "spd": 45 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "831",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

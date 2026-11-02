@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "drifblim",
+    "nationalDex": 426,
+    "captureRate": 60,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "drifblim",
+      "types": ["ghost", "flying"],
+      "baseStats": { "hp": 150, "atk": 80, "def": 44, "spe": 80, "spa": 90, "spd": 54 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "426",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "drifloon",
+      "to": "drifblim",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    }
+  ]
+}

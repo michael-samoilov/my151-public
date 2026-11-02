@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "foongus",
+    "nationalDex": 590,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "foongus",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 69, "atk": 55, "def": 45, "spe": 15, "spa": 55, "spd": 55 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["plant"],
+      "debut": "black-white",
+      "sprite": "590",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

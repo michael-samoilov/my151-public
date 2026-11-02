@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "yanmega",
+    "nationalDex": 469,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "yanmega",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 86, "atk": 76, "def": 86, "spe": 95, "spa": 116, "spd": 56 },
+      "color": "green",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "469",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "yanma",
+      "to": "yanmega",
+      "methods": []
+    }
+  ]
+}

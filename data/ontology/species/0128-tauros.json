@@ -1,0 +1,71 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tauros",
+    "nationalDex": 128,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "breed",
+        "values": ["combat", "blaze", "aqua"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tauros",
+      "types": ["normal"],
+      "baseStats": { "hp": 75, "atk": 100, "def": 95, "spe": 110, "spa": 40, "spd": 70 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "128",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tauros-paldea-combat",
+      "region": "paldea",
+      "variety": { "breed": "combat" },
+      "types": ["fighting"],
+      "baseStats": { "hp": 75, "atk": 110, "def": 105, "spe": 100, "spa": 30, "spd": 70 },
+      "color": "black",
+      "debut": "scarlet-violet",
+      "sprite": "10250",
+      "externalIds": { "pokeapiForm": "tauros-paldea-combat-breed" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tauros-paldea-blaze",
+      "region": "paldea",
+      "variety": { "breed": "blaze" },
+      "types": ["fighting", "fire"],
+      "baseStats": { "hp": 75, "atk": 110, "def": 105, "spe": 100, "spa": 30, "spd": 70 },
+      "color": "black",
+      "debut": "scarlet-violet",
+      "sprite": "10251",
+      "externalIds": { "pokeapiForm": "tauros-paldea-blaze-breed" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tauros-paldea-aqua",
+      "region": "paldea",
+      "variety": { "breed": "aqua" },
+      "types": ["fighting", "water"],
+      "baseStats": { "hp": 75, "atk": 110, "def": 105, "spe": 100, "spa": 30, "spd": 70 },
+      "color": "black",
+      "debut": "scarlet-violet",
+      "sprite": "10252",
+      "externalIds": { "pokeapiForm": "tauros-paldea-aqua-breed" },
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

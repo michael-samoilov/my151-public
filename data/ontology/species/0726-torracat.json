@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "torracat",
+    "nationalDex": 726,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "torracat",
+      "types": ["fire"],
+      "baseStats": { "hp": 65, "atk": 85, "def": 50, "spe": 90, "spa": 80, "spd": 50 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "726",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "litten",
+      "to": "torracat",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 17 }
+          ]
+        }
+      ]
+    }
+  ]
+}

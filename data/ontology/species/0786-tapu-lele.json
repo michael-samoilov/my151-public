@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tapu-lele",
+    "nationalDex": 786,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tapu-lele",
+      "types": ["psychic", "fairy"],
+      "baseStats": { "hp": 70, "atk": 85, "def": 75, "spe": 95, "spa": 130, "spd": 115 },
+      "color": "pink",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "786",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

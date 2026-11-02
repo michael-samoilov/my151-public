@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "swoobat",
+    "nationalDex": 528,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "swoobat",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 67, "atk": 57, "def": 55, "spe": 114, "spa": 77, "spd": 55 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["ground", "flying"],
+      "debut": "black-white",
+      "sprite": "528",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "woobat",
+      "to": "swoobat",
+      "methods": []
+    }
+  ]
+}

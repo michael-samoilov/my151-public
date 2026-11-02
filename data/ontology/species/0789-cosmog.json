@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cosmog",
+    "nationalDex": 789,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cosmog",
+      "types": ["psychic"],
+      "baseStats": { "hp": 43, "atk": 29, "def": 31, "spe": 37, "spa": 29, "spd": 31 },
+      "color": "blue",
+      "shape": "ball",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "789",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cetitan",
+    "nationalDex": 975,
+    "captureRate": 50,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cetitan",
+      "types": ["ice"],
+      "baseStats": { "hp": 170, "atk": 113, "def": 65, "spe": 73, "spa": 45, "spd": 55 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "975",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cetoddle",
+      "to": "cetitan",
+      "methods": []
+    }
+  ]
+}

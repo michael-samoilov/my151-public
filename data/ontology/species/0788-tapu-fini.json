@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tapu-fini",
+    "nationalDex": 788,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tapu-fini",
+      "types": ["water", "fairy"],
+      "baseStats": { "hp": 70, "atk": 75, "def": 115, "spe": 85, "spa": 95, "spd": 130 },
+      "color": "purple",
+      "shape": "arms",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "788",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "haxorus",
+    "nationalDex": 612,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "haxorus",
+      "types": ["dragon"],
+      "baseStats": { "hp": 76, "atk": 147, "def": 90, "spe": 97, "spa": 60, "spd": 70 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "black-white",
+      "sprite": "612",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "fraxure",
+      "to": "haxorus",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 48 }
+          ]
+        }
+      ]
+    }
+  ]
+}

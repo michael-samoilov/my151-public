@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "forretress",
+    "nationalDex": 205,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "forretress",
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 75, "atk": 90, "def": 140, "spe": 40, "spa": 60, "spd": 60 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "205",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pineco",
+      "to": "forretress",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 31 }
+          ]
+        }
+      ]
+    }
+  ]
+}

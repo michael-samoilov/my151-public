@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sharpedo",
+    "nationalDex": 319,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sharpedo",
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 70, "atk": 120, "def": 40, "spe": 95, "spa": 95, "spd": 40 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "319",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sharpedo-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["sharpedo"]
+      },
+      "baseStats": { "hp": 70, "atk": 140, "def": 70, "spe": 105, "spa": 110, "spd": 65 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10070",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "carvanha",
+      "to": "sharpedo",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

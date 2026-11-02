@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "walking-wake",
+    "nationalDex": 1009,
+    "captureRate": 5,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "walking-wake",
+      "types": ["water", "dragon"],
+      "baseStats": { "hp": 99, "atk": 83, "def": 91, "spe": 109, "spa": 125, "spd": 83 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1009",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

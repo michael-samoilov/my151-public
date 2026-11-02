@@ -1,0 +1,88 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "meowstic",
+    "nationalDex": 678,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "meowstic",
+      "sex": "male",
+      "types": ["psychic"],
+      "baseStats": { "hp": 74, "atk": 48, "def": 76, "spe": 104, "spa": 83, "spd": 81 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "678",
+      "externalIds": { "pokeapiForm": "meowstic-male" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meowstic-female",
+      "sex": "female",
+      "color": "white",
+      "sprite": "10025",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "meowstic-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["meowstic"]
+      },
+      "baseStats": { "hp": 74, "atk": 48, "def": 76, "spe": 124, "spa": 143, "spd": 101 },
+      "debut": "legends-za",
+      "sprite": "10314",
+      "externalIds": { "pokeapiForm": "meowstic-male-mega" },
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "espurr",
+      "to": "meowstic",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "espurr",
+      "to": "meowstic-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

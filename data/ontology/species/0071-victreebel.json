@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "victreebel",
+    "nationalDex": 71,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "victreebel",
+      "types": ["grass", "poison"],
+      "baseStats": { "hp": 80, "atk": 105, "def": 65, "spe": 70, "spa": 100, "spd": 70 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["plant"],
+      "debut": "red-blue",
+      "sprite": "71",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "victreebel-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["victreebel"]
+      },
+      "baseStats": { "hp": 80, "atk": 125, "def": 85, "spe": 70, "spa": 135, "spd": 95 },
+      "debut": "legends-za",
+      "sprite": "10279",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "weepinbell",
+      "to": "victreebel",
+      "methods": []
+    }
+  ]
+}

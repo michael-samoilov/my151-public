@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "caterpie",
+    "nationalDex": 10,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "caterpie",
+      "types": ["bug"],
+      "baseStats": { "hp": 45, "atk": 30, "def": 35, "spe": 45, "spa": 20, "spd": 20 },
+      "color": "green",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "10",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

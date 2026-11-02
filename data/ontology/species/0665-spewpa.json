@@ -1,0 +1,42 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spewpa",
+    "nationalDex": 665,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spewpa",
+      "types": ["bug"],
+      "baseStats": { "hp": 45, "atk": 22, "def": 60, "spe": 29, "spa": 27, "spd": 30 },
+      "color": "black",
+      "shape": "blob",
+      "eggGroups": ["bug"],
+      "debut": "x-y",
+      "sprite": "665",
+      "externalIds": { "pokeapiForm": "spewpa-icy-snow" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "scatterbug",
+      "to": "spewpa",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 9 }
+          ]
+        }
+      ]
+    }
+  ]
+}

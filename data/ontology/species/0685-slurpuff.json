@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "slurpuff",
+    "nationalDex": 685,
+    "captureRate": 140,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "slurpuff",
+      "types": ["fairy"],
+      "baseStats": { "hp": 82, "atk": 80, "def": 86, "spe": 72, "spa": 85, "spd": 75 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "685",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "swirlix",
+      "to": "slurpuff",
+      "methods": []
+    }
+  ]
+}

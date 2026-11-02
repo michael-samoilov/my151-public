@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "yveltal",
+    "nationalDex": 717,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "yveltal",
+      "types": ["dark", "flying"],
+      "baseStats": { "hp": 126, "atk": 131, "def": 95, "spe": 99, "spa": 131, "spd": 98 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "x-y",
+      "sprite": "717",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

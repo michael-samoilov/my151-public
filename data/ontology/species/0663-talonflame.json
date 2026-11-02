@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "talonflame",
+    "nationalDex": 663,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "talonflame",
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 78, "atk": 81, "def": 71, "spe": 126, "spa": 74, "spd": 69 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "x-y",
+      "sprite": "663",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "fletchinder",
+      "to": "talonflame",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

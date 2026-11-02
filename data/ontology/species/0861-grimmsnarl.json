@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grimmsnarl",
+    "nationalDex": 861,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grimmsnarl",
+      "types": ["dark", "fairy"],
+      "baseStats": { "hp": 95, "atk": 120, "def": 65, "spe": 60, "spa": 95, "spd": 75 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["fairy", "humanshape"],
+      "debut": "sword-shield",
+      "sprite": "861",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "grimmsnarl-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["grimmsnarl"]
+      },
+      "sprite": "10222",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "morgrem",
+      "to": "grimmsnarl",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

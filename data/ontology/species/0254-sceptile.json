@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sceptile",
+    "nationalDex": 254,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sceptile",
+      "types": ["grass"],
+      "baseStats": { "hp": 70, "atk": 85, "def": 65, "spe": 120, "spa": 105, "spd": 85 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "ruby-sapphire",
+      "sprite": "254",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sceptile-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["sceptile"]
+      },
+      "types": ["grass", "dragon"],
+      "baseStats": { "hp": 70, "atk": 110, "def": 75, "spe": 145, "spa": 145, "spd": 85 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10065",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "grovyle",
+      "to": "sceptile",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

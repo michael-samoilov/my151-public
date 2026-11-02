@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "camerupt",
+    "nationalDex": 323,
+    "captureRate": 150,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "camerupt",
+      "types": ["fire", "ground"],
+      "baseStats": { "hp": 70, "atk": 100, "def": 70, "spe": 40, "spa": 105, "spd": 75 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "323",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "camerupt-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["camerupt"]
+      },
+      "baseStats": { "hp": 70, "atk": 120, "def": 100, "spe": 20, "spa": 145, "spd": 105 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10087",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "numel",
+      "to": "camerupt",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 33 }
+          ]
+        }
+      ]
+    }
+  ]
+}

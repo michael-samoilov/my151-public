@@ -153,11 +153,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true, capped: true });
       }
       if (ok === 1) {
-        const activityAck = await appendMinuteActivity(cid, 'league', body.activity, receivedAt);
-        if (exportKind) {
-          const highlight = await recordToolExport(exportKind === 'card' ? 'card' : 'league', pokemonIds);
-          return res.status(200).json({ ok: true, highlight, activityAck });
-        }
+        const [activityAck, highlight] = await Promise.all([
+          appendMinuteActivity(cid, 'league', body.activity, receivedAt),
+          exportKind ? recordToolExport(exportKind === 'card' ? 'card' : 'league', pokemonIds) : undefined,
+        ]);
+        if (exportKind) return res.status(200).json({ ok: true, highlight, activityAck });
         return res.status(200).json({ ok: true, activityAck });
       }
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));

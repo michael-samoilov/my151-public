@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clauncher",
+    "nationalDex": 692,
+    "captureRate": 225,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clauncher",
+      "types": ["water"],
+      "baseStats": { "hp": 50, "atk": 53, "def": 62, "spe": 44, "spa": 58, "spd": 63 },
+      "color": "blue",
+      "shape": "armor",
+      "eggGroups": ["water1", "water3"],
+      "debut": "x-y",
+      "sprite": "692",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

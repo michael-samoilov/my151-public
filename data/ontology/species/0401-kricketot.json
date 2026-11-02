@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kricketot",
+    "nationalDex": 401,
+    "captureRate": 255,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kricketot",
+      "types": ["bug"],
+      "baseStats": { "hp": 37, "atk": 25, "def": 41, "spe": 25, "spa": 25, "spd": 41 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "401",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "clodsire",
+    "nationalDex": 980,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "clodsire",
+      "types": ["poison", "ground"],
+      "baseStats": { "hp": 130, "atk": 75, "def": 60, "spe": 20, "spa": 45, "spd": 100 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["water1", "ground"],
+      "debut": "scarlet-violet",
+      "sprite": "980",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wooper-paldea",
+      "to": "clodsire",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "raging-bolt",
+    "nationalDex": 1021,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "raging-bolt",
+      "types": ["electric", "dragon"],
+      "baseStats": { "hp": 125, "atk": 73, "def": 91, "spe": 75, "spa": 137, "spd": 89 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1021",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kirlia",
+    "nationalDex": 281,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kirlia",
+      "types": ["psychic", "fairy"],
+      "baseStats": { "hp": 38, "atk": 35, "def": 35, "spe": 50, "spa": 65, "spd": 55 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape", "indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "281",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ralts",
+      "to": "kirlia",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "relicanth",
+    "nationalDex": 369,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "relicanth",
+      "types": ["water", "rock"],
+      "baseStats": { "hp": 100, "atk": 90, "def": 130, "spe": 55, "spa": 45, "spd": 65 },
+      "color": "gray",
+      "shape": "fish",
+      "eggGroups": ["water1", "water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "369",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

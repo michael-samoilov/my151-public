@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "flutter-mane",
+    "nationalDex": 987,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "flutter-mane",
+      "types": ["ghost", "fairy"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 55, "spe": 135, "spa": 135, "spd": 135 },
+      "color": "gray",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "987",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

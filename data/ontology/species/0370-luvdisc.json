@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "luvdisc",
+    "nationalDex": 370,
+    "captureRate": 225,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "luvdisc",
+      "types": ["water"],
+      "baseStats": { "hp": 43, "atk": 30, "def": 55, "spe": 97, "spa": 40, "spd": 65 },
+      "color": "pink",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "370",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

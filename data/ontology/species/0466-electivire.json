@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "electivire",
+    "nationalDex": 466,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "electivire",
+      "types": ["electric"],
+      "baseStats": { "hp": 75, "atk": 123, "def": 67, "spe": 95, "spa": 95, "spd": 85 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "466",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "electabuzz",
+      "to": "electivire",
+      "methods": []
+    }
+  ]
+}

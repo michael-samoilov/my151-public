@@ -1,0 +1,60 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "golisopod",
+    "nationalDex": 768,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "golisopod",
+      "types": ["bug", "water"],
+      "baseStats": { "hp": 75, "atk": 125, "def": 140, "spe": 40, "spa": 60, "spd": 90 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["bug", "water3"],
+      "debut": "sun-moon",
+      "sprite": "768",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "golisopod-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["golisopod"]
+      },
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 75, "atk": 150, "def": 175, "spe": 40, "spa": 70, "spd": 120 },
+      "shape": "tentacles",
+      "debut": "legends-za",
+      "sprite": "10316",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wimpod",
+      "to": "golisopod",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

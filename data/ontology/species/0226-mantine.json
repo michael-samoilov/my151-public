@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mantine",
+    "nationalDex": 226,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mantine",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 85, "atk": 40, "def": 70, "spe": 70, "spa": 80, "spd": 140 },
+      "color": "purple",
+      "shape": "wings",
+      "eggGroups": ["water1"],
+      "debut": "gold-silver",
+      "sprite": "226",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mantyke",
+      "to": "mantine",
+      "methods": []
+    }
+  ]
+}

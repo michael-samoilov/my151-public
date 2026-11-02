@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lokix",
+    "nationalDex": 920,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lokix",
+      "types": ["bug", "dark"],
+      "baseStats": { "hp": 71, "atk": 102, "def": 78, "spe": 92, "spa": 52, "spd": 55 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["bug"],
+      "debut": "scarlet-violet",
+      "sprite": "920",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nymble",
+      "to": "lokix",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

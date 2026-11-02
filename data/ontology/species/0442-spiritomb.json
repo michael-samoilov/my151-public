@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "spiritomb",
+    "nationalDex": 442,
+    "captureRate": 100,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "spiritomb",
+      "types": ["ghost", "dark"],
+      "baseStats": { "hp": 50, "atk": 92, "def": 108, "spe": 35, "spa": 92, "spd": 108 },
+      "color": "purple",
+      "shape": "blob",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "442",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

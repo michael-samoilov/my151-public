@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zoroark",
+    "nationalDex": 571,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zoroark",
+      "types": ["dark"],
+      "baseStats": { "hp": 60, "atk": 105, "def": 60, "spe": 105, "spa": 120, "spd": 60 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "571",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zoroark-hisui",
+      "region": "hisui",
+      "types": ["normal", "ghost"],
+      "baseStats": { "hp": 55, "atk": 100, "def": 60, "spe": 110, "spa": 125, "spd": 60 },
+      "debut": "legends-arceus",
+      "sprite": "10239",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "zorua",
+      "to": "zoroark",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "zorua-hisui",
+      "to": "zoroark-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

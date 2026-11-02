@@ -1,0 +1,47 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "flapple",
+    "nationalDex": 841,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "flapple",
+      "types": ["grass", "dragon"],
+      "baseStats": { "hp": 70, "atk": 110, "def": 80, "spe": 70, "spa": 95, "spd": 60 },
+      "color": "green",
+      "shape": "wings",
+      "eggGroups": ["plant", "dragon"],
+      "debut": "sword-shield",
+      "sprite": "841",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "flapple-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["flapple"]
+      },
+      "sprite": "10216",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "applin",
+      "to": "flapple",
+      "methods": []
+    }
+  ]
+}

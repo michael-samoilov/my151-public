@@ -1,0 +1,46 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "smeargle",
+    "nationalDex": 235,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["smearguru"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "smeargle",
+      "types": ["normal"],
+      "baseStats": { "hp": 55, "atk": 20, "def": 35, "spe": 75, "spa": 20, "spd": 45 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "235",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "smeargle-smearguru",
+      "variety": { "look": "smearguru" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11117",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

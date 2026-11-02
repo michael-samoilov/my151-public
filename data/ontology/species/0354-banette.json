@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "banette",
+    "nationalDex": 354,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "banette",
+      "types": ["ghost"],
+      "baseStats": { "hp": 64, "atk": 115, "def": 65, "spe": 65, "spa": 83, "spd": 63 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "354",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "banette-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["banette"]
+      },
+      "baseStats": { "hp": 64, "atk": 165, "def": 75, "spe": 75, "spa": 93, "spd": 83 },
+      "debut": "x-y",
+      "sprite": "10056",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shuppet",
+      "to": "banette",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    }
+  ]
+}

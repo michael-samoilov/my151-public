@@ -1,0 +1,78 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "castform",
+    "nationalDex": 351,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "castform",
+      "types": ["normal"],
+      "baseStats": { "hp": 70, "atk": 70, "def": 70, "spe": 70, "spa": 70, "spd": 70 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["fairy", "indeterminate"],
+      "debut": "ruby-sapphire",
+      "sprite": "351",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "castform-sunny",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["castform"]
+      },
+      "types": ["fire"],
+      "color": "red",
+      "sprite": "10013",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "castform-rainy",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["castform"]
+      },
+      "types": ["water"],
+      "color": "blue",
+      "sprite": "10014",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "castform-snowy",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["castform"]
+      },
+      "types": ["ice"],
+      "color": "white",
+      "sprite": "10015",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cranidos",
+    "nationalDex": 408,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cranidos",
+      "types": ["rock"],
+      "baseStats": { "hp": 67, "atk": 125, "def": 40, "spe": 58, "spa": 30, "spd": 30 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "diamond-pearl",
+      "sprite": "408",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

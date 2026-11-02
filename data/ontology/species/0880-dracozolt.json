@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dracozolt",
+    "nationalDex": 880,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dracozolt",
+      "types": ["electric", "dragon"],
+      "baseStats": { "hp": 90, "atk": 100, "def": 90, "spe": 75, "spa": 80, "spd": 70 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "880",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

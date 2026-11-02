@@ -1,0 +1,60 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "greedent",
+    "nationalDex": 820,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["chef-dente"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "greedent",
+      "types": ["normal"],
+      "baseStats": { "hp": 120, "atk": 95, "def": 95, "spe": 20, "spa": 55, "spd": 75 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "820",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "greedent-chef-dente",
+      "variety": { "look": "chef-dente" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11127",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "skwovet",
+      "to": "greedent",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

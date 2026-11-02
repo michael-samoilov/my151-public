@@ -1,0 +1,48 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arcanine",
+    "nationalDex": 59,
+    "captureRate": 75,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arcanine",
+      "types": ["fire"],
+      "baseStats": { "hp": 90, "atk": 110, "def": 80, "spe": 95, "spa": 100, "spd": 80 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "59",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "arcanine-hisui",
+      "region": "hisui",
+      "types": ["fire", "rock"],
+      "baseStats": { "hp": 95, "atk": 115, "def": 80, "spe": 90, "spa": 95, "spd": 80 },
+      "debut": "legends-arceus",
+      "sprite": "10230",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "growlithe",
+      "to": "arcanine",
+      "methods": []
+    },
+    {
+      "from": "growlithe-hisui",
+      "to": "arcanine-hisui",
+      "methods": []
+    }
+  ]
+}

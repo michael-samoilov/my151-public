@@ -53,3 +53,8 @@ docs/i18n/poke-corpus/
 .league-shot-tree/
 
 docs/**/local/
+
+# Fixture folders that scripts/check-bundle-budget.test.ts and check-home-artwork-budget.test.ts
+# create under the repository root while they run. Ignored so the CI build receipt, which
+# fingerprints every tracked and untracked file, does not change while the unit lane runs.
+/.budget-fixture-*/

@@ -1,0 +1,73 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "squawkabilly",
+    "nationalDex": 931,
+    "captureRate": 190,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "plumage",
+        "values": ["green", "blue", "yellow", "white"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "squawkabilly",
+      "variety": { "plumage": "green" },
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 82, "atk": 96, "def": 51, "spe": 92, "spa": 45, "spd": 51 },
+      "color": "green",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "scarlet-violet",
+      "sprite": "931",
+      "externalIds": { "pokeapiForm": "squawkabilly-green-plumage" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "squawkabilly-blue-plumage",
+      "variety": { "plumage": "blue" },
+      "color": "blue",
+      "sprite": "10260",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "squawkabilly-yellow-plumage",
+      "variety": { "plumage": "yellow" },
+      "color": "yellow",
+      "sprite": "10261",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "squawkabilly-white-plumage",
+      "variety": { "plumage": "white" },
+      "color": "white",
+      "sprite": "10262",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arrokuda",
+    "nationalDex": 846,
+    "captureRate": 255,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arrokuda",
+      "types": ["water"],
+      "baseStats": { "hp": 41, "atk": 63, "def": 40, "spe": 66, "spa": 40, "spd": 30 },
+      "color": "brown",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "sword-shield",
+      "sprite": "846",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

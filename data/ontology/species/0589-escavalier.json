@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "escavalier",
+    "nationalDex": 589,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "escavalier",
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 70, "atk": 135, "def": 105, "spe": 20, "spa": 60, "spd": 105 },
+      "color": "gray",
+      "shape": "arms",
+      "eggGroups": ["bug"],
+      "debut": "black-white",
+      "sprite": "589",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "karrablast",
+      "to": "escavalier",
+      "methods": []
+    }
+  ]
+}

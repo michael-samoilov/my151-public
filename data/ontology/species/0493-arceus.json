@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arceus",
+    "nationalDex": 493,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arceus",
+      "types": ["normal"],
+      "baseStats": { "hp": 120, "atk": 120, "def": 120, "spe": 120, "spa": 120, "spd": 120 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "493",
+      "externalIds": { "pokeapiForm": "arceus-normal" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

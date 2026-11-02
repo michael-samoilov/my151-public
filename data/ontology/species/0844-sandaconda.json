@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sandaconda",
+    "nationalDex": 844,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sandaconda",
+      "types": ["ground"],
+      "baseStats": { "hp": 72, "atk": 107, "def": 125, "spe": 71, "spa": 65, "spd": 70 },
+      "color": "green",
+      "shape": "squiggle",
+      "eggGroups": ["ground", "dragon"],
+      "debut": "sword-shield",
+      "sprite": "844",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sandaconda-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["sandaconda"]
+      },
+      "sprite": "10218",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "silicobra",
+      "to": "sandaconda",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dragapult",
+    "nationalDex": 887,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dragapult",
+      "types": ["dragon", "ghost"],
+      "baseStats": { "hp": 88, "atk": 120, "def": 75, "spe": 142, "spa": 100, "spd": 75 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["indeterminate", "dragon"],
+      "debut": "sword-shield",
+      "sprite": "887",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "drakloak",
+      "to": "dragapult",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 60 }
+          ]
+        }
+      ]
+    }
+  ]
+}

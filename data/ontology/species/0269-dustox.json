@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dustox",
+    "nationalDex": 269,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dustox",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 60, "atk": 50, "def": 70, "spe": 65, "spa": 50, "spd": 90 },
+      "color": "green",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "ruby-sapphire",
+      "sprite": "269",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cascoon",
+      "to": "dustox",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 10 }
+          ]
+        }
+      ]
+    }
+  ]
+}

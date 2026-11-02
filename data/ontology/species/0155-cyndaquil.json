@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cyndaquil",
+    "nationalDex": 155,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cyndaquil",
+      "types": ["fire"],
+      "baseStats": { "hp": 39, "atk": 52, "def": 43, "spe": 65, "spa": 60, "spd": 50 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "155",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

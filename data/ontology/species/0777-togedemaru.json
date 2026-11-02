@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "togedemaru",
+    "nationalDex": 777,
+    "captureRate": 180,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "togedemaru",
+      "types": ["electric", "steel"],
+      "baseStats": { "hp": 65, "atk": 98, "def": 63, "spe": 96, "spa": 40, "spd": 73 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "sun-moon",
+      "sprite": "777",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

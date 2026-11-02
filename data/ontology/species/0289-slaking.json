@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "slaking",
+    "nationalDex": 289,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "slaking",
+      "types": ["normal"],
+      "baseStats": { "hp": 150, "atk": 160, "def": 100, "spe": 100, "spa": 95, "spd": 65 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "289",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "vigoroth",
+      "to": "slaking",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

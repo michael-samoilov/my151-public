@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ferroseed",
+    "nationalDex": 597,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ferroseed",
+      "types": ["grass", "steel"],
+      "baseStats": { "hp": 44, "atk": 50, "def": 91, "spe": 10, "spa": 24, "spd": 86 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["plant", "mineral"],
+      "debut": "black-white",
+      "sprite": "597",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

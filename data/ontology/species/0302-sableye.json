@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sableye",
+    "nationalDex": 302,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sableye",
+      "types": ["dark", "ghost"],
+      "baseStats": { "hp": 50, "atk": 75, "def": 75, "spe": 50, "spa": 65, "spd": 65 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "ruby-sapphire",
+      "sprite": "302",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "sableye-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["sableye"]
+      },
+      "baseStats": { "hp": 50, "atk": 85, "def": 125, "spe": 20, "spa": 85, "spd": 115 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10066",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

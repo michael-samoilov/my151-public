@@ -1,0 +1,186 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "floette",
+    "nationalDex": 670,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "flower",
+        "values": ["red", "blue", "orange", "white", "yellow", "eternal"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "floette",
+      "variety": { "flower": "red" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 54, "atk": 45, "def": 47, "spe": 52, "spa": 75, "spd": 98 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "670",
+      "externalIds": { "pokeapiForm": "floette-red" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "floette-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["floette-eternal"]
+      },
+      "baseStats": { "hp": 74, "atk": 85, "def": 87, "spe": 102, "spa": 155, "spd": 148 },
+      "eggGroups": ["fairy"],
+      "debut": "legends-za",
+      "sprite": "10296",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "floette-blue",
+      "variety": { "flower": "blue" },
+      "sprite": "11086",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "floette-orange",
+      "variety": { "flower": "orange" },
+      "sprite": "11087",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "floette-white",
+      "variety": { "flower": "white" },
+      "sprite": "11088",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "floette-yellow",
+      "variety": { "flower": "yellow" },
+      "sprite": "11089",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "floette-eternal",
+      "variety": { "flower": "eternal" },
+      "baseStats": { "hp": 74, "atk": 65, "def": 67, "spe": 92, "spa": 125, "spd": 128 },
+      "eggGroups": ["no-eggs"],
+      "sprite": "10061",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "eggGroups": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "flabebe",
+      "to": "floette",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 19 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "flabebe-blue",
+      "to": "floette-blue",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 19 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "flabebe-orange",
+      "to": "floette-orange",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 19 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "flabebe-white",
+      "to": "floette-white",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 19 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "flabebe-yellow",
+      "to": "floette-yellow",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 19 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

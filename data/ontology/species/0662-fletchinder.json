@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fletchinder",
+    "nationalDex": 662,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fletchinder",
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 62, "atk": 73, "def": 55, "spe": 84, "spa": 56, "spd": 52 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "x-y",
+      "sprite": "662",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "fletchling",
+      "to": "fletchinder",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 17 }
+          ]
+        }
+      ]
+    }
+  ]
+}

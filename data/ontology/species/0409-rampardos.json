@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rampardos",
+    "nationalDex": 409,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rampardos",
+      "types": ["rock"],
+      "baseStats": { "hp": 97, "atk": 165, "def": 60, "spe": 58, "spa": 65, "spd": 50 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "diamond-pearl",
+      "sprite": "409",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cranidos",
+      "to": "rampardos",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

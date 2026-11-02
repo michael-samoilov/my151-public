@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sinistea",
+    "nationalDex": 854,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sinistea",
+      "types": ["ghost"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 45, "spe": 50, "spa": 74, "spd": 54 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "854",
+      "externalIds": { "pokeapiForm": "sinistea-phony" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

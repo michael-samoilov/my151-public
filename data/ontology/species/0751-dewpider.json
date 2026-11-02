@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dewpider",
+    "nationalDex": 751,
+    "captureRate": 200,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dewpider",
+      "types": ["water", "bug"],
+      "baseStats": { "hp": 38, "atk": 40, "def": 52, "spe": 27, "spa": 40, "spd": 72 },
+      "color": "green",
+      "shape": "legs",
+      "eggGroups": ["water1", "bug"],
+      "debut": "sun-moon",
+      "sprite": "751",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

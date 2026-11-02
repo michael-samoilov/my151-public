@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ho-oh",
+    "nationalDex": 250,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ho-oh",
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 106, "atk": 130, "def": 90, "spe": 90, "spa": 110, "spd": 154 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "250",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

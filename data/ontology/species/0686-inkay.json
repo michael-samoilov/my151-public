@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "inkay",
+    "nationalDex": 686,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "inkay",
+      "types": ["dark", "psychic"],
+      "baseStats": { "hp": 53, "atk": 54, "def": 53, "spe": 45, "spa": 37, "spd": 46 },
+      "color": "blue",
+      "shape": "tentacles",
+      "eggGroups": ["water1", "water2"],
+      "debut": "x-y",
+      "sprite": "686",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

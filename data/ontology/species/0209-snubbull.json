@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "snubbull",
+    "nationalDex": 209,
+    "captureRate": 190,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "snubbull",
+      "types": ["fairy"],
+      "baseStats": { "hp": 60, "atk": 80, "def": 50, "spe": 30, "spa": 40, "spd": 40 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "gold-silver",
+      "sprite": "209",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

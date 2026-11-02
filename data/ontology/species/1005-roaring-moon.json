@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "roaring-moon",
+    "nationalDex": 1005,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "roaring-moon",
+      "types": ["dragon", "dark"],
+      "baseStats": { "hp": 105, "atk": 139, "def": 71, "spe": 119, "spa": 55, "spd": 101 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1005",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}
