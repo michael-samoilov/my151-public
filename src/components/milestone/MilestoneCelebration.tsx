@@ -5,21 +5,24 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
 import { fireCompletionConfetti, preloadCompletionConfetti } from './completionConfetti';
-import { TipCard } from './TipCard';
+import { FloatingTip } from './TipCard';
 import type { TipTarget } from './tipDots';
 import { useOverlayOpen } from './useOverlayOpen';
 
 interface Nudge {
   nav: Extract<AppView, 'analytics' | 'view'>;
   target: TipTarget;
+  /** What the View page marks once the person gets there: no popup appears on that page. */
+  then: readonly TipTarget[];
   titleKey: NoArgKey;
+  bodyKey?: NoArgKey;
   ctaKey: NoArgKey;
 }
 
 const NUDGES: Record<number, Nudge> = {
-  25: { nav: 'analytics', target: 'dex-analytics', titleKey: 'nudge.25.title', ctaKey: 'nudge.25.cta' },
-  100: { nav: 'view', target: 'dex-view', titleKey: 'nudge.100.title', ctaKey: 'nudge.100.cta' },
-  151: { nav: 'view', target: 'dex-view', titleKey: 'nudge.151.title', ctaKey: 'nudge.151.cta' },
+  25: { nav: 'analytics', target: 'dex-analytics', then: [], titleKey: 'nudge.25.title', ctaKey: 'nudge.25.cta' },
+  100: { nav: 'view', target: 'dex-view', then: ['dex-view-settings'], titleKey: 'nudge.100.title', ctaKey: 'nudge.100.cta' },
+  151: { nav: 'view', target: 'dex-view', then: ['dex-export'], titleKey: 'nudge.151.title', bodyKey: 'nudge.151.body', ctaKey: 'nudge.151.cta' },
 };
 
 const REVEAL_DELAY_MOBILE_MS = 950;
@@ -72,23 +75,18 @@ export function MilestoneCelebration({ view, onNavigate }: { view: AppView; onNa
 
   const handleCta = useCallback(() => {
     if (nudge) onNavigate(nudge.nav);
-    if (celebration === 100) {
-      usePokedexStore.getState().armStatsHint();
-      usePokedexStore.getState().dismissExportHint();
-    } else if (celebration === 151) {
-      usePokedexStore.getState().armExportHint();
-      usePokedexStore.getState().dismissStatsHint();
-    }
     dismiss();
-  }, [nudge, celebration, onNavigate, dismiss]);
+  }, [nudge, onNavigate, dismiss]);
 
   if (!nudge || !ready) return null;
   return (
-    <TipCard
+    <FloatingTip
       key={celebration}
       id={`dex-${celebration}`}
       target={nudge.target}
+      then={nudge.then}
       title={t(nudge.titleKey)}
+      body={nudge.bodyKey && t(nudge.bodyKey)}
       action={t(nudge.ctaKey)}
       onAction={handleCta}
       onDismiss={dismiss}

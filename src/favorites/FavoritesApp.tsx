@@ -221,23 +221,6 @@ function FavoritesContent({ sel, setSel }: {
           onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills, shiny); }} />
         <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
-          <AnalyticsNudge armed={analytics.armed} canShow={currentView === 'picker' && !exportOpen && (desktop || sel === null)} desktop={desktop}
-            onDismiss={analytics.dismiss}
-            onOpen={() => {
-              setSel(null);
-              setAnalyticsMounted(true);
-              setCurrentView('analytics');
-            }} />
-          <FollowUpHint
-            id="favorites-complete"
-            armed={completionNudge.armed}
-            dismiss={completionNudge.dismiss}
-            fulfilled={exportOpen}
-            target="favorites-export"
-            title={t('favorites.nudge.complete.title')}
-            body={t('favorites.nudge.complete.body')}
-            onShown={completionShown}
-          />
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
           <div className="flex min-h-0 flex-1">
             <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
@@ -265,6 +248,23 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
+      <AnalyticsNudge armed={analytics.armed} canShow={currentView === 'picker' && !exportOpen && (desktop || sel === null)} desktop={desktop}
+        onDismiss={analytics.dismiss}
+        onOpen={() => {
+          setSel(null);
+          setAnalyticsMounted(true);
+          setCurrentView('analytics');
+        }} />
+      <FollowUpHint
+        id="favorites-complete"
+        armed={completionNudge.armed}
+        dismiss={completionNudge.dismiss}
+        fulfilled={exportOpen}
+        target="favorites-export"
+        title={t('favorites.nudge.complete.title')}
+        body={t('favorites.nudge.complete.body')}
+        onShown={completionShown}
+      />
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} shiny={shiny} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />

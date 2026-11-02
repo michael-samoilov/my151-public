@@ -116,28 +116,24 @@ test.describe('league funnel export nudges', () => {
     await expect(nudge).toBeVisible({ timeout: 5000 });
     await expect(nudge).toHaveAttribute('data-tip-card', 'league-gyms');
     const exportButton = page.locator('[data-league-export="league"]');
-    const dot = exportButton.locator('[data-tip-dot]');
-    await expect(dot).toBeVisible();
-    await expect(exportButton).not.toHaveCSS('animation-name', /pulse/);
-    await page.waitForTimeout(500);
+    await expect(page.locator('[data-nudge-placement]')).toHaveAttribute('data-nudge-placement', 'below');
+    await expect(exportButton.locator('[data-tip-dot]')).toBeVisible();
+    await expect(exportButton).toHaveCSS('animation-name', 'none');
     const geo = await page.evaluate(() => {
       const n = document.querySelector('[data-testid="tip-card"]')!.getBoundingClientRect();
-      const bar = document.querySelector('[data-testid="league-tool-bar"]')!.getBoundingClientRect();
       const summary = document.querySelector('[data-lg-league-root]')!.getBoundingClientRect();
       const rows = [...Array(14)].map((_, i) =>
         document.querySelector(`[data-testid="league-slot-${i}"]`)!.getBoundingClientRect());
       return {
-        gapBelowToolbar: n.top - bar.bottom,
-        gapAboveSummary: summary.top - n.bottom,
+        gapBelowSummary: n.top - summary.bottom,
         rowsUnderPopup: rows.filter((r) => r.bottom > n.top && r.top < n.bottom).length,
         rowsOnScreen: rows.filter((r) => r.top >= 0 && r.bottom <= innerHeight).length,
         popupBottom: n.bottom,
         viewportHeight: innerHeight,
       };
     });
-    await testInfo.attach('roster-tip-under-toolbar.json', { body: JSON.stringify(geo, null, 2), contentType: 'application/json' });
-    expect(geo.gapBelowToolbar).toBeGreaterThanOrEqual(0);
-    expect(geo.gapAboveSummary).toBeGreaterThanOrEqual(0);
+    await testInfo.attach('roster-popup-below.json', { body: JSON.stringify(geo, null, 2), contentType: 'application/json' });
+    expect(geo.gapBelowSummary).toBeGreaterThanOrEqual(0);
     expect(geo.rowsUnderPopup).toBe(0);
     expect(geo.rowsOnScreen).toBe(14);
     expect(geo.popupBottom).toBeLessThanOrEqual(geo.viewportHeight);
@@ -149,7 +145,7 @@ test.describe('league funnel export nudges', () => {
     ]);
     await nudge.getByRole('button', { name: 'Dismiss' }).click();
     await expect(tip(page)).toHaveCount(0);
-    await expect(dot).toBeVisible();
+    await expect(exportButton.locator('[data-tip-dot]'), 'the dot stays after the tip closes').toBeVisible();
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',
       'league-nudge-league-dismiss',
@@ -224,36 +220,39 @@ async function unseenEightGymsLeague(page: Page) {
 test.describe('league funnel export nudges on a Retina desktop', () => {
   test.use({ viewport: { width: 1440, height: 790 }, deviceScaleFactor: 2 });
 
-  test('the gym-leaders tip sits under the toolbar, points at Export, and covers no row', async ({ page }, testInfo) => {
+  test('the gym-leaders popup sits beside the summary and leaves its zoom alone', async ({ page }, testInfo) => {
     await collectEvents(page);
     await unseenEightGymsLeague(page);
     await page.goto('/custom-gym-leader');
     const nudge = tip(page);
     await expect(nudge).toHaveAttribute('data-tip-card', 'league-gyms', { timeout: 5000 });
+    await expect(page.locator('[data-nudge-placement]')).toHaveAttribute('data-nudge-placement', 'beside');
     await expect(page.locator('[data-league-export="league"] [data-tip-dot]')).toBeVisible();
     await page.waitForTimeout(500);
-    const open = await page.evaluate(() => {
-      const n = document.querySelector('[data-testid="tip-card"]')!.getBoundingClientRect();
-      const bar = document.querySelector('[data-testid="league-tool-bar"]')!.getBoundingClientRect();
+    const read = () => page.evaluate(() => {
+      const root = document.querySelector('[data-lg-league-root]')!;
+      const s = root.getBoundingClientRect();
+      const n = document.querySelector('[data-testid="tip-card"]')?.getBoundingClientRect();
       const exportBox = document.querySelector('[data-league-export="league"]')!.getBoundingClientRect();
-      const notch = document.querySelector('[data-testid="tip-card"] .rotate-45')!.getBoundingClientRect();
-      const rows = [...Array(14)].map((_, i) =>
-        document.querySelector(`[data-testid="league-slot-${i}"]`)!.getBoundingClientRect());
+      const arrow = document.querySelector('[data-testid="tip-card"] .rotate-45')?.getBoundingClientRect();
       return {
-        gapBelowToolbar: n.top - bar.bottom,
-        popup: { left: n.left, right: n.right },
-        notchToExport: Math.abs(notch.left + notch.width / 2 - (exportBox.left + exportBox.width / 2)),
-        rowsUnderPopup: rows.filter((r) => r.bottom > n.top && r.top < n.bottom).length,
+        zoom: Number(getComputedStyle(root.parentElement!).zoom),
+        summary: { left: s.left, right: s.right, top: s.top },
+        popup: n ? { left: n.left, right: n.right, top: n.top } : null,
+        arrowToExport: arrow ? Math.abs(arrow.left + arrow.width / 2 - (exportBox.left + exportBox.width / 2)) : null,
         viewportWidth: innerWidth,
       };
     });
-    await testInfo.attach('roster-tip-desktop.json', { body: JSON.stringify(open, null, 2), contentType: 'application/json' });
-    expect(open.gapBelowToolbar).toBeGreaterThanOrEqual(0);
-    expect(open.popup.left).toBeGreaterThanOrEqual(0);
-    expect(open.popup.right).toBeLessThanOrEqual(open.viewportWidth);
-    expect(open.notchToExport).toBeLessThanOrEqual(1);
-    expect(open.rowsUnderPopup).toBe(0);
+    const open = await read();
     await nudge.getByRole('button', { name: 'Dismiss' }).click();
     await expect(nudge).toHaveCount(0);
+    await page.waitForTimeout(500);
+    const closed = await read();
+    await testInfo.attach('roster-popup-beside.json', { body: JSON.stringify({ open, closed }, null, 2), contentType: 'application/json' });
+    expect(open.popup!.left).toBeGreaterThan(open.summary.right);
+    expect(open.popup!.right).toBeLessThanOrEqual(open.viewportWidth);
+    expect(open.popup!.top).toBeCloseTo(open.summary.top, 0);
+    expect(open.arrowToExport).toBeLessThan(24);
+    expect(open.zoom, 'the summary keeps its zoom while the popup shows').toBe(closed.zoom);
   });
 });

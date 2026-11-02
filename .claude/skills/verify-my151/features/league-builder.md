@@ -93,10 +93,13 @@ league suites, then `favorites`. The league suites:
   eight gym leaders with a card still empty, `league-complete` for every card
   filled, and `league-full` for six lines on all 14 cards. `league-full`
   arrives with the confetti, once the summary is on screen and the picker is
-  shut. Each tip sits in the page flow under the toolbar of the pane whose
-  Export button it points at, so it never covers a summary row, and the fit
-  shrinks the summary to make room. The Export button it points at carries a
-  red dot (`[data-tip-dot]`) and no pulse. The dot stays after the tip closes
+  shut. The card tip floats just below the card's Export button, and `full`
+  beside an open card on desktop floats under the league Export button.
+  The roster tips never cover a summary row: `data-nudge-placement` is
+  `beside` where the pane has room right of the summary (a desktop) and
+  `below` elsewhere, where the tip joins the page flow and the fit shrinks
+  the summary to make room. The Export button a tip points at carries a red
+  dot (`[data-tip-dot]`) and no pulse. The dot stays after the tip closes
   and goes when that Export opens. It also loads a full v3 save that saw
   the eight-gym popup and checks the store: version 4 or later, `complete`
   celebrated, and no popup. The store persists at version 6

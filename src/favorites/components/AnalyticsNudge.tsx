@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useT } from '@/i18n';
-import { TipCard } from '@/components/milestone/TipCard';
+import { FloatingTip } from '@/components/milestone/TipCard';
 import { useOverlayOpen } from '@/components/milestone/useOverlayOpen';
 
 const REVEAL_DELAY_MOBILE_MS = 950;
@@ -27,7 +27,7 @@ export function AnalyticsNudge({ armed, canShow, desktop, onOpen, onDismiss }: {
   }, [show, desktop]);
   if (!show || !ready) return null;
   return (
-    <TipCard
+    <FloatingTip
       id="favorites-25"
       target="favorites-analytics"
       title={t('nudge.25.title')}

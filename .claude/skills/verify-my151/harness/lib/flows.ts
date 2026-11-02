@@ -2365,11 +2365,10 @@ async function runFavoritesCompletionPopup(s: Session, url: string, ctx: FlowCon
     const a = arrow ? arrow.getBoundingClientRect() : { left: -999, width: 0 };
     const b = button.getBoundingClientRect();
     const c = card.getBoundingClientRect();
-    const bar = document.querySelector('[data-testid="favorites-header"]').getBoundingClientRect();
     return {
       filled, popup: true, beacons,
       offset: Math.round((a.left + a.width / 2 - (b.left + b.width / 2)) * 10) / 10,
-      gap: Math.round((c.top - bar.bottom) * 10) / 10,
+      gap: Math.round((c.top - b.bottom) * 10) / 10,
       inside: c.left >= 0 && c.right <= innerWidth && c.bottom <= innerHeight,
     };
   `);
@@ -2377,8 +2376,8 @@ async function runFavoritesCompletionPopup(s: Session, url: string, ctx: FlowCon
   await cleanup();
   return [
     ok('favorites:complete-popup-shown', shown && m.popup && m.filled === '257/257', `filled=${m.filled} popup=${m.popup}`),
-    ok('favorites:complete-popup-points-at-export', m.popup && Math.abs(m.offset) <= 1.5 && m.gap >= 0 && m.gap <= 16 && m.inside,
-      `notch-button=${m.offset}px gap-under-toolbar=${m.gap}px inside=${m.inside}`),
+    ok('favorites:complete-popup-points-at-export', m.popup && Math.abs(m.offset) <= 1.5 && m.gap > 0 && m.gap <= 14 && m.inside,
+      `notch-button=${m.offset}px gap=${m.gap}px inside=${m.inside}`),
     ok('favorites:complete-popup-beacon', m.beacons === 1, `nudge-shown posts=${m.beacons}`),
   ];
 }
@@ -2987,19 +2986,18 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
   if (roster) {
 
-    const geo = await s.evalJson<{ covered: number[]; dot: boolean; pulse: boolean; belowToolbar: boolean }>(
-      `const card=document.querySelector('[data-testid="tip-card"]');const n=card.getBoundingClientRect();
+    const geo = await s.evalJson<{ covered: number[]; dot: boolean; pulse: boolean; placement: string | null }>(
+      `const n=document.querySelector('[data-testid="tip-card"]').getBoundingClientRect();
        const covered=[];for(let i=0;i<14;i++){const r=document.querySelector('[data-testid="league-slot-'+i+'"]').getBoundingClientRect();
        if(Math.min(r.right,n.right)-Math.max(r.left,n.left)>0.5&&Math.min(r.bottom,n.bottom)-Math.max(r.top,n.top)>0.5)covered.push(i+1);}
-       const b=[...document.querySelectorAll('[data-league-export="league"]')].find((el)=>el.getBoundingClientRect().width>0);
-       const bar=b&&b.closest('[data-testid="league-tool-bar"]');
+       const b=document.querySelector('[data-league-export="league"]');
        return {covered,dot:!!b&&!!b.querySelector('[data-tip-dot]'),pulse:!!b&&getComputedStyle(b).animationName!=='none',
-         belowToolbar:!!bar&&n.top>=bar.getBoundingClientRect().bottom};`,
-    ).catch(() => ({ covered: [-1], dot: false, pulse: true, belowToolbar: false }));
+         placement:document.querySelector('[data-nudge-placement]')?.getAttribute('data-nudge-placement')??null};`,
+    ).catch(() => ({ covered: [-1], dot: false, pulse: true, placement: null }));
     checks.push(ok(
       'league-funnel:roster-nudge-clear-of-rows',
-      geo.covered.length === 0 && geo.dot && !geo.pulse && geo.belowToolbar,
-      `covered rows=[${geo.covered.join(',')}] export dot=${geo.dot} pulse=${geo.pulse} under toolbar=${geo.belowToolbar}`,
+      geo.covered.length === 0 && geo.dot && !geo.pulse,
+      `covered rows=[${geo.covered.join(',')}] export dot=${geo.dot} pulse=${geo.pulse} placement=${geo.placement}`,
     ));
   } else {
     checks.push(ok('league-funnel:roster-nudge-clear-of-rows', false, 'roster nudge never shown'));

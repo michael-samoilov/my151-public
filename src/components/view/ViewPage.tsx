@@ -18,7 +18,6 @@ import { DexExportOverlay } from '@/components/export/DexExportOverlay';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { TipDot } from '@/components/milestone/TipDot';
 import { useTipVisit } from '@/components/milestone/tipDots';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
@@ -650,10 +649,7 @@ export function ViewPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
-  const statsHintArmed = usePokedexStore((s) => s.statsHintArmed);
-  const dismissStatsHint = usePokedexStore((s) => s.dismissStatsHint);
-  const exportHintArmed = usePokedexStore((s) => s.exportHintArmed);
-  const dismissExportHint = usePokedexStore((s) => s.dismissExportHint);
+  useTipVisit('dex-view-settings', settingsOpen);
   useTipVisit('dex-export', exportOpen);
 
   const hasCustom = customOrder !== null;
@@ -839,9 +835,11 @@ export function ViewPage() {
             <HeaderActionButton type="button"
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
+              data-tip-target="dex-view-settings"
               className="text-muted-foreground hover:text-foreground hover:bg-muted"
               aria-label={t('view.settings')}
             >
+              <TipDot target="dex-view-settings" />
               <Settings className="w-4 h-4" />
               {hasCustom && (
                 <span
@@ -864,25 +862,6 @@ export function ViewPage() {
           </>,
           toolbarSlot,
         )}
-
-        <FollowUpHint
-          id="dex-stats"
-          armed={statsHintArmed && toolbarSlot !== null}
-          dismiss={dismissStatsHint}
-          fulfilled={exportOpen}
-          target="dex-export"
-          title={t('view.hint.stats.title')}
-          body={t('view.hint.stats.body')}
-        />
-        <FollowUpHint
-          id="dex-export"
-          armed={exportHintArmed && toolbarSlot !== null}
-          dismiss={dismissExportHint}
-          fulfilled={exportOpen}
-          target="dex-export"
-          title={t('view.hint.export.title')}
-          body={t('view.hint.export.body')}
-        />
 
         <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-2">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>

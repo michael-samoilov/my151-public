@@ -32,7 +32,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
-import { LeagueTipSlot } from './components/LeagueFunnelNudge';
+import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
 import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
@@ -215,7 +215,6 @@ export function LeagueApp() {
                   <LeagueExportButton />
                 </span>
               </div>
-              <LeagueTipSlot pane="league" />
               <div className="mx-auto w-full max-w-[26rem] px-3 pt-2.5">
                 <LeagueHome />
               </div>
@@ -251,7 +250,6 @@ export function LeagueApp() {
                   </span>
                 </div>
               </div>
-              <LeagueTipSlot pane="league" />
               <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-3">
                 <div className={cn('mx-auto px-3', openCard === null ? LEAGUE_SOLO_CONTENT : PANE_CONTENT)}>
                   <LeagueHome />
@@ -275,7 +273,6 @@ export function LeagueApp() {
                     <CardActions cardIndex={openCard} />
                   </div>
                 </div>
-                <LeagueTipSlot pane="card" />
                 <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
                   <div className={cn('mx-auto', PANE_CONTENT)}>
                     <CardPage cardIndex={openCard} showBack={false} withBar={false} />
@@ -332,6 +329,7 @@ export function LeagueApp() {
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
         {exportOpen && <ErrorBoundary where="league-export"><Suspense fallback={<ScreenSpinner />}><LeagueExportOverlay /></Suspense></ErrorBoundary>}
+        <LeagueFunnelNudge />
       </div>
     </TooltipProvider>
   );

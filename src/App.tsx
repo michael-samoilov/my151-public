@@ -251,7 +251,6 @@ function App() {
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
         <main id={MAIN_ID} tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none">
-        <MilestoneCelebration view={currentView} onNavigate={handleViewChange} />
         <ErrorBoundary where="pokedex-builder">
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
@@ -315,6 +314,8 @@ function App() {
       {practiceRender && <PickerPracticeRender onDone={endPracticeRender} />}
 
       <FeedbackHost route={currentView} />
+
+      <MilestoneCelebration view={currentView} onNavigate={handleViewChange} />
 
       <MilestoneTunePanel />
     </TooltipProvider>

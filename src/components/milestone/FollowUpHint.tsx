@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TipCard } from './TipCard';
+import { FloatingTip } from './TipCard';
 import type { TipTarget } from './tipDots';
 
 const REVEAL_DELAY_MS = 260;
@@ -44,5 +44,5 @@ export function FollowUpHint({
   }, [visible, onShown]);
 
   if (!visible) return null;
-  return <TipCard id={id} target={target} title={title} body={body} onDismiss={dismiss} />;
+  return <FloatingTip id={id} target={target} title={title} body={body} onDismiss={dismiss} />;
 }

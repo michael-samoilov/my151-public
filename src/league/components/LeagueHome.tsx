@@ -49,6 +49,7 @@ import {
 } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
+import { LeagueRosterNudge } from './LeagueFunnelNudge';
 import { leagueSpriteUrl } from '../leagueSprite';
 
 const GREY = '#a3a3a3';
@@ -403,6 +404,7 @@ export function LeagueHome() {
           ) : null}
         </div>
       </div>
+      <LeagueRosterNudge fit={fit} />
       </HomeMetricsContext.Provider>
     </DndContext>
   );
