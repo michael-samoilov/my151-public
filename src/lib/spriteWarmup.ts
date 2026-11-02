@@ -116,8 +116,13 @@ function enqueue(urls: readonly string[], first: boolean) {
   schedulePump();
 }
 
-export function warmSprites(urls: readonly string[], first = false) {
+/** Queues `urls`. The returned function drops the ones that have not started. */
+export function warmSprites(urls: readonly string[], first = false): () => void {
   if (warmupAllowed()) enqueue(urls, first);
+  return () => {
+    const drop = new Set(urls);
+    queue = queue.filter((url) => !drop.has(url));
+  };
 }
 
 /** A section the pointer rests on is the likeliest next tap, so its picker goes first. */

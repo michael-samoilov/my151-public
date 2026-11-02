@@ -42,10 +42,10 @@ async function settled(page: Page): Promise<number> {
   return last;
 }
 
-async function chooseType(page: Page, name: string) {
+async function chooseType(page: Page, name: string, label = name) {
   await page.locator('button[aria-label^="Gym type"]:visible').first().click();
   await page.getByRole('button', { name, exact: true }).click();
-  await expect(page.locator(`button[aria-label="Gym type: ${name}"]:visible`)).toHaveCount(1);
+  await expect(page.locator(`button[aria-label="Gym type: ${label}"]:visible`)).toHaveCount(1);
 }
 
 /** How long each picker tile on screen waited for its sprite after it appeared. */
@@ -116,6 +116,53 @@ test.describe('league picker preload', () => {
     await slowNetwork(page);
     const before = await spriteRequests(page);
     await chooseType(page, 'Water');
+    const preloaded = (await settled(page)) - before;
+    const waits = await openPicker(page);
+    const slowest = Math.max(...waits.map((w) => w.waitedMs));
+    await testInfo.attach('picker-sprite-waits.json', {
+      body: JSON.stringify({ latencyMs: LATENCY_MS, preloaded, tiles: waits.length, slowestMs: slowest, waits }, null, 1),
+      contentType: 'application/json',
+    });
+    expect(waits.length).toBeGreaterThan(0);
+    expect(preloaded).toBeGreaterThan(0);
+    expect(preloaded).toBeLessThan(60);
+    expect(slowest).toBeLessThanOrEqual(INSTANT_MS);
+  });
+
+  test('a gym with no type loads the start of the unfiltered picker', async ({ page }, testInfo) => {
+    await seed(page);
+    await page.goto('/custom-gym-leader?lang=en&notme');
+    await page.getByTestId('league-slot-0').waitFor();
+    await slowNetwork(page);
+    const before = await spriteRequests(page);
+    await page.getByTestId('league-slot-0').click();
+    await page.getByTestId('card-cell-1-1').waitFor();
+    const preloaded = (await settled(page)) - before;
+    const waits = await openPicker(page);
+    const slowest = Math.max(...waits.map((w) => w.waitedMs));
+    await testInfo.attach('picker-sprite-waits.json', {
+      body: JSON.stringify({ latencyMs: LATENCY_MS, preloaded, tiles: waits.length, slowestMs: slowest, waits }, null, 1),
+      contentType: 'application/json',
+    });
+    expect(waits.length).toBeGreaterThan(0);
+    expect(preloaded).toBeGreaterThan(100);
+    expect(preloaded).toBeLessThan(400);
+    expect(slowest).toBeLessThanOrEqual(INSTANT_MS);
+  });
+
+  test('No type with My favorites on loads only the favorites', async ({ page }, testInfo) => {
+    await seed(page, FAVORITE_WATER);
+    await page.goto('/custom-gym-leader?lang=en&notme');
+    await page.getByTestId('league-slot-0').click();
+    await page.getByTestId('card-cell-1-1').waitFor();
+    await chooseType(page, 'Fire');
+    await page.getByTestId('card-cell-1-1').click();
+    await page.getByRole('button', { name: /My favorites/ }).first().click();
+    await page.getByTestId('browser-close').click();
+    await settled(page);
+    await slowNetwork(page);
+    const before = await spriteRequests(page);
+    await chooseType(page, 'No type', 'no type');
     const preloaded = (await settled(page)) - before;
     const waits = await openPicker(page);
     const slowest = Math.max(...waits.map((w) => w.waitedMs));
