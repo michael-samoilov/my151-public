@@ -747,7 +747,7 @@
   "analytics.regionalDex": "地區圖鑑",
   "analytics.shape.heading": "體形",
   "analytics.tip": "提示：點按圖表中的長條，即可查看是哪些寶可夢在主導你的圖鑑趨勢",
-  "analytics.type.descMatchup": "對所有地區寶可夢的「效果絕佳（2倍）」屬性優勢平均數（攻擊與防守），以及與全國圖鑑的差值。",
+  "analytics.type.descMatchup": "各屬性對本圖鑑中所有寶可夢的有利相性淨平均數（攻擊時效果絕佳，防守時效果不好），以及與全國圖鑑的差值。",
   "analytics.type.heading": "寶可夢屬性",
   "analytics.typeView.distribution": "屬性分布",
   "analytics.typeView.matchups": "屬性相剋",

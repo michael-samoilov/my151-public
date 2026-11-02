@@ -747,7 +747,7 @@
   "analytics.regionalDex": "지방 도감",
   "analytics.shape.heading": "형태",
   "analytics.tip": "팁: 그래프 막대를 누르면 도감의 경향을 이끄는 포켓몬을 볼 수 있어요",
-  "analytics.type.descMatchup": "지방의 모든 포켓몬을 상대로 한 '효과가 굉장한(2배)' 타입 상성의 평균 수(공격·방어)와 전국도감 대비 차이.",
+  "analytics.type.descMatchup": "이 도감의 모든 포켓몬을 상대로 한 각 타입의 유리한 상성 순평균 수(공격할 때는 효과가 굉장함, 방어할 때는 효과가 별로임)와 전국도감 대비 차이.",
   "analytics.type.heading": "포켓몬 타입",
   "analytics.typeView.distribution": "타입 분포",
   "analytics.typeView.matchups": "타입 상성",

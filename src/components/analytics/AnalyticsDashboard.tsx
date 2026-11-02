@@ -491,7 +491,7 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1 -my-1 px-0.5 -mx-0.5">
             <button type="button"
               onClick={() => setExcludeSpecial(!excludeSpecial)}
               className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${

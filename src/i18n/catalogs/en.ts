@@ -81,7 +81,7 @@ export const enUi = {
   'analytics.regionalDex': 'Regional Dex',
   'analytics.shape.heading': 'Body Shape',
   'analytics.tip': 'Tip: Press chart bars to see which Pokémon are driving trends in your dex',
-  'analytics.type.descMatchup': 'Each type’s average net super-effective matchups, attacking and defending, against every Pokémon in this dex, and the difference from the National Dex.',
+  'analytics.type.descMatchup': 'Each type’s average net favorable matchups vs. every Pokémon in this dex (super-effective when attacking, not-very-effective when defending), and the difference from the National Dex.',
   'analytics.type.heading': 'Pokémon Type',
   'analytics.typeView.distribution': 'Type distribution',
   'analytics.typeView.matchups': 'Type matchups',

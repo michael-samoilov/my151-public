@@ -763,7 +763,7 @@
   "analytics.regionalDex": "Regionaldex",
   "analytics.shape.heading": "Körperform",
   "analytics.tip": "Tipp: Tippe auf die Balken, um zu sehen, welche Pokémon die Trends in deinem Pokédex prägen",
-  "analytics.type.descMatchup": "Ø Anzahl doppelter Typvorteile (Angriff und Verteidigung) gegen alle Pokémon der Region und Abweichung vom Nationalen Pokédex.",
+  "analytics.type.descMatchup": "Durchschnittliche Netto-Zahl günstiger Typvorteile jedes Typs gegen alle Pokémon in diesem Pokédex (sehr effektiv im Angriff, nicht sehr effektiv in der Verteidigung) und die Abweichung vom Nationalen Pokédex.",
   "analytics.type.heading": "Pokémon-Typ",
   "analytics.typeView.distribution": "Typenverteilung",
   "analytics.typeView.matchups": "Typ-Effektivität",

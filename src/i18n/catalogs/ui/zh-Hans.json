@@ -747,7 +747,7 @@
   "analytics.regionalDex": "地区图鉴",
   "analytics.shape.heading": "体形",
   "analytics.tip": "提示：点按图表中的条形，即可查看是哪些宝可梦在主导你的图鉴趋势",
-  "analytics.type.descMatchup": "对所有地区宝可梦的“效果绝佳（2倍）”属性优势平均数（进攻与防守），以及与全国图鉴的差值。",
+  "analytics.type.descMatchup": "各属性对本图鉴中所有宝可梦的有利相性净平均数（进攻时效果绝佳，防守时效果不好），以及与全国图鉴的差值。",
   "analytics.type.heading": "宝可梦属性",
   "analytics.typeView.distribution": "属性分布",
   "analytics.typeView.matchups": "属性相克",

@@ -747,7 +747,7 @@
   "analytics.regionalDex": "地方図鑑",
   "analytics.shape.heading": "体形",
   "analytics.tip": "ヒント：グラフのバーを押すと、図鑑の傾向を左右しているポケモンが分かります",
-  "analytics.type.descMatchup": "地方の全ポケモンに対する「効果抜群（2倍）」の平均数（攻撃と防御）と、全国図鑑との差。",
+  "analytics.type.descMatchup": "各タイプが、この図鑑のすべてのポケモンに対して有利になる相性の差し引き平均数（攻撃では「効果抜群」、防御では「効果いまひとつ」）と、全国図鑑との差。",
   "analytics.type.heading": "ポケモンのタイプ",
   "analytics.typeView.distribution": "タイプ分布",
   "analytics.typeView.matchups": "タイプ相性",
