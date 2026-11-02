@@ -1,13 +1,13 @@
 # Pokémon data model (ontology) spec
 
-Status: proposal, for Michael's review. Nothing in this spec is built yet.
-Date: 2026-11-01.
+Status: approved direction. Michael reviewed version 1 on 2026-11-02 and asked for the changes in version 2. Phase 0 is in progress. Nothing else is built yet.
+Date: 2026-11-01, revised 2026-11-02.
 
 ## Summary
 
-The app knows about Pokémon in three separate catalogs, with six ID schemes and more than 50 hard-coded exception lists. This spec proposes one connected data model: species, forms, appearances, sprites, artists, games, moves, evolutions, and encounters, each an object with a stable ID and typed links. Every tool reads it through generated projections.
+The app knows about Pokémon in three separate catalogs, with six ID schemes and more than 50 hard-coded exception lists. This spec proposes one connected data model: species, forms, sprites, artists, projects, games, moves, evolutions, and encounters, each an object with a stable ID and typed links. Every tool reads it through generated projections.
 
-The first visible change it enables is sprite alignment. Today every sprite is roughly centered in its 96×96 canvas. A small grounded sprite such as Bulbasaur has 33 empty rows under its feet. With a `pose` and measured `bounds` on each sprite, grounded sprites sit on the floor of their box, and floating sprites keep the artist's placement.
+The first visible change it enables is sprite alignment. Today every sprite is roughly centered in its 96×96 canvas. A small grounded sprite such as Bulbasaur has 33 empty rows under its feet. With a `pose` and measured `bounds` on each sprite, grounded sprites stand 4 pixels above the floor of their box, and floating sprites move down half as far.
 
 The work splits into seven phases. Phase 0 (sprite pose and bounds) stands alone and ships first. Phases 1 and 2 replace the three catalogs with one, and remove the cause of most current data bugs. Moves and encounters come after that.
 
@@ -91,7 +91,7 @@ Height, weight, abilities, gender ratio, egg cycles, base friendship, genus, evo
 
 ### Design rules
 
-1. **One object, one ID.** Every object has a stable string ID, such as `pikachu`, `stunfisk-galar`, or `scarlet-violet`. TypeScript brands each ID type, so a `FormId` never passes where a `SpeciesId` belongs. Other numbers become properties: the National Dex number, PokeAPI IDs, and one frozen `appId` per form. Saved data and the API keep storing `appId`, so the Dex and League need no saved-data migration. An `appId` is never reused.
+1. **One object, one ID.** Every object has a stable string ID, such as `pikachu`, `stunfisk-galar`, or `scarlet-violet`. TypeScript brands each ID type, so a `FormId` never passes where a `SpeciesId` belongs. Each form also has one frozen number, its `AppId`, which is unique across the whole app. Saved data, the API, and analytics store that number. See "IDs and saved data" below.
 2. **A fact lives in one place.** Each fact has one owner object. Every other object reaches it through a link. A build check fails when two files state the same fact.
 3. **Store sparse, read resolved.** A form states only the fields that differ from its species' default form. One shared resolver returns the complete record, so app code never walks an inheritance chain. The build checks every resolved value. Sparse storage keeps the bundle small: the earlier prototype measured 3,086 gzip bytes sparse against 30,283 resolved.
 4. **A special case is a field.** A hard-coded list of IDs in app code is a defect. The behavior moves to a typed field or a link, with a source and a reason.
@@ -99,13 +99,23 @@ Height, weight, abilities, gender ratio, egg cycles, base friendship, genus, evo
 6. **The ontology lives at build time. The browser gets projections.** The full graph never ships to a browser. Each tool imports a generated slice that holds only the fields it reads. The bundle budget gate stays in force.
 7. **A link with properties is an object.** An evolution, a learnset entry, and an encounter each carry conditions. Each one is its own object type with its own fields, not a field on one end.
 
+### IDs and saved data
+
+- **One ledger.** `data/ontology/ids/app-ids.json` maps each `AppId` to its `FormId`. It is append-only, and `npm run ontology:mint` is its only writer. The checker compares it with production, so a number never changes meaning and never returns after retirement.
+- **Numbering.** A default form's number is its National Dex number. Every other new form takes the next number from 20001, so nobody can read an `AppId` as a PokeAPI ID again. PokeAPI IDs are separate properties with their own brands.
+- **Collisions.** Where a Dex number and a Picker number disagree today, the Dex number wins. The Dex, the League, and `/api/submit` change nothing.
+- **Migrations.** The Picker's four colliding numbers (`10179`, `10180`, `10191`, `10227`) move in one saved-data migration. The League's saved power-up array position becomes a form ID in another.
+- **Analytics.** Stored analytics records keep their numbers. The admin reports decode an old Picker number by the record's write time, so no stored record is rewritten.
+
+App code crosses between numbers and IDs only at two functions, `fromAppId` and `appId`, at the storage, URL, and API boundaries.
+
 ### Object types and links
 
 ```mermaid
 erDiagram
     SPECIES ||--|{ FORM : "has forms (one is default)"
-    FORM ||--o{ APPEARANCE : "is drawn as (normal, shiny, female)"
-    APPEARANCE ||--o{ SPRITE : "depicted by"
+    FORM ||--o{ FORM : "state step from"
+    FORM ||--o{ SPRITE : "depicted by"
     SPRITE }o--o{ ARTIST : "drawn by"
     SPRITE }o--o| PROJECT : "sourced from"
     PROJECT }o--o{ ARTIST : "has members"
@@ -136,27 +146,22 @@ erDiagram
     TEAM_SLOT }o--|| FORM : "is"
 ```
 
-The diagram omits the reference vocabularies (color, shape, egg group, growth rate, tags) and localized names. Each of those is a small object type that other objects link to by ID.
+The diagram omits the reference vocabularies (color, shape, egg group, growth rate, tags, variety axes) and localized names. Each of those is a small object type that other objects link to by ID.
 
 ### Species and form
 
-A **species** holds the facts that every form shares. A **form** holds everything that can differ between forms. Every species names exactly one default form, and a form does not repeat that fact. The app picks, filters, and shows forms, never bare species.
-
-This split matches how the games behave. Alolan Raichu has its own types, stats, and abilities. Every Raichu shares one egg group, one gender ratio, and one evolution family.
+A **species** holds the facts that every form shares. A **form** is one distinct Pokémon a person can pick: a default form, a regional form, a pattern, a Mega, a female with a different look. Every species names exactly one default form, and a form does not repeat that fact. The app picks, filters, and shows forms, never bare species.
 
 ```ts
 type SpeciesId = Brand<string, 'SpeciesId'>   // 'raichu'
 type FormId = Brand<string, 'FormId'>         // 'raichu', 'raichu-alola', 'raichu-mega-x'
+type AppId = Brand<number, 'AppId'>           // the frozen number saved data and the API store
 
 interface Species {
   id: SpeciesId
   nationalDex: number                // 26
   defaultForm: FormId
-  generation: GenerationId           // introduced in
-  debutGame: GameId
-  family: FamilyId                   // evolution family, for grouping
   genderRatio: GenderRatio           // { kind: 'genderless' } | { kind: 'ratio'; femaleEighths: 0..8 }
-  eggGroups: EggGroupId[]
   hatchCycles: number
   captureRate: number
   baseFriendship: number
@@ -165,16 +170,82 @@ interface Species {
   paradox?: { era: 'ancient' | 'future'; mirrors: SpeciesId }
   convergentOf?: SpeciesId
   tags: SpeciesTagId[]               // flags with no payload: baby, fossil, pseudo-legendary
-  names: LocalizedText               // keyed by locale
+  varietyAxes?: { axis: VarietyAxisId; values: VarietyValueId[] }[]  // the axes its forms vary on
+  standIn?: { [tool in ToolId]?: FormId }  // a tool shows another form's art, such as Wishiwashi School in the Dex
+  names: LocalizedText
   genus: LocalizedText               // "Mouse Pokémon"
-  externalIds: ExternalIds           // pokeapi species id, bulbapedia title, showdown id
+  externalIds: ExternalIds
+}
+```
+
+Generation, evolution family, and debut game are derived. Generation comes from the default form's debut game. The family is the connected set of evolutions.
+
+#### How forms are classified
+
+A single `kind` per form breaks on forms that are two things at once. Mega Magearna Original Color is a Mega and a color variant. Galarian Darmanitan Zen Mode is regional and a battle state. Independent yes/no flags (`isMega`, `isRegional`) fix that, but they create five other problems:
+
+1. Impossible states compile, such as `isMega` and `isPrimal` both true.
+2. A flag has no payload. It cannot say which region, which Mega Stone, or which letter.
+3. `false` cannot tell "no" from "nobody recorded it".
+4. A new category adds a column to every row.
+5. A fact that follows from structure must be copied by hand. A Mega of a Galarian form is Galarian, and a copied flag drifts.
+
+The data-model practice for this is **faceted classification**. Each independent dimension (facet) has a small closed set of values with an explicit "none", and each form takes one value per facet. Product catalogs use it for size, color, and material. It keeps the independence of Michael's proposed flags and adds payloads, exclusivity within a facet, and an explicit "none".
+
+Pokémon need one refinement. A Mega or a battle state is not a point in the same space as a regional form. It is a transformation of another form. So a form's classification has two parts:
+
+- **Coordinates**, for permanent forms: `region`, `variety` (axes the species declares, such as letter, pattern, cream and sweet, appliance, breed, mask, or outfit), `sex`, and `fusion`. A permanent form states all four, absent meaning none. No two permanent forms of a species can share coordinates. That check alone would have caught the old duplicate Rapid Strike Urshifu (Picker `10191`, Dex `10227`).
+- **A state step**, for temporary forms: exactly one step (`mega`, `primal`, `gigantamax`, `eternamax`, `ultra-burst`, `terastal`, `battle-mode`, `move-look`, or `ride`) and the forms that enter it. A state form takes its coordinates from the forms it is entered from, and its chain is their chain plus its own step.
+
+```ts
+interface Coordinates {
+  region: RegionId | null            // Galarian, Hisuian, Paldean
+  variety: { [axis: string]: VarietyValueId }  // { letter: 'a' }, { cream: 'vanilla', sweet: 'star' }
+  sex: 'male' | 'female' | null      // set only when the sexes look or play differently; then both sexes are forms
+  fusion: SpeciesId | null           // Kyurem White has 'reshiram'
 }
 
-interface Form {
-  id: FormId
-  appId: number                      // frozen; the number saved data and the API store
-  species: SpeciesId
-  kind: FormKind                     // discriminated union, see below
+type FormState =
+  | { kind: 'mega'; stone: ItemId; letter?: 'x' | 'y' }
+  | { kind: 'primal'; orb: ItemId }
+  | { kind: 'gigantamax'; move: MoveId }
+  | { kind: 'eternamax' }
+  | { kind: 'ultra-burst'; item: ItemId }
+  | { kind: 'terastal'; teraType: TeraType }
+  | { kind: 'battle-mode'; trigger: StateTrigger }  // Zen Mode, Blade Forme, School, Complete, Ash, Hero
+  | { kind: 'move-look'; move: MoveId }             // Overdrive, Radiant Sun
+  | { kind: 'ride' }                                // Koraidon Limited Build
+
+// What a person writes. The types forbid mixing the two shapes.
+type PermanentFormEntry = { id: FormId } & Partial<Coordinates> & Partial<FormFacts> & { state?: never; tools: ToolInclusion }
+type StateFormEntry = { id: FormId } & { [K in keyof Coordinates]?: never } & Partial<FormFacts> & {
+  state: FormState & { from: [FormId, ...FormId[]] | 'any' }
+  tools: ToolInclusion
+}
+```
+
+The yes/no flags still exist. The build derives them, and the resolved form exposes them as `form.is.mega`, `form.is.regional`, `form.is.battleOnly`, and so on. Nobody authors them, so they cannot disagree with the structure.
+
+| Form | How it is written | Derived flags |
+| --- | --- | --- |
+| Alolan Raichu | `region: 'alola'` | regional |
+| Mega Magearna Original Color | `state: { kind: 'mega', from: ['magearna-original'] }` | mega, variety, battle-only |
+| Galarian Darmanitan Zen Mode | `state: { kind: 'battle-mode', from: ['darmanitan-galar'] }` | regional, battle-only |
+| Mega Floette | `state: { kind: 'mega', from: ['floette-eternal'] }` | mega, battle-only |
+| Paldean Tauros Aqua Breed | `region: 'paldea', variety: { breed: 'aqua' }` | regional, variety |
+| Gigantamax Alcremie | `state: { kind: 'gigantamax', from: 'any' }` | gigantamax, battle-only |
+| Meowstic female | `sex: 'female'` with its own abilities | sex |
+| Pikachu female | `sex: 'female'` with no other field | sex, look only |
+| Cap Pikachu | `variety: { outfit: 'cap-original' }`, `shiny: { locked: … }`, `obtain: 'event-only'` | variety, event |
+| Shadow Lugia | `variety: { look: 'shadow' }`, `debut: 'pokemon-xd'` | variety, spin-off |
+| Terapagos Stellar | a `terastal` step from Terapagos Terastal, itself a `battle-mode` step | two-step chain |
+
+A future regional Mega is a `mega` step from the regional form. It needs no schema change.
+
+#### What a form owns, and what it inherits
+
+```ts
+interface FormFacts {
   types: [TypeId] | [TypeId, TypeId]
   abilities: { first: AbilityId; second?: AbilityId; hidden?: AbilityId }
   baseStats: { hp: number; atk: number; def: number; spa: number; spd: number; spe: number }
@@ -182,91 +253,75 @@ interface Form {
   weightHg: number                   // hectograms, as the games store it
   color: ColorId
   shape: ShapeId
-  persistence: 'permanent' | 'battle-only' | 'transient'
-  availability: Availability[]       // per game: obtainable, transfer-only, event-only, unobtainable
-  shiny: { kind: 'available' } | { kind: 'locked'; reason: string }
-  order: number                      // position among the species' forms
-  appearances: AppearanceId[]        // normal, shiny, female, female-shiny ...
-  names: LocalizedText               // full display name, "Alolan Raichu"
-  formNames: LocalizedText           // form label only, "Alolan Form"
-  externalIds: ExternalIds           // pokeapi pokemon id and pokemon-form id, showdown id
+  eggGroups: EggGroupId[]            // on the form: Eternal Floette and Cap Pikachu differ from their species
+  debut: GameId
+  obtain: 'standard' | 'event-only' | 'story-only' | 'spinoff-only' | 'unobtainable'
+  shiny: 'available' | { locked: string }   // the reason, quoted on hover
 }
 ```
 
-#### Form kinds
+There is one inheritance rule. A permanent form inherits every fact it does not state from its species' default form. A state form inherits from the first form it is entered from. The default form states every core fact. The build derives `bst`, persistence (`permanent`, `battle`, or `field`), the flags, the generation, and whether the form differs only in looks.
 
-`FormKind` is a discriminated union. Each kind carries only the payload that applies to it, so a filter such as "hide battle-only forms" reads one field instead of a hard-coded list.
+Two checks catch the drift that inheritance leaves open. `state-twin-differs` fails when two copies of the same state disagree, and `state-stats-missing` fails when a state form changes types but not stats.
 
-| `kind` | Payload | Examples |
-| --- | --- | --- |
-| `base` | none | Raichu, Bulbasaur |
-| `regional` | `region: RegionId` | Alolan Raichu, Hisuian Zorua, Paldean Tauros (Combat Breed) |
-| `mega` | `stone: ItemId`, `variant?: 'x' \| 'y'` | Mega Charizard X, Mega Raichu X |
-| `primal` | `item: ItemId` | Primal Kyogre |
-| `gigantamax` | `gmaxMove: MoveId` | Gigantamax Pikachu |
-| `battle` | `trigger: BattleTrigger` | Darmanitan Zen Mode, Aegislash Blade Forme, Palafin Hero Form, Terastal Terapagos, Ultra Necrozma |
-| `alternate` | `trigger: FormTrigger` | Rotom appliances, Deoxys formes, Giratina Origin, Shaymin Sky |
-| `fusion` | `partner: SpeciesId` | Kyurem White, Necrozma Dusk Mane, Calyrex Ice Rider |
-| `cosmetic` | `group: string` | Unown letters, Vivillon patterns, Alcremie sweets |
-| `gender` | `gender: 'male' \| 'female'` | Meowstic, Indeedee, Basculegion, when stats or moves differ |
-| `event` | `distribution?: DistributionId` | Cap Pikachu, Cosplay Pikachu, Spiky-eared Pichu |
-| `totem` | none | Totem Raticate |
-| `spinoff` | `game: GameId` | Shadow Lugia (XD), Pokkén Shadow Mewtwo, Ranger or Mystery Dungeon forms, Pokopia forms |
+#### Tool inclusion
 
-The default form can have any kind. Unown A is the default form of Unown, and its kind is `cosmetic`.
-
-Three related facts stay out of `kind`, because they combine freely with most kinds. The check rejects a contradiction, such as a `mega` form that is `permanent`.
-
-- **Persistence** (`permanent`, `battle-only`, `transient`). It answers "can this form appear in a party box?". Today the League and the Picker disagree here: the League treats Zen Darmanitan, Blade Aegislash, and Hero Palafin as temporary, and the Picker's battle-form test counts none of them. One field ends that disagreement.
-- **Games** (`availability`). It answers "where does this form exist?". A spin-off form names its game here as well.
-- **Mechanical difference** (types, stats, ability, or appearance only). The build derives it by comparing the resolved form with the default form, so nobody maintains it by hand.
-
-Visual-only female differences, such as Pikachu's heart tail, are not forms. They are appearances of one form.
-
-#### Appearance
-
-An **appearance** is one way a form looks: `normal`, `shiny`, `female`, or `female-shiny`. Shiny is a coloration, not a form. An appearance links to its sprites.
+Every resolved form has a `tools` field: `{ picker, dex, league }`. Each value is `'in'` or the reason it is out.
 
 ```ts
-interface Appearance {
-  id: AppearanceId                   // 'raichu-alola/shiny'
-  form: FormId
-  coloration: 'normal' | 'shiny'
-  gender?: 'female'                  // only when the female looks different
-}
+type ToolVerdict = 'in' | { out: OutReason }
+type OutReason =
+  | 'battle-state'                   // the checker proves the form has a state step
+  | 'spinoff-only'                   // the checker proves the debut game is not mainline
+  | 'look-only'                      // the checker proves no fact differs from the default form
+  | { decision: string }             // a product call, citing where Michael made it
+type ToolInclusion = { picker: ToolVerdict; dex: ToolVerdict; league: ToolVerdict }
 ```
+
+A default form is in every tool unless it states otherwise. Every other form must state all three verdicts, so a new form cannot ship without a decision for each tool. A structural reason is a claim the checker proves, so a wrong reason fails the build. The build also writes a report of every form's verdicts, so a policy change shows as a reviewable diff. This replaces `TEMPORARY_FORM_IDS`, `PICKER_ONLY_FORM_IDS`, `FUSION_FORM_IDS`, `EXCLUSIVE_FORM_GROUPS`, the Unown exclusion, and the League and Picker eligibility lists.
+
+#### Shiny
+
+Shiny is a coloration, not a form. Every form has a normal and a shiny look, unless `shiny` says it is locked. No appearance record exists.
 
 ### Sprite, artist, project, and terms
 
-A **sprite** is one image file. It depicts one appearance. An appearance can have several sprites from different art styles or artists, and the app picks one per style.
+A **sprite** is one image file, keyed by its file stem. It depicts one form, normal or shiny.
 
 ```ts
-interface Sprite {
-  id: SpriteId                       // the file stem, such as '25', '10100', 'alcremie-star'
-  depicts: AppearanceId
-  style: SpriteStyleId               // 'gen5-dot', 'home', 'picker-pack' ...
+type SpriteId = Brand<string, 'SpriteId'>    // the file stem: '25', '10100', 'alcremie-star'
+
+interface NormalSprite {
+  id: SpriteId
+  depicts: FormId
+  style: SpriteStyleId               // 'gen5-dot' today
   file: string                       // path under public/sprites
-  revision?: string                  // cache-busting version, today in spriteRevisions.json
-  artists: ArtistId[]                // empty for an official game rip
-  project?: ProjectId                // the collection it came from
-  evidence: EvidenceRef              // where the credit was checked, and when
-  pose: 'grounded' | 'floating'      // authored, reviewed by a person
-  bounds: { top: number; right: number; bottom: number; left: number } // measured opaque box, in sprite pixels
-  ink?: number                       // measured, today in spriteInk.json
-  shinyPair?: SpriteId               // the matching shiny sprite, same alpha mask
+  channel: ProjectId | 'own-upload' | 'game-rip'   // how the file reached the app
+  credits: { artist: ArtistId; role: 'drew' | 'edited' | 'cleaned-up' | 'shiny' }[]
+  basedOn?: SpriteId                 // an edit of another sprite
+  evidence: EvidenceRef
+  pose: 'grounded' | 'floating'      // a person's judgment of this drawing
+}
+
+interface ShinySprite {
+  id: SpriteId                       // 'shiny/25'
+  shinyOf: SpriteId                  // shares pose and bounds; check-shiny-masks proves the outline matches
+  credits: { artist: ArtistId; role: 'shiny' }[]   // only its own work; the normal sprite's credits are added
+  evidence: EvidenceRef
 }
 
 interface Artist {
   id: ArtistId
   displayName: string
-  links: { label: string; url: string }[]  // portfolio, social profile, project profile
-  terms?: TermsId                    // the artist's own terms
+  creditedAs?: string[]
+  links: { label: string; url: string; proof: EvidenceRef }[]
+  terms?: TermsId                    // the artist's own published terms
 }
 
 interface Project {
-  id: ProjectId                      // 'smogon-sprite-project', 'pokeapi', 'pokecommunity-gen9'
+  id: ProjectId                      // 'smogon-sprite-project', 'pokeapi-sprites'
   name: string
-  url: string
+  links: { label: string; url: string; proof: EvidenceRef }[]
   terms?: TermsId
 }
 
@@ -274,31 +329,38 @@ interface Terms {
   id: TermsId
   text: string                       // the plaintext, as captured
   url: string
-  capturedAt: string                 // ISO date
+  capturedAt: string
   sha256: string                     // proves the text did not change since capture
-  permits: { commercial: boolean | 'unclear'; modification: boolean | 'unclear'; attributionRequired: boolean }
+  reading: {                         // a person's dated reading of the text
+    use: Grant; commercial: Grant; modify: Grant; credit: 'not-required' | 'requested' | 'required'
+    readBy: string; readAt: string
+  }
 }
+type Grant = 'yes' | 'unclear' | 'no'
 ```
 
-The **effective terms** of a sprite are derived, not authored. They are the artist's terms plus the project's terms. The Acknowledgements page and the credit check read the derived value. A sprite pair (normal and shiny) shares one pose and one set of bounds, because `check-shiny-masks` already proves their outlines match.
+Measured values live in a generated file beside the authored rows: opaque bounds and ink per sprite, with the MD5 of the measured file. A check fails when a file changes after its measurement. The build bakes the alignment offset into each catalog row, so a renderer reads one integer.
+
+#### Effective terms
+
+Michael's rule: for a sprite that came through a project, the more permissive of the project's terms and the artist's own terms applies. Project terms normally apply to sprites sourced through that project.
+
+1. **Per artist.** For each credited artist, compare the project's terms with that artist's own terms. "More permissive" is a product order on four readings: use, commercial use, modification (`yes` beats `unclear` beats `no`), and credit (`not-required` beats `requested` beats `required`). One set wins only if it is at least as permissive on all four.
+2. **Tie or no ranking.** When the two are equal, or neither is at least as permissive on all four, the project's terms apply. The build lists each unranked pair in a review report.
+3. **Per sprite.** A sprite with several artists is bound by every artist's result at once. Its effective terms are the least permissive result on each reading. One artist's generous terms never waive another artist's terms.
+4. **Other channels.** An own upload uses the artist's terms. A game rip has no artist terms.
+
+The Acknowledgements page always credits every artist, whatever the terms say about credit. A reading is a person's judgment of legal text, so each reading names its reader and date.
 
 #### Pose and alignment
 
-`pose` describes the drawing, not the species. Two artists can draw Mega Eelektross differently, so each sprite carries its own value. The key is the file stem, the same key that `spriteInk.json` and `shinySprites.json` use. A shiny file inherits its normal file's pose, because `check-shiny-masks` proves that both have the same outline.
+Michael approved these rules on 2026-11-02. Let `pad` be the number of empty rows under the lowest opaque row.
 
-- `grounded`: the renderer moves the sprite down by `bounds.bottom` minus a small floor gap, so every grounded sprite stands on the same line. A prototype with no gap put the feet directly on the name label in the Dex grid. The gap size is an open decision.
-- `floating`: the renderer keeps the artist's placement.
+- **Grounded:** the sprite moves down `max(0, pad - 4)` native pixels, so its feet sit 4 native pixels above the floor of the sprite box.
+- **Floating:** the sprite moves down half that distance, rounded to a whole native pixel.
+- **No sprite moves up.** A grounded sprite with fewer than 4 empty rows stays where it is. Of the 66 sprites this affects, 47 already touch the top edge, so lifting them would clip their art.
 
-`pose` is a judgment, and `bounds` is a measurement, so they live apart. A person sets the pose. A script measures the bounds and records an MD5 per file, and a `--check` mode fails when a file changes after its measurement. This copies the ink measurement pattern in `scripts/build-favorite-sprite-ink.mjs`.
-
-The sprite file stays unchanged. Alignment is an offset at render time, and a source rectangle in canvas exports. Rewriting the PNG files would trip five checks: sprite revisions, credit evidence hashes, ink measurements, shiny masks, and Picker pack hashes.
-
-Four facts from the current renderers shape the implementation:
-
-1. No shared choke point exists. About 20 sites draw a sprite: `PokemonTile`, the View page, League cards, the League home row, the Picker grid, the Picker chart, admin pages, and three canvas painters. Each one needs the shared offset helper.
-2. The shift must snap to whole source pixels. League desktop draws each source pixel as whole device pixels (`src/league/spriteScale.ts`).
-3. The League home row trims up to 6 native pixels from every side with a negative margin (`src/league/homeLayout.ts`). A bottom-aligned sprite would lose its feet there unless the trim skips the bottom edge.
-4. Overlays such as shiny marks, generation badges, and the Poké Ball background sit relative to the sprite box, not the art. They stay where they are.
+`pose` describes the drawing, not the species. Two artists can draw Mega Eelektross differently, so each sprite carries its own value. The PNG files stay unchanged.
 
 ### Games, generations, regions, and Pokédexes
 
@@ -324,7 +386,7 @@ interface Pokedex {
 }
 ```
 
-A spin-off game is a game like any other. Pokémon Ranger, Mystery Dungeon, XD, Pokkén, Pokopia, and GO each get a `Game` record. A spin-off form links to its game. A filter such as "forms from spin-off games" becomes `form.kind === 'spinoff'`, and "forms from Pokkén" becomes a link lookup.
+A spin-off game is a game like any other. Pokémon Ranger, Mystery Dungeon, XD, Pokkén, Pokopia, and GO each get a `Game` record. A spin-off form names its game in `debut`. A filter such as "forms from spin-off games" becomes `form.is.spinoff`, derived from the debut game's series, and "forms from Pokkén" becomes `form.debut === 'pokken'`.
 
 Starter Pokémon also become a link. Pikachu is the starter of Yellow, and Eevee is a starter of Let's Go, Eevee! A starter is a relation between a game and a form (`Game.starters: FormId[]`), not a tag on a species.
 
@@ -432,7 +494,7 @@ These object types follow from the ones above. Each earns its place through a cu
 | --- | --- | --- |
 | Type and type matchup | 18 types plus Stellar, and the multiplier for each attacker and defender pair, by generation | Type filters, type badges, and coverage charts already use it. Fairy and Steel changed the chart over time. |
 | Ability | Name, description, generation | Form abilities, and a future team builder. |
-| Item | Evolution items, Mega Stones, held items | Evolution conditions and form kinds link to it. |
+| Item | Evolution items, Mega Stones, held items | Evolution conditions and state steps link to it. |
 | Trainer and team | A gym leader, Elite Four member, or rival, with team slots: form, level, moves, item, ability | The League builder models gym leaders today. Real rosters become references. |
 | Reference vocabularies | Color, shape, egg group, growth rate, species tag, habitat tag, encounter method | Each has an ID, localized names, and an icon where one exists, such as the shape icons in `public/shapes`. |
 | Localized text | Names and terms per locale, keyed by object ID | The i18n catalogs become properties of objects instead of a parallel ID scheme. |
@@ -448,7 +510,8 @@ Two rules decide where a fact lives. A fact about a Pokémon lives in its specie
 
 ```text
 data/ontology/
-  species/0026-raichu.json          species fields, plus each form's sparse overrides
+  species/0026-raichu.json          species fields, then its forms in display order, then evolutions into it
+  ids/app-ids.json                  the AppId ledger; only ontology:mint writes it
   sprites/gen5-dot.json             one row per sprite: file, depicts, artists, project, pose
   credits/artists.json              artists, links, terms references
   credits/projects.json             projects, terms references
@@ -485,8 +548,8 @@ Each projection is a pure function of the ontology. The bundle budget gate measu
 1. A link points at an ID that does not exist.
 2. A form has no sprite for a style that a tool uses.
 3. A sprite has no `pose`, no credit evidence, or bounds that are out of date with its file.
-4. A normal and shiny sprite pair disagree on pose.
-5. Two files state the same fact, or app code adds a list of Pokémon IDs. A lint rule rejects a numeric array or set of Pokémon IDs in `src/`.
+4. Two permanent forms of one species share coordinates, a form has no verdict for a tool, or a structural verdict is false.
+5. A ledger number changed meaning or disappeared, two files state the same fact, or app code adds a list of Pokémon IDs. A lint rule rejects a numeric array or set of Pokémon IDs in `src/`.
 
 Each error names the file and the field to fix, like the sprite credit check does today.
 
@@ -506,11 +569,11 @@ Each phase is one pull request that ends in a check. A phase starts only when th
 
 | Phase | Delivers | Proof |
 | --- | --- | --- |
-| 0. Sprite pose and bounds | `pose` and measured `bounds` for every sprite file. One shared alignment helper used by every sprite renderer. Grounded sprites sit on the floor. | A check fails when a sprite has no pose or stale bounds. `/verify-my151` before-and-after shots on every surface that draws a sprite. |
-| 1. Ontology scaffold | `data/ontology/` with every species and form the three catalogs know (1,427 identities), plus the `appId` map. A generator writes today's catalog files from it. | The generated `pokemon.json` is byte-identical to today's. The Picker and League catalogs return the same records at runtime. |
+| 0. Sprite pose and bounds | `pose` and measured `bounds` for every sprite file. One shared alignment helper used by every sprite renderer. Grounded sprites stand 4 pixels above the floor, and floating sprites move down half as far. | A check fails when a sprite has no pose or stale bounds. `/verify-my151` before-and-after shots on every surface that draws a sprite. |
+| 1. Ontology scaffold | `data/ontology/` with every species and form the three catalogs know (1,427 identities), plus the `AppId` ledger. A generator writes today's catalog files from it. | The generated `pokemon.json` is byte-identical to today's. The Picker and League catalogs return the same records at runtime. |
 | 2. One catalog | The Dex, League, and Picker read the generated projections. Duplicate tables are deleted: `formBst.json`, `alt-form-species.json`, `favoriteBrowserIds.json`, and the hand-written ID translations. The Picker's four colliding IDs migrate in saved data. | Saved-data migration tests. Every catalog consumer's existing tests pass. Bundle budget holds. |
 | 3. Exceptions become fields | Each hard-coded list in the census below becomes a typed field or link. A lint rule rejects a new list of Pokémon IDs in `src/`. | For each list: the field-driven result equals the list. The lint fails on a planted list. |
-| 4. Sprites and credits | `spriteAttribution.json`, `sprite-evidence.json`, and `creditTerms.json` merge into sprite, artist, project, and terms objects. Effective terms are derived. | `credits:check-sprites` passes against the new source. The Acknowledgements page is unchanged in screenshots. |
+| 4. Sprites and credits | `spriteAttribution.json`, `sprite-evidence.json`, and `creditTerms.json` merge into sprite, artist, project, and terms objects. Effective terms are derived by the rule in "Effective terms". | `credits:check-sprites` passes against the new source. The Acknowledgements page is unchanged in screenshots. |
 | 5. Games and learnsets | Game and version group objects. Machines and learnsets from PokeAPI, pinned to one revision. The League TM picker can sort by "learnable by most of my team". | Learnset row counts match the pinned PokeAPI CSV. The new filter ships only after Michael approves it from pictures. |
 | 6. Locations and encounters | Location, area, habitat tag, and encounter objects. The biome pipeline in `scripts/biome/` reads them. Shiny-guaranteed encounters become encounter rows. | Encounter counts match the pinned source for each game. |
 
@@ -533,28 +596,28 @@ Each row is a hard-coded list in app code or scripts today, and the field or lin
 | Sub-legendary and Restricted columns, `categories.ts:60-61,176-177` | 44 and 27 | `species.legendaryClass` |
 | `FOSSIL_IDS` and `PSEUDO_LEGENDARY_IDS`, `categories.ts:147,156` | 26 and 35 | `species.tags` |
 | `STARTER_IDS`, `categories.ts:162`, plus Pikachu and Eevee inline at `favorites/model/catalog.ts:184` | 86 | `Game.starters` links |
-| Regional form found by matching `-alola` and similar in the slug, in at least four regex copies | n/a | `form.kind = 'regional'` with `region` |
+| Regional form found by matching `-alola` and similar in the slug, in at least four regex copies | n/a | The `region` coordinate |
 
 ### Form behavior
 
 | Today | Entries | Replaced by |
 | --- | ---: | --- |
-| `TEMPORARY_FORM_IDS`, `src/league/data/formPolicy.ts:3` | 40 | `form.persistence` |
-| `FUSION_FORM_IDS`, `formPolicy.ts:11` | 6 | `form.kind = 'fusion'` |
-| `PICKER_ONLY_FORM_IDS`, `formPolicy.ts:17` | 13 | `form.kind = 'spinoff'` |
+| `TEMPORARY_FORM_IDS`, `src/league/data/formPolicy.ts:3` | 40 | A state step, and the derived `is.battleOnly` |
+| `FUSION_FORM_IDS`, `formPolicy.ts:11` | 6 | The `fusion` coordinate |
+| `PICKER_ONLY_FORM_IDS`, `formPolicy.ts:17` | 13 | `tools.league` verdict `spinoff-only`, proved from `debut` |
 | `STANDALONE_FORM_IDS`, `formPolicy.ts:27` | 17 | Derived: a form with no evolution links |
-| `FORM_PARENT_IDS` and `ADDITIONAL_EVOLUTION_EDGES`, `formPolicy.ts:33,46` | 31 | `Evolution` objects between forms |
-| `TERASTAL_FORM_IDS`, Ultra Necrozma, Eternamax, `favorites/model/catalog.ts:173,180`, `sortKeys.ts:28` | 8 | `form.kind` and `form.persistence` |
+| `FORM_PARENT_IDS` and `ADDITIONAL_EVOLUTION_EDGES`, `formPolicy.ts:33,46` | 31 | `Evolution` objects, with `preserves` for edges that keep a facet such as sex or season |
+| `TERASTAL_FORM_IDS`, Ultra Necrozma, Eternamax, `favorites/model/catalog.ts:173,180`, `sortKeys.ts:28` | 8 | State steps: `terastal`, `ultra-burst`, `eternamax` |
 | `EXCLUSIVE_FORM_GROUPS`, `src/hooks/usePokemonData.ts:36` | 9 | Derived: sibling evolutions that need different items |
 | `ALTERNATE_PICKER_FORMS`, `favorites/model/alternateForms.ts:39-208` | 211 | Form records in the ontology |
-| `ALTERNATE_FORMS` and `PRIMAL_ORBS` (matches English label text), `src/league/model/powerups.ts:15,50` | 14 | `form.kind = 'mega' \| 'primal' \| 'gigantamax'` |
+| `ALTERNATE_FORMS` and `PRIMAL_ORBS` (matches English label text), `src/league/model/powerups.ts:15,50` | 14 | State steps `mega`, `primal`, and `gigantamax`, each with its `from` forms |
 
 ### Names, stats, color, and shape
 
 | Today | Entries | Replaced by |
 | --- | ---: | --- |
-| `MALE_FORM_IDS`, `src/i18n/genderForms.ts:3` | 13 | `species.genderRatio`, plus `form.kind = 'gender'` or a female `Appearance` |
-| `cosmeticGenderIds`, `scripts/build-favorite-bst.ts:16` | 4 | A female `Appearance`, not a form |
+| `MALE_FORM_IDS`, `src/i18n/genderForms.ts:3` | 13 | The `sex` coordinate |
+| `cosmeticGenderIds`, `scripts/build-favorite-bst.ts:16` | 4 | `sex: 'female'` with no other fact, derived as look-only |
 | Urshifu name and the `picker:10227` key, in four files | 4 sites | `form.names` |
 | `sharedRecords`, `build-favorite-bst.ts:18` | 23 | Sparse inheritance from the default form |
 | `formMetadata.json`, `formBst.json`, `powerupTypes.json`, League `alternateForms.json` metadata | 213, 1,427, 128, 80 | Form fields, stored once |
@@ -566,18 +629,18 @@ Each row is a hard-coded list in app code or scripts today, and the field or lin
 | Today | Entries | Replaced by |
 | --- | ---: | --- |
 | Static and reward `shinyIds`, `src/data/archetypes.ts:518,632`, and the same IDs in `PROTECTED`, `scripts/fetch-shiny-sprites.ts:78` | 5 | `Encounter.shiny = 'guaranteed'` |
-| `held` never-shiny forms with reasons, `scripts/data/shiny-sprite-sources.json` | 20 | `form.shiny = { kind: 'locked', reason }` |
-| `pokemon.json` `sprite` that points at another form (Wishiwashi School, Palafin Hero, Terapagos Terastal) | 13 | A Dex display choice in app config, keyed by species |
+| `held` never-shiny forms with reasons, `scripts/data/shiny-sprite-sources.json` | 20 | `shiny: { locked: reason }` |
+| `pokemon.json` `sprite` that points at another form (Wishiwashi School, Palafin Hero, Terapagos Terastal) | 13 | `species.standIn.dex` |
 | Picker sprite reset for 746, 888, 889, 964, 1024, `favorites/model/catalog.ts:88` | 5 | The default form's sprite, with no override |
-| Form order for Ogerpon, Kyurem, Necrozma, Terapagos, Cosplay Pikachu (two copies), Eternal Floette | 11 | `form.order` |
+| Form order for Ogerpon, Kyurem, Necrozma, Terapagos, Cosplay Pikachu (two copies), Eternal Floette | 11 | Order of forms in the species file |
 
 ### Games and identity
 
 | Today | Entries | Replaced by |
 | --- | ---: | --- |
 | `GAMES` in `sourceGame.ts`, `DEBUT_GAMES` and `GAME_REGION` in `debut.ts`, `REGIONAL_DEXES` | 16, 25, 9 | `Game`, `Region`, and `Pokedex` objects |
-| `FORM_SOURCES`, `sourceGame.ts:120` | 39 | `form.kind = 'spinoff'` with its game, or `event` with its distribution |
-| `LATER_DEBUTS` by ID range, `debut.ts:19` | 24 ranges | `form.debutGame` |
+| `FORM_SOURCES`, `sourceGame.ts:120` | 39 | `debut` and `obtain` |
+| `LATER_DEBUTS` by ID range, `debut.ts:19` | 24 ranges | `debut` |
 | Picker-to-Dex ID remaps in `favorites/model/catalog.ts:80`, League `catalog.ts:108-111`, `favoriteBrowserIds.json` | 341 | One `appId` per form |
 
 App concepts stay as app data. The 33 archetypes in `archetypes.ts`, Dex sections, and League rules are features. They reference ontology IDs, and their place lists can later derive from encounter habitats.
@@ -590,14 +653,32 @@ These are defects or risks in the current code. None of them is fixed by this sp
 2. **Two generators can erase the catalog.** `scripts/build-pokemon-data.ts` and `scripts/generate-data.cjs` overwrite `pokemon.json` with default forms only. `scripts/combine_data.py` erases every form and correction. Phase 1 deletes them.
 3. **`scripts/sync-baby.mjs` maps colliding IDs to the wrong species.** It looks up form IDs in PokeAPI `pokemon.csv` and skips the identity guard in `scripts/pokemon-source-identity.mjs`. No baby flag is wrong today. Phase 1 removes the separate ID lookups.
 4. **The biome builder reads TypeScript source with a regular expression.** `scripts/biome/build-assignments.mjs:207-230` parses `categories.ts` and `archetypes.ts`. If a set moves, it returns an empty set and does not fail. Phase 3 gives it data to read.
-5. **Unpinned upstream data.** `scripts/league/fetch-moves.ts` and `scripts/league/fetch-powerup-forms.ts` read PokeAPI `master`, so a rerun can change output with no code change. No CI step runs `npm run league:forms -- --check`. Phase 5 pins every source to one PokeAPI revision.
+5. **Mega Floette is offered on plain Floette.** `src/league/data/powerupForms.json` lists Mega Floette under key `670`, plain Floette. In Legends: Z-A, only Eternal Floette Mega Evolves. The state step `from: ['floette-eternal']` removes the cause. Phase 2 fixes it.
+6. **Unpinned upstream data.** `scripts/league/fetch-moves.ts` and `scripts/league/fetch-powerup-forms.ts` read PokeAPI `master`, so a rerun can change output with no code change. No CI step runs `npm run league:forms -- --check`. Phase 5 pins every source to one PokeAPI revision.
 
-## Open decisions for Michael
+## Decisions
 
-1. **How sprites line up.** Pictures shown in chat on 2026-11-01 compare today's centered sprites, grounded sprites on the floor, and every sprite on the floor, plus real Dex grid screenshots with no floor gap and with a 4-pixel gap. The recommendation is grounded sprites on a floor with a small gap, floating sprites unchanged.
-2. **Who confirms each sprite's pose.** A first pass labeled 1,088 grounded, 326 floating, and 14 unsure. The appendix lists the floating and unsure sprites. The recommendation is that you scan the floating and unsure sheets in this chat once, and later corrections come from reports.
-3. **How IDs change.** The recommendation keeps one frozen number per form for saved data, so only four Favorite Picker IDs need a saved-data migration. The alternative moves saved data to string IDs, which migrates every tool and the analytics records.
-4. **What comes after the core.** Moves first gives the League builder a "TMs most of my team can learn" filter. Encounters first gives habitat sections real data. The recommendation is moves first, because the data is smaller and the League has a named use for it.
+Michael decided these on 2026-11-02.
+
+| Topic | Decision |
+| --- | --- |
+| Sprite alignment | Grounded sprites stand 4 native pixels above the floor. Floating sprites move down half as far. |
+| IDs | Every Pokémon and form has one unique ID. One number never means two Pokémon again. |
+| Facts | One source of truth per fact. No fact repeats in two files. |
+| Tool inclusion | Each form records whether the Picker, the Dex Builder, and the Gym Builder include it. |
+| Exception lists | Every hard-coded ID list becomes a field or link in the model. |
+| Form classification | Michael proposed independent yes/no fields instead of one kind. Version 2 uses facets plus state steps, and derives the yes/no fields (see "How forms are classified"). |
+| Credits | A sprite can credit several artists. Projects and artists both have links. |
+| Effective terms | The more permissive of the project's and the artist's terms applies. Project terms normally apply to sprites sourced through a project. |
+
+Three design candidates, each from a different model, informed version 2. All three rejected both one kind per form and authored yes/no flags, for the reasons in "How forms are classified".
+
+## Open questions
+
+1. **Pose review.** The appendix seed is a model's labeling. Michael has not confirmed it. Corrections come from his scan of the floating and unsure sheets, or from reports.
+2. **Look-only forms in the Gym Builder.** Vivillon patterns and Furfrou trims change no stats. Version 2 keeps today's verdicts until Michael decides otherwise.
+3. **Who reads terms.** A terms reading is a judgment of legal text. Version 2 records a reader and a date on each reading, and assumes Michael is the reader of record.
+4. **Learnsets for the Gym Builder.** "Can learn" can use each form's latest game, or Scarlet and Violet only. This waits for phase 5.
 
 ## Appendix: sprite pose seed
 
