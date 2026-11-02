@@ -729,7 +729,6 @@
   "chart.header.underIndexed1": "낮은",
   "chart.header.underIndexed2": "← 선택 비중",
   "chart.header.evolution": "진화",
-  "analytics.avgCompare": "내 평균: {yours}, 전국도감 평균: {national}.",
   "analytics.bst.heading": "종족값 합계 분포",
   "analytics.dex.national": "전국도감",
   "analytics.meanNational": "전국 평균",

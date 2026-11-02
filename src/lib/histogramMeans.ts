@@ -10,12 +10,18 @@ export function histogramMeans(
  const extent = (runs: MeanRun[]) => runs.reduce((sum, run) => sum + measure(run.text, run.bold).width, 0);
  const numberRun = (value: number): MeanRun => ({ text: compact(value), bold: true });
  if (Math.abs(yours - options) < .000001) {
-  let runs = [{ text: `${labels.exact} `, bold: false }, numberRun(yours)];
-  if (extent(runs) > bounds.right - bounds.left) runs = [numberRun(yours)];
-  const w = extent(runs), x = position(yours);
+  const x = position(yours), right = x + 7, left = x - 7;
+  let runs = [numberRun(yours), { text: ` ${labels.exact}`, bold: false }];
+  let anchor: 'start' | 'end' = 'start', labelX = right;
+  if (extent(runs) > bounds.right - right) {
+   const leftRuns = [{ text: `${labels.exact} `, bold: false }, numberRun(yours)];
+   if (extent(leftRuns) <= left - bounds.left) { runs = leftRuns; anchor = 'end'; labelX = left; }
+   else runs = [numberRun(yours)];
+  }
+  const w = extent(runs);
+  if (anchor === 'start' && w > bounds.right - right) labelX = bounds.right - w;
   return [{ value: yours, x, runs, width: w, text: runs.map(run => run.text).join(''),
-   labelX: Math.max(bounds.left + w / 2, Math.min(bounds.right - w / 2, x)),
-   anchor: 'middle' as const, rail: 0, labelRail: 1, color: '#dc2626', exact: true }];
+   labelX, anchor, rail: 0, labelRail: 0, color: '#dc2626', exact: true }];
  }
  return [{ value: yours, color: '#ef4444', label: labels.yours }, { value: options, color: '#94a3b8', label: labels.options }]
   .sort((a, b) => a.value - b.value).map((point, index) => {

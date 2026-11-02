@@ -729,7 +729,6 @@
   "chart.header.underIndexed1": "偏低",
   "chart.header.underIndexed2": "← 選擇比例",
   "chart.header.evolution": "進化",
-  "analytics.avgCompare": "你的平均：{yours}，全國圖鑑平均：{national}。",
   "analytics.bst.heading": "種族值總和分布",
   "analytics.dex.national": "全國圖鑑",
   "analytics.meanNational": "全國平均",

@@ -26,7 +26,6 @@ const RULES: { test: (key: string) => boolean; tier: Tier }[] = [
   { test: (k) => k.endsWith('.desc'), tier: 'editorial' },
   { test: (k) => k.startsWith('analytics.') && k.endsWith('.desc'), tier: 'editorial' },
   { test: (k) => k === 'analytics.type.descMatchup', tier: 'editorial' },
-  { test: (k) => k === 'analytics.avgCompare', tier: 'editorial' },
   { test: (k) => k === 'viewSettings.statsHint', tier: 'editorial' },
 
   { test: (k) => k.startsWith('milestone.'), tier: 'editorial' },

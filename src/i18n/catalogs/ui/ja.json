@@ -729,7 +729,6 @@
   "chart.header.underIndexed1": "少なめに",
   "chart.header.underIndexed2": "← 選択",
   "chart.header.evolution": "進化",
-  "analytics.avgCompare": "あなたの平均：{yours}、全国図鑑の平均：{national}。",
   "analytics.bst.heading": "種族値合計の分布",
   "analytics.dex.national": "全国図鑑",
   "analytics.meanNational": "全国の平均",

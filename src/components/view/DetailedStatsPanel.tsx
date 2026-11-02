@@ -85,11 +85,10 @@ function StretchTitle({ text }: { text: string }) {
   );
 }
 
-function Card({ title, subtitle, children, variant }: { title: string; subtitle?: string; children: React.ReactNode; variant: StatsVariant }) {
+function Card({ title, children, variant }: { title: string; children: React.ReactNode; variant: StatsVariant }) {
   const titleEl = (
     <>
       <StretchTitle text={title} />
-      {subtitle && <p className={`${STATS_TEXT} text-muted-foreground mb-2 leading-snug`}>{subtitle}</p>}
     </>
   );
   if (variant === 'card-title-in') {
@@ -185,7 +184,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         />
       </Card>
 
-      <Card variant={variant} title={t('stats.bst.title')} subtitle={t('analytics.avgCompare', { yours: analytics.bstStats.avg, national: analytics.nationalAvgBst })}>
+      <Card variant={variant} title={t('stats.bst.title')}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}
@@ -197,6 +196,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
           yTicks={bstHist.yTicks}
           heightScale={heights.bst}
           textClass={STATS_TEXT}
+          meanRail={bstHist.merged.some(d => d.yoursPct > 0) ? { yours: analytics.bstStats.avg, options: analytics.nationalAvgBst, labels: { yours: t('favorites.stats.meanYours'), options: t('analytics.meanNational'), exact: t('favorites.stats.meanExact') } } : undefined}
         />
       </Card>
     </div>
