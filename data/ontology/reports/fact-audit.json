@@ -2,7 +2,7 @@
   "source": "pokeapi@bc92d3b6",
   "generated": "npm run ontology:audit",
   "notes": ["Level pokemon facts come from the form's pokemon row. Level species facts come from its species row; PokeAPI states color, shape, and egg groups per species, so a form's own value is compared with its species' value.", "captureRate, growthRate, legendaryClass, baby, generation, genderRatio, hatchCycles, baseFriendship, and genus are compared once per species, on the default form.", "legendaryClass compares only the legendary flag: PokeAPI has one, the app splits it into sub-legendary and restricted and tags Ultra Beasts from its own list.", "The app's evolution chain number (legacy/evolution-chains.json, shipped in pokemon.json) is a family key, not PokeAPI's chain id. Measured on 2026-11-02: 576 species carry a different number, and the two numberings partition the 1,025 species into the same families (each app number maps to one PokeAPI chain and back). It is not compared; the legacy-chain-mismatch check proves species that evolve into each other share a number.", "A fact marked inherited:unsourced is not compared."],
-  "summary": { "formsCompared": 1404, "disagreements": 211, "kept": 208, "open": 3, "unreviewed": 0 },
+  "summary": { "formsCompared": 1407, "disagreements": 212, "kept": 209, "open": 3, "unreviewed": 0 },
   "rows": [
     {
       "form": "venusaur-gmax",
@@ -1254,6 +1254,14 @@
     },
     {
       "form": "toxtricity-gmax",
+      "fact": "weightHg",
+      "level": "pokemon",
+      "app": null,
+      "source": 10000,
+      "review": { "status": "kept", "decision": "gigantamax-weight-unknown-2026-10-20", "note": "The games show \"????.? kg\" for a gigantamax form; PokeAPI's 10000 is a placeholder.", "auto": true }
+    },
+    {
+      "form": "toxtricity-low-key-gmax",
       "fact": "weightHg",
       "level": "pokemon",
       "app": null,

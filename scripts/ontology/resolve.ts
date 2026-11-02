@@ -48,6 +48,7 @@ function stepOf(entry: FormEntry): FormState | null {
   switch (state.kind) {
     case 'mega': return state.letter ? { kind: 'mega', letter: state.letter } : { kind: 'mega' };
     case 'terastal': return { kind: 'terastal', teraType: state.teraType! };
+    case 'battle-mode': return state.trigger ? { kind: 'battle-mode', trigger: state.trigger } : { kind: 'battle-mode' };
     default: return { kind: state.kind };
   }
 }

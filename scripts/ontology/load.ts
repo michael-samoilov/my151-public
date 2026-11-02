@@ -96,9 +96,9 @@ const FACT_FIELDS = {
 };
 const FACT_KEYS = Object.keys(FACT_FIELDS);
 const SPECIES_FACT_KEYS = ['captureRate', 'growthRate', 'genderRatio', 'hatchCycles', 'baseFriendship', 'genus'];
-const verdict = union(literal('in'), object({ out: union(literal('battle-state', 'spinoff-only', 'look-only'), object({ decision: string })) }));
+const verdict = union(literal('in'), object({ out: union(literal('battle-state', 'spinoff-only', 'look-only'), object({ decision: string }), object({ mergedInto: string })) }));
 const tools = object(Object.fromEntries(TOOLS.map((tool) => [tool, verdict])));
-const STATE_FIELDS = { kind: string, from: union(literal('any'), array(string, 1)), letter: literal('x', 'y', 'z'), teraType: string };
+const STATE_FIELDS = { kind: string, from: union(literal('any'), array(string, 1)), letter: literal('x', 'y', 'z'), teraType: string, trigger: object({ ability: string }) };
 const formSchema = object({
   id: string,
   sprite: string,
@@ -107,7 +107,7 @@ const formSchema = object({
   variety: record(string),
   sex: literal('male', 'female'),
   fusion: string,
-  state: object(STATE_FIELDS, ['letter', 'teraType']),
+  state: object(STATE_FIELDS, ['letter', 'teraType', 'trigger']),
   ...FACT_FIELDS,
   tools,
   ...sourced([...FACT_KEYS, 'tools', 'sprite']),
@@ -145,6 +145,7 @@ const sourcesSchema = array(union(
   object({ id: string, kind: literal('legacy-file'), ref: string }),
   object({ id: string, kind: literal('pokeapi-csv'), repository: string, commit: string, extract: string }),
   object({ id: string, kind: literal('inheritance'), note: string }),
+  object({ id: string, kind: literal('statement'), by: string, date: string, quote: string, where: string }),
 ));
 const pokeapiSchema = object({
   repository: string,
@@ -265,6 +266,7 @@ function checkSpeciesFile(file: SpeciesFile, problem: (code: string, path: strin
       if (form.state.kind === 'terastal' && !state.teraType) problem('shape', `${path}.state`, 'a terastal step names its teraType');
       if (form.state.kind !== 'terastal' && state.teraType) problem('shape', `${path}.state.teraType`, 'only a terastal step has a teraType');
       if (form.state.kind !== 'mega' && state.letter) problem('shape', `${path}.state.letter`, 'only a mega step has a letter');
+      if (form.state.kind !== 'battle-mode' && state.trigger) problem('shape', `${path}.state.trigger`, 'only a battle-mode step has a trigger');
       if (form.state.from !== 'any') for (const from of form.state.from) if (!file.forms.some((other) => other.id === from)) problem('dangling-link', `${path}.state.from`, `"${from}" is not a form of ${file.species.id}`);
     }
     if (index > 0 && !form.tools) problem('tools-missing', `${path}.tools`, `"${form.id}" needs a verdict for picker, dex, and league`);
@@ -340,11 +342,13 @@ function linkOntology(ontology: AuthoredOntology, problem: (file: string, code: 
       if (entry.source && !sources.has(entry.source)) check('dangling-link', `${path}.source`, `"${entry.source}" is not in sources.json`);
       for (const [field, source] of Object.entries(entry.sourceOf ?? {})) if (!sources.has(source)) check('dangling-link', `${path}.sourceOf.${field}`, `"${source}" is not in sources.json`);
       if (entry.state?.kind === 'terastal' && entry.state.teraType !== 'stellar' && !vocab.types.includes(entry.state.teraType)) check('dangling-link', `${path}.state.teraType`, `"${entry.state.teraType}" is not a type or "stellar"`);
+      if (entry.state?.kind === 'battle-mode' && entry.state.trigger && !vocab.abilities.includes(entry.state.trigger.ability)) check('dangling-link', `${path}.state.trigger.ability`, `"${entry.state.trigger.ability}" is not in vocab/abilities.json`);
       for (const tool of TOOLS) {
         const verdict = entry.tools?.[tool];
-        if (verdict && verdict !== 'in' && typeof verdict.out === 'object' && !decisions.has(verdict.out.decision)) {
-          check('dangling-link', `${path}.tools.${tool}`, `decision "${verdict.out.decision}" is not in decisions.json`);
-        }
+        if (!verdict || verdict === 'in' || typeof verdict.out !== 'object') continue;
+        const reason = verdict.out;
+        if ('decision' in reason && !decisions.has(reason.decision)) check('dangling-link', `${path}.tools.${tool}`, `decision "${reason.decision}" is not in decisions.json`);
+        if ('mergedInto' in reason && !forms.has(reason.mergedInto)) check('dangling-link', `${path}.tools.${tool}`, `"${reason.mergedInto}" is not a form`);
       }
     });
     data.evolutions.forEach((edge, index) => {

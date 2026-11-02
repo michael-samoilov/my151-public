@@ -35,6 +35,7 @@
       "id": "palafin-hero",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "zero-to-hero" },
         "from": ["palafin"]
       },
       "baseStats": { "hp": 100, "atk": 160, "def": 97, "spe": 100, "spa": 106, "spd": 87 },

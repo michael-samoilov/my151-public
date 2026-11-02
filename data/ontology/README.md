@@ -7,9 +7,9 @@
 | Path | Holds |
 | --- | --- |
 | `species/<dex4>-<species>.json` | One file per species: species facts, then its forms in display order, then the evolutions into it. `forms[0]` is the default form and states every core fact. Other forms state only what differs from their base. |
-| `ids/app-ids.json` | The `AppId` ledger. Append-only. `npm run ontology:mint` is its only writer. |
+| `ids/app-ids.json` | The `AppId` ledger. Append-only. A new non-default form takes the next free number from 20001 up. The spec names a future `npm run ontology:mint` as its only writer; until it exists, add the row by hand, and the check rejects a changed, reused, or unsorted number. |
 | `vocab/*.json` | Types, colors, shapes, egg groups, growth rates, abilities, species tags, regions, games, variety axes. |
-| `sources.json` | Every data source a fact can cite: the legacy catalog files, the pinned PokeAPI snapshot, and `inherited:unsourced`. |
+| `sources.json` | Every data source a fact can cite: the legacy catalog files, the pinned PokeAPI snapshot, `inherited:unsourced`, and statements, such as Michael reading a fact from the games, each with its quote and date. |
 | `sources/pokeapi-<commit>.json` | The PokeAPI CSV tables at one commit, reduced to what the audit and importer read. `npm run ontology:extract` writes it and records each table's sha256. |
 | `decisions.json` | Product decisions a verdict or an audit row can cite, each with who, when, the quote, and where. |
 | `reports/tool-verdicts.json` | Generated. Every form's Picker, Dex, and League verdict, so a policy change shows as a diff. |
@@ -34,11 +34,11 @@ A form's PokeAPI identity is `externalIds.pokeapiForm` when the identifiers diff
 
 ## Audits
 
-`npm run ontology:audit` compares every form with the pinned PokeAPI snapshot and writes two reports. A row is one disagreement: the form, the fact, the level PokeAPI states it at, both values, and a review. Rules in `scripts/ontology/audit.ts` write a review where the evidence is mechanical, such as a PKHeX game record in the form-metadata audit inventory. Every other row starts `unreviewed`, and the check fails until a person reviews it. A hand-written review survives a rerun while the row's values are unchanged. The `questions` section of the classification report is hand-written and lists what the snapshot cannot settle.
+`npm run ontology:audit` compares every form with the pinned PokeAPI snapshot and writes two reports. A row is one disagreement: the form, the fact, the level PokeAPI states it at, both values, and a review. Rules in `scripts/ontology/audit.ts` write a review where the evidence is mechanical, such as a PKHeX game record in the form-metadata audit inventory. Every other row starts `unreviewed`, and the check fails until a person reviews it. A hand-written review survives a rerun while the row's values are unchanged. The `questions` section of the classification report is hand-written and lists what the snapshot cannot settle. An answered question carries a `review` with who answered, the date, the answer, and what changed.
 
 ## Checks
 
-`npm run ontology:check` runs in every code CI mode. It fails on a dangling link, a missing core fact, an ability outside the vocabulary, two permanent forms with the same coordinates, a false or missing tool verdict, a ledger number that changed meaning, a state twin that differs, two forms with one PokeAPI identity, an unsourced mark on a known fact, a disagreement the audit reports do not list as reviewed, a stale audit row, and a generated file that differs from the ontology. Each message names the file and the field to fix.
+`npm run ontology:check` runs in every code CI mode. It fails on a dangling link, a missing core fact, an ability outside the vocabulary, two permanent forms with the same coordinates, a false or missing tool verdict, a `mergedInto` twin whose target has another species, sprite, or state chain or is out of that tool, a tool that shows two forms of one species with one sprite and one state chain, a battle-mode trigger ability that a form the step enters from does not have, a ledger number that changed meaning, a state twin that differs, two forms with one PokeAPI identity, an unsourced mark on a known fact, a disagreement the audit reports do not list as reviewed, a stale audit row, and a generated file that differs from the ontology. Each message names the file and the field to fix.
 
 `scripts/ontology/parity.test.ts` proves the Favorite Picker and League catalogs return the same records when rebuilt from the ontology.
 
@@ -46,5 +46,5 @@ A form's PokeAPI identity is `externalIds.pokeapiForm` when the identifiers diff
 
 1. Download the tables under `data/v2/csv/` from `https://raw.githubusercontent.com/PokeAPI/pokeapi/<commit>/` into a folder outside the repository. The list is in `scripts/ontology/pokeapi/extract.ts`.
 2. Run `npm run ontology:extract -- <folder> <commit>`.
-3. Set `POKEAPI_COMMIT` in `scripts/ontology/import-legacy.ts` and rerun `npm run ontology:import`, or update `sources.json` and the `sourceOf` values by hand.
+3. Update `sources.json` and the `sourceOf` values by hand. Do not rerun `npm run ontology:import`: it rebuilds the ontology from the legacy catalogs and would erase forms and facts they do not have, so it refuses to run over an existing ontology.
 4. Run `npm run ontology:audit`, review the new rows, then `npm run ontology:build` and `npm run ontology:check`.

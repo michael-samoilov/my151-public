@@ -8,7 +8,7 @@
  * data/ontology/reports/legacy-disagreements.json. A form the classification table does not cover
  * stops the import.
  */
-import { readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pokemonData from '../../src/data/pokemon.json';
@@ -769,6 +769,14 @@ function regionOf(identity: Identity): string | undefined {
 
 // ── Write ────────────────────────────────────────────────────────────────────────────────────
 
+// Since 2026-11-02 the ontology holds forms, facts, sources, and decisions no legacy catalog has, such as
+// the female Mega Pyroar, so a rerun over an existing ontology would erase them.
+const ledgerPath = join(out, 'ids', 'app-ids.json');
+if (existsSync(ledgerPath) && !process.argv.includes('--overwrite')) {
+  const written = new Set(identities.map((identity) => identity.formId));
+  const lost = (readJson(ledgerPath) as { rows: [number, string][] }).rows.filter(([, form]) => !written.has(form));
+  throw new Error(`data/ontology/ already exists, and this one-time import would erase authored data, including ${lost.length} form(s) no legacy catalog has (${lost.map(([, form]) => form).join(', ') || 'none'}). Edit the species files instead. Pass --overwrite only to start the ontology over.`);
+}
 // Only the species folder is emptied, so a renamed species leaves no stale file. reports/tool-verdicts.json belongs to ontology:build.
 rmSync(join(out, 'species'), { recursive: true, force: true });
 for (const { file, data } of speciesFiles) writeJson(join(out, 'species', file), data);

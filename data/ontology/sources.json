@@ -13,5 +13,7 @@
   { "id": "legacy:src/data/categories.ts", "kind": "legacy-file", "ref": "src/data/categories.ts" },
   { "id": "legacy:scripts/data/shiny-sprite-sources.json", "kind": "legacy-file", "ref": "scripts/data/shiny-sprite-sources.json" },
   { "id": "pokeapi@bc92d3b6", "kind": "pokeapi-csv", "repository": "https://github.com/PokeAPI/pokeapi", "commit": "bc92d3b6029ef1abe9e7ad424c400b338f3c11fe", "extract": "data/ontology/sources/pokeapi-bc92d3b6.json" },
-  { "id": "inherited:unsourced", "kind": "inheritance", "note": "No source describes this form, or the pinned snapshot lacks the fact. The value is the base form's by the inheritance rule, and nobody has checked it." }
+  { "id": "inherited:unsourced", "kind": "inheritance", "note": "No source describes this form, or the pinned snapshot lacks the fact. The value is the base form's by the inheritance rule, and nobody has checked it." },
+  { "id": "michael:mega-twins@2026-11-02", "kind": "statement", "by": "Michael", "date": "2026-11-02", "quote": "Mega Meowstic has one sprite for both sexes, and male and female have identical Mega stats. The same holds for Mega Pyroar (female Pyroar Mega Evolves too) and for Gigantamax Toxtricity (Amped and Low Key).", "where": "His answers to the mega-meowstic-female, mega-pyroar-female, and gigantamax-toxtricity-abilities questions in data/ontology/reports/classification-audit.json" },
+  { "id": "michael:ogerpon-terastal-abilities@2026-11-02", "kind": "statement", "by": "Michael", "date": "2026-11-02", "quote": "Each of the four Terastal Ogerpon forms has the ability Embody Aspect for its mask. Source: Michael, 2026-11-02, from the games.", "where": "His answer to the ogerpon-tera-abilities question in data/ontology/reports/classification-audit.json" }
 ]

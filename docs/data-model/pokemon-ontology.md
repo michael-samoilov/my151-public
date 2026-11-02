@@ -1,6 +1,6 @@
 # Pokémon data model (ontology) spec
 
-Status: approved direction. Michael reviewed version 1 on 2026-11-02 and asked for the changes in version 2. Phase 1 and phase 1b (core facts and the source audit, see the delivery plan) are built. Phase 0 (sprite alignment) is in review on the work branch. Phase 1b's open questions are in `data/ontology/reports/classification-audit.json`.
+Status: approved direction. Michael reviewed version 1 on 2026-11-02 and asked for the changes in version 2. Phase 1 and phase 1b (core facts and the source audit, see the delivery plan) are built and on production. Phase 0 (sprite alignment) is in review on the work branch. Michael answered phase 1b's open questions on 2026-11-02. Each answer and what it changed is in `data/ontology/reports/classification-audit.json`.
 Date: 2026-11-01, revised 2026-11-02.
 
 ## Summary
@@ -212,9 +212,14 @@ type FormState =
   | { kind: 'eternamax' }
   | { kind: 'ultra-burst'; item: ItemId }
   | { kind: 'terastal'; teraType: TeraType }
-  | { kind: 'battle-mode'; trigger: StateTrigger }  // Zen Mode, Blade Forme, School, Complete, Ash, Hero
+  | { kind: 'battle-mode'; trigger?: StateTrigger } // Zen Mode, Blade Forme, School, Complete, Ash, Hero
   | { kind: 'move-look'; move: MoveId }             // Overdrive, Radiant Sun
   | { kind: 'ride' }                                // Koraidon Limited Build
+
+// The ability that starts the step: Schooling for Wishiwashi School, Zero to Hero for Palafin Hero,
+// Shields Down for each Minior Core. The checker proves every form the step enters from has it.
+// A battle-mode step without a trigger has none recorded yet.
+type StateTrigger = { ability: AbilityId }
 
 // What a person writes. The types forbid mixing the two shapes.
 type PermanentFormEntry = { id: FormId } & Partial<Coordinates> & Partial<FormFacts> & { state?: never; tools: ToolInclusion }
@@ -239,6 +244,8 @@ The yes/no flags still exist. The build derives them, and the resolved form expo
 | Cap Pikachu | `variety: { outfit: 'cap-original' }`, `shiny: { locked: … }`, `obtain: 'event-only'` | variety, event |
 | Shadow Lugia | `variety: { look: 'shadow' }`, `debut: 'pokemon-xd'` | variety, spin-off |
 | Terapagos Stellar | a `terastal` step from Terapagos Terastal, itself a `battle-mode` step | two-step chain |
+| Minior Red Core | `state: { kind: 'battle-mode', trigger: { ability: 'shields-down' }, from: ['minior'] }` | battle-only |
+| Mega Meowstic female | `state: { kind: 'mega', from: ['meowstic-female'] }`, Picker and League verdicts `{ mergedInto: 'meowstic-mega' }` | mega, battle-only |
 
 A future regional Mega is a `mega` step from the regional form. It needs no schema change.
 
@@ -275,8 +282,11 @@ type OutReason =
   | 'spinoff-only'                   // the checker proves the debut game is not mainline
   | 'look-only'                      // the checker proves no fact differs from the default form
   | { decision: string }             // a product call, citing where Michael made it
+  | { mergedInto: FormId }           // one of two records with one look; the tool shows the target
 type ToolInclusion = { picker: ToolVerdict; dex: ToolVerdict; league: ToolVerdict }
 ```
+
+Some forms are two records with one look. Male and female Meowstic Mega Evolve into one design, and so do male and female Pyroar, and Amped and Low Key Toxtricity when they Gigantamax. Each entry form gets its own state form with its own facts: the Low Key Gigantamax keeps Low Key's abilities. The twin that was added second states `{ out: { mergedInto: <first twin> } }` in each tool that lists the first one, so no tool draws the same Pokémon twice. The checker proves the claim: both forms belong to one species, use one sprite, and have the same state steps, and the target is `in` for that tool. It also fails when a tool shows two forms of one species with one sprite and one state chain, so a new twin cannot ship without the verdict. Both records stay complete in the ontology. A tool that needs the facts of each, such as the abilities in a team builder, reads both records through `canBecome` and draws the target's look. A tool that reaches a merged form, such as the Mega of a female Meowstic, shows the target.
 
 A default form is in every tool unless it states otherwise. Every other form must state all three verdicts, so a new form cannot ship without a decision for each tool. A structural reason is a claim the checker proves, so a wrong reason fails the build. The build also writes a report of every form's verdicts, so a policy change shows as a reviewable diff. This replaces `TEMPORARY_FORM_IDS`, `PICKER_ONLY_FORM_IDS`, `FUSION_FORM_IDS`, `EXCLUSIVE_FORM_GROUPS`, the Unown exclusion, and the League and Picker eligibility lists.
 
@@ -671,6 +681,9 @@ Michael decided these on 2026-11-02.
 | Form classification | Michael proposed independent yes/no fields instead of one kind. Version 2 uses facets plus state steps, and derives the yes/no fields (see "How forms are classified"). |
 | Credits | A sprite can credit several artists. Projects and artists both have links. |
 | Effective terms | The more permissive of the project's and the artist's terms applies. Project terms normally apply to sprites sourced through a project. |
+| Twin forms | Mega Meowstic, Mega Pyroar, and Gigantamax Toxtricity each have one look for both entry forms. The ontology keeps a record per entry form, and no tool shows both (see "Tool inclusion"). |
+| Xerneas | Active Mode stays the default form and the sprite the Dex and Gym Builder show. |
+| Minior | The Cores are battle-mode states triggered by Shields Down, modeled like Wishiwashi School and Palafin Hero. |
 
 Three design candidates, each from a different model, informed version 2. All three rejected both one kind per form and authored yes/no flags, for the reasons in "How forms are classified".
 

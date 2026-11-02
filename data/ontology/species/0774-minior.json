@@ -35,6 +35,7 @@
       "id": "minior-red",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -53,6 +54,7 @@
       "id": "minior-orange",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -71,6 +73,7 @@
       "id": "minior-yellow",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -89,6 +92,7 @@
       "id": "minior-green",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -107,6 +111,7 @@
       "id": "minior-blue",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -125,6 +130,7 @@
       "id": "minior-indigo",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
@@ -143,6 +149,7 @@
       "id": "minior-violet",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "shields-down" },
         "from": ["minior"]
       },
       "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },

@@ -48,7 +48,7 @@ export function pickerRecord(ontology: Ontology, form: ResolvedForm): PickerMon 
 }
 
 export function pickerRecords(ontology: Ontology): PickerMon[] {
-  return [...ontology.forms.values()].map((form) => pickerRecord(ontology, form));
+  return [...ontology.forms.values()].filter((form) => form.tools.picker === 'in').map((form) => pickerRecord(ontology, form));
 }
 
 /** What pickerPokemonMetadata() returns: the owner's Dex row under the form's own facts. */

@@ -40,7 +40,11 @@ export interface AuditReport {
   readonly unmatched?: readonly { readonly form: FormId; readonly inherits: readonly string[] }[];
   readonly missingStateForms?: readonly { readonly pokeapiForm: string; readonly species: string; readonly note: string }[];
   /** Hand-written: what the snapshot cannot settle and no row carries. The audit script keeps this section as it finds it. */
-  readonly questions?: readonly { readonly id: string; readonly question: string; readonly evidence: readonly string[]; readonly recommendation: string }[];
+  readonly questions?: readonly {
+    readonly id: string; readonly question: string; readonly evidence: readonly string[]; readonly recommendation: string;
+    /** Who answered, when, the answer, and what changed because of it. */
+    readonly review?: { readonly status: 'answered'; readonly by: string; readonly date: string; readonly decision: string; readonly outcome: string };
+  }[];
 }
 
 export const AUDIT_REPORTS = {

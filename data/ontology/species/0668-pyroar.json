@@ -62,6 +62,30 @@
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
       "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "pyroar-female-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["pyroar-female"]
+      },
+      "abilities": { "first": "fire-mane" },
+      "baseStats": { "hp": 86, "atk": 88, "def": 92, "spe": 126, "spa": 129, "spd": 86 },
+      "weightHg": 933,
+      "debut": "legends-za",
+      "sprite": "10295",
+      "externalIds": { "pokeapiPokemon": "pyroar-mega" },
+      "tools": {
+        "picker": {
+          "out": { "mergedInto": "pyroar-mega" }
+        },
+        "dex": { "out": "battle-state" },
+        "league": {
+          "out": { "mergedInto": "pyroar-mega" }
+        }
+      },
+      "source": "michael:mega-twins@2026-11-02",
+      "sourceOf": { "abilities": "pokeapi@bc92d3b6", "baseStats": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

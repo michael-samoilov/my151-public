@@ -68,6 +68,31 @@
       },
       "source": "legacy:src/league/data/powerupForms.json",
       "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "abilities": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
+    },
+    {
+      "id": "meowstic-female-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["meowstic-female"]
+      },
+      "abilities": { "first": "trace" },
+      "baseStats": { "hp": 74, "atk": 48, "def": 76, "spe": 124, "spa": 143, "spd": 101 },
+      "heightDm": 8,
+      "weightHg": 101,
+      "color": "blue",
+      "debut": "legends-za",
+      "sprite": "10314",
+      "tools": {
+        "picker": {
+          "out": { "mergedInto": "meowstic-mega" }
+        },
+        "dex": { "out": "battle-state" },
+        "league": {
+          "out": { "mergedInto": "meowstic-mega" }
+        }
+      },
+      "source": "michael:mega-twins@2026-11-02",
+      "sourceOf": { "abilities": "pokeapi@bc92d3b6", "baseStats": "pokeapi@bc92d3b6", "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6", "debut": "pokeapi@bc92d3b6" }
     }
   ],
   "evolutions": [

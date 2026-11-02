@@ -122,7 +122,9 @@ export type DataSourceEntry =
   | { readonly id: DataSourceId; readonly kind: 'legacy-file'; readonly ref: string }
   /** PokeAPI's CSV tables at one commit, read through the extract file; see scripts/ontology/pokeapi/extract.ts. */
   | { readonly id: DataSourceId; readonly kind: 'pokeapi-csv'; readonly repository: string; readonly commit: string; readonly extract: string }
-  | { readonly id: DataSourceId; readonly kind: 'inheritance'; readonly note: string };
+  | { readonly id: DataSourceId; readonly kind: 'inheritance'; readonly note: string }
+  /** A fact a person stated, such as Michael reading it from the games. The quote is what the cited facts rest on. */
+  | { readonly id: DataSourceId; readonly kind: 'statement'; readonly by: string; readonly date: string; readonly quote: string; readonly where: string };
 
 /** legacy/picker.json: what today's Favorite Picker records hold that the ontology does not derive. */
 export interface LegacyPicker {

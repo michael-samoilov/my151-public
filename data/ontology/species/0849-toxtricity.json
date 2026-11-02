@@ -56,7 +56,7 @@
       "id": "toxtricity-gmax",
       "state": {
         "kind": "gigantamax",
-        "from": ["toxtricity", "toxtricity-low-key"]
+        "from": ["toxtricity"]
       },
       "heightDm": 240,
       "weightHg": null,
@@ -68,6 +68,27 @@
         "league": "in"
       },
       "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
+    },
+    {
+      "id": "toxtricity-low-key-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["toxtricity-low-key"]
+      },
+      "heightDm": 240,
+      "weightHg": null,
+      "sprite": "10219",
+      "tools": {
+        "picker": {
+          "out": { "mergedInto": "toxtricity-gmax" }
+        },
+        "dex": { "out": "battle-state" },
+        "league": {
+          "out": { "mergedInto": "toxtricity-gmax" }
+        }
+      },
+      "source": "michael:mega-twins@2026-11-02",
       "sourceOf": { "heightDm": "pokeapi@bc92d3b6", "weightHg": "pokeapi@bc92d3b6" }
     }
   ],

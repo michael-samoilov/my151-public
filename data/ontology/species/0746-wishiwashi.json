@@ -35,6 +35,7 @@
       "id": "wishiwashi-school",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "schooling" },
         "from": ["wishiwashi"]
       },
       "baseStats": { "hp": 45, "atk": 140, "def": 130, "spe": 30, "spa": 140, "spd": 135 },

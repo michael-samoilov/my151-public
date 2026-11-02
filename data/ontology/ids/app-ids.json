@@ -1426,7 +1426,10 @@
     [11128, "cherrim-sunshine"],
     [11129, "pichu-ukulele"],
     [11130, "mewtwo-shadow"],
-    [20001, "urshifu-rapid-strike-gmax"]
+    [20001, "urshifu-rapid-strike-gmax"],
+    [20002, "meowstic-female-mega"],
+    [20003, "pyroar-female-mega"],
+    [20004, "toxtricity-low-key-gmax"]
   ],
   "retired": [
     { "id": 10180, "meant": "stunfisk-galar in the Favorite Picker", "why": "Dex number 10179 wins; the Picker migrates in phase 2." },

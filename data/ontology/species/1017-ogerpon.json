@@ -43,6 +43,7 @@
         "teraType": "grass",
         "from": ["ogerpon"]
       },
+      "abilities": { "first": "embody-aspect" },
       "sprite": "11113",
       "tools": {
         "picker": "in",
@@ -50,7 +51,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "abilities": "michael:ogerpon-terastal-abilities@2026-11-02", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-wellspring-mask",
@@ -77,6 +78,7 @@
         "from": ["ogerpon-wellspring-mask"]
       },
       "types": ["water"],
+      "abilities": { "first": "embody-aspect" },
       "sprite": "11114",
       "tools": {
         "picker": "in",
@@ -84,7 +86,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "michael:ogerpon-terastal-abilities@2026-11-02", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-hearthflame-mask",
@@ -111,6 +113,7 @@
         "from": ["ogerpon-hearthflame-mask"]
       },
       "types": ["fire"],
+      "abilities": { "first": "embody-aspect" },
       "sprite": "11115",
       "tools": {
         "picker": "in",
@@ -118,7 +121,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "michael:ogerpon-terastal-abilities@2026-11-02", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     },
     {
       "id": "ogerpon-cornerstone-mask",
@@ -145,6 +148,7 @@
         "from": ["ogerpon-cornerstone-mask"]
       },
       "types": ["rock"],
+      "abilities": { "first": "embody-aspect" },
       "sprite": "11116",
       "tools": {
         "picker": "in",
@@ -152,7 +156,7 @@
         "league": { "out": "battle-state" }
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",
-      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "inherited:unsourced", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "abilities": "michael:ogerpon-terastal-abilities@2026-11-02", "heightDm": "inherited:unsourced", "weightHg": "inherited:unsourced", "tools": "legacy:src/league/data/formPolicy.ts" }
     }
   ],
   "evolutions": []

@@ -46,6 +46,13 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
         if (!male) problem(form, 'sex-pair-incomplete', `${pathOf(form)}.sex`, `"${form.id}" is a female form with no male form at the same other coordinates; give the default form sex "male"`);
       }
     }
+    for (const tool of TOOLS) {
+      const shown = members.filter((form) => form.tools[tool] === 'in');
+      for (const [index, form] of shown.entries()) {
+        const twin = shown.slice(0, index).find((other) => other.sprite === form.sprite && same(other.states, form.states));
+        if (twin) problem(form, 'twins-both-shown', `${pathOf(form)}.tools.${tool}`, `"${form.id}" and "${twin.id}" have one sprite and one state chain, and the ${tool} shows both; set ${tool} to { "out": { "mergedInto": "${twin.id}" } }`);
+      }
+    }
     const states = members.filter((form) => form.states.length > 0);
     for (const [index, form] of states.entries()) {
       const step = form.states[form.states.length - 1];
@@ -74,6 +81,19 @@ export function checkOntology(ontology: Ontology, environment: CheckEnvironment)
       if (reason === 'battle-state' && form.states.length === 0) problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "battle-state" but has no state step`);
       if (reason === 'spinoff-only' && games.get(form.facts.debut)?.series === 'mainline') problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "spinoff-only" but its debut game "${form.facts.debut}" is mainline`);
       if (reason === 'look-only' && !form.is.lookOnly) problem(form, 'exclusion-reason-false', path, `"${form.id}" claims "look-only" but its types, base stats, or egg groups differ from "${form.species}"`);
+      if (typeof reason === 'object' && 'mergedInto' in reason) {
+        const target = forms.get(reason.mergedInto)!;
+        const claim = `"${form.id}" claims it is merged into "${target.id}"`;
+        if (target.species !== form.species) problem(form, 'exclusion-reason-false', path, `${claim}, but the target is a form of another species, "${target.species}"`);
+        if (target.sprite !== form.sprite) problem(form, 'exclusion-reason-false', path, `${claim}, but its sprite "${form.sprite}" is not the target's sprite "${target.sprite}"`);
+        if (!same(target.states, form.states)) problem(form, 'exclusion-reason-false', path, `${claim}, but its state steps ${JSON.stringify(form.states)} are not the target's ${JSON.stringify(target.states)}`);
+        if (target.tools[tool] !== 'in') problem(form, 'exclusion-reason-false', path, `${claim}, but the target is not in the ${tool}, so the ${tool} would show neither`);
+      }
+    }
+    const step = form.states.at(-1);
+    if (step?.kind === 'battle-mode' && step.trigger) {
+      const without = form.enteredFrom.filter((id) => !Object.values(forms.get(id)!.facts.abilities).includes(step.trigger!.ability));
+      if (without.length) problem(form, 'state-trigger-false', `${pathOf(form)}.state.trigger.ability`, `"${form.id}" is triggered by the ability "${step.trigger.ability}", which ${without.join(', ')} does not have`);
     }
     if (form.isDefault && form.appId !== form.nationalDex) problem(null, 'app-id-default', `rows`, `"${form.id}" is a default form, so its number must be its National Dex number ${form.nationalDex}, not ${form.appId}`);
   }

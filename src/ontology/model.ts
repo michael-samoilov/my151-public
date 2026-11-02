@@ -39,9 +39,11 @@ export interface Coordinates {
 }
 
 export type TeraType = TypeId | 'stellar';
+/** What starts a battle-mode step. The checker proves an ability trigger is an ability of every form the step enters from. */
+export type StateTrigger = { readonly ability: AbilityId };
 /**
- * One temporary transformation. Item, move, and trigger payloads arrive with the items and moves
- * phases, so each kind carries only what today's catalogs know.
+ * One temporary transformation. Item and move payloads arrive with the items and moves phases, so
+ * each kind carries only what is recorded so far. A battle-mode step without a trigger has none recorded yet.
  */
 export type FormState =
   | { readonly kind: 'mega'; readonly letter?: 'x' | 'y' | 'z' }
@@ -50,7 +52,7 @@ export type FormState =
   | { readonly kind: 'eternamax' }
   | { readonly kind: 'ultra-burst' }
   | { readonly kind: 'terastal'; readonly teraType: TeraType }
-  | { readonly kind: 'battle-mode' }
+  | { readonly kind: 'battle-mode'; readonly trigger?: StateTrigger }
   | { readonly kind: 'move-look' }
   | { readonly kind: 'ride' };
 export type StateKind = FormState['kind'];
@@ -84,9 +86,11 @@ export const TOOLS = ['picker', 'dex', 'league'] as const;
 export type ToolId = (typeof TOOLS)[number];
 /**
  * A structural reason is a claim the checker proves on the resolved form, so a wrong reason fails
- * the build. A decision cites a record in data/ontology/decisions.json.
+ * the build. A decision cites a record in data/ontology/decisions.json. mergedInto marks one of two
+ * records with one look, such as the Megas of male and female Meowstic: the tool shows the target
+ * instead, so it never draws the same Pokémon twice. Both records keep their own facts.
  */
-export type OutReason = 'battle-state' | 'spinoff-only' | 'look-only' | { readonly decision: DecisionId };
+export type OutReason = 'battle-state' | 'spinoff-only' | 'look-only' | { readonly decision: DecisionId } | { readonly mergedInto: FormId };
 export type ToolVerdict = 'in' | { readonly out: OutReason };
 export type ToolInclusion = { readonly [T in ToolId]: ToolVerdict };
 
