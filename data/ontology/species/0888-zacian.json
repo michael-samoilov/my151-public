@@ -10,7 +10,7 @@
     "varietyAxes": [
       {
         "axis": "forme",
-        "values": ["hero", "crowned"]
+        "values": ["hero"]
       }
     ],
     "standIn": {}
@@ -30,15 +30,16 @@
     },
     {
       "id": "zacian-crowned",
-      "variety": { "forme": "crowned" },
+      "state": {
+        "kind": "battle-mode",
+        "from": ["zacian"]
+      },
       "types": ["fairy", "steel"],
       "baseStats": { "hp": 92, "atk": 150, "def": 115, "spe": 148, "spa": 80, "spd": 115 },
       "sprite": "10188",
       "tools": {
         "picker": "in",
-        "dex": {
-          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
-        },
+        "dex": { "out": "battle-state" },
         "league": "in"
       },
       "source": "legacy:src/favorites/model/alternateForms.ts",

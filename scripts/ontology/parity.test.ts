@@ -9,7 +9,7 @@ import { allPickerMons } from '../../src/favorites/model/catalog';
 import { pickerPokemonMetadata } from '../../src/favorites/model/metadata';
 import { getAllPokemon as leagueCatalog } from '../../src/league/data/catalog';
 import { buildOntology } from './build';
-import { leagueRows } from './projections/legacy-league';
+import { inLeague, leagueRows } from './projections/legacy-league';
 import { pickerId, pickerMetadata, pickerRecords } from './projections/legacy-picker';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -70,8 +70,7 @@ describe('ontology parity with today’s catalogs', () => {
     for (const form of ontology.forms.values()) {
       expect(form.tools.picker === 'in', `${form.id} picker`).toBe(picker.has(pickerId(ontology, form)));
       expect(form.tools.dex === 'in', `${form.id} dex`).toBe(dex.has(form.appId));
-      const leagueRow = form.states.length === 0 && form.tools.league === 'in';
-      expect(leagueRow, `${form.id} league row`).toBe(league.has(form.appId));
+      expect(inLeague(form), `${form.id} league row`).toBe(league.has(form.appId));
     }
   });
 });

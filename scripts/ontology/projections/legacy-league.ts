@@ -9,7 +9,8 @@ import type { Ontology } from '../resolve';
 import { dexRows, parentInTool, stageOf } from './dex';
 import { isPowerUp } from './legacy-picker';
 
-export const inLeague = (form: ResolvedForm): boolean => form.tools.league === 'in' && form.states.length === 0;
+/** A League catalog row: in the League and not a Mega, Primal, or Gigantamax power-up. Crowned Zacian is a row. */
+export const inLeague = (form: ResolvedForm): boolean => form.tools.league === 'in' && !isPowerUp(form);
 
 export type LeagueRow = Omit<Pokemon, 'archetypes'>;
 
@@ -19,7 +20,7 @@ export function leagueRows(ontology: Ontology): LeagueRow[] {
   const defaults: LeagueRow[] = [];
   const others: LeagueRow[] = [];
   for (const form of ontology.forms.values()) {
-    if (!inLeague(form) || isPowerUp(form)) continue;
+    if (!inLeague(form)) continue;
     const species = ontology.species.get(form.species)!;
     const parent = parentInTool(ontology, form, inLeague);
     const base = dex.get(form.tools.dex === 'in' ? form.appId : ontology.forms.get(species.forms[0])!.appId)!;
