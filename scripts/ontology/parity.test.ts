@@ -1,5 +1,6 @@
-// keeps: the phase 1 parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the
-// Favorite Picker and League catalogs must return the same records when rebuilt from data/ontology/.
+// keeps: the parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the Favorite
+// Picker catalog must return the same records when rebuilt from data/ontology/, and the League catalog must
+// assemble from src/data/generated/league.json the same rows the full projection holds.
 // It runs under vitest because the League catalog imports src/i18n, which needs Vite's import.meta.glob.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,9 +9,11 @@ import dexCatalog from '../../src/data/pokemon.json';
 import { allPickerMons } from '../../src/favorites/model/catalog';
 import { pickerPokemonMetadata } from '../../src/favorites/model/metadata';
 import { getAllPokemon as leagueCatalog } from '../../src/league/data/catalog';
+import { revisedSprite } from '../../src/lib/spriteUrl';
 import { buildOntology } from './build';
-import { inLeague, leagueRows } from './projections/legacy-league';
-import { pickerId, pickerMetadata, pickerRecords } from './projections/legacy-picker';
+import { inLeague, leagueRows } from './projections/league';
+import { pickerMetadata, pickerRecords } from './projections/legacy-picker';
+import { pickerId } from './projections/owner';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const built = buildOntology(root);
@@ -58,9 +61,9 @@ describe('ontology parity with today’s catalogs', () => {
     expect(today.length).toBeGreaterThan(1000);
   });
 
-  it('rebuilds every League catalog row', () => {
+  it('assembles every League catalog row from the sparse projection', () => {
     const today = leagueCatalog().map(({ archetypes: _archetypes, ...row }) => row);
-    const rebuilt = leagueRows(ontology);
+    const rebuilt = leagueRows(ontology).map((row) => ({ ...row, sprite: revisedSprite(row.sprite!) }));
     expect(rebuilt).toHaveLength(today.length);
     expect(differences('league', today, rebuilt), FIX).toEqual([]);
     expect(today.length).toBeGreaterThan(1000);

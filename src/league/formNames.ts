@@ -31,7 +31,7 @@ registerNameExtension(async (locale, catalog, species) => {
       catalog.formCompact ??= {};
       catalog.formCompact[id] = names.formCompact[id];
     }
-    species[id] = form.ownerId;
+    species[id] = form.owner;
     const female = form.name.endsWith('-female');
     const descriptor = names.forms[id] ?? (female ? '♀' : fallback.forms[id]);
     if (descriptor) {
