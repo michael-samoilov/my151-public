@@ -2986,21 +2986,24 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
   if (roster) {
 
-    const geo = await s.evalJson<{ covered: number[]; dot: boolean; pulse: boolean; placement: string | null }>(
-      `const n=document.querySelector('[data-testid="tip-card"]').getBoundingClientRect();
-       const covered=[];for(let i=0;i<14;i++){const r=document.querySelector('[data-testid="league-slot-'+i+'"]').getBoundingClientRect();
-       if(Math.min(r.right,n.right)-Math.max(r.left,n.left)>0.5&&Math.min(r.bottom,n.bottom)-Math.max(r.top,n.top)>0.5)covered.push(i+1);}
-       const b=document.querySelector('[data-league-export="league"]');
-       return {covered,dot:!!b&&!!b.querySelector('[data-tip-dot]'),pulse:!!b&&getComputedStyle(b).animationName!=='none',
-         placement:document.querySelector('[data-nudge-placement]')?.getAttribute('data-nudge-placement')??null};`,
-    ).catch(() => ({ covered: [-1], dot: false, pulse: true, placement: null }));
+    // The tip floats under Export, so the roster keeps its place and size while it shows.
+    const summary = `const r=document.querySelector('[data-lg-league-root]').getBoundingClientRect();return {top:Math.round(r.top),height:Math.round(r.height)};`;
+    const open = await s.evalJson<{ top: number; height: number }>(summary).catch(() => ({ top: -1, height: -1 }));
+    const marks = await s.evalJson<{ dot: boolean; pulse: boolean }>(
+      `const b=document.querySelector('[data-league-export="league"]');
+       return {dot:!!b&&!!b.querySelector('[data-tip-dot]'),pulse:!!b&&getComputedStyle(b).animationName!=='none'};`,
+    ).catch(() => ({ dot: false, pulse: true }));
+    await s.click('[data-testid="tip-card"] button[aria-label="Dismiss"]');
+    await sleep(500);
+    const closed = await s.evalJson<{ top: number; height: number }>(summary).catch(() => ({ top: -2, height: -2 }));
+    const still = open.top === closed.top && open.height === closed.height;
     checks.push(ok(
-      'league-funnel:roster-nudge-clear-of-rows',
-      geo.covered.length === 0 && geo.dot && !geo.pulse,
-      `covered rows=[${geo.covered.join(',')}] export dot=${geo.dot} pulse=${geo.pulse} placement=${geo.placement}`,
+      'league-funnel:roster-nudge-floats',
+      still && marks.dot && !marks.pulse,
+      `summary open=${open.top}/${open.height} closed=${closed.top}/${closed.height} export dot=${marks.dot} pulse=${marks.pulse}`,
     ));
   } else {
-    checks.push(ok('league-funnel:roster-nudge-clear-of-rows', false, 'roster nudge never shown'));
+    checks.push(ok('league-funnel:roster-nudge-floats', false, 'roster nudge never shown'));
   }
 
   if (!(await seedLeagueHome(s, url, FULL_SEEN_V3_LEAGUE))) {

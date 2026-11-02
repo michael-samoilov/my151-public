@@ -116,7 +116,6 @@ test.describe('league funnel export nudges', () => {
     await expect(nudge).toBeVisible({ timeout: 5000 });
     await expect(nudge).toHaveAttribute('data-tip-card', 'league-gyms');
     const exportButton = page.locator('[data-league-export="league"]');
-    await expect(page.locator('[data-nudge-placement]')).toHaveAttribute('data-nudge-placement', 'below');
     await expect(exportButton.locator('[data-tip-dot]')).toBeVisible();
     await expect(exportButton).toHaveCSS('animation-name', 'none');
     const geo = await page.evaluate(() => {
@@ -125,16 +124,14 @@ test.describe('league funnel export nudges', () => {
       const rows = [...Array(14)].map((_, i) =>
         document.querySelector(`[data-testid="league-slot-${i}"]`)!.getBoundingClientRect());
       return {
-        gapBelowSummary: n.top - summary.bottom,
-        rowsUnderPopup: rows.filter((r) => r.bottom > n.top && r.top < n.bottom).length,
+        summaryTop: summary.top,
+        summaryHeight: summary.height,
         rowsOnScreen: rows.filter((r) => r.top >= 0 && r.bottom <= innerHeight).length,
         popupBottom: n.bottom,
         viewportHeight: innerHeight,
       };
     });
-    await testInfo.attach('roster-popup-below.json', { body: JSON.stringify(geo, null, 2), contentType: 'application/json' });
-    expect(geo.gapBelowSummary).toBeGreaterThanOrEqual(0);
-    expect(geo.rowsUnderPopup).toBe(0);
+    await testInfo.attach('roster-popup-floats.json', { body: JSON.stringify(geo, null, 2), contentType: 'application/json' });
     expect(geo.rowsOnScreen).toBe(14);
     expect(geo.popupBottom).toBeLessThanOrEqual(geo.viewportHeight);
     await expect(nudge).toContainText('Gym leaders complete');
@@ -145,6 +142,11 @@ test.describe('league funnel export nudges', () => {
     ]);
     await nudge.getByRole('button', { name: 'Dismiss' }).click();
     await expect(tip(page)).toHaveCount(0);
+    const closed = await page.evaluate(() => {
+      const summary = document.querySelector('[data-lg-league-root]')!.getBoundingClientRect();
+      return { summaryTop: summary.top, summaryHeight: summary.height };
+    });
+    expect(closed, 'the popup floats, so the roster does not move when it closes').toEqual({ summaryTop: geo.summaryTop, summaryHeight: geo.summaryHeight });
     await expect(exportButton.locator('[data-tip-dot]'), 'the dot stays after the tip closes').toBeVisible();
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',
@@ -220,13 +222,12 @@ async function unseenEightGymsLeague(page: Page) {
 test.describe('league funnel export nudges on a Retina desktop', () => {
   test.use({ viewport: { width: 1440, height: 790 }, deviceScaleFactor: 2 });
 
-  test('the gym-leaders popup sits beside the summary and leaves its zoom alone', async ({ page }, testInfo) => {
+  test('the gym-leaders popup floats under Export and leaves the summary alone', async ({ page }, testInfo) => {
     await collectEvents(page);
     await unseenEightGymsLeague(page);
     await page.goto('/custom-gym-leader');
     const nudge = tip(page);
     await expect(nudge).toHaveAttribute('data-tip-card', 'league-gyms', { timeout: 5000 });
-    await expect(page.locator('[data-nudge-placement]')).toHaveAttribute('data-nudge-placement', 'beside');
     await expect(page.locator('[data-league-export="league"] [data-tip-dot]')).toBeVisible();
     await page.waitForTimeout(500);
     const read = () => page.evaluate(() => {
@@ -249,9 +250,8 @@ test.describe('league funnel export nudges on a Retina desktop', () => {
     await page.waitForTimeout(500);
     const closed = await read();
     await testInfo.attach('roster-popup-beside.json', { body: JSON.stringify({ open, closed }, null, 2), contentType: 'application/json' });
-    expect(open.popup!.left).toBeGreaterThan(open.summary.right);
     expect(open.popup!.right).toBeLessThanOrEqual(open.viewportWidth);
-    expect(open.popup!.top).toBeCloseTo(open.summary.top, 0);
+    expect(open.summary, 'the summary does not move while the popup shows').toEqual(closed.summary);
     expect(open.arrowToExport).toBeLessThan(24);
     expect(open.zoom, 'the summary keeps its zoom while the popup shows').toBe(closed.zoom);
   });
