@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "eiscue",
+    "nationalDex": 875,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "eiscue",
+      "types": ["ice"],
+      "baseStats": { "hp": 75, "atk": 80, "def": 110, "spe": 50, "spa": 65, "spd": 90 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["water1", "ground"],
+      "debut": "sword-shield",
+      "sprite": "875",
+      "externalIds": { "pokeapiForm": "eiscue-ice" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "eiscue-noice",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["eiscue"]
+      },
+      "baseStats": { "hp": 75, "atk": 80, "def": 70, "spe": 130, "spa": 65, "spd": 50 },
+      "sprite": "10185",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

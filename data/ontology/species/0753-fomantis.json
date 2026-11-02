@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fomantis",
+    "nationalDex": 753,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fomantis",
+      "types": ["grass"],
+      "baseStats": { "hp": 40, "atk": 55, "def": 35, "spe": 35, "spa": 50, "spd": 35 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "753",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

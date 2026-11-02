@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "samurott",
+    "nationalDex": 503,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "samurott",
+      "types": ["water"],
+      "baseStats": { "hp": 95, "atk": 100, "def": 85, "spe": 70, "spa": 108, "spd": 70 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "503",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "samurott-hisui",
+      "region": "hisui",
+      "types": ["water", "dark"],
+      "baseStats": { "hp": 90, "atk": 108, "def": 80, "spe": 85, "spa": 100, "spd": 65 },
+      "debut": "legends-arceus",
+      "sprite": "10236",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dewott",
+      "to": "samurott",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "dewott",
+      "to": "samurott-hisui",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "alakazam",
+    "nationalDex": 65,
+    "captureRate": 50,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "alakazam",
+      "types": ["psychic"],
+      "baseStats": { "hp": 55, "atk": 50, "def": 45, "spe": 120, "spa": 135, "spd": 95 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "65",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "alakazam-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["alakazam"]
+      },
+      "baseStats": { "hp": 55, "atk": 50, "def": 65, "spe": 150, "spa": 175, "spd": 105 },
+      "debut": "x-y",
+      "sprite": "10037",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kadabra",
+      "to": "alakazam",
+      "methods": []
+    }
+  ]
+}

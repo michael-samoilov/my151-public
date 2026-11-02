@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "grumpig",
+    "nationalDex": 326,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "grumpig",
+      "types": ["psychic"],
+      "baseStats": { "hp": 80, "atk": 45, "def": 65, "spe": 80, "spa": 90, "spd": 110 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "326",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "spoink",
+      "to": "grumpig",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

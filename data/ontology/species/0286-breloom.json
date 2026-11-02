@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "breloom",
+    "nationalDex": 286,
+    "captureRate": 90,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "breloom",
+      "types": ["grass", "fighting"],
+      "baseStats": { "hp": 60, "atk": 130, "def": 80, "spe": 70, "spa": 60, "spd": 60 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["fairy", "plant"],
+      "debut": "ruby-sapphire",
+      "sprite": "286",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shroomish",
+      "to": "breloom",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 23 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "terrakion",
+    "nationalDex": 639,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "terrakion",
+      "types": ["rock", "fighting"],
+      "baseStats": { "hp": 91, "atk": 129, "def": 90, "spe": 108, "spa": 72, "spd": 90 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "639",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

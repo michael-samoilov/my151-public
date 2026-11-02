@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fuecoco",
+    "nationalDex": 909,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fuecoco",
+      "types": ["fire"],
+      "baseStats": { "hp": 67, "atk": 45, "def": 59, "spe": 36, "spa": 63, "spd": 40 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "909",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

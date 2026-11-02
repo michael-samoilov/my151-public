@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shellder",
+    "nationalDex": 90,
+    "captureRate": 190,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shellder",
+      "types": ["water"],
+      "baseStats": { "hp": 30, "atk": 65, "def": 100, "spe": 40, "spa": 45, "spd": 25 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["water3"],
+      "debut": "red-blue",
+      "sprite": "90",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

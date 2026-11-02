@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "blissey",
+    "nationalDex": 242,
+    "captureRate": 30,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "blissey",
+      "types": ["normal"],
+      "baseStats": { "hp": 255, "atk": 10, "def": 10, "spe": 55, "spa": 75, "spd": 135 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "gold-silver",
+      "sprite": "242",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "chansey",
+      "to": "blissey",
+      "methods": []
+    }
+  ]
+}

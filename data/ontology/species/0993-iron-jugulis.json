@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "iron-jugulis",
+    "nationalDex": 993,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "iron-jugulis",
+      "types": ["dark", "flying"],
+      "baseStats": { "hp": 94, "atk": 80, "def": 86, "spe": 108, "spa": 122, "spd": 80 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "993",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

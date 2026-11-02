@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dhelmise",
+    "nationalDex": 781,
+    "captureRate": 25,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dhelmise",
+      "types": ["ghost", "grass"],
+      "baseStats": { "hp": 70, "atk": 131, "def": 100, "spe": 40, "spa": 86, "spd": 90 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["mineral"],
+      "debut": "sun-moon",
+      "sprite": "781",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

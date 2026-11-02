@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tsareena",
+    "nationalDex": 763,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tsareena",
+      "types": ["grass"],
+      "baseStats": { "hp": 72, "atk": 120, "def": 98, "spe": 72, "spa": 50, "spd": 98 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "763",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "steenee",
+      "to": "tsareena",
+      "methods": []
+    }
+  ]
+}

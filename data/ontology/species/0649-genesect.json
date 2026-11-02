@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "genesect",
+    "nationalDex": 649,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "genesect",
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 71, "atk": 120, "def": 95, "spe": 99, "spa": 120, "spd": 95 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "649",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

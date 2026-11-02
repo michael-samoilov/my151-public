@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chien-pao",
+    "nationalDex": 1002,
+    "captureRate": 6,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chien-pao",
+      "types": ["dark", "ice"],
+      "baseStats": { "hp": 80, "atk": 120, "def": 80, "spe": 135, "spa": 90, "spd": 65 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1002",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "xatu",
+    "nationalDex": 178,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "xatu",
+      "types": ["psychic", "flying"],
+      "baseStats": { "hp": 65, "atk": 75, "def": 70, "spe": 95, "spa": 95, "spd": 70 },
+      "color": "green",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "gold-silver",
+      "sprite": "178",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "natu",
+      "to": "xatu",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

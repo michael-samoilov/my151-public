@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "oranguru",
+    "nationalDex": 765,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "oranguru",
+      "types": ["normal", "psychic"],
+      "baseStats": { "hp": 90, "atk": 60, "def": 80, "spe": 60, "spa": 90, "spd": 110 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "765",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

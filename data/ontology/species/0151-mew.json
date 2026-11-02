@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mew",
+    "nationalDex": 151,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mew",
+      "types": ["psychic"],
+      "baseStats": { "hp": 100, "atk": 100, "def": 100, "spe": 100, "spa": 100, "spd": 100 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "151",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

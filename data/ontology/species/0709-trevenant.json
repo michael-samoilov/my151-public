@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "trevenant",
+    "nationalDex": 709,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "trevenant",
+      "types": ["ghost", "grass"],
+      "baseStats": { "hp": 85, "atk": 110, "def": 76, "spe": 56, "spa": 65, "spd": 82 },
+      "color": "brown",
+      "shape": "tentacles",
+      "eggGroups": ["plant", "indeterminate"],
+      "debut": "x-y",
+      "sprite": "709",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "phantump",
+      "to": "trevenant",
+      "methods": []
+    }
+  ]
+}

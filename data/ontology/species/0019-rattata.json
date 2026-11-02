@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rattata",
+    "nationalDex": 19,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rattata",
+      "types": ["normal"],
+      "baseStats": { "hp": 30, "atk": 56, "def": 35, "spe": 72, "spa": 25, "spd": 35 },
+      "color": "purple",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "19",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "rattata-alola",
+      "region": "alola",
+      "types": ["dark", "normal"],
+      "color": "black",
+      "debut": "sun-moon",
+      "sprite": "10091",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

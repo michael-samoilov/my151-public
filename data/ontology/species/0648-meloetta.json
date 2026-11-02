@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "meloetta",
+    "nationalDex": 648,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "meloetta",
+      "types": ["normal", "psychic"],
+      "baseStats": { "hp": 100, "atk": 77, "def": 77, "spe": 90, "spa": 128, "spd": 128 },
+      "color": "white",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "648",
+      "externalIds": { "pokeapiForm": "meloetta-aria" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meloetta-pirouette",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["meloetta"]
+      },
+      "types": ["normal", "fighting"],
+      "baseStats": { "hp": 100, "atk": 128, "def": 90, "spe": 128, "spa": 77, "spd": 77 },
+      "sprite": "10018",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -42,6 +42,7 @@ async function main() {
             await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
           }
           await journal.stage('sprite-credits', 'npm', ['run', 'credits:check-sprites']);
+          await journal.stage('ontology-check', 'npm', ['run', 'ontology:check']);
           await journal.stage('sprite-ink', process.execPath, ['scripts/build-favorite-sprite-ink.mjs', '--check']);
           await journal.stage('verify-harness-types', process.execPath, ['node_modules/typescript/bin/tsc', '-p', '.claude/skills/verify-my151/harness']);
           await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);

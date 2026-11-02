@@ -1,0 +1,82 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "magearna",
+    "nationalDex": 801,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "paint",
+        "values": ["original"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "magearna",
+      "types": ["steel", "fairy"],
+      "baseStats": { "hp": 80, "atk": 95, "def": 115, "spe": 65, "spa": 130, "spd": 115 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "801",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "magearna-original",
+      "variety": { "paint": "original" },
+      "color": "red",
+      "debut": "home",
+      "obtain": "event-only",
+      "sprite": "10147",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "magearna-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["magearna"]
+      },
+      "baseStats": { "hp": 80, "atk": 125, "def": 115, "spe": 95, "spa": 170, "spd": 115 },
+      "debut": "legends-za",
+      "sprite": "10317",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "magearna-original-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["magearna-original"]
+      },
+      "baseStats": { "hp": 80, "atk": 125, "def": 115, "spe": 95, "spa": 170, "spd": 115 },
+      "debut": "legends-za",
+      "obtain": "standard",
+      "sprite": "10318",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,74 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "slowbro",
+    "nationalDex": 80,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "slowbro",
+      "types": ["water", "psychic"],
+      "baseStats": { "hp": 95, "atk": 75, "def": 110, "spe": 30, "spa": 100, "spd": 80 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "red-blue",
+      "sprite": "80",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "slowbro-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["slowbro"]
+      },
+      "baseStats": { "hp": 95, "atk": 75, "def": 180, "spe": 30, "spa": 130, "spd": 80 },
+      "shape": "arms",
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10071",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "slowbro-galar",
+      "region": "galar",
+      "types": ["poison", "psychic"],
+      "baseStats": { "hp": 95, "atk": 100, "def": 95, "spe": 30, "spa": 100, "spd": 70 },
+      "debut": "sword-shield",
+      "sprite": "10165",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "slowpoke",
+      "to": "slowbro",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 37 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "slowpoke-galar",
+      "to": "slowbro-galar",
+      "methods": []
+    }
+  ]
+}

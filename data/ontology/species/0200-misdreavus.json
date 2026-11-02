@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "misdreavus",
+    "nationalDex": 200,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "misdreavus",
+      "types": ["ghost"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 60, "spe": 85, "spa": 85, "spd": 85 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["indeterminate"],
+      "debut": "gold-silver",
+      "sprite": "200",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "poipole",
+    "nationalDex": 803,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "poipole",
+      "types": ["poison"],
+      "baseStats": { "hp": 67, "atk": 73, "def": 67, "spe": 73, "spa": 73, "spd": 67 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "ultra-sun-ultra-moon",
+      "sprite": "803",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

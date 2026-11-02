@@ -1,0 +1,28 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scatterbug",
+    "nationalDex": 664,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scatterbug",
+      "types": ["bug"],
+      "baseStats": { "hp": 38, "atk": 35, "def": 40, "spe": 35, "spa": 27, "spd": 25 },
+      "color": "black",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "x-y",
+      "sprite": "664",
+      "externalIds": { "pokeapiForm": "scatterbug-icy-snow" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

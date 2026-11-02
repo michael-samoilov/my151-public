@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "whiscash",
+    "nationalDex": 340,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "whiscash",
+      "types": ["water", "ground"],
+      "baseStats": { "hp": 110, "atk": 78, "def": 73, "spe": 60, "spa": 76, "spd": 71 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "340",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "barboach",
+      "to": "whiscash",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

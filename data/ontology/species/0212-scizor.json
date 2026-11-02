@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scizor",
+    "nationalDex": 212,
+    "captureRate": 25,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scizor",
+      "types": ["bug", "steel"],
+      "baseStats": { "hp": 70, "atk": 130, "def": 100, "spe": 65, "spa": 55, "spd": 80 },
+      "color": "red",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "212",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "scizor-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["scizor"]
+      },
+      "baseStats": { "hp": 70, "atk": 150, "def": 140, "spe": 75, "spa": 65, "spd": 100 },
+      "debut": "x-y",
+      "sprite": "10046",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "scyther",
+      "to": "scizor",
+      "methods": []
+    }
+  ]
+}

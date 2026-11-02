@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rellor",
+    "nationalDex": 953,
+    "captureRate": 190,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rellor",
+      "types": ["bug"],
+      "baseStats": { "hp": 41, "atk": 50, "def": 60, "spe": 30, "spa": 31, "spd": 58 },
+      "color": "brown",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "scarlet-violet",
+      "sprite": "953",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

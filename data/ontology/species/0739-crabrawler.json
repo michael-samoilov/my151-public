@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crabrawler",
+    "nationalDex": 739,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crabrawler",
+      "types": ["fighting"],
+      "baseStats": { "hp": 47, "atk": 82, "def": 57, "spe": 63, "spa": 42, "spd": 47 },
+      "color": "purple",
+      "shape": "armor",
+      "eggGroups": ["water3"],
+      "debut": "sun-moon",
+      "sprite": "739",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

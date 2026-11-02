@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zebstrika",
+    "nationalDex": 523,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zebstrika",
+      "types": ["electric"],
+      "baseStats": { "hp": 75, "atk": 100, "def": 63, "spe": 116, "spa": 80, "spd": 63 },
+      "color": "black",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "523",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "blitzle",
+      "to": "zebstrika",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 27 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bisharp",
+    "nationalDex": 625,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bisharp",
+      "types": ["dark", "steel"],
+      "baseStats": { "hp": 65, "atk": 125, "def": 100, "spe": 70, "spa": 60, "spd": 70 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "625",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "pawniard",
+      "to": "bisharp",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 52 }
+          ]
+        }
+      ]
+    }
+  ]
+}

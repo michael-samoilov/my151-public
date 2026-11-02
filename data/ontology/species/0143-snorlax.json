@@ -1,0 +1,68 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "snorlax",
+    "nationalDex": 143,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["mosslax"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "snorlax",
+      "types": ["normal"],
+      "baseStats": { "hp": 160, "atk": 110, "def": 65, "spe": 30, "spa": 65, "spd": 110 },
+      "color": "black",
+      "shape": "humanoid",
+      "eggGroups": ["monster"],
+      "debut": "red-blue",
+      "sprite": "143",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "snorlax-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["snorlax"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10206",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "snorlax-mosslax",
+      "variety": { "look": "mosslax" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11120",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "munchlax",
+      "to": "snorlax",
+      "methods": []
+    }
+  ]
+}

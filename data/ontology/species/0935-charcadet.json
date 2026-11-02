@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "charcadet",
+    "nationalDex": 935,
+    "captureRate": 90,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "charcadet",
+      "types": ["fire"],
+      "baseStats": { "hp": 40, "atk": 50, "def": 40, "spe": 35, "spa": 50, "spd": 40 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "scarlet-violet",
+      "sprite": "935",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

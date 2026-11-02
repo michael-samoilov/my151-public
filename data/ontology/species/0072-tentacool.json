@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tentacool",
+    "nationalDex": 72,
+    "captureRate": 190,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tentacool",
+      "types": ["water", "poison"],
+      "baseStats": { "hp": 40, "atk": 40, "def": 35, "spe": 70, "spa": 50, "spd": 100 },
+      "color": "blue",
+      "shape": "tentacles",
+      "eggGroups": ["water3"],
+      "debut": "red-blue",
+      "sprite": "72",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

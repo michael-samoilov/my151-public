@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sunflora",
+    "nationalDex": 192,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sunflora",
+      "types": ["grass"],
+      "baseStats": { "hp": 75, "atk": 75, "def": 55, "spe": 30, "spa": 105, "spd": 85 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "gold-silver",
+      "sprite": "192",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sunkern",
+      "to": "sunflora",
+      "methods": []
+    }
+  ]
+}

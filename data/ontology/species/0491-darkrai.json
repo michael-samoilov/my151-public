@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "darkrai",
+    "nationalDex": 491,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "darkrai",
+      "types": ["dark"],
+      "baseStats": { "hp": 70, "atk": 90, "def": 90, "spe": 125, "spa": 135, "spd": 90 },
+      "color": "black",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "491",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "darkrai-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["darkrai"]
+      },
+      "baseStats": { "hp": 70, "atk": 120, "def": 130, "spe": 85, "spa": 165, "spd": 130 },
+      "shape": "arms",
+      "debut": "legends-za",
+      "sprite": "10312",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

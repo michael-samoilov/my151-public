@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "entei",
+    "nationalDex": 244,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "entei",
+      "types": ["fire"],
+      "baseStats": { "hp": 115, "atk": 115, "def": 85, "spe": 100, "spa": 90, "spd": 75 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "244",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

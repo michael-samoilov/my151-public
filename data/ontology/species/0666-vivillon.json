@@ -1,0 +1,562 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vivillon",
+    "nationalDex": 666,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "pattern",
+        "values": ["meadow", "archipelago", "continental", "elegant", "fancy", "garden", "high-plains", "icy-snow", "jungle", "marine", "modern", "monsoon", "ocean", "pokeball", "polar", "river", "sandstorm", "savanna", "sun", "tundra"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vivillon",
+      "variety": { "pattern": "meadow" },
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 80, "atk": 52, "def": 50, "spe": 89, "spa": 90, "spd": 50 },
+      "color": "pink",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "x-y",
+      "sprite": "666",
+      "externalIds": { "pokeapiForm": "vivillon-meadow" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "vivillon-archipelago",
+      "variety": { "pattern": "archipelago" },
+      "color": "brown",
+      "sprite": "11018",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-continental",
+      "variety": { "pattern": "continental" },
+      "color": "yellow",
+      "sprite": "11019",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-elegant",
+      "variety": { "pattern": "elegant" },
+      "color": "purple",
+      "sprite": "11020",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-fancy",
+      "variety": { "pattern": "fancy" },
+      "obtain": "event-only",
+      "sprite": "11021",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-garden",
+      "variety": { "pattern": "garden" },
+      "color": "green",
+      "sprite": "11022",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-high-plains",
+      "variety": { "pattern": "high-plains" },
+      "color": "brown",
+      "sprite": "11023",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-icy-snow",
+      "variety": { "pattern": "icy-snow" },
+      "color": "white",
+      "sprite": "11024",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-jungle",
+      "variety": { "pattern": "jungle" },
+      "color": "green",
+      "sprite": "11025",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-marine",
+      "variety": { "pattern": "marine" },
+      "color": "blue",
+      "sprite": "11026",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-modern",
+      "variety": { "pattern": "modern" },
+      "color": "red",
+      "sprite": "11027",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-monsoon",
+      "variety": { "pattern": "monsoon" },
+      "color": "gray",
+      "sprite": "11028",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-ocean",
+      "variety": { "pattern": "ocean" },
+      "color": "red",
+      "sprite": "11029",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-pokeball",
+      "variety": { "pattern": "pokeball" },
+      "color": "red",
+      "obtain": "event-only",
+      "sprite": "11030",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-polar",
+      "variety": { "pattern": "polar" },
+      "color": "blue",
+      "sprite": "11031",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-river",
+      "variety": { "pattern": "river" },
+      "color": "brown",
+      "sprite": "11032",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-sandstorm",
+      "variety": { "pattern": "sandstorm" },
+      "color": "brown",
+      "sprite": "11033",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-savanna",
+      "variety": { "pattern": "savanna" },
+      "color": "green",
+      "sprite": "11034",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-sun",
+      "variety": { "pattern": "sun" },
+      "color": "red",
+      "sprite": "11035",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "vivillon-tundra",
+      "variety": { "pattern": "tundra" },
+      "color": "blue",
+      "sprite": "11036",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "spewpa",
+      "to": "vivillon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-archipelago",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-continental",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-elegant",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-fancy",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-garden",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-high-plains",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-icy-snow",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-jungle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-marine",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-modern",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-monsoon",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-ocean",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-pokeball",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-polar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-river",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-sandstorm",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-savanna",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-sun",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "spewpa",
+      "to": "vivillon-tundra",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 12 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

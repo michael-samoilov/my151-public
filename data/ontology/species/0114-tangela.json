@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tangela",
+    "nationalDex": 114,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tangela",
+      "types": ["grass"],
+      "baseStats": { "hp": 65, "atk": 55, "def": 115, "spe": 60, "spa": 100, "spd": 40 },
+      "color": "blue",
+      "shape": "legs",
+      "eggGroups": ["plant"],
+      "debut": "red-blue",
+      "sprite": "114",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

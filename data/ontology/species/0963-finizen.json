@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "finizen",
+    "nationalDex": 963,
+    "captureRate": 200,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "finizen",
+      "types": ["water"],
+      "baseStats": { "hp": 70, "atk": 45, "def": 40, "spe": 75, "spa": 45, "spd": 40 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["ground", "water2"],
+      "debut": "scarlet-violet",
+      "sprite": "963",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

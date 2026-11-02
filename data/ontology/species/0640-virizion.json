@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "virizion",
+    "nationalDex": 640,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "virizion",
+      "types": ["grass", "fighting"],
+      "baseStats": { "hp": 91, "atk": 90, "def": 72, "spe": 108, "spa": 90, "spd": 129 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "640",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

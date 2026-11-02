@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gouging-fire",
+    "nationalDex": 1020,
+    "captureRate": 10,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gouging-fire",
+      "types": ["fire", "dragon"],
+      "baseStats": { "hp": 105, "atk": 115, "def": 121, "spe": 91, "spa": 65, "spd": 93 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1020",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

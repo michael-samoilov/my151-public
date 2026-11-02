@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "morelull",
+    "nationalDex": 755,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "morelull",
+      "types": ["grass", "fairy"],
+      "baseStats": { "hp": 40, "atk": 35, "def": 55, "spe": 15, "spa": 65, "spd": 75 },
+      "color": "purple",
+      "shape": "blob",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "755",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

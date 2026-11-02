@@ -1,0 +1,57 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cramorant",
+    "nationalDex": 845,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cramorant",
+      "types": ["flying", "water"],
+      "baseStats": { "hp": 70, "atk": 85, "def": 55, "spe": 85, "spa": 85, "spd": 95 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "sword-shield",
+      "sprite": "845",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "cramorant-gulping",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["cramorant"]
+      },
+      "sprite": "10182",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "cramorant-gorging",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["cramorant"]
+      },
+      "sprite": "10183",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

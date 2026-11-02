@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kilowattrel",
+    "nationalDex": 941,
+    "captureRate": 90,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kilowattrel",
+      "types": ["electric", "flying"],
+      "baseStats": { "hp": 70, "atk": 70, "def": 60, "spe": 125, "spa": 105, "spd": 60 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "scarlet-violet",
+      "sprite": "941",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wattrel",
+      "to": "kilowattrel",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

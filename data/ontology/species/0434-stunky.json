@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "stunky",
+    "nationalDex": 434,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "stunky",
+      "types": ["poison", "dark"],
+      "baseStats": { "hp": 63, "atk": 63, "def": 47, "spe": 74, "spa": 41, "spd": 41 },
+      "color": "purple",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "434",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

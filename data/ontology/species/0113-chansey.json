@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chansey",
+    "nationalDex": 113,
+    "captureRate": 30,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chansey",
+      "types": ["normal"],
+      "baseStats": { "hp": 250, "atk": 5, "def": 5, "spe": 50, "spa": 35, "spd": 105 },
+      "color": "pink",
+      "shape": "upright",
+      "eggGroups": ["fairy"],
+      "debut": "red-blue",
+      "sprite": "113",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "happiny",
+      "to": "chansey",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cherrim",
+    "nationalDex": 421,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cherrim",
+      "types": ["grass"],
+      "baseStats": { "hp": 70, "atk": 60, "def": 70, "spe": 85, "spa": 87, "spd": 78 },
+      "color": "purple",
+      "shape": "legs",
+      "eggGroups": ["fairy", "plant"],
+      "debut": "diamond-pearl",
+      "sprite": "421",
+      "externalIds": { "pokeapiForm": "cherrim-overcast" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "cherrim-sunshine",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["cherrim"]
+      },
+      "sprite": "11128",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cherubi",
+      "to": "cherrim",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

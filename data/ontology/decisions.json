@@ -1,0 +1,4 @@
+[
+  { "id": "spec-v2-keeps-todays-verdicts", "by": "Michael", "date": "2026-11-02", "quote": "Version 2 keeps today’s verdicts until Michael decides otherwise.", "where": "docs/data-model/pokemon-ontology.md, \"Open questions\", item 2" },
+  { "id": "league-spinoff-forms-2026-10-20", "by": "Michael", "date": "2026-10-20", "quote": "for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder.", "where": "src/league/data/formPolicy.ts, PICKER_ONLY_FORM_IDS" }
+]

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "carbink",
+    "nationalDex": 703,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "carbink",
+      "types": ["rock", "fairy"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 150, "spe": 50, "spa": 50, "spd": 150 },
+      "color": "gray",
+      "shape": "ball",
+      "eggGroups": ["fairy", "mineral"],
+      "debut": "x-y",
+      "sprite": "703",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

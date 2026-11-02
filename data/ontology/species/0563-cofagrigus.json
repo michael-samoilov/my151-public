@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cofagrigus",
+    "nationalDex": 563,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cofagrigus",
+      "types": ["ghost"],
+      "baseStats": { "hp": 58, "atk": 50, "def": 145, "spe": 30, "spa": 95, "spd": 105 },
+      "color": "yellow",
+      "shape": "blob",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "black-white",
+      "sprite": "563",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "yamask",
+      "to": "cofagrigus",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    }
+  ]
+}

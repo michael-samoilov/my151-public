@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "taillow",
+    "nationalDex": 276,
+    "captureRate": 200,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "taillow",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 40, "atk": 55, "def": 30, "spe": 85, "spa": 30, "spd": 30 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "ruby-sapphire",
+      "sprite": "276",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

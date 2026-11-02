@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dodrio",
+    "nationalDex": 85,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dodrio",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 60, "atk": 110, "def": 70, "spe": 110, "spa": 60, "spd": 60 },
+      "color": "brown",
+      "shape": "legs",
+      "eggGroups": ["flying"],
+      "debut": "red-blue",
+      "sprite": "85",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "doduo",
+      "to": "dodrio",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 31 }
+          ]
+        }
+      ]
+    }
+  ]
+}

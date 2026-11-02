@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "magby",
+    "nationalDex": 240,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "magby",
+      "types": ["fire"],
+      "baseStats": { "hp": 45, "atk": 75, "def": 37, "spe": 83, "spa": 70, "spd": 55 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "240",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

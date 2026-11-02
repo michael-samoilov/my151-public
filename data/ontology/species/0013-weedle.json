@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "weedle",
+    "nationalDex": 13,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "weedle",
+      "types": ["bug", "poison"],
+      "baseStats": { "hp": 40, "atk": 35, "def": 30, "spe": 50, "spa": 20, "spd": 20 },
+      "color": "brown",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "red-blue",
+      "sprite": "13",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

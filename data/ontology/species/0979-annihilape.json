@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "annihilape",
+    "nationalDex": 979,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "annihilape",
+      "types": ["fighting", "ghost"],
+      "baseStats": { "hp": 110, "atk": 115, "def": 80, "spe": 90, "spa": 50, "spd": 90 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "979",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "primeape",
+      "to": "annihilape",
+      "methods": []
+    }
+  ]
+}

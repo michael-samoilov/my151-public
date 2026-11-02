@@ -1,0 +1,147 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "minior",
+    "nationalDex": 774,
+    "captureRate": 30,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "minior",
+      "types": ["rock", "flying"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 100, "spe": 60, "spa": 60, "spd": 100 },
+      "color": "brown",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "sun-moon",
+      "sprite": "774",
+      "externalIds": { "pokeapiForm": "minior-red-meteor" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "minior-red",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "red",
+      "sprite": "10136",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-orange",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "red",
+      "sprite": "10137",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-yellow",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "yellow",
+      "sprite": "10138",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-green",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "green",
+      "sprite": "10139",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-blue",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "blue",
+      "sprite": "10140",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-indigo",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "blue",
+      "sprite": "10141",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "minior-violet",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["minior"]
+      },
+      "baseStats": { "hp": 60, "atk": 100, "def": 60, "spe": 120, "spa": 100, "spd": 60 },
+      "color": "purple",
+      "sprite": "10142",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

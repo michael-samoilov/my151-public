@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "noctowl",
+    "nationalDex": 164,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "noctowl",
+      "types": ["normal", "flying"],
+      "baseStats": { "hp": 100, "atk": 50, "def": 50, "spe": 70, "spa": 86, "spd": 96 },
+      "color": "brown",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "gold-silver",
+      "sprite": "164",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "hoothoot",
+      "to": "noctowl",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ferrothorn",
+    "nationalDex": 598,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ferrothorn",
+      "types": ["grass", "steel"],
+      "baseStats": { "hp": 74, "atk": 94, "def": 131, "spe": 20, "spa": 54, "spd": 116 },
+      "color": "gray",
+      "shape": "tentacles",
+      "eggGroups": ["plant", "mineral"],
+      "debut": "black-white",
+      "sprite": "598",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ferroseed",
+      "to": "ferrothorn",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

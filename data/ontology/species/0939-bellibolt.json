@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bellibolt",
+    "nationalDex": 939,
+    "captureRate": 50,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bellibolt",
+      "types": ["electric"],
+      "baseStats": { "hp": 109, "atk": 64, "def": 91, "spe": 45, "spa": 103, "spd": 83 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["water1"],
+      "debut": "scarlet-violet",
+      "sprite": "939",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tadbulb",
+      "to": "bellibolt",
+      "methods": []
+    }
+  ]
+}

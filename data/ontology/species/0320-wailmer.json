@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wailmer",
+    "nationalDex": 320,
+    "captureRate": 125,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wailmer",
+      "types": ["water"],
+      "baseStats": { "hp": 130, "atk": 70, "def": 35, "spe": 60, "spa": 70, "spd": 35 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["ground", "water2"],
+      "debut": "ruby-sapphire",
+      "sprite": "320",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

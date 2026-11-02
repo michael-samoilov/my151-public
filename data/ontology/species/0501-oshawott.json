@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "oshawott",
+    "nationalDex": 501,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "oshawott",
+      "types": ["water"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 45, "spe": 45, "spa": 63, "spd": 45 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "501",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

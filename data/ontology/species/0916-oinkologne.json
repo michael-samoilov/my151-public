@@ -1,0 +1,73 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "oinkologne",
+    "nationalDex": 916,
+    "captureRate": 100,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "oinkologne",
+      "sex": "male",
+      "types": ["normal"],
+      "baseStats": { "hp": 110, "atk": 100, "def": 75, "spe": 65, "spa": 59, "spd": 80 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "916",
+      "externalIds": { "pokeapiForm": "oinkologne-male" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "oinkologne-female",
+      "sex": "female",
+      "baseStats": { "hp": 115, "atk": 90, "def": 70, "spe": 65, "spa": 59, "spd": 90 },
+      "color": "brown",
+      "sprite": "11002",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "lechonk",
+      "to": "oinkologne",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "lechonk",
+      "to": "oinkologne-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

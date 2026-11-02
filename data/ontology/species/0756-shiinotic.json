@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shiinotic",
+    "nationalDex": 756,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shiinotic",
+      "types": ["grass", "fairy"],
+      "baseStats": { "hp": 60, "atk": 45, "def": 80, "spe": 30, "spa": 90, "spd": 100 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "sun-moon",
+      "sprite": "756",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "morelull",
+      "to": "shiinotic",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

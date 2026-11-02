@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "regieleki",
+    "nationalDex": 894,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "regieleki",
+      "types": ["electric"],
+      "baseStats": { "hp": 80, "atk": 100, "def": 50, "spe": 200, "spa": 100, "spd": 50 },
+      "color": "yellow",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "894",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

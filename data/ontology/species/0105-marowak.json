@@ -1,0 +1,64 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "marowak",
+    "nationalDex": 105,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "marowak",
+      "types": ["ground"],
+      "baseStats": { "hp": 60, "atk": 80, "def": 110, "spe": 45, "spa": 50, "spd": 80 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "red-blue",
+      "sprite": "105",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "marowak-alola",
+      "region": "alola",
+      "types": ["fire", "ghost"],
+      "color": "purple",
+      "debut": "sun-moon",
+      "sprite": "10115",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cubone",
+      "to": "marowak",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "cubone",
+      "to": "marowak-alola",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    }
+  ]
+}

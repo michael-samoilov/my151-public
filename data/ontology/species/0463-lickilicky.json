@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lickilicky",
+    "nationalDex": 463,
+    "captureRate": 30,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lickilicky",
+      "types": ["normal"],
+      "baseStats": { "hp": 110, "atk": 85, "def": 95, "spe": 50, "spa": 80, "spd": 95 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["monster"],
+      "debut": "diamond-pearl",
+      "sprite": "463",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "lickitung",
+      "to": "lickilicky",
+      "methods": []
+    }
+  ]
+}

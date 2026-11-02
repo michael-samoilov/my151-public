@@ -1,0 +1,48 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "golem",
+    "nationalDex": 76,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "golem",
+      "types": ["rock", "ground"],
+      "baseStats": { "hp": 80, "atk": 120, "def": 130, "spe": 45, "spa": 55, "spd": 65 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["mineral"],
+      "debut": "red-blue",
+      "sprite": "76",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "golem-alola",
+      "region": "alola",
+      "types": ["rock", "electric"],
+      "color": "gray",
+      "debut": "sun-moon",
+      "sprite": "10111",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "graveler",
+      "to": "golem",
+      "methods": []
+    },
+    {
+      "from": "graveler-alola",
+      "to": "golem-alola",
+      "methods": []
+    }
+  ]
+}

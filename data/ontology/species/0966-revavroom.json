@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "revavroom",
+    "nationalDex": 966,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "revavroom",
+      "types": ["steel", "poison"],
+      "baseStats": { "hp": 80, "atk": 119, "def": 90, "spe": 90, "spa": 54, "spd": 67 },
+      "color": "gray",
+      "shape": "legs",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "966",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "varoom",
+      "to": "revavroom",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

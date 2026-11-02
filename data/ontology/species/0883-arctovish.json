@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arctovish",
+    "nationalDex": 883,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arctovish",
+      "types": ["water", "ice"],
+      "baseStats": { "hp": 90, "atk": 90, "def": 100, "spe": 55, "spa": 80, "spd": 90 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "883",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zarude",
+    "nationalDex": 893,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["dada"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zarude",
+      "types": ["dark", "grass"],
+      "baseStats": { "hp": 105, "atk": 120, "def": 105, "spe": 105, "spa": 70, "spd": 95 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "893",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zarude-dada",
+      "variety": { "forme": "dada" },
+      "obtain": "event-only",
+      "sprite": "10192",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

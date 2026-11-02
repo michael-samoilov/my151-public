@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "minun",
+    "nationalDex": 312,
+    "captureRate": 200,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "minun",
+      "types": ["electric"],
+      "baseStats": { "hp": 60, "atk": 40, "def": 50, "spe": 95, "spa": 75, "spd": 85 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["fairy"],
+      "debut": "ruby-sapphire",
+      "sprite": "312",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

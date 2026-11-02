@@ -1,0 +1,51 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lopunny",
+    "nationalDex": 428,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lopunny",
+      "types": ["normal"],
+      "baseStats": { "hp": 65, "atk": 76, "def": 84, "spe": 105, "spa": 54, "spd": 96 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "428",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "lopunny-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["lopunny"]
+      },
+      "types": ["normal", "fighting"],
+      "baseStats": { "hp": 65, "atk": 136, "def": 94, "spe": 135, "spa": 54, "spd": 96 },
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10088",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "buneary",
+      "to": "lopunny",
+      "methods": []
+    }
+  ]
+}

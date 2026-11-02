@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hakamo-o",
+    "nationalDex": 783,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hakamo-o",
+      "types": ["dragon", "fighting"],
+      "baseStats": { "hp": 55, "atk": 75, "def": 90, "spe": 65, "spa": 65, "spd": 70 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["dragon"],
+      "debut": "sun-moon",
+      "sprite": "783",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "jangmo-o",
+      "to": "hakamo-o",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

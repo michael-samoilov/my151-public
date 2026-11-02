@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nidoqueen",
+    "nationalDex": 31,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nidoqueen",
+      "types": ["poison", "ground"],
+      "baseStats": { "hp": 90, "atk": 92, "def": 87, "spe": 76, "spa": 75, "spd": 85 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "31",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nidorina",
+      "to": "nidoqueen",
+      "methods": []
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scovillain",
+    "nationalDex": 952,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scovillain",
+      "types": ["grass", "fire"],
+      "baseStats": { "hp": 65, "atk": 108, "def": 65, "spe": 75, "spa": 108, "spd": 65 },
+      "color": "green",
+      "shape": "upright",
+      "eggGroups": ["plant"],
+      "debut": "scarlet-violet",
+      "sprite": "952",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "scovillain-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["scovillain"]
+      },
+      "baseStats": { "hp": 65, "atk": 138, "def": 85, "spe": 75, "spa": 138, "spd": 85 },
+      "debut": "legends-za",
+      "sprite": "10320",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "capsakid",
+      "to": "scovillain",
+      "methods": []
+    }
+  ]
+}

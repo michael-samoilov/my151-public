@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "seaking",
+    "nationalDex": 119,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "seaking",
+      "types": ["water"],
+      "baseStats": { "hp": 80, "atk": 92, "def": 65, "spe": 68, "spa": 65, "spd": 80 },
+      "color": "red",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "red-blue",
+      "sprite": "119",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "goldeen",
+      "to": "seaking",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 33 }
+          ]
+        }
+      ]
+    }
+  ]
+}

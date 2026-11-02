@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "latios",
+    "nationalDex": 381,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "latios",
+      "types": ["dragon", "psychic"],
+      "baseStats": { "hp": 80, "atk": 90, "def": 80, "spe": 110, "spa": 130, "spd": 110 },
+      "color": "blue",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "ruby-sapphire",
+      "sprite": "381",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "latios-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["latios"]
+      },
+      "baseStats": { "hp": 80, "atk": 130, "def": 100, "spe": 110, "spa": 160, "spd": 120 },
+      "color": "purple",
+      "debut": "omega-ruby-alpha-sapphire",
+      "sprite": "10063",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

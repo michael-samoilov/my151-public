@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "paras",
+    "nationalDex": 46,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "paras",
+      "types": ["bug", "grass"],
+      "baseStats": { "hp": 35, "atk": 70, "def": 55, "spe": 25, "spa": 45, "spd": 55 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["bug", "plant"],
+      "debut": "red-blue",
+      "sprite": "46",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

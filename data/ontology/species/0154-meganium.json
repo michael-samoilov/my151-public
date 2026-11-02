@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "meganium",
+    "nationalDex": 154,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "meganium",
+      "types": ["grass"],
+      "baseStats": { "hp": 80, "atk": 82, "def": 100, "spe": 80, "spa": 83, "spd": 100 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "plant"],
+      "debut": "gold-silver",
+      "sprite": "154",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "meganium-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["meganium"]
+      },
+      "types": ["grass", "fairy"],
+      "baseStats": { "hp": 80, "atk": 92, "def": 115, "spe": 80, "spa": 143, "spd": 115 },
+      "debut": "legends-za",
+      "sprite": "10282",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bayleef",
+      "to": "meganium",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 32 }
+          ]
+        }
+      ]
+    }
+  ]
+}

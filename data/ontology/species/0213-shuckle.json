@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shuckle",
+    "nationalDex": 213,
+    "captureRate": 190,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shuckle",
+      "types": ["bug", "rock"],
+      "baseStats": { "hp": 20, "atk": 10, "def": 230, "spe": 5, "spa": 10, "spd": 230 },
+      "color": "yellow",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "gold-silver",
+      "sprite": "213",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

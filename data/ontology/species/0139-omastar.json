@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "omastar",
+    "nationalDex": 139,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "omastar",
+      "types": ["rock", "water"],
+      "baseStats": { "hp": 70, "atk": 60, "def": 125, "spe": 55, "spa": 115, "spd": 70 },
+      "color": "blue",
+      "shape": "tentacles",
+      "eggGroups": ["water1", "water3"],
+      "debut": "red-blue",
+      "sprite": "139",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "omanyte",
+      "to": "omastar",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "orthworm",
+    "nationalDex": 968,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "orthworm",
+      "types": ["steel"],
+      "baseStats": { "hp": 70, "atk": 85, "def": 145, "spe": 65, "spa": 60, "spd": 55 },
+      "color": "pink",
+      "shape": "squiggle",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "968",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

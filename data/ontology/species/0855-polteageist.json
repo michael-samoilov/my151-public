@@ -1,0 +1,34 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "polteageist",
+    "nationalDex": 855,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "polteageist",
+      "types": ["ghost"],
+      "baseStats": { "hp": 60, "atk": 65, "def": 65, "spe": 70, "spa": 134, "spd": 114 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["mineral", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "855",
+      "externalIds": { "pokeapiForm": "polteageist-phony" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sinistea",
+      "to": "polteageist",
+      "methods": []
+    }
+  ]
+}

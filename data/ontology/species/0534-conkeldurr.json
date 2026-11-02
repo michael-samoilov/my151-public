@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "conkeldurr",
+    "nationalDex": 534,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "conkeldurr",
+      "types": ["fighting"],
+      "baseStats": { "hp": 105, "atk": 140, "def": 95, "spe": 45, "spa": 55, "spd": 65 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "534",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "gurdurr",
+      "to": "conkeldurr",
+      "methods": []
+    }
+  ]
+}

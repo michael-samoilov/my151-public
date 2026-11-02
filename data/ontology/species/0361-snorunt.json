@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "snorunt",
+    "nationalDex": 361,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "snorunt",
+      "types": ["ice"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 50, "spe": 50, "spa": 50, "spd": 50 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["fairy", "mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "361",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

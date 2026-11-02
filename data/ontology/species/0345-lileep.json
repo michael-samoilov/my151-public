@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lileep",
+    "nationalDex": 345,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lileep",
+      "types": ["rock", "grass"],
+      "baseStats": { "hp": 66, "atk": 41, "def": 77, "spe": 23, "spa": 61, "spd": 87 },
+      "color": "purple",
+      "shape": "blob",
+      "eggGroups": ["water3"],
+      "debut": "ruby-sapphire",
+      "sprite": "345",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

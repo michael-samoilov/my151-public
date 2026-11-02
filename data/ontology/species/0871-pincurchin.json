@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "pincurchin",
+    "nationalDex": 871,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "pincurchin",
+      "types": ["electric"],
+      "baseStats": { "hp": 48, "atk": 101, "def": 95, "spe": 15, "spa": 91, "spd": 85 },
+      "color": "purple",
+      "shape": "tentacles",
+      "eggGroups": ["water1", "indeterminate"],
+      "debut": "sword-shield",
+      "sprite": "871",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

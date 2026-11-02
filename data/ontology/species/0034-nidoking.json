@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nidoking",
+    "nationalDex": 34,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nidoking",
+      "types": ["poison", "ground"],
+      "baseStats": { "hp": 81, "atk": 102, "def": 77, "spe": 85, "spa": 85, "spd": 75 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "red-blue",
+      "sprite": "34",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nidorino",
+      "to": "nidoking",
+      "methods": []
+    }
+  ]
+}

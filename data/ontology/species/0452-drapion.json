@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "drapion",
+    "nationalDex": 452,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "drapion",
+      "types": ["poison", "dark"],
+      "baseStats": { "hp": 70, "atk": 90, "def": 110, "spe": 95, "spa": 60, "spd": 75 },
+      "color": "purple",
+      "shape": "armor",
+      "eggGroups": ["bug", "water3"],
+      "debut": "diamond-pearl",
+      "sprite": "452",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "skorupi",
+      "to": "drapion",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

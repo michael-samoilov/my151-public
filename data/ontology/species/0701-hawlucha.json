@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "hawlucha",
+    "nationalDex": 701,
+    "captureRate": 100,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "hawlucha",
+      "types": ["fighting", "flying"],
+      "baseStats": { "hp": 78, "atk": 92, "def": 75, "spe": 118, "spa": 74, "spd": 63 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["flying", "humanshape"],
+      "debut": "x-y",
+      "sprite": "701",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "hawlucha-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["hawlucha"]
+      },
+      "baseStats": { "hp": 78, "atk": 137, "def": 100, "spe": 118, "spa": 74, "spd": 93 },
+      "debut": "legends-za",
+      "sprite": "10300",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

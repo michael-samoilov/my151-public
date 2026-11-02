@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "quilava",
+    "nationalDex": 156,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "quilava",
+      "types": ["fire"],
+      "baseStats": { "hp": 58, "atk": 64, "def": 58, "spe": 80, "spa": 80, "spd": 65 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "gold-silver",
+      "sprite": "156",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cyndaquil",
+      "to": "quilava",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 14 }
+          ]
+        }
+      ]
+    }
+  ]
+}

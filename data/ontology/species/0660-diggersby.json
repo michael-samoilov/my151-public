@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "diggersby",
+    "nationalDex": 660,
+    "captureRate": 127,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "diggersby",
+      "types": ["normal", "ground"],
+      "baseStats": { "hp": 85, "atk": 56, "def": 77, "spe": 78, "spa": 50, "spd": 77 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "x-y",
+      "sprite": "660",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "bunnelby",
+      "to": "diggersby",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

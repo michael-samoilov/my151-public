@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "blipbug",
+    "nationalDex": 824,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "blipbug",
+      "types": ["bug"],
+      "baseStats": { "hp": 25, "atk": 20, "def": 20, "spe": 45, "spa": 25, "spd": 45 },
+      "color": "blue",
+      "shape": "armor",
+      "eggGroups": ["bug"],
+      "debut": "sword-shield",
+      "sprite": "824",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

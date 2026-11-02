@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chi-yu",
+    "nationalDex": 1004,
+    "captureRate": 6,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chi-yu",
+      "types": ["dark", "fire"],
+      "baseStats": { "hp": 55, "atk": 80, "def": 80, "spe": 100, "spa": 135, "spd": 120 },
+      "color": "red",
+      "shape": "fish",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1004",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

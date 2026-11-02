@@ -1,0 +1,49 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mr-mime",
+    "nationalDex": 122,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mr-mime",
+      "types": ["psychic", "fairy"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 65, "spe": 90, "spa": 100, "spd": 120 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "red-blue",
+      "sprite": "122",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "mr-mime-galar",
+      "region": "galar",
+      "types": ["ice", "psychic"],
+      "baseStats": { "hp": 50, "atk": 65, "def": 65, "spe": 100, "spa": 90, "spd": 90 },
+      "color": "white",
+      "debut": "sword-shield",
+      "sprite": "10168",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "mime-jr",
+      "to": "mr-mime",
+      "methods": []
+    },
+    {
+      "from": "mime-jr",
+      "to": "mr-mime-galar",
+      "methods": []
+    }
+  ]
+}

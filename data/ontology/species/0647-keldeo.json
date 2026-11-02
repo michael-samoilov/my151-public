@@ -1,0 +1,46 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "keldeo",
+    "nationalDex": 647,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["ordinary", "resolute"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "keldeo",
+      "variety": { "forme": "ordinary" },
+      "types": ["water", "fighting"],
+      "baseStats": { "hp": 91, "atk": 72, "def": 90, "spe": 108, "spa": 129, "spd": 90 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "black-white",
+      "sprite": "647",
+      "externalIds": { "pokeapiForm": "keldeo-ordinary" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "keldeo-resolute",
+      "variety": { "forme": "resolute" },
+      "sprite": "10024",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

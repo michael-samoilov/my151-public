@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wiglett",
+    "nationalDex": 960,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wiglett",
+      "types": ["water"],
+      "baseStats": { "hp": 10, "atk": 55, "def": 25, "spe": 95, "spa": 35, "spd": 25 },
+      "color": "white",
+      "shape": "blob",
+      "eggGroups": ["water3"],
+      "debut": "scarlet-violet",
+      "sprite": "960",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

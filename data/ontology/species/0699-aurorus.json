@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "aurorus",
+    "nationalDex": 699,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "aurorus",
+      "types": ["rock", "ice"],
+      "baseStats": { "hp": 123, "atk": 77, "def": 72, "spe": 58, "spa": 99, "spd": 92 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["monster"],
+      "debut": "x-y",
+      "sprite": "699",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "amaura",
+      "to": "aurorus",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 39 }
+          ]
+        }
+      ]
+    }
+  ]
+}

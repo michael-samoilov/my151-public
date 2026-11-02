@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crabominable",
+    "nationalDex": 740,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crabominable",
+      "types": ["fighting", "ice"],
+      "baseStats": { "hp": 97, "atk": 132, "def": 77, "spe": 43, "spa": 62, "spd": 67 },
+      "color": "white",
+      "shape": "armor",
+      "eggGroups": ["water3"],
+      "debut": "sun-moon",
+      "sprite": "740",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "crabominable-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["crabominable"]
+      },
+      "baseStats": { "hp": 97, "atk": 157, "def": 122, "spe": 33, "spa": 62, "spd": 107 },
+      "debut": "legends-za",
+      "sprite": "10315",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "crabrawler",
+      "to": "crabominable",
+      "methods": []
+    }
+  ]
+}

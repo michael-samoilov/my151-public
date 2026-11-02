@@ -1,0 +1,44 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kangaskhan",
+    "nationalDex": 115,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kangaskhan",
+      "types": ["normal"],
+      "baseStats": { "hp": 105, "atk": 95, "def": 80, "spe": 90, "spa": 40, "spd": 80 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["monster"],
+      "debut": "red-blue",
+      "sprite": "115",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "kangaskhan-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["kangaskhan"]
+      },
+      "baseStats": { "hp": 105, "atk": 125, "def": 100, "spe": 100, "spa": 60, "spd": 100 },
+      "debut": "x-y",
+      "sprite": "10039",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

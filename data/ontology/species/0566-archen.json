@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "archen",
+    "nationalDex": 566,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "archen",
+      "types": ["rock", "flying"],
+      "baseStats": { "hp": 55, "atk": 112, "def": 45, "spe": 70, "spa": 74, "spd": 45 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["flying", "water3"],
+      "debut": "black-white",
+      "sprite": "566",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

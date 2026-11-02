@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "iron-hands",
+    "nationalDex": 992,
+    "captureRate": 50,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "iron-hands",
+      "types": ["fighting", "electric"],
+      "baseStats": { "hp": 154, "atk": 140, "def": 108, "spe": 50, "spa": 50, "spd": 68 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "992",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

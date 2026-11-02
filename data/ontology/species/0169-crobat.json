@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crobat",
+    "nationalDex": 169,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crobat",
+      "types": ["poison", "flying"],
+      "baseStats": { "hp": 85, "atk": 90, "def": 80, "spe": 130, "spa": 70, "spd": 80 },
+      "color": "purple",
+      "shape": "bug-wings",
+      "eggGroups": ["flying"],
+      "debut": "gold-silver",
+      "sprite": "169",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "golbat",
+      "to": "crobat",
+      "methods": []
+    }
+  ]
+}

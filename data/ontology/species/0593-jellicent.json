@@ -1,0 +1,69 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "jellicent",
+    "nationalDex": 593,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "jellicent",
+      "sex": "male",
+      "types": ["water", "ghost"],
+      "baseStats": { "hp": 100, "atk": 60, "def": 70, "spe": 60, "spa": 85, "spd": 105 },
+      "color": "white",
+      "shape": "tentacles",
+      "eggGroups": ["indeterminate"],
+      "debut": "black-white",
+      "sprite": "593",
+      "externalIds": { "pokeapiForm": "jellicent-male" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "jellicent-female",
+      "sex": "female",
+      "sprite": "11070",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "frillish",
+      "to": "jellicent",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    },
+    {
+      "from": "frillish-female",
+      "to": "jellicent-female",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bonsly",
+    "nationalDex": 438,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bonsly",
+      "types": ["rock"],
+      "baseStats": { "hp": 50, "atk": 80, "def": 95, "spe": 10, "spa": 10, "spd": 45 },
+      "color": "brown",
+      "shape": "legs",
+      "eggGroups": ["no-eggs"],
+      "debut": "diamond-pearl",
+      "sprite": "438",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

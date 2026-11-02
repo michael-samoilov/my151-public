@@ -1,0 +1,67 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "calyrex",
+    "nationalDex": 898,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "calyrex",
+      "types": ["psychic", "grass"],
+      "baseStats": { "hp": 100, "atk": 80, "def": 80, "spe": 80, "spa": 80, "spd": 80 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "898",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "calyrex-ice",
+      "fusion": "glastrier",
+      "types": ["psychic", "ice"],
+      "baseStats": { "hp": 100, "atk": 165, "def": 150, "spe": 50, "spa": 85, "spd": 130 },
+      "color": "white",
+      "shape": "quadruped",
+      "sprite": "10193",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "calyrex-shadow",
+      "fusion": "spectrier",
+      "types": ["psychic", "ghost"],
+      "baseStats": { "hp": 100, "atk": 85, "def": 80, "spe": 150, "spa": 165, "spd": 100 },
+      "color": "black",
+      "shape": "quadruped",
+      "sprite": "10194",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "baseStats": "legacy:src/favorites/data/formMetadata.json", "color": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

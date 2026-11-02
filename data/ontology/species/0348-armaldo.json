@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "armaldo",
+    "nationalDex": 348,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "armaldo",
+      "types": ["rock", "bug"],
+      "baseStats": { "hp": 75, "atk": 125, "def": 100, "spe": 45, "spa": 70, "spd": 80 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["water3"],
+      "debut": "ruby-sapphire",
+      "sprite": "348",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "anorith",
+      "to": "armaldo",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

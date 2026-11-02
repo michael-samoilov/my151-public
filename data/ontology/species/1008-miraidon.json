@@ -1,0 +1,43 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "miraidon",
+    "nationalDex": 1008,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "miraidon",
+      "types": ["electric", "dragon"],
+      "baseStats": { "hp": 100, "atk": 85, "def": 100, "spe": 135, "spa": 135, "spd": 115 },
+      "color": "purple",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1008",
+      "externalIds": { "pokeapiForm": "miraidon-ultimate-mode" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "miraidon-low-power-mode",
+      "state": {
+        "kind": "ride",
+        "from": ["miraidon"]
+      },
+      "sprite": "11119",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

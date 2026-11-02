@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "scorbunny",
+    "nationalDex": 813,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "scorbunny",
+      "types": ["fire"],
+      "baseStats": { "hp": 50, "atk": 71, "def": 40, "spe": 69, "spa": 40, "spd": 40 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "sword-shield",
+      "sprite": "813",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

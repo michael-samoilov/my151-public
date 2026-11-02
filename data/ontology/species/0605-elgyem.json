@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "elgyem",
+    "nationalDex": 605,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "elgyem",
+      "types": ["psychic"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 55, "spe": 30, "spa": 85, "spd": 55 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["humanshape"],
+      "debut": "black-white",
+      "sprite": "605",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,43 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "eevee",
+    "nationalDex": 133,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "eevee",
+      "types": ["normal"],
+      "baseStats": { "hp": 55, "atk": 55, "def": 50, "spe": 55, "spa": 45, "spd": 65 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "red-blue",
+      "sprite": "133",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "eevee-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["eevee"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10205",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

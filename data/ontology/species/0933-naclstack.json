@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "naclstack",
+    "nationalDex": 933,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "naclstack",
+      "types": ["rock"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 100, "spe": 35, "spa": 35, "spd": 65 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "933",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "nacli",
+      "to": "naclstack",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 24 }
+          ]
+        }
+      ]
+    }
+  ]
+}

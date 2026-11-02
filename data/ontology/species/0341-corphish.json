@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "corphish",
+    "nationalDex": 341,
+    "captureRate": 205,
+    "growthRate": "fluctuating",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "corphish",
+      "types": ["water"],
+      "baseStats": { "hp": 43, "atk": 80, "def": 65, "spe": 35, "spa": 50, "spd": 35 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["water1", "water3"],
+      "debut": "ruby-sapphire",
+      "sprite": "341",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

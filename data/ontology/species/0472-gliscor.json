@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "gliscor",
+    "nationalDex": 472,
+    "captureRate": 30,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "gliscor",
+      "types": ["ground", "flying"],
+      "baseStats": { "hp": 75, "atk": 95, "def": 125, "spe": 95, "spa": 45, "spd": 75 },
+      "color": "purple",
+      "shape": "wings",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "472",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "gligar",
+      "to": "gliscor",
+      "methods": []
+    }
+  ]
+}

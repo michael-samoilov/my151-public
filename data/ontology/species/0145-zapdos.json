@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zapdos",
+    "nationalDex": 145,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zapdos",
+      "types": ["electric", "flying"],
+      "baseStats": { "hp": 90, "atk": 90, "def": 85, "spe": 100, "spa": 125, "spd": 90 },
+      "color": "yellow",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "145",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zapdos-galar",
+      "region": "galar",
+      "types": ["fighting", "flying"],
+      "baseStats": { "hp": 90, "atk": 125, "def": 90, "spe": 100, "spa": 85, "spd": 90 },
+      "debut": "sword-shield",
+      "sprite": "10170",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

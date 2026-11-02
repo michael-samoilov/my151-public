@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "klinklang",
+    "nationalDex": 601,
+    "captureRate": 30,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "klinklang",
+      "types": ["steel"],
+      "baseStats": { "hp": 60, "atk": 100, "def": 115, "spe": 90, "spa": 70, "spd": 85 },
+      "color": "gray",
+      "shape": "heads",
+      "eggGroups": ["mineral"],
+      "debut": "black-white",
+      "sprite": "601",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "klang",
+      "to": "klinklang",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 49 }
+          ]
+        }
+      ]
+    }
+  ]
+}

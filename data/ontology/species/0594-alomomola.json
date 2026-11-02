@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "alomomola",
+    "nationalDex": 594,
+    "captureRate": 75,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "alomomola",
+      "types": ["water"],
+      "baseStats": { "hp": 165, "atk": 75, "def": 80, "spe": 65, "spa": 40, "spd": 45 },
+      "color": "pink",
+      "shape": "fish",
+      "eggGroups": ["water1", "water2"],
+      "debut": "black-white",
+      "sprite": "594",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

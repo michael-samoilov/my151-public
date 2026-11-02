@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "chimchar",
+    "nationalDex": 390,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "chimchar",
+      "types": ["fire"],
+      "baseStats": { "hp": 44, "atk": 58, "def": 44, "spe": 61, "spa": 58, "spd": 44 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["ground", "humanshape"],
+      "debut": "diamond-pearl",
+      "sprite": "390",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

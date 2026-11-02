@@ -1,0 +1,38 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "stunfisk",
+    "nationalDex": 618,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "stunfisk",
+      "types": ["ground", "electric"],
+      "baseStats": { "hp": 109, "atk": 66, "def": 84, "spe": 32, "spa": 81, "spd": 99 },
+      "color": "brown",
+      "shape": "fish",
+      "eggGroups": ["water1", "indeterminate"],
+      "debut": "black-white",
+      "sprite": "618",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "stunfisk-galar",
+      "region": "galar",
+      "types": ["ground", "steel"],
+      "baseStats": { "hp": 109, "atk": 81, "def": 99, "spe": 32, "spa": 66, "spd": 84 },
+      "color": "green",
+      "debut": "sword-shield",
+      "sprite": "10180",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

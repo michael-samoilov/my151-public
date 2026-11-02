@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "phantump",
+    "nationalDex": 708,
+    "captureRate": 120,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "phantump",
+      "types": ["ghost", "grass"],
+      "baseStats": { "hp": 43, "atk": 70, "def": 48, "spe": 38, "spa": 50, "spd": 60 },
+      "color": "brown",
+      "shape": "arms",
+      "eggGroups": ["plant", "indeterminate"],
+      "debut": "x-y",
+      "sprite": "708",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ursaluna",
+    "nationalDex": 901,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["bloodmoon"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ursaluna",
+      "types": ["ground", "normal"],
+      "baseStats": { "hp": 130, "atk": 140, "def": 105, "spe": 50, "spa": 45, "spd": 80 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "legends-arceus",
+      "sprite": "901",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "ursaluna-bloodmoon",
+      "variety": { "forme": "bloodmoon" },
+      "baseStats": { "hp": 113, "atk": 70, "def": 120, "spe": 52, "spa": 135, "spd": 65 },
+      "shape": "upright",
+      "debut": "scarlet-violet",
+      "sprite": "10272",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "ursaring",
+      "to": "ursaluna",
+      "methods": []
+    }
+  ]
+}

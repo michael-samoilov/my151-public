@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "snover",
+    "nationalDex": 459,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "snover",
+      "types": ["grass", "ice"],
+      "baseStats": { "hp": 60, "atk": 62, "def": 50, "spe": 40, "spa": 62, "spd": 60 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["monster", "plant"],
+      "debut": "diamond-pearl",
+      "sprite": "459",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

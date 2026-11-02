@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shroodle",
+    "nationalDex": 944,
+    "captureRate": 190,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shroodle",
+      "types": ["poison", "normal"],
+      "baseStats": { "hp": 40, "atk": 65, "def": 35, "spe": 75, "spa": 40, "spd": 35 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "scarlet-violet",
+      "sprite": "944",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,82 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "flabebe",
+    "nationalDex": 669,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "flower",
+        "values": ["red", "blue", "orange", "white", "yellow"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "flabebe",
+      "variety": { "flower": "red" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 44, "atk": 38, "def": 39, "spe": 42, "spa": 61, "spd": 79 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "669",
+      "externalIds": { "pokeapiForm": "flabebe-red" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "flabebe-blue",
+      "variety": { "flower": "blue" },
+      "sprite": "11082",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "flabebe-orange",
+      "variety": { "flower": "orange" },
+      "sprite": "11083",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "flabebe-white",
+      "variety": { "flower": "white" },
+      "sprite": "11084",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "flabebe-yellow",
+      "variety": { "flower": "yellow" },
+      "sprite": "11085",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

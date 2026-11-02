@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "heatmor",
+    "nationalDex": 631,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "heatmor",
+      "types": ["fire"],
+      "baseStats": { "hp": 85, "atk": 97, "def": 66, "spe": 65, "spa": 105, "spd": 66 },
+      "color": "red",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "631",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

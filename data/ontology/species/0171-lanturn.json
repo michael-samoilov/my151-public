@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lanturn",
+    "nationalDex": 171,
+    "captureRate": 75,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lanturn",
+      "types": ["water", "electric"],
+      "baseStats": { "hp": 125, "atk": 58, "def": 58, "spe": 67, "spa": 76, "spd": 76 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "gold-silver",
+      "sprite": "171",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "chinchou",
+      "to": "lanturn",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 27 }
+          ]
+        }
+      ]
+    }
+  ]
+}

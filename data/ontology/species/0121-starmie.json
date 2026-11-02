@@ -1,0 +1,50 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "starmie",
+    "nationalDex": 121,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "starmie",
+      "types": ["water", "psychic"],
+      "baseStats": { "hp": 60, "atk": 75, "def": 85, "spe": 115, "spa": 100, "spd": 85 },
+      "color": "purple",
+      "shape": "blob",
+      "eggGroups": ["water3"],
+      "debut": "red-blue",
+      "sprite": "121",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "starmie-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["starmie"]
+      },
+      "baseStats": { "hp": 60, "atk": 140, "def": 105, "spe": 120, "spa": 130, "spd": 105 },
+      "debut": "legends-za",
+      "sprite": "10280",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "staryu",
+      "to": "starmie",
+      "methods": []
+    }
+  ]
+}

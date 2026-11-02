@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mareep",
+    "nationalDex": 179,
+    "captureRate": 235,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mareep",
+      "types": ["electric"],
+      "baseStats": { "hp": 55, "atk": 40, "def": 40, "spe": 35, "spa": 65, "spd": 45 },
+      "color": "white",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "ground"],
+      "debut": "gold-silver",
+      "sprite": "179",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

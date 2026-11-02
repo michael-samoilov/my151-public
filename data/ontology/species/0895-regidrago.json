@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "regidrago",
+    "nationalDex": 895,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "regidrago",
+      "types": ["dragon"],
+      "baseStats": { "hp": 200, "atk": 100, "def": 50, "spe": 80, "spa": 100, "spd": 50 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "895",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

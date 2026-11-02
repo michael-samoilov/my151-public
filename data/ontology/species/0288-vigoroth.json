@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "vigoroth",
+    "nationalDex": 288,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "vigoroth",
+      "types": ["normal"],
+      "baseStats": { "hp": 80, "atk": 80, "def": 80, "spe": 90, "spa": 55, "spd": 55 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "288",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "slakoth",
+      "to": "vigoroth",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 18 }
+          ]
+        }
+      ]
+    }
+  ]
+}

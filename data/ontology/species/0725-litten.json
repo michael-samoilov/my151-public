@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "litten",
+    "nationalDex": 725,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "litten",
+      "types": ["fire"],
+      "baseStats": { "hp": 45, "atk": 65, "def": 40, "spe": 70, "spa": 60, "spd": 40 },
+      "color": "red",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sun-moon",
+      "sprite": "725",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

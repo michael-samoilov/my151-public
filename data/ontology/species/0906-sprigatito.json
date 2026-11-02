@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sprigatito",
+    "nationalDex": 906,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sprigatito",
+      "types": ["grass"],
+      "baseStats": { "hp": 40, "atk": 61, "def": 54, "spe": 65, "spa": 45, "spd": 45 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["ground", "plant"],
+      "debut": "scarlet-violet",
+      "sprite": "906",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

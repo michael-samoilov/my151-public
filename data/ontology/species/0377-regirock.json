@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "regirock",
+    "nationalDex": 377,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "regirock",
+      "types": ["rock"],
+      "baseStats": { "hp": 80, "atk": 100, "def": 200, "spe": 50, "spa": 50, "spd": 100 },
+      "color": "brown",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "ruby-sapphire",
+      "sprite": "377",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "glaceon",
+    "nationalDex": 471,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "glaceon",
+      "types": ["ice"],
+      "baseStats": { "hp": 65, "atk": 60, "def": 110, "spe": 65, "spa": 130, "spd": 95 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "diamond-pearl",
+      "sprite": "471",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "eevee",
+      "to": "glaceon",
+      "methods": []
+    }
+  ]
+}

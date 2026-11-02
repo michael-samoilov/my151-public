@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zweilous",
+    "nationalDex": 634,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zweilous",
+      "types": ["dark", "dragon"],
+      "baseStats": { "hp": 72, "atk": 85, "def": 70, "spe": 58, "spa": 65, "spd": 70 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["dragon"],
+      "debut": "black-white",
+      "sprite": "634",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "deino",
+      "to": "zweilous",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 50 }
+          ]
+        }
+      ]
+    }
+  ]
+}

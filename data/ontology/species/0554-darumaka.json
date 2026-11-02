@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "darumaka",
+    "nationalDex": 554,
+    "captureRate": 120,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "darumaka",
+      "types": ["fire"],
+      "baseStats": { "hp": 70, "atk": 90, "def": 45, "spe": 50, "spa": 15, "spd": 45 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "554",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "darumaka-galar",
+      "region": "galar",
+      "types": ["ice"],
+      "color": "white",
+      "debut": "sword-shield",
+      "sprite": "10176",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

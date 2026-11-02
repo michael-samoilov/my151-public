@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "claydol",
+    "nationalDex": 344,
+    "captureRate": 90,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "claydol",
+      "types": ["ground", "psychic"],
+      "baseStats": { "hp": 60, "atk": 70, "def": 105, "spe": 75, "spa": 70, "spd": 120 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["mineral"],
+      "debut": "ruby-sapphire",
+      "sprite": "344",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "baltoy",
+      "to": "claydol",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

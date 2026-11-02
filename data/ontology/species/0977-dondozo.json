@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dondozo",
+    "nationalDex": 977,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dondozo",
+      "types": ["water"],
+      "baseStats": { "hp": 150, "atk": 100, "def": 115, "spe": 35, "spa": 65, "spd": 65 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "scarlet-violet",
+      "sprite": "977",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

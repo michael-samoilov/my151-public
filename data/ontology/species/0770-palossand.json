@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "palossand",
+    "nationalDex": 770,
+    "captureRate": 60,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "palossand",
+      "types": ["ghost", "ground"],
+      "baseStats": { "hp": 85, "atk": 75, "def": 110, "spe": 35, "spa": 100, "spd": 75 },
+      "color": "brown",
+      "shape": "squiggle",
+      "eggGroups": ["indeterminate"],
+      "debut": "sun-moon",
+      "sprite": "770",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sandygast",
+      "to": "palossand",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 42 }
+          ]
+        }
+      ]
+    }
+  ]
+}

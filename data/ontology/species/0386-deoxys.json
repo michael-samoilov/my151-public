@@ -1,0 +1,82 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "deoxys",
+    "nationalDex": 386,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "mythical",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "forme",
+        "values": ["normal", "attack", "defense", "speed"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "deoxys",
+      "variety": { "forme": "normal" },
+      "types": ["psychic"],
+      "baseStats": { "hp": 50, "atk": 150, "def": 50, "spe": 150, "spa": 150, "spd": 50 },
+      "color": "red",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "ruby-sapphire",
+      "sprite": "386",
+      "externalIds": { "pokeapiForm": "deoxys-normal" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "deoxys-attack",
+      "variety": { "forme": "attack" },
+      "baseStats": { "hp": 50, "atk": 180, "def": 20, "spe": 150, "spa": 180, "spd": 20 },
+      "debut": "firered-leafgreen",
+      "sprite": "10001",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "deoxys-defense",
+      "variety": { "forme": "defense" },
+      "baseStats": { "hp": 50, "atk": 70, "def": 160, "spe": 90, "spa": 70, "spd": 160 },
+      "debut": "firered-leafgreen",
+      "sprite": "10002",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "deoxys-speed",
+      "variety": { "forme": "speed" },
+      "baseStats": { "hp": 50, "atk": 95, "def": 90, "spe": 180, "spa": 95, "spd": 90 },
+      "debut": "emerald",
+      "sprite": "10003",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

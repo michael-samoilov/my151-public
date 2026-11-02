@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cloyster",
+    "nationalDex": 91,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cloyster",
+      "types": ["water", "ice"],
+      "baseStats": { "hp": 50, "atk": 95, "def": 180, "spe": 70, "spa": 85, "spd": 45 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["water3"],
+      "debut": "red-blue",
+      "sprite": "91",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "shellder",
+      "to": "cloyster",
+      "methods": []
+    }
+  ]
+}

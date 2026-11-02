@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "iron-moth",
+    "nationalDex": 994,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "iron-moth",
+      "types": ["fire", "poison"],
+      "baseStats": { "hp": 80, "atk": 70, "def": 60, "spe": 110, "spa": 140, "spd": 110 },
+      "color": "white",
+      "shape": "bug-wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "994",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wingull",
+    "nationalDex": 278,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wingull",
+      "types": ["water", "flying"],
+      "baseStats": { "hp": 40, "atk": 30, "def": 30, "spe": 85, "spa": 55, "spd": 30 },
+      "color": "white",
+      "shape": "wings",
+      "eggGroups": ["water1", "flying"],
+      "debut": "ruby-sapphire",
+      "sprite": "278",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

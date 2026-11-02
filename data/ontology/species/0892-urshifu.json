@@ -1,0 +1,81 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "urshifu",
+    "nationalDex": 892,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "style",
+        "values": ["single-strike", "rapid-strike"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "urshifu",
+      "variety": { "style": "single-strike" },
+      "types": ["fighting", "dark"],
+      "baseStats": { "hp": 100, "atk": 130, "def": 100, "spe": 97, "spa": 63, "spd": 60 },
+      "color": "gray",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "sword-shield",
+      "sprite": "892",
+      "externalIds": { "pokeapiForm": "urshifu-single-strike" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "urshifu-rapid-strike",
+      "variety": { "style": "rapid-strike" },
+      "types": ["fighting", "water"],
+      "sprite": "10191",
+      "tools": { "picker": "in", "dex": "in", "league": "in" }
+    },
+    {
+      "id": "urshifu-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["urshifu"]
+      },
+      "sprite": "10226",
+      "externalIds": { "pokeapiForm": "urshifu-single-strike-gmax" },
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    },
+    {
+      "id": "urshifu-rapid-strike-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["urshifu-rapid-strike"]
+      },
+      "sprite": "10227",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kubfu",
+      "to": "urshifu",
+      "methods": []
+    },
+    {
+      "from": "kubfu",
+      "to": "urshifu-rapid-strike",
+      "methods": []
+    }
+  ]
+}

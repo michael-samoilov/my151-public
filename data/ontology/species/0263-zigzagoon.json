@@ -1,0 +1,37 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "zigzagoon",
+    "nationalDex": 263,
+    "captureRate": 255,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "zigzagoon",
+      "types": ["normal"],
+      "baseStats": { "hp": 38, "atk": 30, "def": 41, "spe": 60, "spa": 30, "spd": 41 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "263",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "zigzagoon-galar",
+      "region": "galar",
+      "types": ["dark", "normal"],
+      "color": "white",
+      "debut": "sword-shield",
+      "sprite": "10174",
+      "tools": { "picker": "in", "dex": "in", "league": "in" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

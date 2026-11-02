@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "heliolisk",
+    "nationalDex": 695,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "heliolisk",
+      "types": ["electric", "normal"],
+      "baseStats": { "hp": 62, "atk": 55, "def": 52, "spe": 109, "spa": 109, "spd": 94 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["monster", "dragon"],
+      "debut": "x-y",
+      "sprite": "695",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "helioptile",
+      "to": "heliolisk",
+      "methods": []
+    }
+  ]
+}

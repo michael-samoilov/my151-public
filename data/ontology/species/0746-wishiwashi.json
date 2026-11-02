@@ -1,0 +1,45 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wishiwashi",
+    "nationalDex": 746,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": { "dex": "wishiwashi-school" }
+  },
+  "forms": [
+    {
+      "id": "wishiwashi",
+      "types": ["water"],
+      "baseStats": { "hp": 45, "atk": 20, "def": 20, "spe": 40, "spa": 25, "spd": 25 },
+      "color": "blue",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "sun-moon",
+      "sprite": "746",
+      "externalIds": { "pokeapiForm": "wishiwashi-solo" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "wishiwashi-school",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["wishiwashi"]
+      },
+      "baseStats": { "hp": 45, "atk": 140, "def": 130, "spe": 30, "spa": 140, "spd": 135 },
+      "shape": "heads",
+      "sprite": "10127",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

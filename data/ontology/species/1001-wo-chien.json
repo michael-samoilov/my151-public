@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wo-chien",
+    "nationalDex": 1001,
+    "captureRate": 6,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wo-chien",
+      "types": ["dark", "grass"],
+      "baseStats": { "hp": 85, "atk": 85, "def": 100, "spe": 70, "spa": 95, "spd": 135 },
+      "color": "brown",
+      "shape": "squiggle",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1001",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

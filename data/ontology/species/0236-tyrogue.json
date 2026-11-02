@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tyrogue",
+    "nationalDex": 236,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tyrogue",
+      "types": ["fighting"],
+      "baseStats": { "hp": 35, "atk": 35, "def": 35, "spe": 35, "spa": 35, "spd": 35 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "236",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

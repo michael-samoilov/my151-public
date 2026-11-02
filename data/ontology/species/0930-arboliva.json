@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "arboliva",
+    "nationalDex": 930,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "arboliva",
+      "types": ["grass", "normal"],
+      "baseStats": { "hp": 78, "atk": 69, "def": 90, "spe": 39, "spa": 125, "spd": 109 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "scarlet-violet",
+      "sprite": "930",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dolliv",
+      "to": "arboliva",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 35 }
+          ]
+        }
+      ]
+    }
+  ]
+}

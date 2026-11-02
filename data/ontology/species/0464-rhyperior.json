@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rhyperior",
+    "nationalDex": 464,
+    "captureRate": 30,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rhyperior",
+      "types": ["ground", "rock"],
+      "baseStats": { "hp": 115, "atk": 140, "def": 130, "spe": 40, "spa": 55, "spd": 55 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "diamond-pearl",
+      "sprite": "464",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "rhydon",
+      "to": "rhyperior",
+      "methods": []
+    }
+  ]
+}

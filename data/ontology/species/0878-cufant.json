@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cufant",
+    "nationalDex": 878,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cufant",
+      "types": ["steel"],
+      "baseStats": { "hp": 72, "atk": 80, "def": 49, "spe": 40, "spa": 40, "spd": 49 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground", "mineral"],
+      "debut": "sword-shield",
+      "sprite": "878",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

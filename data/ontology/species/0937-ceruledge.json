@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ceruledge",
+    "nationalDex": 937,
+    "captureRate": 25,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ceruledge",
+      "types": ["fire", "ghost"],
+      "baseStats": { "hp": 75, "atk": 125, "def": 80, "spe": 85, "spa": 60, "spd": 100 },
+      "color": "purple",
+      "shape": "humanoid",
+      "eggGroups": ["humanshape"],
+      "debut": "scarlet-violet",
+      "sprite": "937",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "charcadet",
+      "to": "ceruledge",
+      "methods": []
+    }
+  ]
+}

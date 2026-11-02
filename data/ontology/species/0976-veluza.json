@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "veluza",
+    "nationalDex": 976,
+    "captureRate": 100,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "veluza",
+      "types": ["water", "psychic"],
+      "baseStats": { "hp": 90, "atk": 102, "def": 73, "spe": 70, "spa": 78, "spd": 65 },
+      "color": "gray",
+      "shape": "fish",
+      "eggGroups": ["water2"],
+      "debut": "scarlet-violet",
+      "sprite": "976",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

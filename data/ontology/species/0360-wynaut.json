@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "wynaut",
+    "nationalDex": 360,
+    "captureRate": 125,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": ["baby"],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "wynaut",
+      "types": ["psychic"],
+      "baseStats": { "hp": 95, "atk": 23, "def": 48, "spe": 23, "spa": 23, "spd": 48 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "ruby-sapphire",
+      "sprite": "360",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

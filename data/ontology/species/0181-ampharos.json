@@ -1,0 +1,59 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ampharos",
+    "nationalDex": 181,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ampharos",
+      "types": ["electric"],
+      "baseStats": { "hp": 90, "atk": 75, "def": 85, "spe": 55, "spa": 115, "spd": 90 },
+      "color": "yellow",
+      "shape": "upright",
+      "eggGroups": ["monster", "ground"],
+      "debut": "gold-silver",
+      "sprite": "181",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "ampharos-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["ampharos"]
+      },
+      "types": ["electric", "dragon"],
+      "baseStats": { "hp": 90, "atk": 95, "def": 105, "spe": 45, "spa": 165, "spd": 110 },
+      "debut": "x-y",
+      "sprite": "10045",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "flaaffy",
+      "to": "ampharos",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 30 }
+          ]
+        }
+      ]
+    }
+  ]
+}

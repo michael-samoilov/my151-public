@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "delcatty",
+    "nationalDex": 301,
+    "captureRate": 60,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "delcatty",
+      "types": ["normal"],
+      "baseStats": { "hp": 70, "atk": 65, "def": 65, "spe": 90, "spa": 55, "spd": 55 },
+      "color": "purple",
+      "shape": "quadruped",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "ruby-sapphire",
+      "sprite": "301",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "skitty",
+      "to": "delcatty",
+      "methods": []
+    }
+  ]
+}

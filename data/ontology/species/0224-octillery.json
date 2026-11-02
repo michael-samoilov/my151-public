@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "octillery",
+    "nationalDex": 224,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "octillery",
+      "types": ["water"],
+      "baseStats": { "hp": 75, "atk": 105, "def": 75, "spe": 45, "spa": 105, "spd": 75 },
+      "color": "red",
+      "shape": "tentacles",
+      "eggGroups": ["water1", "water2"],
+      "debut": "gold-silver",
+      "sprite": "224",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "remoraid",
+      "to": "octillery",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 25 }
+          ]
+        }
+      ]
+    }
+  ]
+}

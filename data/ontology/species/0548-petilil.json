@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "petilil",
+    "nationalDex": 548,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "petilil",
+      "types": ["grass"],
+      "baseStats": { "hp": 45, "atk": 35, "def": 50, "spe": 30, "spa": 70, "spd": 50 },
+      "color": "green",
+      "shape": "blob",
+      "eggGroups": ["plant"],
+      "debut": "black-white",
+      "sprite": "548",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

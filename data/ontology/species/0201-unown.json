@@ -1,0 +1,360 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "unown",
+    "nationalDex": 201,
+    "captureRate": 225,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "letter",
+        "values": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "exclamation", "question"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "unown",
+      "variety": { "letter": "a" },
+      "types": ["psychic"],
+      "baseStats": { "hp": 48, "atk": 72, "def": 48, "spe": 48, "spa": 72, "spd": 48 },
+      "color": "black",
+      "shape": "ball",
+      "eggGroups": ["no-eggs"],
+      "debut": "gold-silver",
+      "sprite": "201",
+      "externalIds": { "pokeapiForm": "unown-a" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "unown-b",
+      "variety": { "letter": "b" },
+      "sprite": "11037",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-c",
+      "variety": { "letter": "c" },
+      "sprite": "11038",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-d",
+      "variety": { "letter": "d" },
+      "sprite": "11039",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-e",
+      "variety": { "letter": "e" },
+      "sprite": "11040",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-f",
+      "variety": { "letter": "f" },
+      "sprite": "11041",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-g",
+      "variety": { "letter": "g" },
+      "sprite": "11042",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-h",
+      "variety": { "letter": "h" },
+      "sprite": "11043",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-i",
+      "variety": { "letter": "i" },
+      "sprite": "11044",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-j",
+      "variety": { "letter": "j" },
+      "sprite": "11045",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-k",
+      "variety": { "letter": "k" },
+      "sprite": "11046",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-l",
+      "variety": { "letter": "l" },
+      "sprite": "11047",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-m",
+      "variety": { "letter": "m" },
+      "sprite": "11048",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-n",
+      "variety": { "letter": "n" },
+      "sprite": "11049",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-o",
+      "variety": { "letter": "o" },
+      "sprite": "11050",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-p",
+      "variety": { "letter": "p" },
+      "sprite": "11051",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-q",
+      "variety": { "letter": "q" },
+      "sprite": "11052",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-r",
+      "variety": { "letter": "r" },
+      "sprite": "11053",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-s",
+      "variety": { "letter": "s" },
+      "sprite": "11054",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-t",
+      "variety": { "letter": "t" },
+      "sprite": "11055",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-u",
+      "variety": { "letter": "u" },
+      "sprite": "11056",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-v",
+      "variety": { "letter": "v" },
+      "sprite": "11057",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-w",
+      "variety": { "letter": "w" },
+      "sprite": "11058",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-x",
+      "variety": { "letter": "x" },
+      "sprite": "11059",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-y",
+      "variety": { "letter": "y" },
+      "sprite": "11060",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-z",
+      "variety": { "letter": "z" },
+      "sprite": "11061",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-exclamation",
+      "variety": { "letter": "exclamation" },
+      "debut": "ruby-sapphire",
+      "sprite": "11062",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "unown-question",
+      "variety": { "letter": "question" },
+      "debut": "ruby-sapphire",
+      "sprite": "11063",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": { "out": "look-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

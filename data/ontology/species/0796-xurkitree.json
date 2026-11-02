@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "xurkitree",
+    "nationalDex": 796,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "ultra-beast",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "xurkitree",
+      "types": ["electric"],
+      "baseStats": { "hp": 83, "atk": 89, "def": 71, "spe": 83, "spa": 173, "spd": 71 },
+      "color": "black",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "796",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

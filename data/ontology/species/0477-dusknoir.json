@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "dusknoir",
+    "nationalDex": 477,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "dusknoir",
+      "types": ["ghost"],
+      "baseStats": { "hp": 45, "atk": 100, "def": 135, "spe": 45, "spa": 65, "spd": 135 },
+      "color": "black",
+      "shape": "arms",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "477",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dusclops",
+      "to": "dusknoir",
+      "methods": []
+    }
+  ]
+}

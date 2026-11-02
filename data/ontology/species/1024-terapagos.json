@@ -1,0 +1,61 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "terapagos",
+    "nationalDex": 1024,
+    "captureRate": 255,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": { "dex": "terapagos-terastal" }
+  },
+  "forms": [
+    {
+      "id": "terapagos",
+      "types": ["normal"],
+      "baseStats": { "hp": 90, "atk": 65, "def": 85, "spe": 60, "spa": 65, "spd": 85 },
+      "color": "blue",
+      "shape": "quadruped",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1024",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "terapagos-terastal",
+      "state": {
+        "kind": "battle-mode",
+        "from": ["terapagos"]
+      },
+      "baseStats": { "hp": 95, "atk": 95, "def": 110, "spe": 85, "spa": 105, "spd": 110 },
+      "shape": "ball",
+      "sprite": "10276",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "shape": "legacy:src/data/form-shapes.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "terapagos-stellar",
+      "state": {
+        "kind": "terastal",
+        "teraType": "stellar",
+        "from": ["terapagos-terastal"]
+      },
+      "baseStats": { "hp": 160, "atk": 105, "def": 110, "spe": 85, "spa": 130, "spd": 110 },
+      "sprite": "10277",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

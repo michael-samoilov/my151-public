@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "fezandipiti",
+    "nationalDex": 1016,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "fezandipiti",
+      "types": ["poison", "fairy"],
+      "baseStats": { "hp": 88, "atk": 91, "def": 82, "spe": 99, "spa": 70, "spd": 125 },
+      "color": "black",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1016",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

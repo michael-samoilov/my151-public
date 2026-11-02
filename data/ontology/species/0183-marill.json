@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "marill",
+    "nationalDex": 183,
+    "captureRate": 190,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "marill",
+      "types": ["water", "fairy"],
+      "baseStats": { "hp": 70, "atk": 20, "def": 50, "spe": 40, "spa": 20, "spd": 50 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["water1", "fairy"],
+      "debut": "gold-silver",
+      "sprite": "183",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "azurill",
+      "to": "marill",
+      "methods": []
+    }
+  ]
+}

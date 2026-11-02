@@ -1,0 +1,60 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tinkaton",
+    "nationalDex": 959,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["tinkmaster"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tinkaton",
+      "types": ["fairy", "steel"],
+      "baseStats": { "hp": 85, "atk": 75, "def": 77, "spe": 94, "spa": 70, "spd": 105 },
+      "color": "pink",
+      "shape": "humanoid",
+      "eggGroups": ["fairy"],
+      "debut": "scarlet-violet",
+      "sprite": "959",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "tinkaton-tinkmaster",
+      "variety": { "look": "tinkmaster" },
+      "debut": "pokopia",
+      "obtain": "spinoff-only",
+      "sprite": "11125",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "tinkatuff",
+      "to": "tinkaton",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 38 }
+          ]
+        }
+      ]
+    }
+  ]
+}

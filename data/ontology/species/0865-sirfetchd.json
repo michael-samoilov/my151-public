@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "sirfetchd",
+    "nationalDex": 865,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "sirfetchd",
+      "types": ["fighting"],
+      "baseStats": { "hp": 62, "atk": 135, "def": 95, "spe": 65, "spa": 68, "spd": 82 },
+      "color": "white",
+      "shape": "wings",
+      "eggGroups": ["flying", "ground"],
+      "debut": "sword-shield",
+      "sprite": "865",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "farfetchd-galar",
+      "to": "sirfetchd",
+      "methods": []
+    }
+  ]
+}

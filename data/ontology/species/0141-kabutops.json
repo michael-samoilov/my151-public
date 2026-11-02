@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "kabutops",
+    "nationalDex": 141,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "kabutops",
+      "types": ["rock", "water"],
+      "baseStats": { "hp": 60, "atk": 115, "def": 105, "spe": 80, "spa": 65, "spd": 70 },
+      "color": "brown",
+      "shape": "upright",
+      "eggGroups": ["water1", "water3"],
+      "debut": "red-blue",
+      "sprite": "141",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "kabuto",
+      "to": "kabutops",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "panpour",
+    "nationalDex": 515,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "panpour",
+      "types": ["water"],
+      "baseStats": { "hp": 50, "atk": 53, "def": 48, "spe": 64, "spa": 53, "spd": 48 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "515",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

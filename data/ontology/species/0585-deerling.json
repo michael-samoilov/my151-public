@@ -1,0 +1,73 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "deerling",
+    "nationalDex": 585,
+    "captureRate": 190,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "season",
+        "values": ["spring", "summer", "autumn", "winter"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "deerling",
+      "variety": { "season": "spring" },
+      "types": ["normal", "grass"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 50, "spe": 75, "spa": 40, "spd": 50 },
+      "color": "pink",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "black-white",
+      "sprite": "585",
+      "externalIds": { "pokeapiForm": "deerling-spring" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "deerling-summer",
+      "variety": { "season": "summer" },
+      "color": "green",
+      "sprite": "11008",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "deerling-autumn",
+      "variety": { "season": "autumn" },
+      "color": "red",
+      "sprite": "11009",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "deerling-winter",
+      "variety": { "season": "winter" },
+      "color": "brown",
+      "sprite": "11010",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

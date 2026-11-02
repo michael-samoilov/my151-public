@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "frigibax",
+    "nationalDex": 996,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "frigibax",
+      "types": ["dragon", "ice"],
+      "baseStats": { "hp": 65, "atk": 75, "def": 45, "spe": 55, "spa": 35, "spd": 45 },
+      "color": "gray",
+      "shape": "upright",
+      "eggGroups": ["dragon", "mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "996",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

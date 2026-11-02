@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "beautifly",
+    "nationalDex": 267,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "beautifly",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 60, "atk": 70, "def": 50, "spe": 65, "spa": 100, "spd": 50 },
+      "color": "yellow",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "ruby-sapphire",
+      "sprite": "267",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "silcoon",
+      "to": "beautifly",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 10 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "electrike",
+    "nationalDex": 309,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "electrike",
+      "types": ["electric"],
+      "baseStats": { "hp": 40, "atk": 45, "def": 40, "spe": 65, "spa": 65, "spd": 40 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "309",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

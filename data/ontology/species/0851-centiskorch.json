@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "centiskorch",
+    "nationalDex": 851,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "centiskorch",
+      "types": ["fire", "bug"],
+      "baseStats": { "hp": 100, "atk": 115, "def": 65, "spe": 65, "spa": 90, "spd": 90 },
+      "color": "red",
+      "shape": "tentacles",
+      "eggGroups": ["bug"],
+      "debut": "sword-shield",
+      "sprite": "851",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "centiskorch-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["centiskorch"]
+      },
+      "sprite": "10220",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "sizzlipede",
+      "to": "centiskorch",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 28 }
+          ]
+        }
+      ]
+    }
+  ]
+}

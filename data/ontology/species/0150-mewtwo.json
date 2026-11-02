@@ -1,0 +1,83 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mewtwo",
+    "nationalDex": 150,
+    "captureRate": 3,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "look",
+        "values": ["shadow"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mewtwo",
+      "types": ["psychic"],
+      "baseStats": { "hp": 106, "atk": 110, "def": 90, "spe": 130, "spa": 154, "spd": 90 },
+      "color": "purple",
+      "shape": "upright",
+      "eggGroups": ["no-eggs"],
+      "debut": "red-blue",
+      "sprite": "150",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "mewtwo-mega-x",
+      "state": {
+        "kind": "mega",
+        "letter": "x",
+        "from": ["mewtwo"]
+      },
+      "types": ["psychic", "fighting"],
+      "baseStats": { "hp": 106, "atk": 190, "def": 100, "spe": 130, "spa": 154, "spd": 100 },
+      "debut": "x-y",
+      "sprite": "10043",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "types": "legacy:src/favorites/data/powerupTypes.json", "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "mewtwo-mega-y",
+      "state": {
+        "kind": "mega",
+        "letter": "y",
+        "from": ["mewtwo"]
+      },
+      "baseStats": { "hp": 106, "atk": 150, "def": 70, "spe": 140, "spa": 194, "spd": 120 },
+      "debut": "x-y",
+      "sprite": "10044",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "mewtwo-shadow",
+      "variety": { "look": "shadow" },
+      "debut": "pokken-tournament",
+      "obtain": "spinoff-only",
+      "sprite": "11130",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "spinoff-only" },
+        "league": { "out": "spinoff-only" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "debut": "legacy:src/favorites/model/sourceGame.ts", "obtain": "legacy:src/favorites/model/sourceGame.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

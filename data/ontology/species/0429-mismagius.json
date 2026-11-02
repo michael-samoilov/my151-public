@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mismagius",
+    "nationalDex": 429,
+    "captureRate": 45,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mismagius",
+      "types": ["ghost"],
+      "baseStats": { "hp": 60, "atk": 60, "def": 60, "spe": 105, "spa": 105, "spd": 105 },
+      "color": "purple",
+      "shape": "ball",
+      "eggGroups": ["indeterminate"],
+      "debut": "diamond-pearl",
+      "sprite": "429",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "misdreavus",
+      "to": "mismagius",
+      "methods": []
+    }
+  ]
+}

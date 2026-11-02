@@ -1,0 +1,82 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "oricorio",
+    "nationalDex": 741,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "style",
+        "values": ["baile", "pom-pom", "pau", "sensu"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "oricorio",
+      "variety": { "style": "baile" },
+      "types": ["fire", "flying"],
+      "baseStats": { "hp": 75, "atk": 70, "def": 70, "spe": 93, "spa": 98, "spd": 70 },
+      "color": "red",
+      "shape": "wings",
+      "eggGroups": ["flying"],
+      "debut": "sun-moon",
+      "sprite": "741",
+      "externalIds": { "pokeapiForm": "oricorio-baile" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "oricorio-pom-pom",
+      "variety": { "style": "pom-pom" },
+      "types": ["electric", "flying"],
+      "color": "yellow",
+      "sprite": "10123",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "oricorio-pau",
+      "variety": { "style": "pau" },
+      "types": ["psychic", "flying"],
+      "color": "pink",
+      "sprite": "10124",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "oricorio-sensu",
+      "variety": { "style": "sensu" },
+      "types": ["ghost", "flying"],
+      "color": "purple",
+      "sprite": "10125",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

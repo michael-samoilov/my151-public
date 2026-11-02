@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "abomasnow",
+    "nationalDex": 460,
+    "captureRate": 60,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "abomasnow",
+      "types": ["grass", "ice"],
+      "baseStats": { "hp": 90, "atk": 92, "def": 75, "spe": 60, "spa": 92, "spd": 85 },
+      "color": "white",
+      "shape": "upright",
+      "eggGroups": ["monster", "plant"],
+      "debut": "diamond-pearl",
+      "sprite": "460",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "abomasnow-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["abomasnow"]
+      },
+      "baseStats": { "hp": 90, "atk": 132, "def": 105, "spe": 30, "spa": 132, "spd": 105 },
+      "debut": "x-y",
+      "sprite": "10060",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "snover",
+      "to": "abomasnow",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 40 }
+          ]
+        }
+      ]
+    }
+  ]
+}

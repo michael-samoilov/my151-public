@@ -1,0 +1,55 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "drednaw",
+    "nationalDex": 834,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "drednaw",
+      "types": ["water", "rock"],
+      "baseStats": { "hp": 90, "atk": 115, "def": 90, "spe": 74, "spa": 48, "spd": 68 },
+      "color": "green",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "water1"],
+      "debut": "sword-shield",
+      "sprite": "834",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "drednaw-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["drednaw"]
+      },
+      "sprite": "10214",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json"
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "chewtle",
+      "to": "drednaw",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 22 }
+          ]
+        }
+      ]
+    }
+  ]
+}

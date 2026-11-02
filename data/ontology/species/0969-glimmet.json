@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "glimmet",
+    "nationalDex": 969,
+    "captureRate": 70,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "glimmet",
+      "types": ["rock", "poison"],
+      "baseStats": { "hp": 48, "atk": 35, "def": 42, "spe": 60, "spa": 105, "spd": 60 },
+      "color": "blue",
+      "shape": "ball",
+      "eggGroups": ["mineral"],
+      "debut": "scarlet-violet",
+      "sprite": "969",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

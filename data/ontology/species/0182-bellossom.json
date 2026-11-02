@@ -1,0 +1,33 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "bellossom",
+    "nationalDex": 182,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "bellossom",
+      "types": ["grass"],
+      "baseStats": { "hp": 75, "atk": 80, "def": 95, "spe": 50, "spa": 90, "spd": 100 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["plant"],
+      "debut": "gold-silver",
+      "sprite": "182",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "gloom",
+      "to": "bellossom",
+      "methods": []
+    }
+  ]
+}

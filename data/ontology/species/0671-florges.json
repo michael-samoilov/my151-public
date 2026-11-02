@@ -1,0 +1,112 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "florges",
+    "nationalDex": 671,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "flower",
+        "values": ["red", "blue", "orange", "white", "yellow"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "florges",
+      "variety": { "flower": "red" },
+      "types": ["fairy"],
+      "baseStats": { "hp": 78, "atk": 65, "def": 68, "spe": 75, "spa": 112, "spd": 154 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["fairy"],
+      "debut": "x-y",
+      "sprite": "671",
+      "externalIds": { "pokeapiForm": "florges-red" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "florges-blue",
+      "variety": { "flower": "blue" },
+      "sprite": "11090",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "florges-orange",
+      "variety": { "flower": "orange" },
+      "sprite": "11091",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "florges-white",
+      "variety": { "flower": "white" },
+      "sprite": "11092",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "florges-yellow",
+      "variety": { "flower": "yellow" },
+      "sprite": "11093",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "look-only" },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "floette",
+      "to": "florges",
+      "methods": []
+    },
+    {
+      "from": "floette-blue",
+      "to": "florges-blue",
+      "methods": [],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "floette-orange",
+      "to": "florges-orange",
+      "methods": [],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "floette-white",
+      "to": "florges-white",
+      "methods": [],
+      "source": "legacy:src/league/data/catalog.ts"
+    },
+    {
+      "from": "floette-yellow",
+      "to": "florges-yellow",
+      "methods": [],
+      "source": "legacy:src/league/data/catalog.ts"
+    }
+  ]
+}

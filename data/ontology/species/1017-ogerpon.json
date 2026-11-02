@@ -1,0 +1,148 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "ogerpon",
+    "nationalDex": 1017,
+    "captureRate": 5,
+    "growthRate": "slow",
+    "legendaryClass": "sub-legendary",
+    "tags": [],
+    "varietyAxes": [
+      {
+        "axis": "mask",
+        "values": ["teal", "wellspring", "hearthflame", "cornerstone"]
+      }
+    ],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "ogerpon",
+      "variety": { "mask": "teal" },
+      "types": ["grass"],
+      "baseStats": { "hp": 80, "atk": 120, "def": 84, "spe": 110, "spa": 60, "spd": 96 },
+      "color": "green",
+      "shape": "humanoid",
+      "eggGroups": ["no-eggs"],
+      "debut": "scarlet-violet",
+      "sprite": "1017",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "ogerpon-teal-tera",
+      "state": {
+        "kind": "terastal",
+        "teraType": "grass",
+        "from": ["ogerpon"]
+      },
+      "sprite": "11113",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-wellspring-mask",
+      "variety": { "mask": "wellspring" },
+      "types": ["grass", "water"],
+      "color": "blue",
+      "sprite": "10273",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-wellspring-tera",
+      "state": {
+        "kind": "terastal",
+        "teraType": "water",
+        "from": ["ogerpon-wellspring-mask"]
+      },
+      "types": ["water"],
+      "sprite": "11114",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-hearthflame-mask",
+      "variety": { "mask": "hearthflame" },
+      "types": ["grass", "fire"],
+      "color": "red",
+      "sprite": "10274",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-hearthflame-tera",
+      "state": {
+        "kind": "terastal",
+        "teraType": "fire",
+        "from": ["ogerpon-hearthflame-mask"]
+      },
+      "types": ["fire"],
+      "sprite": "11115",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-cornerstone-mask",
+      "variety": { "mask": "cornerstone" },
+      "types": ["grass", "rock"],
+      "color": "gray",
+      "sprite": "10275",
+      "tools": {
+        "picker": "in",
+        "dex": {
+          "out": { "decision": "spec-v2-keeps-todays-verdicts" }
+        },
+        "league": "in"
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "color": "legacy:src/favorites/data/formMetadata.json", "tools": "legacy:src/league/data/formPolicy.ts" }
+    },
+    {
+      "id": "ogerpon-cornerstone-tera",
+      "state": {
+        "kind": "terastal",
+        "teraType": "rock",
+        "from": ["ogerpon-cornerstone-mask"]
+      },
+      "types": ["rock"],
+      "sprite": "11116",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "types": "legacy:src/favorites/model/alternateForms.ts", "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": []
+}

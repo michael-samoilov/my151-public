@@ -1,0 +1,74 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "blastoise",
+    "nationalDex": 9,
+    "captureRate": 45,
+    "growthRate": "medium-slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "blastoise",
+      "types": ["water"],
+      "baseStats": { "hp": 79, "atk": 83, "def": 100, "spe": 78, "spa": 85, "spd": 105 },
+      "color": "blue",
+      "shape": "upright",
+      "eggGroups": ["monster", "water1"],
+      "debut": "red-blue",
+      "sprite": "9",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "blastoise-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["blastoise"]
+      },
+      "baseStats": { "hp": 79, "atk": 103, "def": 120, "spe": 78, "spa": 135, "spd": 115 },
+      "debut": "x-y",
+      "sprite": "10036",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "blastoise-gmax",
+      "state": {
+        "kind": "gigantamax",
+        "from": ["blastoise"]
+      },
+      "debut": "sword-shield",
+      "sprite": "10197",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "wartortle",
+      "to": "blastoise",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 36 }
+          ]
+        }
+      ]
+    }
+  ]
+}

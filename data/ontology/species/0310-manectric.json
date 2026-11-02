@@ -1,0 +1,58 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "manectric",
+    "nationalDex": 310,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "manectric",
+      "types": ["electric"],
+      "baseStats": { "hp": 70, "atk": 75, "def": 60, "spe": 105, "spa": 105, "spd": 60 },
+      "color": "yellow",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "ruby-sapphire",
+      "sprite": "310",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "manectric-mega",
+      "state": {
+        "kind": "mega",
+        "from": ["manectric"]
+      },
+      "baseStats": { "hp": 70, "atk": 75, "def": 80, "spe": 135, "spa": 135, "spd": 80 },
+      "debut": "x-y",
+      "sprite": "10055",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": "in"
+      },
+      "source": "legacy:src/league/data/powerupForms.json",
+      "sourceOf": { "baseStats": "legacy:src/favorites/data/formMetadata.json", "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "electrike",
+      "to": "manectric",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 26 }
+          ]
+        }
+      ]
+    }
+  ]
+}

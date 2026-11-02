@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "cursola",
+    "nationalDex": 864,
+    "captureRate": 30,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "cursola",
+      "types": ["ghost"],
+      "baseStats": { "hp": 60, "atk": 95, "def": 50, "spe": 30, "spa": 145, "spd": 130 },
+      "color": "white",
+      "shape": "arms",
+      "eggGroups": ["water1", "water3"],
+      "debut": "sword-shield",
+      "sprite": "864",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "corsola-galar",
+      "to": "cursola",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 38 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "tandemaus",
+    "nationalDex": 924,
+    "captureRate": 150,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "tandemaus",
+      "types": ["normal"],
+      "baseStats": { "hp": 50, "atk": 50, "def": 45, "spe": 75, "spa": 40, "spd": 45 },
+      "color": "white",
+      "shape": "heads",
+      "eggGroups": ["ground", "fairy"],
+      "debut": "scarlet-violet",
+      "sprite": "924",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

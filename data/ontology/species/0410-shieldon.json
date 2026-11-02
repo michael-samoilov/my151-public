@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "shieldon",
+    "nationalDex": 410,
+    "captureRate": 45,
+    "growthRate": "erratic",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "shieldon",
+      "types": ["rock", "steel"],
+      "baseStats": { "hp": 30, "atk": 42, "def": 118, "spe": 30, "spa": 42, "spd": 88 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["monster"],
+      "debut": "diamond-pearl",
+      "sprite": "410",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

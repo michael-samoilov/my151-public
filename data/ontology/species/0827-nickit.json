@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "nickit",
+    "nationalDex": 827,
+    "captureRate": 255,
+    "growthRate": "fast",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "nickit",
+      "types": ["dark"],
+      "baseStats": { "hp": 40, "atk": 28, "def": 28, "spe": 50, "spa": 47, "spd": 52 },
+      "color": "brown",
+      "shape": "quadruped",
+      "eggGroups": ["ground"],
+      "debut": "sword-shield",
+      "sprite": "827",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}

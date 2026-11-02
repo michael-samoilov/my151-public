@@ -1,0 +1,41 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "crustle",
+    "nationalDex": 558,
+    "captureRate": 75,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "crustle",
+      "types": ["bug", "rock"],
+      "baseStats": { "hp": 70, "atk": 105, "def": 125, "spe": 45, "spa": 65, "spd": 75 },
+      "color": "red",
+      "shape": "armor",
+      "eggGroups": ["bug", "mineral"],
+      "debut": "black-white",
+      "sprite": "558",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "dwebble",
+      "to": "crustle",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 34 }
+          ]
+        }
+      ]
+    }
+  ]
+}

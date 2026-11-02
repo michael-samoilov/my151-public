@@ -1,0 +1,42 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "mothim",
+    "nationalDex": 414,
+    "captureRate": 45,
+    "growthRate": "medium",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "mothim",
+      "types": ["bug", "flying"],
+      "baseStats": { "hp": 70, "atk": 94, "def": 50, "spe": 66, "spa": 94, "spd": 50 },
+      "color": "yellow",
+      "shape": "bug-wings",
+      "eggGroups": ["bug"],
+      "debut": "diamond-pearl",
+      "sprite": "414",
+      "externalIds": { "pokeapiForm": "mothim-plant" },
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "burmy",
+      "to": "mothim",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 20 }
+          ]
+        }
+      ]
+    }
+  ]
+}

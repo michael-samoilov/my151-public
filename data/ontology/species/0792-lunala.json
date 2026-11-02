@@ -1,0 +1,56 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "lunala",
+    "nationalDex": 792,
+    "captureRate": 45,
+    "growthRate": "slow",
+    "legendaryClass": "restricted",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "lunala",
+      "types": ["psychic", "ghost"],
+      "baseStats": { "hp": 137, "atk": 113, "def": 89, "spe": 97, "spa": 137, "spd": 107 },
+      "color": "purple",
+      "shape": "wings",
+      "eggGroups": ["no-eggs"],
+      "debut": "sun-moon",
+      "sprite": "792",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    },
+    {
+      "id": "lunala-full-moon",
+      "state": {
+        "kind": "move-look",
+        "from": ["lunala"]
+      },
+      "sprite": "11110",
+      "tools": {
+        "picker": "in",
+        "dex": { "out": "battle-state" },
+        "league": { "out": "battle-state" }
+      },
+      "source": "legacy:src/favorites/model/alternateForms.ts",
+      "sourceOf": { "tools": "legacy:src/league/data/formPolicy.ts" }
+    }
+  ],
+  "evolutions": [
+    {
+      "from": "cosmoem",
+      "to": "lunala",
+      "methods": [
+        {
+          "games": "all",
+          "trigger": "level-up",
+          "conditions": [
+            { "kind": "level", "level": 53 }
+          ]
+        }
+      ]
+    }
+  ]
+}

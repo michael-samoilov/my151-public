@@ -1,0 +1,27 @@
+{
+  "source": "legacy:src/data/pokemon.json",
+  "species": {
+    "id": "rhyhorn",
+    "nationalDex": 111,
+    "captureRate": 120,
+    "growthRate": "slow",
+    "legendaryClass": "none",
+    "tags": [],
+    "varietyAxes": [],
+    "standIn": {}
+  },
+  "forms": [
+    {
+      "id": "rhyhorn",
+      "types": ["ground", "rock"],
+      "baseStats": { "hp": 80, "atk": 85, "def": 95, "spe": 25, "spa": 30, "spd": 30 },
+      "color": "gray",
+      "shape": "quadruped",
+      "eggGroups": ["monster", "ground"],
+      "debut": "red-blue",
+      "sprite": "111",
+      "sourceOf": { "debut": "legacy:src/favorites/model/debut.ts" }
+    }
+  ],
+  "evolutions": []
+}
