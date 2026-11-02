@@ -1,6 +1,6 @@
 # The Pokémon ontology
 
-`data/ontology/` is the one source for every Pokémon fact the app ships. `npm run ontology:build` reads it and writes `src/data/pokemon.json` and `src/data/generated/league.json`. The contract is [docs/data-model/pokemon-ontology.md](../../docs/data-model/pokemon-ontology.md).
+`data/ontology/` is the one source for every Pokémon fact the app ships. `npm run ontology:build` reads it and writes `src/data/pokemon.json` and the tool projections in `src/data/generated/`. The contract is [docs/data-model/pokemon-ontology.md](../../docs/data-model/pokemon-ontology.md).
 
 ## Files
 
@@ -17,6 +17,8 @@
 | `reports/legacy-disagreements.json` | What the legacy catalog files disagreed on when they were imported, and which value won. |
 | `legacy/` | What today's catalogs hold that the ontology does not derive. Phase 2 deletes it. |
 | `../../src/data/generated/league.json` | Generated. What the League catalog adds to the Dex rows: the Dex fields it shows differently, each added form as the fields that differ from its owner's row, and the evolutions beyond a form's first. `src/league/data/catalog.ts` reads it. |
+| `../../src/data/generated/favorites.json` | Generated. What the Favorite Picker adds to the Dex rows: the Dex fields it shows differently, including today's four Picker numbers, and each added form as the fields that differ from its owner. `src/favorites/model/catalog.ts` reads it. |
+| `../../src/data/generated/favorites-metadata.json` | Generated. Each Picker entry's stats, BST, color, shape, and egg groups where they differ from its Dex row. Only the drill-down and stats views load it. |
 
 ## Provenance
 
@@ -29,7 +31,7 @@ A form's PokeAPI identity is `externalIds.pokeapiForm` when the identifiers diff
 ## Change a fact
 
 1. Edit the species file. Cite the source in `sourceOf` when it differs from the file's.
-2. Run `npm run ontology:build`. It regenerates `src/data/pokemon.json`, `src/data/generated/league.json`, and `reports/tool-verdicts.json`.
+2. Run `npm run ontology:build`. It regenerates `src/data/pokemon.json`, the files in `src/data/generated/`, and `reports/tool-verdicts.json`.
 3. Run `npm run ontology:audit` if the check reports an unlisted disagreement. Review the new row: `kept` with a decision id, or `open` with the evidence on each side.
 4. Run `npm run ontology:check`. It must pass before a push.
 
@@ -41,7 +43,7 @@ A form's PokeAPI identity is `externalIds.pokeapiForm` when the identifiers diff
 
 `npm run ontology:check` runs in every code CI mode. It fails on a dangling link, a missing core fact, an ability outside the vocabulary, two permanent forms with the same coordinates, a false or missing tool verdict, a `mergedInto` twin whose target has another species, sprite, or state chain or is out of that tool, a tool that shows two forms of one species with one sprite and one state chain, a battle-mode trigger ability that a form the step enters from does not have, a ledger number that changed meaning, a state twin that differs, two forms with one PokeAPI identity, an unsourced mark on a known fact, a disagreement the audit reports do not list as reviewed, a stale audit row, and a generated file that differs from the ontology. Each message names the file and the field to fix.
 
-`scripts/ontology/parity.test.ts` proves the Favorite Picker catalog returns the same records when rebuilt from the ontology, and that the League catalog assembles the rows the full projection holds.
+`scripts/ontology/parity.test.ts` proves the Favorite Picker and League catalogs assemble, from their generated files, the records the full projections hold.
 
 ## Pin a newer PokeAPI commit
 

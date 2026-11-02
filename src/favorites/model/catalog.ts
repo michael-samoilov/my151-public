@@ -6,13 +6,10 @@ import {
   STARTER_IDS,
   ULTRA_BEAST_IDS,
 } from '@/data/categories';
-import powerupForms from '@/league/data/powerupForms.json';
-import powerupTypes from '../data/powerupTypes.json';
+import favorites from '@/data/generated/favorites.json';
 import altFormSpecies from '@/i18n/alt-form-species.json';
 import type { Pokemon, TypeName } from '@/types/pokemon';
-import type { PowerupForms } from '@/league/model/powerups';
 import { GEN_NUMBERS, type GenNumber } from './cells';
-import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 
 export const CONVERGENT_IDS = new Set([948, 949, 960, 961]);
 
@@ -28,9 +25,14 @@ export interface PickerMon {
   ownerId: number;
 }
 
+type PickerFields = Partial<Omit<PickerMon, 'sprite'>> & { spriteStem?: string };
+type PickerForm = PickerFields & { id: number; owner: number; name: string };
+const GENERATED = favorites as unknown as {
+  dexOverrides: Record<string, PickerFields>;
+  forms: PickerForm[];
+};
+
 const SPECIES = pokemonData as Pokemon[];
-const FORMS = powerupForms as PowerupForms;
-const POWERUP_TYPES = powerupTypes as Record<number, TypeName[]>;
 
 const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?!-cap)(?:-|$)/;
 const SPECIES_BY_ID = new Map(SPECIES.map((p) => [p.id, p]));
@@ -77,64 +79,32 @@ function pushMon(mon: PickerMon): void {
 }
 
 for (const p of SPECIES) {
-  const pickerId = p.id === 10178 ? 10179 : p.id === 10179 ? 10180 : p.id === 10227 ? 10191 : p.id;
+  const { spriteStem, ...fields } = GENERATED.dexOverrides[p.id] ?? {};
+  const pickerId = fields.id ?? p.id;
   DEX_ID_BY_PICKER_ID.set(pickerId, p.id);
   LINE_BY_ID.set(pickerId, p.evolutionChainId);
   pushMon({
     id: pickerId,
-    name: p.id === 892 ? 'urshifu-single-strike' : p.name,
-    types: p.id === 888 ? ['fairy'] : p.id === 889 ? ['fighting'] : p.types,
-    generation: asGen(p.generation),
-    sprite: [746, 888, 889, 964, 1024].includes(p.id) ? pokemonSpriteUrl(p.id) : pickerId === 10191 ? pokemonSpriteUrl(10191) : revisedSprite(p.sprite),
-    source: 'dex',
-    ownerId: p.id === 10227 ? 892 : pickerId,
+    name: fields.name ?? p.name,
+    types: fields.types ?? p.types,
+    generation: asGen(fields.generation ?? p.generation),
+    sprite: spriteStem ? pokemonSpriteUrl(spriteStem) : revisedSprite(p.sprite),
+    source: fields.source ?? 'dex',
+    ownerId: fields.ownerId ?? pickerId,
   });
 }
 
-for (const form of ALTERNATE_PICKER_FORMS) {
-  const owner = BY_ID.get(form.ownerId);
-  if (!owner) continue;
+for (const { owner: ownerId, spriteStem, ...form } of GENERATED.forms) {
+  const owner = BY_ID.get(ownerId)!;
   LINE_BY_ID.set(form.id, LINE_BY_ID.get(owner.id) ?? owner.id);
   pushMon({
     id: form.id,
     name: form.name,
-    types: form.types,
+    types: form.types ?? owner.types,
     generation: form.generation ?? owner.generation,
-    sprite: pokemonSpriteUrl(form.id),
+    sprite: pokemonSpriteUrl(spriteStem ?? form.id),
     source: form.source ?? 'dex',
-    ownerId: owner.id,
-  });
-}
-
-for (const [ownerRaw, kinds] of Object.entries(FORMS)) {
-  const ownerId = Number(ownerRaw);
-  const owner = BY_ID.get(ownerId);
-  if (!owner) continue;
-  for (const kind of ['mega', 'dynamax'] as const) {
-    for (const form of kinds[kind] ?? []) {
-      const types = POWERUP_TYPES[form.id];
-      if (!types) throw new Error(`Missing sourced types for battle form ${form.id}. Run scripts/build-favorite-powerup-types.mjs.`);
-      pushMon({
-        id: form.id,
-        name: form.label,
-        types,
-        generation: owner.generation,
-        sprite: pokemonSpriteUrl(form.id),
-        source: 'powerup',
-        ownerId,
-      });
-    }
-  }
-}
-
-const rapidStrike = BY_ID.get(10191);
-if (rapidStrike) {
-  pushMon({
-    ...rapidStrike,
-    id: 10227,
-    name: 'Gigantamax Urshifu Rapid Strike',
-    sprite: pokemonSpriteUrl(10227),
-    source: 'powerup',
+    ownerId,
   });
 }
 

@@ -10,6 +10,16 @@ const mounted=(page:Page)=>expect(page.locator('#root > .p151-boot, #root > .lg-
 function measured(posts:Payload[]) {const segments=posts.at(-1)?.attention?.segments??[];return {segments,total:segments.reduce((sum,s)=>sum+s.end-s.start,0)};}
 async function boot(page:Page,tool:typeof tools[number],optedOut=false,input=true) {
  const posts:Payload[]=[];
+ await page.addInitScript(api=>{
+   const counts={started:0,settled:0};
+   Object.assign(window,{toolFetches:counts});
+   const send=window.fetch.bind(window);
+   window.fetch=(input,init)=>{
+     const response=send(input,init);
+     if(String(input instanceof Request?input.url:input).endsWith(`/api/${api}`)){counts.started++;void response.finally(()=>{counts.settled++;}).catch(()=>{});}
+     return response;
+   };
+ },tool.api);
  await page.addInitScript(()=>{
    localStorage.setItem('personal-151-pokedex-v3',JSON.stringify({state:{sections:{starter:[1]}},version:10}));
    localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7}},version:3}));
@@ -24,6 +34,10 @@ async function boot(page:Page,tool:typeof tools[number],optedOut=false,input=tru
  if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(0);
  await page.keyboard.press('ArrowRight');
  return posts;
+}
+async function noRequestInFlight(page:Page) {
+ await expect.poll(()=>page.evaluate(()=>{const counts=(window as unknown as {toolFetches:{started:number;settled:number}}).toolFetches;return counts.started-counts.settled;})).toBe(0);
+ await page.evaluate(()=>new Promise<void>(resolve=>{const channel=new MessageChannel();channel.port1.onmessage=()=>resolve();channel.port2.postMessage(0);}));
 }
 async function wheel(page:Page) {
  const delivered=page.evaluate(()=>new Promise<void>(resolve=>window.addEventListener('wheel',()=>resolve(),{once:true})));
@@ -44,6 +58,7 @@ for(const tool of tools) {
    await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);
    await expect.poll(()=>posts.at(-1)?.attention).toBeDefined();
    await expect.poll(()=>measured(posts).total).toBe(minute);
+   await noRequestInFlight(page);
    const sent=posts.length;
    await page.clock.runFor(25*minute);expect(posts.length).toBe(sent);
    await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);

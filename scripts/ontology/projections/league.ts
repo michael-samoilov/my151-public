@@ -2,7 +2,10 @@ import type { Pokemon } from '../../../src/types/pokemon';
 import type { ResolvedForm } from '../../../src/ontology/model';
 import type { Ontology } from '../resolve';
 import { dexRows, parentInTool, stageOf } from './dex';
+import { differingFields } from './diff';
 import { isPowerUp, pickerOwner } from './owner';
+
+const LEAGUE_SKIP = ['id', 'name', 'sprite'];
 
 export const inLeague = (form: ResolvedForm): boolean => form.tools.league === 'in' && !isPowerUp(form);
 
@@ -54,15 +57,6 @@ export interface LeagueProjection {
   readonly extraEvolutions: readonly (readonly [number, number])[];
 }
 
-function differingFields(row: LeagueRow, base: LeagueRow): Fields {
-  const fields: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(row)) {
-    if (key === 'id' || key === 'name' || key === 'sprite') continue;
-    if (JSON.stringify(value) !== JSON.stringify((base as unknown as Record<string, unknown>)[key])) fields[key] = value;
-  }
-  return fields as Fields;
-}
-
 export function leagueProjection(ontology: Ontology): LeagueProjection {
   const dex = new Map(dexRows(ontology).map(({ archetypes: _archetypes, ...row }) => [row.id, row as unknown as LeagueRow]));
   const rows = leagueRows(ontology);
@@ -73,7 +67,7 @@ export function leagueProjection(ontology: Ontology): LeagueProjection {
   for (const row of rows) {
     const form = byAppId.get(row.id)!;
     if (form.tools.dex === 'in') {
-      const fields = differingFields(row, dex.get(row.id)!);
+      const fields = differingFields(row, dex.get(row.id)!, LEAGUE_SKIP) as Fields;
       if (Object.keys(fields).length) dexOverrides[row.id] = fields;
       continue;
     }
@@ -85,7 +79,7 @@ export function leagueProjection(ontology: Ontology): LeagueProjection {
       owner: owner.appId,
       name: row.name,
       ...(form.sprite === String(form.appId) ? {} : { spriteStem: form.sprite }),
-      ...differingFields(row, ownerRow),
+      ...(differingFields(row, ownerRow, LEAGUE_SKIP) as Fields),
     });
   }
   const extraEvolutions: [number, number][] = [];
