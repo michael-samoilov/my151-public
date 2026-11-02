@@ -4,17 +4,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
-import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
-import { mergeEvolutionBranches } from './chainMerge';
+import { useFilteredPokemonGrouped, getExclusiveForms, type PokemonDataSource } from '@/hooks/usePokemonData';
+import { browseSubgroups, gridDefinitions, gridModels, searchResultSubgroups, type BrowserSubgroup, type GridInputs } from './gridLayout';
 import { browserFavoriteIds, browserFilterOptions, useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
-import { BUILD_GROUPS } from '@/data/slot-template';
-import { CATEGORIES, type PokemonCategory } from '@/data/categories';
-import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
+import { CATEGORIES } from '@/data/categories';
+import { TYPE_NAMES, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
-import { archetypeName as archetypeLabel, archetypeSubgroupLabel, categoryColumnLabel, categoryName as categoryLabel, categorySubgroupLabel, colorLabel, eggGroupLabel, raw, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
+import { archetypeName as archetypeLabel, categoryColumnLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, raw, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -50,22 +49,8 @@ const PLACES_IDS = new Set(PLACES_ORDER);
 const GAME_MECHANICS_ORDER = ['evolution-item', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'reward-pokemon', 'version-exclusive'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
-interface BrowserSubgroup {
-  label: string;
-  pokemonIds: number[];
-  shinyIds?: number[];
-  order?: 'evoLine';
-  lines?: number[][];
-}
-
 const SEARCH_RENDER_LIMIT = 150;
 const COUNT_ANNOUNCE_DELAY_MS = 500;
-
-interface SubgroupGridGroup {
-  key: string;
-  members: Pokemon[];
-  matchedIds: Set<number>;
-}
 
 export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false, dataSource }: {
   dataSource?: PokemonDataSource;
@@ -331,7 +316,6 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const filterOptions = useMemo(() => ({ ...browseOptions, search: searchInput }), [browseOptions, searchInput]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
-  const lookupPokemon = deferredOptions.dataSource?.getPokemonById ?? getPokemonById;
 
   const totalCount = useMemo(() => groups.reduce((sum, g) => sum + g.members.length, 0), [groups]);
 
@@ -344,73 +328,16 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     : null;
   const archetypeName = activeArchetypeDef ? archetypeLabel(activeArchetypeDef.id) : null;
 
-  const gridCategoryDef = deferredOptions.category
-    ? CATEGORIES.find((c) => c.id === deferredOptions.category)
-    : null;
-  const gridArchetypeDef = deferredOptions.archetype
-    ? ARCHETYPES.find((a) => a.id === deferredOptions.archetype)
-    : null;
-  const shinyIds = useMemo(
-    () => gridArchetypeDef?.shinyIds ? new Set(gridArchetypeDef.shinyIds) : undefined,
-    [gridArchetypeDef]
-  );
-  const spriteOverrides = gridArchetypeDef?.spriteOverrides;
+  const { gridCategoryDef, gridArchetypeDef } = gridDefinitions(deferredOptions);
 
   const scopedToLines = !!(scopeFilterLines && (scopeFilter || restrictIds));
 
-  const scopeSubgroup = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
-    if (!scopedToLines) return null;
-    const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
-    if (inScope.length === 0) return [];
-    return [{
-      label: scopeFilterLabel ?? t('browser.scope'),
-      pokemonIds: inScope,
-      order: 'evoLine',
-      lines: scopeFilterLines,
-    }];
-  }, [scopedToLines, scopeFilterLines, scopeFilterLabel, t]);
+  const gridInputs = useMemo((): GridInputs => {
+    void t;
+    return { groups, gridCategoryDef, gridArchetypeDef, dataSource: deferredOptions.dataSource, scopeFilter, restrictIds, scopeFilterLabel, scopeFilterLines, myDexFilter, myDexSections, standaloneTiles };
+  }, [t, groups, gridCategoryDef, gridArchetypeDef, deferredOptions.dataSource, scopeFilter, restrictIds, scopeFilterLabel, scopeFilterLines, myDexFilter, myDexSections, standaloneTiles]);
 
-  const sectionSubgroups = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
-    if (!myDexFilter || !myDexSections) return null;
-    const inResults = new Set(ids);
-    return BUILD_GROUPS
-      .map((g) => ({
-        label: sectionLabel(g.id),
-        pokemonIds: (myDexSections[g.id] ?? []).filter((id) => inResults.has(id)),
-      }))
-      .filter((sub) => sub.pokemonIds.length > 0);
-  }, [myDexFilter, myDexSections]);
-
-  const effectiveSubgroups = useMemo((): BrowserSubgroup[] => {
-    if (gridArchetypeDef?.subgroups) {
-      return gridArchetypeDef.subgroups.map((sub, i) => ({ ...sub, label: archetypeSubgroupLabel(gridArchetypeDef.id, i) }));
-    }
-    if (gridCategoryDef?.subgroups) {
-      return gridCategoryDef.subgroups.map((sub, i) => ({ ...sub, label: categorySubgroupLabel(gridCategoryDef.id, i) }));
-    }
-
-    const sourceIds = gridArchetypeDef
-      ? gridArchetypeDef.pokemonIds
-      : groups.flatMap(g => [...g.matchedIds]);
-
-    const scoped = scopeSubgroup(sourceIds);
-    if (scoped) return scoped;
-
-    const bySection = sectionSubgroups(sourceIds);
-    if (bySection) return bySection;
-
-    const genMap = new Map<number, number[]>();
-    for (const id of sourceIds) {
-      const p = lookupPokemon(id);
-      if (!p) continue;
-      if (!genMap.has(p.generation)) genMap.set(p.generation, []);
-      genMap.get(p.generation)!.push(id);
-    }
-
-    return [...genMap.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
-  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, lookupPokemon, t]);
+  const effectiveSubgroups = useMemo(() => browseSubgroups(gridInputs), [gridInputs]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -458,136 +385,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
   const searchSubgroups = useMemo((): BrowserSubgroup[] => {
     if (!isSearching || tooManyResults) return [];
-    const memberIds = groups.flatMap((g) => g.members.map((m) => m.id));
-    const scoped = scopeSubgroup(memberIds);
-    if (scoped) return scoped;
-    const bySection = sectionSubgroups(memberIds);
-    if (bySection) return bySection;
-    const genMap = new Map<number, number[]>();
-    for (const g of groups) {
-      for (const m of g.members) {
-        if (!genMap.has(m.generation)) genMap.set(m.generation, []);
-        genMap.get(m.generation)!.push(m.id);
-      }
-    }
-    return [...genMap.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
-  }, [isSearching, tooManyResults, groups, scopeSubgroup, sectionSubgroups, t]);
+    return searchResultSubgroups(gridInputs);
+  }, [isSearching, tooManyResults, gridInputs]);
 
-  const subgroupModels = useMemo(() => {
-    const compareBrowserOrder = deferredOptions.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
-    const source = isSearching ? searchSubgroups : effectiveSubgroups;
-    const dualCols = !isSearching ? gridCategoryDef?.dualColumns : undefined;
-    const models: {
-      label: string;
-      dualCols?: NonNullable<PokemonCategory['dualColumns']>;
-      groups?: SubgroupGridGroup[];
-      leftGroups?: SubgroupGridGroup[];
-      rightGroups?: SubgroupGridGroup[];
-      shinyIds?: Set<number>;
-      spriteOverrides?: Record<number, string>;
-    }[] = [];
-
-    const claimedPokemonIds = standaloneTiles ? new Set<number>() : null;
-
-    for (const sub of source) {
-      const subIdSet = new Set(sub.pokemonIds);
-      const inheritedMemberId = !isSearching && !sub.lines && (gridArchetypeDef || gridCategoryDef?.subgroups || dualCols)
-        ? deferredOptions.dataSource?.archetypeMemberId
-        : undefined;
-      const matchesMember = (ids: Set<number>, id: number) => ids.has(id) || ids.has(inheritedMemberId?.(id) ?? id);
-
-      if (sub.lines) {
-        const drawn = sub.lines
-          .map((line) => line.map((id) => lookupPokemon(id)).filter((p): p is Pokemon => !!p))
-          .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
-          .map((members) => {
-            let gen = Infinity;
-            let first = Infinity;
-            for (const m of members) {
-              if (m.generation < gen) gen = m.generation;
-              if (m.id < first) first = m.id;
-            }
-            return { members, gen, first };
-          })
-          .sort((a, b) => a.gen - b.gen || a.first - b.first)
-          .map(({ members }) => ({
-            key: `${sub.label}-${members.map((m) => m.id).join('-')}`,
-            members,
-            matchedIds: new Set(members.filter((m) => subIdSet.has(m.id)).map((m) => m.id)),
-          }));
-        if (drawn.length > 0) models.push({ label: sub.label, groups: drawn });
-        continue;
-      }
-
-      let matching = groups.filter(g => g.members.some(m => matchesMember(subIdSet, m.id)));
-      if (matching.length === 0) continue;
-      if (claimedPokemonIds) {
-        matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).flatMap((group) => {
-          const members = group.members.filter(member => matchesMember(subIdSet, member.id) && !claimedPokemonIds.has(member.id));
-          for (const member of members) claimedPokemonIds.add(member.id);
-          return members.length > 0 ? [{ ...group, members }] : [];
-        });
-        if (matching.length === 0) continue;
-      }
-
-      if (!isSearching && gridArchetypeDef) {
-        const orderIdx = new Map<EvolutionGroup, number>();
-        for (const g of matching) {
-          orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id || inheritedMemberId?.(m.id) === id)));
-        }
-        matching.sort((a, b) => orderIdx.get(a)! - orderIdx.get(b)!);
-      } else if (sub.order === 'evoLine') {
-        const key = new Map<EvolutionGroup, [number, number]>();
-        for (const g of matching) {
-          let gen = Infinity;
-          let id = Infinity;
-          for (const m of g.members) {
-            if (m.generation < gen) gen = m.generation;
-            if (id === Infinity || compareBrowserOrder(m.id, id) < 0) id = m.id;
-          }
-          key.set(g, [gen, id]);
-        }
-        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || compareBrowserOrder(key.get(a)![1], key.get(b)![1]));
-      } else {
-        const minId = new Map<EvolutionGroup, number>();
-        for (const g of matching) {
-          let min = Infinity;
-          for (const m of g.members) {
-            if (matchesMember(subIdSet, m.id) && (min === Infinity || compareBrowserOrder(m.id, min) < 0)) min = m.id;
-          }
-          minId.set(g, min);
-        }
-        matching.sort((a, b) => compareBrowserOrder(minId.get(a)!, minId.get(b)!));
-      }
-
-      const mapGroup = (group: EvolutionGroup): SubgroupGridGroup => ({
-        key: `${sub.label}-${group.members.map(member => member.id).join('-')}`,
-        members: group.members,
-        matchedIds: new Set(group.members.filter(m => matchesMember(subIdSet, m.id)).map(m => m.id)),
-      });
-
-      if (dualCols) {
-        const leftIdSet = new Set(dualCols.left.ids);
-        const rightIdSet = new Set(dualCols.right.ids);
-        models.push({
-          label: sub.label,
-          dualCols,
-          leftGroups: matching.filter(g => g.members.some(m => matchesMember(leftIdSet, m.id))).map(mapGroup),
-          rightGroups: matching.filter(g => g.members.some(m => matchesMember(rightIdSet, m.id))).map(mapGroup),
-        });
-      } else {
-        models.push({
-          label: sub.label,
-          groups: matching.map(mapGroup),
-          shinyIds: isSearching ? undefined : (sub.shinyIds ? new Set(sub.shinyIds) : shinyIds),
-          spriteOverrides: isSearching ? undefined : spriteOverrides,
-        });
-      }
-    }
-    return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles, lookupPokemon, deferredOptions.dataSource]);
+  const subgroupModels = useMemo(
+    () => gridModels(isSearching ? searchSubgroups : effectiveSubgroups, isSearching, gridInputs),
+    [isSearching, searchSubgroups, effectiveSubgroups, gridInputs],
+  );
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const shownCount = useMemo(() => {
     if (!scopedToLines && !standaloneTiles) return totalCount;

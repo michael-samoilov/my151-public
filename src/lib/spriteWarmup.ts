@@ -92,8 +92,12 @@ function enqueue(urls: readonly string[], first: boolean) {
   schedulePump();
 }
 
-export function warmSprites(urls: readonly string[], first = false) {
+export function warmSprites(urls: readonly string[], first = false): () => void {
   if (warmupAllowed()) enqueue(urls, first);
+  return () => {
+    const drop = new Set(urls);
+    queue = queue.filter((url) => !drop.has(url));
+  };
 }
 
 export function warmSectionFirst(sectionId: string) {
