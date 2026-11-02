@@ -24,6 +24,7 @@ It does not replace the rules or decisions in those records.
 | Admin standing decisions and work history | Admin handoff, 2026-09-30 (not published) |
 | Favorite Picker standing decisions and work history | Favorite Picker handoff (not published) |
 | Reliability work history | Reliability handoff, 2026-09-30 (not published) |
+| Pokémon ontology state and next phase | Ontology handoff, 2026-11-02 (not published) |
 | Ideas without active implementation | [Backlog](backlog.md) |
 | Unscheduled feature requests | Feature backlog in the working notes (not published) |
 | Running task list | To-do list in the working notes (not published) |
