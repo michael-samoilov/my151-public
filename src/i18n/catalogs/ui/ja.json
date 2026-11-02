@@ -63,8 +63,6 @@
   "common.skipToMain": "メインコンテンツにスキップ",
   "dex.national": "全国図鑑",
   "header.tagline": " — 自分だけのポケモン図鑑を作ろう",
-  "header.toolNameCore": "ポケモン図鑑づくり",
-  "header.toolNameQualifier": "オリジナル",
   "intro.body": "自分だけの地方図鑑を作り、詳細な統計を分析したら、画像に書き出して保存・共有しよう。",
   "intro.dismiss": "紹介を閉じる",
   "intro.headline": "自分だけの{count}匹を作ろう",
