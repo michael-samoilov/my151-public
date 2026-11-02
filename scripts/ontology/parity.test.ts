@@ -1,4 +1,4 @@
-// keeps: the parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the Favorite Picker catalog must return the same records when rebuilt from data/ontology/, and the League catalog must assemble from src/data/generated/league.json the rows the full projection holds.
+// keeps: the parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the Favorite Picker and League catalogs must assemble, from src/data/generated/, the records the full projections hold.
 // platform: Vitest runs this test because the League catalog imports src/i18n, which needs Vite's import.meta.glob.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { getAllPokemon as leagueCatalog } from '../../src/league/data/catalog';
 import { revisedSprite } from '../../src/lib/spriteUrl';
 import { buildOntology } from './build';
 import { inLeague, leagueRows } from './projections/league';
-import { pickerMetadata, pickerRecords } from './projections/legacy-picker';
+import { pickerMetadata, pickerRecords } from './projections/favorites';
 import { pickerId } from './projections/owner';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -43,7 +43,7 @@ const FIX = 'This catalog and data/ontology/ disagree. Make the same form change
 describe('ontology parity with today’s catalogs', () => {
   it('rebuilds every Favorite Picker record', () => {
     const today = allPickerMons();
-    const rebuilt = pickerRecords(ontology);
+    const rebuilt = pickerRecords(ontology).map((record) => ({ ...record, sprite: revisedSprite(record.sprite) }));
     expect(rebuilt).toHaveLength(today.length);
     expect(differences('picker', today, rebuilt), FIX).toEqual([]);
     expect(today.length).toBeGreaterThan(1000);
@@ -52,7 +52,7 @@ describe('ontology parity with today’s catalogs', () => {
   it('rebuilds every Favorite Picker metadata record', () => {
     const today = allPickerMons().map((mon) => pickerPokemonMetadata(mon)!).map(({ archetypes: _archetypes, ...record }) => record);
     const byPickerId = new Map([...ontology.forms.values()].map((form) => [pickerId(ontology, form), form]));
-    const rebuilt = today.map((record) => pickerMetadata(ontology, byPickerId.get(record.id)!)).map(({ archetypes: _archetypes, ...record }) => record);
+    const rebuilt = today.map((record) => pickerMetadata(ontology, byPickerId.get(record.id)!)).map(({ archetypes: _archetypes, ...record }) => ({ ...record, sprite: revisedSprite(record.sprite!) }));
     expect(differences('picker metadata', today, rebuilt), FIX).toEqual([]);
     expect(today.length).toBeGreaterThan(1000);
   });
