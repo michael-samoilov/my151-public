@@ -27,7 +27,6 @@ function ArtistRow({ name, files }: { name: string; files: number }) {
   );
 }
 
-/** A bundle's artists, ranked by the app's files credited to them through it. */
 export function BundleArtists({ entry }: { entry: BundleCredit }) {
   const t = useT();
   const tn = useTn();

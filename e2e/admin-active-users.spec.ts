@@ -90,7 +90,6 @@ test.describe('admin active users range', () => {
     const hours = Number(label?.match(/over (\d+) hours/)?.[1]);
     expect(hours).toBeGreaterThanOrEqual(23);
     expect(hours).toBeLessThanOrEqual(24);
-    // The newest point counts the past 60 minutes, and its label says so.
     const pastHour = label?.match(/Past hour (\d+)\./)?.[1];
     expect(pastHour).toBeDefined();
     const paints = () => page.evaluate(() => (window as unknown as { hourlyPaints: string[] }).hourlyPaints);
@@ -215,7 +214,6 @@ test.describe('admin active users range', () => {
   });
 
   test('a month name that would run into the next is left out, and the year moves on', { tag: '@viewport' }, async ({ page }) => {
-    // On October 28 the 90 days of activity start on July 31, one day before August.
     const now = Date.UTC(2026, 9, 28, 12);
     await page.clock.setFixedTime(now);
     await page.addInitScript(() => {
@@ -264,7 +262,6 @@ test.describe('admin active users range', () => {
 
   test('7d ends its line on today\'s calendar-day count and labels it with the day name', async ({ page }) => {
     const payload = activityPayload();
-    // A last-24-hours count unlike any day's, so a label that used it would show.
     payload.lastPointLabels = { ...payload.lastPointLabels!, label24h: 97 };
     await page.route('**/api/submissions?**', route => route.fulfill({ json: payload }));
     await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));

@@ -106,9 +106,7 @@ function useTileSize(colFactor: number, rowFactor: number, reserveH: number = 0)
   return { containerRef, tileSize };
 }
 
-/** True once web fonts have finished loading, so canvas text measurement (used
- *  to fit section names) reflects the real Inter metrics rather than a fallback.
- *  Flips state on load to trigger a re-measure/re-render. */
+// platform: Canvas text measurement uses a fallback font until web fonts load, so labels re-measure once fonts are ready.
 function useFontsReady(): boolean {
   const [ready, setReady] = useState(
     () => typeof document !== 'undefined' && (document as Document).fonts?.status === 'loaded',
@@ -264,7 +262,6 @@ export function SectionOverlays({
   const fontSize = tileSize * 0.26;
   const strokeW = outlineStrokeW(tileSize, OUTLINE_STROKE_FRAC);
   const dotTail = 6 * strokeW;
-  // Re-measure labels once the real font is loaded (canvas metrics depend on it).
   const fontsReady = useFontsReady();
 
   return (
@@ -431,8 +428,6 @@ export function ViewPage() {
     const lastRowGeom = showSectionOverlays && lastRowOffsetCols > 0
       ? { index: lastRowIndex, count: lastRowCount, offsetCols: lastRowOffsetCols }
       : null;
-    // The runs carry the section names in the active language. `t` changes
-    // with the catalog, so a language switch rebuilds them.
     void t;
     const allRuns = showSectionOverlays ? computeSectionRuns(sorted, sections, COLS) : [];
 
@@ -530,14 +525,8 @@ export function ViewPage() {
   const statsScale = statsNatural.h > 0 ? statsTargetHeight / statsNatural.h : 1;
   const statsDisplayW = statsNatural.w > 0 ? statsNatural.w * statsScale : statsTileCols * tileSize;
 
-  // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
-  // box, which a CSS transform does not affect — so this is stable. The natural
-  // width is a fixed rem value, so its height (hence the aspect) settles at once.
-  //
-  // useLayoutEffect (not useEffect) so the first measurement + scale are applied
-  // BEFORE the browser paints — otherwise the panel briefly paints at scale 1
-  // (full natural size, oversized text) for one frame before shrinking, which
-  // reads as a flicker when arriving on the View page.
+  // platform: ResizeObserver reports the layout box, which a CSS transform does not change.
+  // platform: React runs useLayoutEffect before the browser paints, so the first scale applies without a one-frame flicker.
   useLayoutEffect(() => {
     const el = statsContentRef.current;
     if (!el) return;

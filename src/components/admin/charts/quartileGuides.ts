@@ -6,7 +6,6 @@ interface ChartQuartile {
   axisValue?: number;
 }
 
-// Ticks every 25% so each tick meets a p25, p50 or p75 guide.
 export function percentileAxis(color: string) {
   return {type: 'value' as const, min: 0, max: 100, interval: 25, splitLine: {show: false}, axisLabel: {color, fontSize: 9, formatter: '{value}%'}};
 }
@@ -24,7 +23,6 @@ export function quartileGuideSeries(quartiles: ChartQuartile[], xMin: number, xM
       const text = `${Number(api.value(2))*100}p`;
       const value = format(Number(api.value(3)));
       const textWidth = (ctx?.measureText(`${text} ${value}`).width ?? 70)+8;
-      // A label with no room right of its corner moves left, where the curve runs above the line, so it goes under the line.
       const under = pos[0]+4 > right-textWidth;
       return {type: 'group' as const, children: [
         {type: 'polyline' as const, shape: {points: [left,pos,bottom]}, style: {stroke: color,lineWidth: 1,lineDash: [3,3],opacity: 0.45,fill: null}},

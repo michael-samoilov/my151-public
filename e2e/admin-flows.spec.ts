@@ -219,7 +219,6 @@ test.describe('admin flows', () => {
     const builder = { cid: 'flow-e2e', firstTs: now - 60_000, lastTs: now, submits: 1, sessions: 1, sessionMs: [60_000],
       sessionLog: [{ ts: now - 60_000, ids: [1] }, { ts: now, ids: [1] }], maxDepth: 1, everIds: [1], latestIds: [1], completed: false, exported: false };
     const payload = buildDashboard({ clients: { 'flow-e2e': JSON.stringify(builder) }, archived: [], funnel: {}, funnelWindow: null, leagueClients: {} }, { range: 'all' }, now);
-    // Live sources from October 29: a long host and a run of sources too small to space their labels by size.
     payload.referrerFlow = [
       ['www.google.com', 50, 15, 8], ['www.bing.com', 20, 9, 3], ['duckduckgo.com', 7, 3, 1], ['noai.duckduckgo.com', 2, 1, 0],
       ['search.yahoo.com', 2, 1, 0], ['arch.b4k.dev', 1, 1, 0], ['search.brave.com', 1, 1, 0], ['it.search.yahoo.com', 1, 0, 0],

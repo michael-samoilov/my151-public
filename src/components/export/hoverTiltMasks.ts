@@ -241,7 +241,7 @@ async function typeIconRasterUrl(ctx: HoverTiltMaskContext): Promise<string | nu
   return url;
 }
 
-/** CSS mask-image cannot fetch sibling files from a data-URL SVG. Rasterize type glyphs. */
+// platform: CSS mask-image cannot fetch sibling files from a data-URL SVG, so the type glyphs are rasterized.
 export async function resolveHoverTiltMaskPaint(
   id: HoverTiltMaskId,
   ctx: HoverTiltMaskContext = EMPTY_MASK_CONTEXT,

@@ -101,20 +101,7 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
             aria-label={t('league.name.label')}
             enterKeyHint="done"
             onKeyDown={confirmOnEnter}
-            // Small on purpose; the league entry caps maximum-scale on iOS so
-            // focusing a sub-16px input no longer zooms the page.
-            // The same weight the gym card's theme placeholder wears, so the
-            // two "not filled in yet" fields read as one thing.
-            // The words are clipped at the field's own box, and a clip
-            // lands mid-glyph — which reads as the name running under
-            // whatever sits next in the bar rather than ending. An
-            // ellipsis says it ends. Browsers draw it only while the
-            // field is not focused, which is the behaviour to want: once
-            // you are typing you need to see the caret's end of the text,
-            // not a mark saying there is more.
-            //
-            // Only the drawing is cut. `value` is the whole name, and the
-            // store keeps it — the export renders from the store.
+            // platform: Browsers draw a `text-overflow` ellipsis only while the field is not focused, so typing shows the caret end of the text.
             className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight text-ellipsis outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
           />
         </span>
@@ -316,17 +303,6 @@ export function LeagueApp() {
           </BottomSheet>
         )}
 
-        {/* The report form's only mount point on this entry.
-            `FeedbackButton` is just a trigger: it calls `openFeedback`, and
-            whichever `FeedbackHost` is mounted owns the sheet. The league
-            builder boots from its own root (`src/league/main.tsx`), not from
-            `App.tsx`, so it never inherited that app's host -- and every bug
-            button here did nothing at all, silently, because an unregistered
-            opener is a no-op rather than an error.
-
-            Outside the two panes on purpose. Each of them is `overflow-hidden`
-            and goes `inert` when the other is showing, so a sheet mounted in
-            one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
         {exportOpen && <ErrorBoundary where="league-export"><Suspense fallback={<ScreenSpinner />}><LeagueExportOverlay /></Suspense></ErrorBoundary>}
         <LeagueFunnelNudge />

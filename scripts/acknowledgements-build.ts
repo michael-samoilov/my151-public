@@ -18,7 +18,7 @@ interface Heading {
   part?: string;
 }
 
-/** Reads `## name - version (license): part` headings, the format Vite writes and the extra file copies. */
+// platform: Vite writes license headings as `## name - version (license): part`, and the extra file copies that format.
 export function readHeadings(markdown: string): Heading[] {
   return [...markdown.matchAll(/^## (.+?)(?: - (\S+))?(?: \(([^)]+)\))?(?:: (.+))?$/gm)].map(([, name, version, license, part]) => ({
     name,
@@ -32,9 +32,7 @@ export function buildIndex(buildList: string, extraList: string): NpmPackageInde
   const built = readHeadings(buildList);
   const extra = readHeadings(extraList);
   const extraNames = new Set(extra.map((heading) => heading.name));
-  // Vite names a package by the nearest package.json, so a package with a
-  // nested one shows up by its folder ("country-flag-icons/string/3x2"),
-  // with no license. The extra file holds that package's notice.
+  // platform: Vite names a package by its nearest package.json, so a nested one shows as a folder path with no license.
   const supersededBy = (name: string) => [...extraNames].some((root) => name.startsWith(`${root}/`));
   const kept = built.filter((heading) => heading.license || !supersededBy(heading.name));
   const packages = new Map<string, NpmPackage>();
@@ -72,7 +70,7 @@ export function npmPackageIndex(): Plugin {
     configResolved(config) {
       root = config.root;
     },
-    // After every generateBundle hook, so Vite's own license list exists.
+    // platform: Vite's own license list exists only after every generateBundle hook, so this runs in writeBundle.
     writeBundle(options, bundle) {
       const asset = bundle[BUILD_LIST];
       if (!asset || asset.type !== 'asset' || !options.dir) return;

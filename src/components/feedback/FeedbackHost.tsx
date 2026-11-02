@@ -10,11 +10,7 @@ let loadedSheet: Sheet | null = null;
 const loadSheet = () => loadChunk(() => import('./FeedbackSheet')).then((module) => (loadedSheet = module.FeedbackSheet));
 const LazySheet = lazy(() => loadSheet().then((FeedbackSheet) => ({ default: FeedbackSheet })));
 
-// The form's code stays off the first download and arrives once the page has
-// loaded and gone idle. A tap after that renders the form inside the tap, so
-// its text field takes focus there and iOS opens the keyboard; loaded on the
-// tap, the focus came after the download and the first report after a reload
-// opened without a keyboard (October 2026).
+// platform: iOS opens the keyboard only when focus happens inside the tap, so the form code preloads once the page is idle.
 if (typeof document !== 'undefined') {
   const prefetch = () => whenIdle(() => { void loadSheet().catch(() => {}); });
   if (document.readyState === 'complete') prefetch();

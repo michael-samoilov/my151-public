@@ -1,7 +1,6 @@
 import { FAVORITES_STORAGE_KEY, SAVED_PICKS_KEY } from '../store/useFavoritesStore';
 import { buildFavoritesSnapshot, type FavoritesCompletion } from './snapshot';
 
-/** Counts the saved picks as the app shows them, and records the count for the hub. */
 export function recordSavedPicks(): FavoritesCompletion | null {
   let saved: string | null;
   let fills: unknown;
@@ -18,8 +17,6 @@ export function recordSavedPicks(): FavoritesCompletion | null {
   try {
     const record = JSON.stringify({ saved, filled: completion.filled });
     if (localStorage.getItem(SAVED_PICKS_KEY) !== record) localStorage.setItem(SAVED_PICKS_KEY, record);
-  } catch {
-    // Without the record, the hub's picks line waits for the app.
-  }
+  } catch {}
   return completion;
 }

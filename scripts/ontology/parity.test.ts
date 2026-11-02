@@ -1,6 +1,5 @@
-// keeps: the phase 1 parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the
-// Favorite Picker and League catalogs must return the same records when rebuilt from data/ontology/.
-// It runs under vitest because the League catalog imports src/i18n, which needs Vite's import.meta.glob.
+// keeps: the phase 1 parity gate of docs/data-model/pokemon-ontology.md, which no E2E test can reach: the Favorite Picker and League catalogs must return the same records when rebuilt from data/ontology/.
+// platform: Vitest runs this test because the League catalog imports src/i18n, which needs Vite's import.meta.glob.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -49,8 +48,6 @@ describe('ontology parity with today’s catalogs', () => {
   });
 
   it('rebuilds every Favorite Picker metadata record', () => {
-    // usePokemonData.ts writes the app's archetype lists onto the shared pokemon.json rows when the
-    // League catalog loads, so the metadata records carry them here. Archetypes are app data, not ontology.
     const today = allPickerMons().map((mon) => pickerPokemonMetadata(mon)!).map(({ archetypes: _archetypes, ...record }) => record);
     const byPickerId = new Map([...ontology.forms.values()].map((form) => [pickerId(ontology, form), form]));
     const rebuilt = today.map((record) => pickerMetadata(ontology, byPickerId.get(record.id)!)).map(({ archetypes: _archetypes, ...record }) => record);

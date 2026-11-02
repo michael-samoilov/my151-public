@@ -106,9 +106,7 @@ interface EvoLineGridProps {
   onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
-  /** Show every tile shiny, or faded under the no-shiny mark when it has no shiny. */
   shinyView?: boolean;
-  /** Load the shiny sprites of the rows on screen, so a press of the Shiny switch repaints at once. */
   preloadShinies?: boolean;
   cols?: number;
   variant?: EvoLineVariant;
@@ -411,7 +409,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                     const info = matchupInfo.get(pokemon.id)!;
                     const offD = doublings(info.offense, false);
                     const defD = doublings(info.defense, true);
-                    const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
+                    const dColor = (d: number) => d > 0 ? 'text-emerald-600' : d < 0 ? 'text-red-500' : '';
                     const iconCls = 'w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)]';
                     const iconSz = 'calc(var(--tile-sprite)*0.18)';
                     const gap = 'calc(var(--tile-sprite)*0.04)';

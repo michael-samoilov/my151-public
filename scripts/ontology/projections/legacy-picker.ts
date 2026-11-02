@@ -1,8 +1,3 @@
-/**
- * Today's Favorite Picker catalog, rebuilt from the ontology: the records allPickerMons() and
- * pickerPokemonMetadata() return. The parity test proves them equal. Phase 2 replaces the Picker's
- * own catalog with a projection, and this file with it.
- */
 import type { PickerMon } from '../../../src/favorites/model/catalog';
 import { revisedSprite } from '../../../src/lib/spriteUrl';
 import type { Pokemon } from '../../../src/types/pokemon';
@@ -19,7 +14,6 @@ function regionOf(ontology: Ontology, form: ResolvedForm): string | null {
   return form.states.length ? regionOf(ontology, ontology.forms.get(form.enteredFrom[0])!) : form.coordinates.region;
 }
 
-/** The Picker's ownerId: a Dex row owns itself; a form of a regional Dex row belongs to it; everything else to the species. */
 export function pickerOwner(ontology: Ontology, form: ResolvedForm): ResolvedForm {
   const legacyOwner = ontology.authored.legacy.picker.owners[form.id];
   if (legacyOwner) return ontology.forms.get(legacyOwner)!;
@@ -51,7 +45,6 @@ export function pickerRecords(ontology: Ontology): PickerMon[] {
   return [...ontology.forms.values()].filter((form) => form.tools.picker === 'in').map((form) => pickerRecord(ontology, form));
 }
 
-/** What pickerPokemonMetadata() returns: the owner's Dex row under the form's own facts. */
 export function pickerMetadata(ontology: Ontology, form: ResolvedForm): Pokemon {
   const rows = dexRowsByAppId(ontology);
   const record = pickerRecord(ontology, form);

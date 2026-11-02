@@ -83,10 +83,7 @@ export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): F
     }
   }
 
-  // A blend over a partly transparent pixel shows some of the layer's own
-  // color, so the gleam's dark gaps darkened the anti-aliased rim of the
-  // card's rounded corners. Ink masks stop one pixel inside that rim; the
-  // extra pixel covers the bilinear blur when the preview scales the mask up.
+  // platform: A blend over a partly transparent pixel shows the layer's own colour, so ink masks stop a pixel inside the anti-aliased rim.
   if (need.sat || need.gloss) {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {

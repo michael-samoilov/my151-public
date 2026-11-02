@@ -8,6 +8,7 @@ const ROLLING_24H_MS = 24 * HOUR_MS;
 const ROLLING_7D_MS = 7 * DAY_MS;
 const ROLLING_30D_MS = 30 * DAY_MS;
 const HOURLY_WINDOW_DAYS = 7;
+const QUOTA_OUTAGE_END_MS = Date.UTC(2026, 8, 26);
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -28,8 +29,6 @@ export interface SessionRecord {
   sessions?: number;
   sessionMs?: number[];
   sessionLog?: { ts: number }[];
-  /** The UTC days this record counts as an active user (api/_visitorQuality.ts).
-   *  When absent, every day with activity counts. */
   engagedDays?: number[];
   country?: string;
   region?: string;
@@ -167,13 +166,9 @@ export type DailyActivityPoint = {
   day: number;
   dau: number;
   rolling7: number;
-  /** Distinct browsers over this UTC day and the prior 29 days, with verified retention. */
   rolling30?: number | null;
-  /** Lower bound from the activity still recorded; missing sessions cannot be recovered. */
   recordedRolling30?: number | null;
-  /** Rolling 24h unique `cid` at `now` — set only on today's row when `now` is given. */
   label24h?: number | null;
-  /** Rolling 168h unique `cid` at `now` — set only on today's row when `now` is given. */
   label168h?: number | null;
   label720h?: number | null;
   recordedLabel720h?: number | null;
@@ -273,7 +268,6 @@ function calendarDays(r: SessionRecord, now?: number): number[] {
   if (r.activityCoverageFrom == null || !Number.isFinite(r.activityCoverageFrom)) return days;
   const opening = Math.max(dayStart(r.activityCoverageFrom), now == null ? -Infinity : dayStart(now) - 89 * DAY_MS);
   const end = now == null ? Infinity : dayStart(now);
-  // An engaged day can be in neither source, such as a seen day whose beacon left after midnight.
   for (const day of r.engagedDays ?? r.activeDays ?? []) {
     if (Number.isFinite(day) && day === dayStart(day) && day >= opening && day <= end) days.push(day);
   }
@@ -304,8 +298,7 @@ export function activityGrowth(
     || coverage.retainedFrom > previousStart || coverage.completeThrough < end) {
     return { ...dates, status: 'unavailable', reason: 'incomplete history' };
   }
-  // The quota outage before September 26 cannot be reconstructed from records.
-  if (previousStart < Date.UTC(2026, 8, 26)
+  if (previousStart < QUOTA_OUTAGE_END_MS
     || coverage.outages?.some(outage => !Number.isFinite(outage.start) || !Number.isFinite(outage.end)
       || outage.start < end && outage.end > previousStart)) {
     return { ...dates, status: 'unavailable', reason: 'recording outage' };
@@ -382,7 +375,6 @@ export function dailyActive(records: SessionRecord[], now?: number, coverage?: A
 export type HourlyActivityPoint = {
   hour: number;
   unique: number;
-  /** Unique browsers in the 60 minutes before `now`; set only on the current hour's row. */
   pastHour?: number;
 };
 
@@ -652,24 +644,16 @@ export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable
   return known;
 }
 
-/** Incomplete dex size bucket. `exported` is builders in this bucket who
- *  exported; they still count in `count`, and the chart draws a branch from
- *  the bucket to Exported. Non-exporters stay in the bucket. */
 export interface DexSizeBucket {
   label: string;
   count: number;
   exported: number;
 }
 
-/** What a browser exported from the gym leader maker, as one outcome: a
- *  browser that exported a league and a gym card counts as `both` only. */
 export const LEAGUE_EXPORT_ENDS = ['league', 'both', 'card'] as const;
 export type LeagueExportEnd = (typeof LEAGUE_EXPORT_ENDS)[number];
 export type LeagueExportCounts = Record<LeagueExportEnd, number>;
 
-/** League gym-completion bucket. `exports` counts the people in this bucket
- *  under one export end each. Incomplete buckets keep non-exporters in the
- *  bucket. Full league peels them to Kept private. */
 export interface LeagueGymBucket {
   label: string;
   count: number;
@@ -870,7 +854,6 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
   return [...byCid.values()];
 }
 
-/** The days a record is active on, after its engaged-day filter. */
 function activityDays(r: SessionRecord): number[] {
   return r.engagedDays ?? [...activeTimestamps(r).map(dayStart), ...(r.activeDays ?? [])];
 }

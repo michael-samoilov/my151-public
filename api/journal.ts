@@ -20,12 +20,7 @@ import {
   type JournalEntry,
 } from './_events.js';
 
-/** Days one call may read. 90 days of lists is already a lot of round trips;
- *  a wider window is a second call, not a slower one. */
 export const JOURNAL_MAX_DAYS = 90;
-/** Entries one call may return. A day can hold 50,000, so an unbounded 90-day
- *  read is a 4.5-million-entry response. Past this the response is truncated
- *  from the OLDEST day, and `truncated` says so. */
 export const JOURNAL_MAX_ENTRIES = 60_000;
 const DEFAULT_DAYS = 30;
 

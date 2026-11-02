@@ -1,4 +1,14 @@
 {
+  "api/feedback-list.ts": {
+    "written/one-redis-command-per-request": {
+      "count": 1
+    }
+  },
+  "api/journal.ts": {
+    "written/one-redis-command-per-request": {
+      "count": 1
+    }
+  },
   "src/components/admin/AdminPage.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1

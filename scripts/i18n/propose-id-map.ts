@@ -14,8 +14,6 @@ export interface IdMapEntry {
   speciesId: number;
   formId: number;
   formIdentifier: string;
-  /** Present only where the app id does NOT match PokeAPI's id for this
-   *  creature — the collisions that make a naive join unsafe. */
   note?: string;
   needsReview?: true;
 }

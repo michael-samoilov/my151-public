@@ -20,13 +20,7 @@ export function labelTrack(track: number): number {
   return headingTracks() ? track : 0;
 }
 
-/**
- * Half a pixel over the app's 15, so that with an odd column every cell
- * centre, and so every sprite, lands on a whole pixel. A sprite drawn from a
- * half pixel is resampled by one device pixel against the same sprite laid
- * out by the browser, which showed up as hatching over every team member
- * when the export was diffed against its artboard.
- */
+// platform: A canvas sprite drawn from a half pixel resamples one device pixel off the browser's placement, so cell centres land on whole pixels.
 export const PADX = 15.5;
 export const COL = (BOX_W - 2 * PADX) / 7;
 export const ROW = 100;
@@ -220,12 +214,7 @@ export function tmBodyShiftRem(nameLines = 1): number {
   return ((bottomGap - topGap) / 4) / (16 * K);
 }
 
-/**
- * Alphabetic baseline for a CSS line box of height `lineH` at `fontPx`.
- *
- * Canvas `middle` is the em-box centre. CSS `leading-[1.4]` centres the em
- * square and sits Latin on the alphabetic baseline, below that centre.
- */
+// platform: Canvas `middle` is the em-box centre, while CSS `leading-[1.4]` centres the em square and sets Latin on the lower alphabetic baseline.
 export function cssLineAlphabetic(
   lineTop: number,
   lineH: number,
@@ -268,21 +257,6 @@ export interface Box {
   h: number;
 }
 
-/**
- * The ace's and the partner's squares, in picture pixels, for a grid whose
- * top-left corner is at (`ox`, `oy`).
- *
- * The partner sits in the panel's bottom-right cell, centred on column 3, so
- * it stands over the team sprite below it. That centring leaves a gap to the
- * panel's right edge, and the partner keeps the same gap to the bottom edge.
- *
- * The ace is centred on the panel's top-left 2×2 cells. Inside the cell
- * insets those cells are 178px tall. A centred 192px square would start 7px
- * above the panel, and the panel would clip a sprite drawn up to the top of
- * its frame, such as Celesteela or Raging Bolt. So the ace moves down until
- * it keeps the partner's gap to the top edge. Its left edge is rounded to a
- * whole pixel, which keeps its 2× pixels square.
- */
 export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Box } {
   const box = showcaseBox();
   const partnerCx = 2.5 * COL;

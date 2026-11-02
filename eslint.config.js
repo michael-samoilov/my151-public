@@ -5,8 +5,11 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import my151 from './scripts/eslint/plugin.mjs'
+import { writtenRulesConfig } from './scripts/eslint/writtenRules.mjs'
 
-const unusedVars = {
+const sharedRules = {
+  'no-empty': ['error', { allowEmptyCatch: true }],
   '@typescript-eslint/no-unused-vars': ['error', {
     argsIgnorePattern: '^_',
     varsIgnorePattern: '^_',
@@ -30,7 +33,7 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
-    rules: { ...unusedVars },
+    rules: { ...sharedRules },
   },
 
   {
@@ -67,7 +70,7 @@ export default defineConfig([
       ecmaVersion: 2022,
       globals: { ...globals.node, ...globals.browser },
     },
-    rules: { ...unusedVars },
+    rules: { ...sharedRules },
   },
 
   {
@@ -75,4 +78,19 @@ export default defineConfig([
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 
+  {
+    files: [
+      'src/**/*.{ts,tsx}',
+      'api/**/*.ts',
+      'scripts/**/*.ts',
+      'e2e/**/*.ts',
+      '*.config.ts',
+      '**/*.{js,mjs,cjs}',
+    ],
+    ignores: ['.claude/vendor/**', 'src/components/export/hover-tilt/**'],
+    plugins: { my151 },
+    rules: { 'my151/no-comments': 'error' },
+  },
+
+  ...writtenRulesConfig,
 ])

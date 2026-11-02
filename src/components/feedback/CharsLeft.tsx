@@ -1,7 +1,6 @@
 import { useTn } from '@/i18n';
 import { cn } from '@/lib/utils';
 
-// Silent until the last tenth of the limit, so a short note never shows a count.
 export function CharsLeft({ length, max, className }: { length: number; max: number; className?: string }) {
   const tn = useTn();
   const left = max - length;

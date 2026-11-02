@@ -1,7 +1,3 @@
-// Lint and type check before a push, at the same time. The Claude Code hook in
-// .claude/hooks/pre-push-checks.mjs runs this; people and other agents run `npm run ci:pre-push`.
-// It reuses the CI runner's lint cache and type-check state, so a repeat check takes seconds.
-// Exit 2 means a check failed. Any other non-zero exit is a failure of this script itself.
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +5,7 @@ import { dropTypecheckStateAfterDependencyChange, eslintCacheArgs } from './cach
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const SHOWN_LINES = 100;
+const CHECK_FAILED_EXIT_CODE = 2;
 
 interface Result { name: string; passed: boolean; output: string; seconds: string }
 
@@ -33,4 +30,4 @@ for (const { name, passed, output, seconds } of results) {
   console.log(`${passed ? 'passed' : 'FAILED'}: ${name} (${seconds}s)`);
   if (!passed) console.log(output.trimEnd().split('\n').slice(-SHOWN_LINES).join('\n'));
 }
-if (results.some(result => !result.passed)) process.exitCode = 2;
+if (results.some(result => !result.passed)) process.exitCode = CHECK_FAILED_EXIT_CODE;

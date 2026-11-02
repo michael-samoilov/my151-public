@@ -1,21 +1,3 @@
-/**
- * Checks that docs/credits/sprite-evidence.json still describes the sprites
- * the app shows. It fails when:
- *
- * - a file a production page can request has no ledger row;
- * - a shown file's bytes changed, so its sha256 no longer equals its row's;
- * - a row names a file that no page shows any more.
- *
- * A file that scripts/sprite-reencodes.json lists with its current content is a
- * lossless re-encode that renders like the file its row proves, so the row keeps
- * the original's sha256. check-sprite-revisions.mjs fails when that entry goes stale.
- *
- * It runs offline. The list of shown files comes from the app's own catalogs
- * (scripts/credits/shownSprites.ts), which loads them through Vite so
- * `import.meta.glob` and the `@/` alias resolve as they do in the build.
- *
- * Usage: npx tsx scripts/credits/check-sprite-evidence.ts [--list <out.json>]
- */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

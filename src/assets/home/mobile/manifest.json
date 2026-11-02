@@ -5,11 +5,11 @@
   "inputs": [
     {
       "path": "src/components/home/HomePage.tsx",
-      "sha256": "8a85fc93676a154614c5c811f799270533027bacd8d80aacfeed8bd48eebfffb"
+      "sha256": "fa7048ae56c1088c339a46adc9b3063600486d442e8a7b70df9c2b6210833b94"
     },
     {
       "path": "src/home/artwork.tsx",
-      "sha256": "962c8af84a6d5c9148f35a6b8a9535e692dfcf07edf652d1f08c4323922bb63a"
+      "sha256": "81ae367e1edcc0897a07d1a5746cbaa637f1247d5f0f28c855d7cdc185f26923"
     },
     {
       "path": "src/home/artwork-data.ts",
@@ -17,7 +17,7 @@
     },
     {
       "path": "src/home/artwork-controller.js",
-      "sha256": "5dd567bfc83cbc3146e0f019ee19c75b448c8d08ad5fc6e7d0185c8a57889617"
+      "sha256": "6c4c4fe915721743165f4826443deb213525f57616bbb97dfab30ef0982f5bb6"
     },
     {
       "path": "src/components/home/useHomeSheetLift.ts",
@@ -29,11 +29,11 @@
     },
     {
       "path": "src/lib/layoutFontSize.ts",
-      "sha256": "6eaa95ad7c84d85344c018da1d8f96a158f81c2ae1bc8d95ffd1c3ec7641cfbe"
+      "sha256": "3428d6e8902f27e81850e15bbc27320094c3f92eb9b396b99e700327501c276b"
     },
     {
       "path": "src/lib/viewport.ts",
-      "sha256": "4154125291894c288180753a2c56f2be883e8ca310450a6f16cb2baaa2b063f1"
+      "sha256": "4bbf4052c93f01d9d2f33c173c0ee5be2aace6318c0805999fb5d17296612d03"
     },
     {
       "path": "src/assets/fonts/inter-home-initial.woff2",

@@ -26,11 +26,7 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
   await context.close();
 });
 
-// Firefox paints a page as soon as a script forces its layout, even with the
-// stylesheet still loading. `visualViewport.width` forces layout, so a read
-// before the stylesheet link showed the hub unstyled for about 600 ms on every
-// Firefox load. Every such read must come after the link, where the browser
-// holds the script until the stylesheet has loaded.
+// platform: Firefox paints as soon as a script forces layout, even while the stylesheet still loads.
 test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
   const html = await (await request.get('/')).text();
   const styles = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)];
@@ -152,8 +148,6 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
   });
 }
 
-// The boot script counts saved work and writes it into the page before its
-// first paint, so the counts need no app code.
 test('before the app runs, the hub already shows the saved counts', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));
@@ -184,10 +178,6 @@ test('before the app runs, the hub already shows the saved counts', async ({ bro
   for (const line of lines) expect(line.height).toBeGreaterThan(0);
 });
 
-// The boot script cannot check picks the way the app does, so before the app
-// runs it shows only the count the app recorded for the same saved picks.
-// Without that record the line waits for the app, and never shows a number
-// the app then corrects.
 test('before the app runs, the picks line shows only the count the app recorded for the same picks', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));
@@ -235,11 +225,7 @@ for (const [name, options, settings] of [
   });
 }
 
-// With the stylesheet cached, a browser can paint the hub while its HTML is
-// still arriving. The hub centres its content, so the rest of the HTML would
-// move what was painted: a layout shift of about 0.3 on a phone. The lab
-// measures that; this test holds the guard against it. HTML that stops inside
-// the grid stands for HTML still arriving.
+// platform: With the stylesheet cached, a browser can paint the hub while its HTML still arrives.
 test('a hub whose HTML has only partly arrived shows none of it yet', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL, ...PHONE, javaScriptEnabled: false });
   const page = await context.newPage();

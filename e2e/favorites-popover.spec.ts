@@ -106,8 +106,7 @@ test('desktop pane switches grid cells and closes on Escape or outside clicks', 
   await expect(picker).toBeVisible();
   await page.locator('h1').click();
   steps.outsideGrid = await state();
-  // Escape closes it, even after a tooltip layer handled the key first and
-  // prevented its default, as an open Radix tooltip does.
+  // platform: An open Radix tooltip handles Escape first and prevents its default.
   await page.getByTestId('favorites-cell-ice-4').click();
   await expect(picker).toBeVisible();
   await page.evaluate(() => document.addEventListener('keydown', (event) => event.preventDefault(), { capture: true }));

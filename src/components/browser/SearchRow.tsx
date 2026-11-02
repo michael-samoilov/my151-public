@@ -1,12 +1,10 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useTightFit } from '@/hooks/useTightFit';
 
-/** Room to type past the placeholder, in the search field's font size. */
 const TYPING_ROOM_EM = 2;
 
 let canvas: CanvasRenderingContext2D | null = null;
 
-/** The row width at which the search field fits its placeholder plus TYPING_ROOM_EM, with every item at full size. */
 function fullWidth(row: HTMLElement): number {
   const field = row.querySelector('input')!;
   const style = getComputedStyle(field);
@@ -16,14 +14,6 @@ function fullWidth(row: HTMLElement): number {
   return row.scrollWidth - room + canvas.measureText(field.placeholder).width + TYPING_ROOM_EM * parseFloat(style.fontSize);
 }
 
-/**
- * The browser's search row. Given a `layout`, it passes `tight` to its
- * children when the row is too narrow for their full size.
- *
- * `layout` names the texts that set the full row's width. When it or the
- * row's width changes, the children render in full once and the row
- * measures them, so the measurement never sees its own collapse.
- */
 export function SearchRow({ layout, children }: {
   layout: string | null;
   children: (tight: boolean) => ReactNode;

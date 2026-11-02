@@ -341,14 +341,12 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
   );
 }
 
-/** Sprites in the app that come from or through a sprite project. PokéAPI also delivers official and Smogon sprites. */
 function projectSprites(id: string, credited: number): number {
   if (id !== 'pokeapi-sprites') return credited;
   const delivery = pokeapiDelivery();
   return delivery.official + delivery.smogon + delivery.own;
 }
 
-/** A sprite project's "Used for" text, with its counts from the credit data. */
 function useProjectUse() {
   const t = useT();
   return (id: string): string | undefined => {

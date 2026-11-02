@@ -270,8 +270,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
 
     const mapBox = (await map.boundingBox())!;
     const press = { x: mapBox.x + mapBox.width * 0.25, y: mapBox.y + mapBox.height * 0.5 };
-    // Sample in the page one second after touchend. Driver round trips for
-    // geometry can otherwise consume the 200ms margin before the fade starts.
+    // platform: Playwright driver round trips can use up the 200ms margin before the fade, so the page samples itself.
     await page.evaluate(() => {
       const probe = new Promise<{opacity: number; hit: string; elapsed: number}>((resolve) => {
         window.addEventListener('touchend', () => {

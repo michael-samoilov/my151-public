@@ -6,25 +6,20 @@ import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { cn } from '@/lib/utils';
 import { showTipDot, type TipTarget } from './tipDots';
 
-/** A tip offers an action, and the whole card is that action, or explains in a body, or both. */
 type TipContent =
   | { action: string; onAction: () => void; body?: string }
   | { body: string; action?: never; onAction?: never };
 
 type TipProps = TipContent & {
-  /** Names the tip in `data-tip-card`. */
   id: string;
   target: TipTarget;
-  /** Targets that get a dot once the person visits `target`. */
   then?: readonly TipTarget[];
   title: string;
   onDismiss: () => void;
 };
 
 type TipCardProps = TipProps & {
-  /** The target button, whose glyph the card repeats. */
   anchor: Element | null;
-  /** Where the notch points, in px from the card's left edge, or no notch. */
   notch: number | null;
   className?: string;
   style?: CSSProperties;
@@ -34,11 +29,8 @@ const EASE_IN = 'cubic-bezier(0.2, 0, 0, 1)';
 const EASE_OUT = 'cubic-bezier(0.4, 0, 1, 1)';
 const HIDDEN: Keyframe = { opacity: 0, transform: 'translateY(-4px)' };
 const SHOWN: Keyframe = { opacity: 1, transform: 'none' };
-/** The gap between the target's bottom edge and the card, which the notch spans. */
 const GAP_PX = 10;
-/** The notch stays clear of the card's rounded corners. */
 const NOTCH_INSET_PX = 14;
-/** About two thirds of a second of frames to wait for a target that is still sliding in. */
 const ATTACH_FRAMES = 40;
 
 function reducedMotion(): boolean {
@@ -47,12 +39,7 @@ function reducedMotion(): boolean {
 
 const SEGMENTED: readonly Locale[] = ['ja', 'zh-Hans', 'zh-Hant'];
 
-/**
- * Japanese and Chinese have no spaces, so a browser may break a line inside a word
- * (WebKit and Chinese have no phrase-aware breaking). This puts the only break points
- * between phrases: a word with the punctuation and Japanese particles that follow it.
- * The text that holds it keeps all, so it breaks nowhere else.
- */
+// platform: Browsers may break Japanese and Chinese lines inside a word, and WebKit has no phrase-aware breaking for Chinese.
 function phrases(text: string, locale: Locale): ReactNode {
   if (!SEGMENTED.includes(locale) || typeof Intl.Segmenter !== 'function') return text;
   const units: string[] = [];
@@ -64,10 +51,6 @@ function phrases(text: string, locale: Locale): ReactNode {
   return units.map((unit, i) => <Fragment key={i}>{i > 0 && <wbr />}{unit}</Fragment>);
 }
 
-/**
- * The tip's card: a copy of the target's glyph, a one-line title, then a red action line
- * or a body. The target gets its dot as the card mounts. The card never times out.
- */
 export function TipCard({ id, target, then, title, onDismiss, anchor, notch, className, style, ...content }: TipCardProps) {
   const t = useT();
   const locale = useLocale();
@@ -168,7 +151,6 @@ function visibleArea(r: DOMRect): number {
   return r.left >= 0 && r.top >= 0 ? w * h : 0;
 }
 
-/** The on-screen copy of the target with the most visible area. A two-pane layout can hold one per pane. */
 function pickVisibleTarget(target: TipTarget): Element | null {
   let best: Element | null = null;
   let bestArea = 0;
@@ -182,10 +164,6 @@ function pickVisibleTarget(target: TipTarget): Element | null {
   return best;
 }
 
-/**
- * A tip that floats just below its target button, so the page never shifts for it.
- * It sizes to its content, so a long title keeps one line, and stays inside the page gutter.
- */
 export function FloatingTip({ onAnchor, ...tip }: TipProps & { onAnchor?: (el: Element) => void }) {
   const [anchor, setAnchor] = useState<{ el: Element; rect: DOMRect } | null>(null);
   const [width, setWidth] = useState<number | null>(null);

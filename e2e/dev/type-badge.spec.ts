@@ -37,11 +37,7 @@ async function measure(page: import('@playwright/test').Page, locale: string): P
       const baseline = parseFloat(text.getAttribute('y') ?? '0');
       const scaleX = (svg.querySelector('g') as SVGGElement).transform.baseVal.consolidate()?.matrix.a ?? 1;
 
-      // Canvas `actualBoundingBox*` are true ink extents for these exact
-      // characters in the same font the SVG resolved — the only way to see the
-      // Latin-vs-CJK offset this badge is designed to remove. `getBBox` would
-      // give the layout box, which is the font's ascent and descent and so says
-      // nothing about where the glyphs actually sit.
+      // platform: Canvas actualBoundingBox gives the glyphs' true ink extents; SVG getBBox gives only the font's ascent and descent.
       ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}`;
       const m = ctx.measureText(label);
 

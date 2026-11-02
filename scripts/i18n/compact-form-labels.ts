@@ -12,8 +12,6 @@ const CODES: Record<string, string> = {
   '10': '10%', '50': '50%', complete: '100%',
   mega: 'M', primal: 'P', gmax: 'GMX',
   male: '♂', female: '♀',
-  // Pokopia identities name the character; the codes follow the form names
-  // (Stereo Rotom, Pale, Decorator, Cook, Supervisor). Pikachu, Ph.D. has P.
   dj: 'DJ', peakychu: 'PE', smearguru: 'D', 'chef-dente': 'C', tinkmaster: 'S',
 };
 const DEFAULT_SUFFIX: Record<string, string> = {
@@ -27,7 +25,6 @@ const INDICATED_BASE_FORMS = new Set([422, 423, 585, 586, 681, 745, 892, 1017]);
 
 interface FormIdentity { key: string; species: number; region?: string; suffix: string; }
 
-/** Build codes against the complete family, never the current query or viewport. */
 export function compactFormLabels(entries: IdMapEntry[], forms: Record<string, string>, regionMarks: Record<string, string>): Record<string, string> {
   const base = new Map(entries.filter(entry => entry.appId === entry.speciesId).map(entry => [entry.speciesId, entry.appName]));
   const identities: FormIdentity[] = entries.flatMap(entry => {

@@ -33,7 +33,6 @@ async function main() {
   const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId };
   try {
     if (selection.effectiveMode !== 'docs') {
-      // These lanes read the source and write only their own outputs, so they run at the same time.
       await settleLanes([
         () => journal.stage('lint', 'npm', ['run', 'lint', '--', ...eslintCacheArgs(root)]),
         () => journal.stage('unit', 'npm', ['test']),

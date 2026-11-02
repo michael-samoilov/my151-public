@@ -30,24 +30,13 @@ async function overlayExtent(page: Page, selector: string) {
   }, selector);
 }
 
-/**
- * Every `position: fixed` element whose containing block is not the viewport.
- *
- * This is the defect's root rather than one of its symptoms. A transformed,
- * filtered or perspective ancestor becomes the containing block for its fixed
- * descendants, so the element stops measuring against the window — and the
- * league's mobile shell is one 200%-wide track that the camera translates, so
- * anything fixed inside it lands at twice the width and the wrong offset.
- * Checking the property itself catches an overlay nobody thought to measure.
- */
+// platform: A transformed, filtered, or perspective ancestor becomes the containing block of its position: fixed descendants.
 async function fixedUnderATransform(page: Page) {
   return page.evaluate(() => {
     const offenders: string[] = [];
     for (const el of document.querySelectorAll<HTMLElement>('*')) {
       if (getComputedStyle(el).position !== 'fixed') continue;
-      // Only things a person can see. dnd-kit parks a 1x1 clipped live region
-      // inside whatever tree its context sits in, for screen readers; where
-      // that lands cannot be wrong, because it is never painted.
+      // platform: dnd-kit parks a 1x1 clipped live region for screen readers inside its context's tree, and nothing paints it.
       const box = el.getBoundingClientRect();
       if (box.width < 4 || box.height < 4) continue;
       for (let parent = el.parentElement; parent; parent = parent.parentElement) {

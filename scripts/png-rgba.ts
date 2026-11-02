@@ -3,7 +3,6 @@ import { crc32, deflateSync, inflateSync } from 'node:zlib';
 export interface Raster {
   width: number;
   height: number;
-  /** RGBA, 4 bytes per pixel. */
   data: Uint8Array;
 }
 
@@ -24,10 +23,9 @@ function chunks(png: Buffer): Map<string, Buffer[]> {
 
 const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
 const CHANNELS: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
-/** Adam7 passes as [first column, first row, column step, row step]. */
+// platform: PNG Adam7 passes, each as [first column, first row, column step, row step].
 const ADAM7 = [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]];
 
-/** Reverses the scanline filters of one `height`-row image of `stride` bytes per row, read from `raw` at `start`. */
 function unfilter(raw: Buffer, start: number, height: number, stride: number, pixelBytes: number): Uint8Array {
   const lines = new Uint8Array(height * stride);
   let src = start;
@@ -58,13 +56,6 @@ function unfilter(raw: Buffer, start: number, height: number, stride: number, pi
   return lines;
 }
 
-/**
- * Decode a PNG to RGBA: 8-bit RGBA, RGB, gray and gray-alpha, and palette or
- * gray at 1, 2, 4 or 8 bits, with tRNS transparency, plain or Adam7-interlaced.
- * That covers every upstream icon and every Pokémon sprite (asserted below
- * rather than assumed). A general decoder would be a dependency or several
- * hundred lines.
- */
 export function decode(png: Buffer): Raster {
   const parts = chunks(png);
   const ihdr = parts.get('IHDR')?.[0];
@@ -126,7 +117,6 @@ export function decode(png: Buffer): Raster {
   return { width, height, data };
 }
 
-/** Whether two rasters show the same pixels. Fully transparent pixels match whatever color they store. */
 export function samePixels(a: Raster, b: Raster): boolean {
   if (a.width !== b.width || a.height !== b.height) return false;
   for (let i = 0; i < a.data.length; i += 4) {
@@ -136,10 +126,6 @@ export function samePixels(a: Raster, b: Raster): boolean {
   return true;
 }
 
-/**
- * How many pixels are see-through in one raster and not the other, or null when
- * the sizes differ. A shiny with 0 has the same outline as its normal sprite.
- */
 export function maskDifference(a: Raster, b: Raster): number | null {
   if (a.width !== b.width || a.height !== b.height) return null;
   let count = 0;
@@ -147,7 +133,7 @@ export function maskDifference(a: Raster, b: Raster): number | null {
   return count;
 }
 
-/** Whether every chunk's CRC is right. A browser skips a damaged chunk, but Pillow and other tools refuse the file. */
+// platform: A browser skips a damaged PNG chunk, but Pillow and other tools refuse the file.
 export function intact(png: Buffer): boolean {
   for (let pos = 8; pos + 12 <= png.length;) {
     const length = png.readUInt32BE(pos);
@@ -158,7 +144,6 @@ export function intact(png: Buffer): boolean {
   return false;
 }
 
-/** Encode RGBA as an 8-bit RGBA PNG. scripts/optimize-sprites.py shrinks the result. */
 export function encode({ width, height, data }: Raster): Buffer {
   const chunk = (type: string, body: Buffer) => {
     const head = Buffer.alloc(8);

@@ -1,21 +1,12 @@
 #!/usr/bin/env node
-/**
- * The fix loop, one round per run: render, audit, and (once the audit is
- * clean) verify. The fix between rounds is yours, at the source; this runner
- * makes each round one command with its own evidence directory and a hard
- * cap on rounds, so a loop that is not converging says so instead of
- * spinning.
- *
- * Usage:
- *   node loop.mjs --out <dir> --render "<shell command>" \
- *     --audit "<audit.mjs arguments>" [--verify "<shell command>"] [--max-rounds 6] [--reset]
- *
- * Exit codes: 0 clean (and verify passed, when given); 1 the audit found
- * errors; 2 the verify command failed; 3 the round cap is spent.
- */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+
+const EXIT_CLEAN = 0;
+const EXIT_FIX_AT_SOURCE = 1;
+const EXIT_VERIFY_FAILED = 2;
+const EXIT_ROUND_CAP_SPENT = 3;
 
 const args = process.argv.slice(2);
 const opt = { out: 'render-audit-loop', maxRounds: 6, reset: false };
@@ -49,9 +40,9 @@ const finish = (code, note) => {
   process.exit(code);
 };
 
-if (state.round > opt.maxRounds) finish(3, `round cap of ${opt.maxRounds} spent; the loop is not converging. Stop, name what still fails and why, and ask.`);
-if (opt.render && sh(opt.render, 'render') !== 0) finish(1, 'the render command failed; fix that first');
+if (state.round > opt.maxRounds) finish(EXIT_ROUND_CAP_SPENT, `round cap of ${opt.maxRounds} spent; the loop is not converging. Stop, name what still fails and why, and ask.`);
+if (opt.render && sh(opt.render, 'render') !== 0) finish(EXIT_FIX_AT_SOURCE, 'the render command failed; fix that first');
 const auditCode = sh(`node "${path.join(here, 'audit.mjs')}" --out "${roundDir}" ${opt.audit}`, 'audit');
-if (auditCode !== 0) finish(1, `the audit found errors (see ${roundDir}); fix each one at its source, then run this command again`);
-if (opt.verify && sh(opt.verify, 'verify') !== 0) finish(2, 'the audit is clean but verify failed; fix the regression it names, then run this command again');
-finish(0, opt.verify ? 'clean: the audit found nothing and verify passed' : 'clean: the audit found nothing');
+if (auditCode !== 0) finish(EXIT_FIX_AT_SOURCE, `the audit found errors (see ${roundDir}); fix each one at its source, then run this command again`);
+if (opt.verify && sh(opt.verify, 'verify') !== 0) finish(EXIT_VERIFY_FAILED, 'the audit is clean but verify failed; fix the regression it names, then run this command again');
+finish(EXIT_CLEAN, opt.verify ? 'clean: the audit found nothing and verify passed' : 'clean: the audit found nothing');

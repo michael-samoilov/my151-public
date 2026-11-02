@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * A shiny sprite shows the same art as its normal sprite in other colors, so
- * the two have the same outline. A shiny drawn from another design does not:
- * Terapagos Stellar's shiny showed an older form than its normal sprite.
- *
- * Fails when a file under public/sprites/pokemon/shiny/ has no normal sprite of
- * the same name, when its alpha mask differs from that normal sprite's in any
- * pixel, and when `src/data/shinySprites.json` and the folder list different
- * files. `scripts/fetch-shiny-sprites.ts` applies the same test, deletes a
- * shiny that fails it, and rewrites the list.
- *
- * Usage: node scripts/check-shiny-masks.mjs
- */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { decode, maskDifference } from './png-rgba.ts';
 

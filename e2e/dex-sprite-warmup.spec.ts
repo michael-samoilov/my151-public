@@ -15,7 +15,6 @@ test('a first visit downloads the starter pickers\' sprites in the background', 
   const requested = recordSprites(page);
   await page.goto('/pokedex-builder?notme');
   await expect(page.locator('[data-section-id]').first()).toBeVisible();
-  // Bulbasaur, Charmander and Squirtle head the grass, fire and water starter pickers.
   await expect.poll(() => ['1.png', '4.png', '7.png'].filter((file) => requested.includes(file)), { timeout: 20_000 })
     .toEqual(['1.png', '4.png', '7.png']);
   await testInfo.attach('warmed-sprites.json', { body: JSON.stringify(requested), contentType: 'application/json' });
@@ -40,7 +39,6 @@ test('hovering a section moves its picker sprites to the front of the background
   const mythical = page.locator('[data-section-id="mythical"]');
   await mythical.hover();
   const before = requested.length;
-  // Mew heads the Mythical picker, the last section on the page.
   await expect.poll(() => requested.includes('151.png'), { timeout: 20_000 }).toBe(true);
   const ahead = requested.indexOf('151.png') - before;
   await testInfo.attach('hover-order.json', { body: JSON.stringify({ requestedBeforeHover: before, requestedBetweenHoverAndMew: ahead, requested }), contentType: 'application/json' });

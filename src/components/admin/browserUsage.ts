@@ -3,8 +3,6 @@ import { fmtChipDuration, formatWhen } from './userPreview';
 
 export type UsageTool = 'dex' | 'league' | 'picker';
 export type UsageSource = 'active' | 'legacy';
-// `alsoMissing` marks a sizer time whose column also holds rows that show
-// "not recorded", so the sizer reserves that label's width too.
 export type CardTime = BrowserTime & {missing?: boolean; alsoMissing?: true};
 
 export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number; missing?: boolean; partial?: true; alsoMissing?: true };

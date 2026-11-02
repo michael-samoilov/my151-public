@@ -1,31 +1,4 @@
 #!/usr/bin/env node
-/**
- * Enforces two testing rules from AGENTS.md section 4, "Testing".
- *
- *   node scripts/check-test-rules.mjs
- *
- * 1. A new unit test needs a reason to exist. A unit test file
- *    (`src/**\/*.test.ts(x)`, `scripts/**\/*.test.ts`) that is new since the
- *    base commit fails unless it sits in a keep area, or one of its first 5
- *    lines is a `// keeps: <bug E2E misses>` comment. A file is in a keep area
- *    when one of these holds:
- *    - It lives under `scripts/`, or an import resolves into `api/` or
- *      `scripts/`. E2E stubs every API route and never runs the build gates.
- *    - Its path or an import specifier contains `store`, `persist`, or
- *      `migrat`. That is saved-data shape and migrations.
- * 2. A proof test is never committed. Any `.spec` or `.test` file whose name
- *    starts with `proof-` or `zz-proof`, or that contains a `// proof:`
- *    comment, fails. This rule reads every file in the tree, not only new ones.
- *
- * "New" compares the working tree, untracked files included, with the merge
- * base of HEAD and origin/claude/pokedex-region-builder-AviYF. Without that
- * ref, the base is HEAD~1. Without HEAD~1, rule 1 is skipped with a message.
- * A renamed or moved test is not new.
- *
- * Imports are found by regex, not a parser: static `import … from`, bare
- * `import '…'`, `export … from`, `import('…')`, and `vi.mock('…')`. Relative
- * specifiers and the `@/` alias are resolved to repository paths.
- */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, posix } from 'node:path';

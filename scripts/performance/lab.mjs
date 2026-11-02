@@ -154,8 +154,7 @@ holdBrowserLock();
   const work = fs.mkdtempSync(path.join(tmpdir(), 'my151-lab-'));
   const servers = [];
   const tls = selfSignedTls(work);
-  // Trust the lab's own certificate by its key. A certificate error that is
-  // only ignored also turns off Chrome's HTTP cache, which real visitors have.
+  // platform: Chrome turns off its HTTP cache on an ignored certificate error, so the lab trusts its own key instead.
   const browser = await chromium.launch({ executablePath: chromiumPath(), args: [`--ignore-certificate-errors-spki-list=${tls.spki}`] });
   try {
 

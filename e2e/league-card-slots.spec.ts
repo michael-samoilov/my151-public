@@ -160,7 +160,6 @@ test.describe('gym card slots', () => {
     const chipIsOff = () => page.locator('[data-filter-chip="scope"]').count();
 
     await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
-    // The league hides the count until a search or filter narrows the list.
     await page.waitForSelector('[data-result-count]', { state: 'attached' });
     await page.waitForTimeout(500);
     expect(await chipIsOff(), 'no chip on an empty card').toBe(0);

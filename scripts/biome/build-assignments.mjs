@@ -42,11 +42,7 @@ const SECTION_BY_TAG = {
 const VALID_TAGS = new Set([...Object.keys(SECTION_BY_TAG), 'urban', 'special', 'water']);
 const WATERY = new Set(['ocean', 'lake', 'beach', 'swamp']);
 
-// Version ids (PokeAPI) for the Gen VII/VIII merge. Let's Go (31/32) is
-// deliberately EXCLUDED: its catch-combo rare-spawn system puts species like
-// Dratini on ~20 routes at once (and PokeAPI encodes every LGPE slot at
-// rarity 100), which is gimmick-spawn pollution rather than habitat identity —
-// Kanto is already richly covered by RBY/FRLG/HGSS.
+// platform: PokeAPI puts Let's Go species on about 20 routes at rarity 100, so Let's Go versions 31 and 32 stay out.
 const GEN78_VIDS = new Set(['27', '28', '29', '30', '33', '34', '35', '36', '50', '51']);
 
 const HIGH = { share: 0.55, games: 3, margin: 1.5 };
@@ -62,10 +58,7 @@ function relativeRarityWeight(rarity, lineMaxRarity) {
 function methodClassWeight(method) {
   const m = method.toLowerCase();
   if (m === 'sos-encounter' || m === 'sos-from-bubbling-spot') return 0.3;
-  // SM terrain-ambush spots (dust clouds / rustling / bubbling): one-off spawn
-  // points PokeAPI encodes at rarity "100". Real presence, weak habitat claim —
-  // and NOT water-specific (Diglett's are sand clouds), so they follow the
-  // location's tags in votesFor rather than the water branch.
+  // platform: PokeAPI encodes Sun and Moon ambush spots at rarity 100, although each is a one-off spawn point.
   if (m === 'bubbling-spots') return 0.3;
   if (m === 'island-scan') return 0.2;
   return 1;

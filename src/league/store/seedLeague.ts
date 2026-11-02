@@ -27,7 +27,6 @@ export function seedLeagueOnFirstVisit(): void {
     if (window.localStorage.getItem(LEAGUE_STORAGE_KEY) !== null) return;
     window.localStorage.setItem(LEAGUE_STORAGE_KEY, JSON.stringify(previewLeagueSeed()));
   } catch {
-    // A blocked or full localStorage is not worth a broken page: the app
-    // opens on an empty league, which is what it did before the seed.
+    // platform: localStorage can be blocked or full, so a failed write opens an empty league.
   }
 }

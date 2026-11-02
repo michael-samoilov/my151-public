@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// Each Redis command the handler sends is one billed Upstash command.
 const sent: string[] = [];
 let list: string[] = [];
 let hashes: Record<string, Record<string, number>> = {};

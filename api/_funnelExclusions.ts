@@ -3,9 +3,6 @@ import { JOURNAL_PREFIX } from './_events.js';
 import { DAY_MS, dayStart } from './_aggregate.js';
 import { FUNNEL_DAY_TTL_DAYS } from './_range.js';
 
-/** Funnel events that archived browsers sent, as `<day>|<event>` -> count. The
- *  funnel counters cannot be filtered by browser, so the dashboard subtracts
- *  these. They come from the journal, which keeps each event's browser. */
 export const FUNNEL_EXCLUDED_KEY = 'funnel:excluded';
 
 const COUNT_EVENTS = `
@@ -48,7 +45,6 @@ return 1
 
 const DAYS_PER_CALL = 31;
 
-/** Every journal event the given browsers sent, over the funnel retention. */
 export async function countJournalEvents(cids: string[], now = Date.now()): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   if (!cids.length) return out;
@@ -62,15 +58,12 @@ export async function countJournalEvents(cids: string[], now = Date.now()): Prom
   return out;
 }
 
-/** Add (+1) or remove (-1) one browser's events after its archive mark changed. */
 export async function adjustFunnelExclusions(cid: string, sign: 1 | -1): Promise<void> {
   const found = await countJournalEvents([cid]);
   const args = Object.entries(found).flatMap(([field, n]) => [field, String(sign * n)]);
   if (args.length) await redis.eval(ADJUST, [FUNNEL_EXCLUDED_KEY], args);
 }
 
-/** Recount every archived browser's events. The key holds only derived counts,
- *  so replacing it loses nothing. */
 export async function rebuildFunnelExclusions(archived: string[]): Promise<number> {
   const found = await countJournalEvents(archived);
   const building = `${FUNNEL_EXCLUDED_KEY}:building`;
@@ -84,7 +77,6 @@ export async function rebuildFunnelExclusions(archived: string[]): Promise<numbe
   return Object.values(found).reduce((a, b) => a + b, 0);
 }
 
-/** Excluded events per name, over the given days, or over all days when null. */
 export function excludedTotals(hash: Record<string, unknown> | null | undefined, days: Set<string> | null): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [field, raw] of Object.entries(hash ?? {})) {

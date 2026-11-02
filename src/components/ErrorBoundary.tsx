@@ -3,22 +3,6 @@ import { t } from '@/i18n';
 import { PsyduckArt } from '@/components/shared/EmptyState';
 import { sendCrashReport } from '@/lib/feedbackContext';
 
-/**
- * The app had no error reporting at all: no boundary, no `window.onerror`, and
- * client fetch failures swallowed. A crash produced a white screen and zero
- * signal — the user could not tell you what happened and you could not see that
- * it had. Now each crash a boundary catches sends a report by itself, and the
- * screen offers one thing to do: reload.
- *
- * Still a class, because React 19 has no hook equivalent for
- * `componentDidCatch`.
- *
- * Wrap each `<Suspense>` separately as well as the app: the locale and route
- * chunks are fetched lazily, chunk-load failure on a flaky mobile connection is
- * the most likely error here, and one failed chunk should cost one page rather
- * than the whole session's work.
- */
-
 const ROUTE: Record<string, string> = {
   hub: 'home',
   'pokedex-builder': 'builder',
@@ -39,6 +23,7 @@ interface State {
   error: Error | null;
 }
 
+// platform: React 19 has no hook equivalent for componentDidCatch, so the boundary stays a class.
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 

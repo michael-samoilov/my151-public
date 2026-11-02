@@ -43,7 +43,6 @@ import { DesktopPane } from './DesktopPane';
 const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('packing') === '1';
 
-/** A pointer option also names the source cells that show it in its look. A pick option has none. */
 type SheetOption = SelectorOption & { sources: readonly string[] };
 
 export function PickerSheet({
@@ -119,7 +118,6 @@ export function PickerSheet({
   }
 
   const picks = useMemo(() => (kind === 'pick' ? eligibleFor(type, gen, sortOrder) : []), [kind, type, gen, sortOrder]);
-  // A pick sheet shows the look the switch asks for; a pointer sheet shows each Pokémon in each look its sources show it in.
   const options = useMemo((): SheetOption[] => (kind === 'pointer'
     ? pointerOptions(type, gen, fills, shiny).flatMap(({ id, shiny: look, sources }) => {
       const mon = getPickerMon(id);
@@ -150,7 +148,6 @@ export function PickerSheet({
   const currentShiny = isShinyCell(fills, shiny, key);
   const converting = kind === 'pick' && current != null && placesShiny(current) !== currentShiny;
   const isCurrent = (option: SheetOption) => option.mon.id === currentId && (kind === 'pick' || option.shiny === currentShiny);
-  // A pointer option stands for the source cells that show it in its look, so its pills and marks name only those.
   const shownBy = (option: SheetOption) => Object.fromEntries(option.sources.map((source) => [source, option.mon.id]));
 
   function pick(option: SheetOption) {
@@ -219,7 +216,6 @@ export function PickerSheet({
 
   const titleGap = desktop ? 6 : 2;
   const titleRoom = viewportPx - 16 - (packing ? 20 : 0);
-  // On a narrow phone, the pills drop their labels before the title badges shrink below the pills' height.
   const headerTight = useTightFit(
     desktop || options.length === 0 ? null : `${titleRoom}|${locale}|${type}|${gen}`,
     headerButtonsRef,

@@ -17,9 +17,7 @@ export const DEFAULT_LOCALE: Locale = 'en';
 interface LocaleMeta {
   endonym: string;
   tag: string;
-  /** PokeAPI `languages.csv` id, used by the name-catalog generator.
-   *  Japanese uses 1 (ja-Hrkt) rather than 11 (kanji): it is what the games
-   *  display, and 11 has gaps in egg groups and stat names. */
+  // platform: PokeAPI languages.csv id 1 (ja-Hrkt) is what the games display; id 11 (kanji) has gaps in egg groups and stat names.
   pokeapiId: number;
   dir: 'ltr' | 'rtl';
 }

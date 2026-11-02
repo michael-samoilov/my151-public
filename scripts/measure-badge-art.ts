@@ -3,9 +3,12 @@ import { inflateSync } from 'node:zlib';
 
 interface Raster { width: number; height: number; data: Uint8Array }
 
+const PNG_COLOR_RGBA = 6;
+const PNG_COLOR_RGB = 2;
+
 function decode(png: Buffer): Raster {
   let pos = 8;
-  let width = 0, height = 0, colorType = 6;
+  let width = 0, height = 0, colorType = PNG_COLOR_RGBA;
   const idat: Buffer[] = [];
   while (pos < png.length) {
     const length = png.readUInt32BE(pos);
@@ -15,10 +18,9 @@ function decode(png: Buffer): Raster {
     else if (type === 'IDAT') idat.push(data);
     pos += 12 + length;
   }
-  // Playwright writes opaque RGB; the sprite art is RGBA. Both are handled so
-  // the reference and our rendering go through one measurement path.
-  if (colorType !== 6 && colorType !== 2) throw new Error(`colorType ${colorType}`);
-  const channels = colorType === 6 ? 4 : 3;
+  // platform: Playwright screenshots are opaque RGB PNGs and the sprite art is RGBA, so the decoder reads both.
+  if (colorType !== PNG_COLOR_RGBA && colorType !== PNG_COLOR_RGB) throw new Error(`colorType ${colorType}`);
+  const channels = colorType === PNG_COLOR_RGBA ? 4 : 3;
   const raw = inflateSync(Buffer.concat(idat));
   const stride = width * channels;
   const out = new Uint8Array(height * stride);

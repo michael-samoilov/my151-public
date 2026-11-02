@@ -1,15 +1,6 @@
 let installed = false;
 
-/**
- * Keeps React from crashing on a page that the browser translated.
- *
- * Page translation, such as Chrome's, replaces the text nodes that React
- * rendered with its own `<font>` elements. When React later removes such a
- * text node, or inserts before one, the DOM throws `NotFoundError`. A visitor
- * crashed the Pokédex builder this way 10 times on October 20, 2026. The fix
- * follows https://github.com/facebook/react/issues/11538. A translated page
- * can then keep showing an old piece of text until the next reload.
- */
+// platform: Page translation replaces React's text nodes with <font> elements, so React's removeChild and insertBefore throw NotFoundError (facebook/react#11538).
 export function installTranslationGuard(): void {
   if (installed || typeof Node === 'undefined') return;
   installed = true;

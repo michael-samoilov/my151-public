@@ -1,6 +1,5 @@
 import { useTipDot, type TipTarget } from './tipDots';
 
-/** The red dot on a tip's target button. The button must be `relative`. */
 export function TipDot({ target }: { target: TipTarget }) {
   if (!useTipDot(target)) return null;
   return (

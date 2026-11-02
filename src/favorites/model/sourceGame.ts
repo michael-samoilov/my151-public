@@ -1,40 +1,15 @@
 import type { Locale } from '@/i18n/config';
 import type { PickerMon } from './catalog';
 
-/**
- * Why a form names its source game in the picker tooltip:
- *
- * - `spin-off`: the form exists only in a spin-off game.
- * - `event`: a main-series form that only an event, a demo transfer, or a
- *   Pokémon HOME reward gives.
- * - `story`: a main-series form the player meets in the story but cannot get.
- * - `state`: a look a Pokémon takes for a move, in battle, or as a ride, in
- *   the game it comes from. It is not a form the player keeps.
- *
- * Evidence for each row: docs/favorite-picker-work/source-games/README.md.
- */
 type SourceGroup = 'spin-off' | 'event' | 'story' | 'state';
 
-/**
- * The groups whose forms show the game. Michael, 2026-10-20: "let's do it for
- * spin-off games, event-only, and story-only, but not for battle/ride states".
- */
 const SHOWN_GROUPS: ReadonlySet<SourceGroup> = new Set(['spin-off', 'event', 'story']);
 
 type GameTitle = Readonly<Record<Locale, string>>;
 
-/** Same string in every locale: the game uses one title worldwide. */
 const everywhere = (title: string): GameTitle =>
   ({ en: title, ja: title, ko: title, 'zh-Hans': title, 'zh-Hant': title, fr: title, de: title, es: title, it: title });
 
-/**
- * Official titles without the series word (Michael, 2026-10-20: "drop the word
- * "pokemon" from the game name in all languages"). Pokémon GO, Pokémon HOME
- * and Japanese Pokopia keep it: the rest of the title would not name the game.
- * Each source is in the evidence README. A game with no release in a locale
- * uses the name its community there uses, when one exists, and the English
- * title otherwise.
- */
 const GAMES = {
   pokopia: { ...everywhere('Pokopia'), ja: 'ぽこ あ ポケモン' },
   'mystery-dungeon': {
@@ -116,49 +91,47 @@ const GAMES = {
 
 type Game = keyof typeof GAMES;
 
-/** Picker id, then the game the form comes from and why it names it. */
 const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
-  11112: ['pokopia', 'spin-off'], // Stereo Rotom
-  11117: ['pokopia', 'spin-off'], // Smeargle (Decorator)
-  11120: ['pokopia', 'spin-off'], // Snorlax (Mossy)
-  11121: ['pokopia', 'spin-off'], // Pikachu (Pale)
-  11122: ['mystery-dungeon', 'spin-off'], // Purple Kecleon
-  11123: ['xd', 'spin-off'], // Shadow Lugia
-  11124: ['mystery-dungeon', 'spin-off'], // Primal Dialga
-  11125: ['pokopia', 'spin-off'], // Tinkaton (Supervisor)
-  11126: ['pokopia', 'spin-off'], // Tangrowth (Professor)
-  11127: ['pokopia', 'spin-off'], // Greedent (Cook)
-  10263: ['go', 'spin-off'], // Gimmighoul (Roaming Form)
-  11064: ['hgss', 'event'], // Spiky-eared Pichu
-  10094: ['sm', 'event'], // Pikachu (Original Cap)
-  10095: ['sm', 'event'], // Pikachu (Hoenn Cap)
-  10096: ['sm', 'event'], // Pikachu (Sinnoh Cap)
-  10097: ['sm', 'event'], // Pikachu (Unova Cap)
-  10098: ['sm', 'event'], // Pikachu (Kalos Cap)
-  10099: ['sm', 'event'], // Pikachu (Alola Cap)
-  10148: ['usum', 'event'], // Pikachu (Partner Cap)
-  10160: ['swsh', 'event'], // Pikachu (World Cap)
-  10117: ['sm', 'event'], // Ash-Greninja
-  11021: ['xy', 'event'], // Vivillon (Fancy Pattern)
-  11030: ['xy', 'event'], // Vivillon (Poké Ball Pattern)
-  10192: ['swsh', 'event'], // Zarude (Dada)
-  10147: ['home', 'event'], // Magearna (Original Color)
-  10190: ['swsh', 'story'], // Eternamax Eternatus
-  11128: ['dp', 'state'], // Cherrim (Sunshine Form)
-  11129: ['ranger-gs', 'spin-off'], // Ukulele Pichu
-  11130: ['pokken', 'spin-off'], // Shadow Mewtwo
-  11105: ['bw', 'state'], // Reshiram (Overdrive)
-  11106: ['bw', 'state'], // Zekrom (Overdrive)
-  11107: ['b2w2', 'state'], // Black Kyurem (Overdrive)
-  11108: ['b2w2', 'state'], // White Kyurem (Overdrive)
-  11109: ['sm', 'state'], // Solgaleo (Radiant Sun Phase)
-  11110: ['sm', 'state'], // Lunala (Full Moon Phase)
-  11111: ['sm', 'state'], // Marshadow (Zenith)
-  11118: ['sv', 'state'], // Koraidon (Limited Build)
-  11119: ['sv', 'state'], // Miraidon (Low-Power Mode)
+  11112: ['pokopia', 'spin-off'],
+  11117: ['pokopia', 'spin-off'],
+  11120: ['pokopia', 'spin-off'],
+  11121: ['pokopia', 'spin-off'],
+  11122: ['mystery-dungeon', 'spin-off'],
+  11123: ['xd', 'spin-off'],
+  11124: ['mystery-dungeon', 'spin-off'],
+  11125: ['pokopia', 'spin-off'],
+  11126: ['pokopia', 'spin-off'],
+  11127: ['pokopia', 'spin-off'],
+  10263: ['go', 'spin-off'],
+  11064: ['hgss', 'event'],
+  10094: ['sm', 'event'],
+  10095: ['sm', 'event'],
+  10096: ['sm', 'event'],
+  10097: ['sm', 'event'],
+  10098: ['sm', 'event'],
+  10099: ['sm', 'event'],
+  10148: ['usum', 'event'],
+  10160: ['swsh', 'event'],
+  10117: ['sm', 'event'],
+  11021: ['xy', 'event'],
+  11030: ['xy', 'event'],
+  10192: ['swsh', 'event'],
+  10147: ['home', 'event'],
+  10190: ['swsh', 'story'],
+  11128: ['dp', 'state'],
+  11129: ['ranger-gs', 'spin-off'],
+  11130: ['pokken', 'spin-off'],
+  11105: ['bw', 'state'],
+  11106: ['bw', 'state'],
+  11107: ['b2w2', 'state'],
+  11108: ['b2w2', 'state'],
+  11109: ['sm', 'state'],
+  11110: ['sm', 'state'],
+  11111: ['sm', 'state'],
+  11118: ['sv', 'state'],
+  11119: ['sv', 'state'],
 };
 
-/** The source game's title in `locale`, or null when the tooltip names none. */
 export function sourceGameTitle(mon: PickerMon, locale: Locale): string | null {
   const source = FORM_SOURCES[mon.id];
   if (!source || !SHOWN_GROUPS.has(source[1])) return null;

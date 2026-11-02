@@ -34,13 +34,11 @@ export function splitProvisional(
   };
 }
 
-/** Calendar DAU, except the newest point, which shows the last 24 hours when the server sent that count. */
 export function chartDailyValues(series: DailyPoint[]): number[] {
   const last = series.length - 1;
   return series.map((p, i) => (i === last && p.label24h != null ? p.label24h : p.dau));
 }
 
-/** Unique users per clock hour, except the current hour, which shows the past 60 minutes when the server sent them. */
 export function chartHourlyValues(series: HourlyPoint[]): number[] {
   const last = series.length - 1;
   return series.map((p, i) => (i === last && p.pastHour != null ? p.pastHour : p.unique));
@@ -155,11 +153,6 @@ interface MonthLabelTick {
   year: number | null;
 }
 
-/**
- * Month names left-aligned on each month's first day. `fits` gets a name and the days until the
- * next name; a name that would run into the next one is left out, which in practice is a short
- * first month. The first name shown carries the year, as does every January.
- */
 export function monthLabelTicks(days: number[], fits: (abbr: string, span: number) => boolean = () => true): MonthLabelTick[] {
   if (days.length === 0) return [];
   const groups: { start: number; month: number; year: number }[] = [];

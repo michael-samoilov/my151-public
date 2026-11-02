@@ -1,15 +1,10 @@
-/**
- * What the ontology and the pinned PokeAPI snapshot disagree on. npm run ontology:audit writes the
- * disagreements to data/ontology/reports/, and npm run ontology:check proves every one is listed
- * there and reviewed, so a changed fact that no longer matches the source cannot ship unreviewed.
- */
 import type { FormId } from '../../../src/ontology/ids';
 import type { ResolvedForm } from '../../../src/ontology/model';
 import { INHERITED_UNSOURCED, type FormEntry, type SpeciesFile } from '../authored';
 import type { Ontology } from '../resolve';
 import { appGrowthRate, pokeapiIdentityOf, type PokeapiFormRow, type PokeapiIdentity } from './source';
 
-/** Which PokeAPI table states the fact. PokeAPI gives color, shape, and egg groups per species, so a form's own value has no counterpart of its own. */
+// platform: PokeAPI states color, shape, and egg groups per species, so a form's own value has no PokeAPI counterpart.
 export type Level = 'form' | 'pokemon' | 'species';
 
 export interface Disagreement {
@@ -22,9 +17,7 @@ export interface Disagreement {
 
 export type Review =
   | { readonly status: 'unreviewed' }
-  /** The app keeps its value; the decision names where that was decided. auto marks a review a rule in audit.ts wrote. */
   | { readonly status: 'kept'; readonly decision: string; readonly note: string; readonly auto?: true }
-  /** The source cannot settle it. The note carries the evidence on each side for Michael. */
   | { readonly status: 'open'; readonly note: string };
 
 export interface AuditRow extends Disagreement {
@@ -39,10 +32,8 @@ export interface AuditReport {
   readonly rows: readonly AuditRow[];
   readonly unmatched?: readonly { readonly form: FormId; readonly inherits: readonly string[] }[];
   readonly missingStateForms?: readonly { readonly pokeapiForm: string; readonly species: string; readonly note: string }[];
-  /** Hand-written: what the snapshot cannot settle and no row carries. The audit script keeps this section as it finds it. */
   readonly questions?: readonly {
     readonly id: string; readonly question: string; readonly evidence: readonly string[]; readonly recommendation: string;
-    /** Who answered, when, the answer, and what changed because of it. */
     readonly review?: { readonly status: 'answered'; readonly by: string; readonly date: string; readonly decision: string; readonly outcome: string };
   }[];
 }
@@ -62,7 +53,6 @@ export interface Linked {
   readonly identity: PokeapiIdentity;
 }
 
-/** Every form with its authored entry and PokeAPI identity, in ontology order. */
 export function linkedForms(ontology: Ontology): Linked[] {
   const entries = new Map<string, FormEntry | SpeciesFile['forms'][0]>();
   for (const { data } of ontology.authored.species) for (const entry of data.forms) entries.set(entry.id, entry);
@@ -76,7 +66,7 @@ export function linkedForms(ontology: Ontology): Linked[] {
 
 const unsourced = (entry: Linked['entry'], fact: string): boolean => (entry.sourceOf as Record<string, string> | undefined)?.[fact] === INHERITED_UNSOURCED;
 
-/** The form a Mega, Primal, or Gigantamax enters from, as PokeAPI names it: the identifier minus the step suffix. */
+// platform: PokeAPI names a Mega, Primal, or Gigantamax after the form it enters from, plus a step suffix.
 export const POWER_UP_SUFFIX = /-(mega(?:-[xyz])?|primal|gmax)$/;
 export const powerUpEntryIdentifier = (identifier: string): string | null => (POWER_UP_SUFFIX.test(identifier) ? identifier.replace(POWER_UP_SUFFIX, '') : null);
 
@@ -100,7 +90,6 @@ export function classificationDisagreements(ontology: Ontology): Disagreement[] 
   return rows;
 }
 
-/** Mega, Primal, and Gigantamax forms of app species that PokeAPI has and no app form claims. */
 export function missingStateForms(ontology: Ontology): NonNullable<AuditReport['missingStateForms']> {
   const claimed = new Set<string>();
   for (const { identity } of linkedForms(ontology)) if (identity.kind === 'form') claimed.add(identity.form.identifier);
@@ -142,8 +131,7 @@ export function factDisagreements(ontology: Ontology): Disagreement[] {
     const resolved = ontology.species.get(form.species)!;
     row('captureRate', 'species', resolved.captureRate, species.captureRate);
     row('growthRate', 'species', resolved.growthRate, appGrowthRate(species.growthRate));
-    // PokeAPI has one legendary flag; the app splits it into sub-legendary and restricted, and
-    // tags Ultra Beasts from its own list, so only the flag is compared.
+    // platform: PokeAPI has one legendary flag, so only that flag is compared with the app's sub-legendary and restricted classes.
     const legendaryFlag = resolved.legendaryClass === 'sub-legendary' || resolved.legendaryClass === 'restricted' ? 'legendary' : resolved.legendaryClass === 'mythical' ? 'mythical' : 'none';
     row('legendaryClass', 'species', legendaryFlag, species.isMythical ? 'mythical' : species.isLegendary ? 'legendary' : 'none');
     row('baby', 'species', resolved.tags.includes('baby'), species.isBaby);

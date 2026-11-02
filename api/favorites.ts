@@ -60,8 +60,6 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     for(let attempt=0;attempt<6;attempt++){
       const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,b.cid),redis.hget(FAVORITE_VERSION_KEY,b.cid)]);
       const existing=parseFavoriteRecord(raw);
-      // As in the Dex and the League, a browser gets a record only after it
-      // places a Pokémon. Tabs that still run older code send empty boards too.
       if(!existing&&snapshot.filled===0)return res.status(200).json({ok:true,activityAck:acknowledgeUnstored(b.activity,received)});
       const session=existing?favoriteSessionAt(existing.sessionLog,now):undefined;
       const events:string[]=session?[]:['favorites-open'];

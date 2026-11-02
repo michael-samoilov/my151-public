@@ -1,8 +1,3 @@
-/**
- * The Dex catalog projection: today's src/data/pokemon.json, byte for byte. A row's evolution
- * fields come from the first evolution into the form whose source form the Dex also lists; when the
- * Dex does not list that form, the row shows the source form's species default instead.
- */
 import type { FormId } from '../../../src/ontology/ids';
 import type { ResolvedForm } from '../../../src/ontology/model';
 import type { Ontology } from '../resolve';
@@ -30,7 +25,6 @@ export interface DexRow {
   eggGroups: readonly string[];
 }
 
-/** The parent a tool shows for a form: the primary evolution's source when the tool lists it, else that source's species default. */
 export function parentInTool(ontology: Ontology, form: ResolvedForm, inTool: (form: ResolvedForm) => boolean): { parent: ResolvedForm; level: number | null } | null {
   const edge = form.evolvesFrom[0];
   if (!edge) return null;
@@ -55,8 +49,6 @@ export function dexRows(ontology: Ontology): DexRow[] {
   const inDex = (form: ResolvedForm) => form.tools.dex === 'in';
   const rows = [...ontology.species.values()].map((species) => species.forms[0]);
   for (const { form, after } of ontology.authored.legacy.dex.formOrder) rows.splice(rows.indexOf(after) + 1, 0, form);
-  // The script that appended the regional forms after the last species wrote "archetypes" before
-  // "sprite"; every row inside the species block has them the other way round.
   const lastSpecies = rows.indexOf(ontology.species.get([...ontology.species.values()].at(-1)!.id)!.forms[0]);
   return rows.map((id, index) => ({ form: ontology.forms.get(id)!, appended: index > lastSpecies })).map(({ form, appended }) => {
     const species = ontology.species.get(form.species)!;

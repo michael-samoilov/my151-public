@@ -59,13 +59,7 @@ test.describe('powerups', () => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
 
-    // The card scales itself with CSS `zoom`, so a 1rem box is a fractional
-    // number of CSS pixels and the painted rect snaps its edges
-    // independently. The right-anchored button measured 15px wide by 16px
-    // tall, and `rounded-full` drew that as an ellipse. Paint containment
-    // rasterises the element at subpixel precision instead.
-    // The disc is what is drawn, and it is not the button: the button is a
-    // larger, transparent press area around it.
+    // platform: Under CSS zoom a 1rem box is fractional and its painted edges snap apart; paint containment rasterises it at subpixel precision.
     const discs = await page.evaluate(() =>
       [...document.querySelectorAll('[data-powerup]')].map((btn) => {
         const disc = btn.querySelector('[data-powerup-disc]')!;
@@ -211,12 +205,7 @@ test.describe('powerups', () => {
   });
 
   test('a press animates nothing on the disc', async ({ page }) => {
-    // The ring and the symbol used to ease over 150ms, and for exactly those
-    // nine frames every cross and reset on the rows below sat a device pixel
-    // off, then dropped back: WebKit composites an element while it
-    // transitions and re-rasterises what overlaps it. Measured on a phone
-    // recording, and again on WebKitGTK with the transition slowed. The
-    // state change is instant, so nothing is composited.
+    // platform: WebKit composites an element while it transitions and re-rasterises what overlaps it, so the state change is instant.
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     const durations = await page.evaluate(() =>

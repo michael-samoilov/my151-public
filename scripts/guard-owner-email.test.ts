@@ -7,7 +7,6 @@ import { expect, test } from 'vitest';
 import { containsOwnerEmail } from '../.claude/hooks/guard-owner-email.mjs';
 
 const hook = join(dirname(fileURLToPath(import.meta.url)), '../.claude/hooks/guard-owner-email.mjs');
-// A made-up address stands in for the owner's, so the real one never enters the repository.
 const [user, domain] = ['ash.ketchum', 'example.org'];
 const owner = `${user}@${domain}`;
 const ownerHash = createHash('sha256').update(owner).digest('hex');

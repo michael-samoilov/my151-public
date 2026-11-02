@@ -260,10 +260,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{tn('league.tm.found', results.length)}</span>
       </div>
 
-      {/* Filter chip row — the selection pane's idiom. `shrink-0` is
-          load-bearing: `overflow-x-auto` sets this flex child's automatic
-          minimum size to zero, so without it the column's flex-shrink crushed
-          the row below its content and clipped the chips top and bottom. */}
+      {/* platform: `overflow-x-auto` sets a flex child's automatic minimum size to zero, so `shrink-0` keeps the chip row from being crushed. */}
       <div className={cn(
         'flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar transition-opacity',
         isSearching && hasActiveFilters && 'opacity-40',

@@ -126,8 +126,7 @@ function placePane(
   const { cell, head, headRow } = tracks(scroller);
   const maxWidth = view.right - view.left;
   const width = Math.min(pane.offsetWidth, maxWidth);
-  // scrollHeight excludes the outer border and rounds to an integer, so
-  // reserve a few pixels before clamping against the visible body.
+  // platform: `scrollHeight` excludes the outer border and rounds to an integer, so the clamp keeps 4px spare.
   const maxHeight = Math.max(0, view.bottom - view.top - 4);
   const contentHeight = [...pane.children].reduce((height, child) =>
     height + Math.max(child.scrollHeight, child.getBoundingClientRect().height), 0);
@@ -195,7 +194,7 @@ function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
       press = { x: event.clientX, y: event.clientY, inside: inPane(event.target), mouse: event.pointerType === 'mouse' };
     };
     const onClick = (event: MouseEvent) => {
-      // A keyboard click (detail 0) has no press of its own.
+      // platform: A keyboard click has `detail` 0 and follows no pointerdown of its own.
       const start = event.detail > 0 ? press : null;
       press = null;
       if (inPane(event.target) || start?.inside) return;
@@ -208,8 +207,7 @@ function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
       const dragged = start != null && start.mouse && Math.hypot(event.clientX - start.x, event.clientY - start.y) > DRAG_PX;
       if (!dragged) closeRef.current();
     };
-    // An open Radix tooltip handles Escape first and prevents its default.
-    // The same Escape still closes the pane, so this ignores defaultPrevented.
+    // platform: An open Radix tooltip handles Escape first and prevents its default, so this handler ignores `defaultPrevented`.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeRef.current();
     };

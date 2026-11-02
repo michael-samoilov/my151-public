@@ -10,23 +10,9 @@ import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms
 
 const OUT_DIR = 'src/i18n/names';
 const PICKER_OUT_DIR = 'src/i18n/picker-names';
-const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
+const COSMETIC_MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
-/**
- * How a name was arrived at. `official` comes from game text or PokéAPI.
- * `official-bulbapedia` is an official name that no game-text corpus in the
- * repository carries, copied from Bulbapedia (BULBAPEDIA_NAMES_PATH).
- * `english-only` marks a descriptor with no official name in that language:
- * the locale carries the English words. `formProvenance` in
- * src/i18n/names.ts exposes the value; no UI marker renders it yet.
- * `official-usage` is an official name from outside game text and
- * Bulbapedia: The Pokémon Company's own websites, or a licensed product
- * (OFFICIAL_USAGE_PATH).
- * `idiomatic` is my151's own wording where no official name exists: the
- * species' official name with an official word, as the language orders an
- * adjective (MY151_NAMES_PATH).
- */
 export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'official-usage' | 'idiomatic' | 'english-only';
 
 const BULBAPEDIA_NAMES_PATH = 'docs/i18n/sources/bulbapedia-form-names.json';
@@ -44,11 +30,6 @@ interface BulbapediaSection {
 
 interface BulbapediaNames {
   read: string;
-  /**
-   * `names` is the name Bulbapedia gives the form, or for a Pokopia character
-   * the character's name. `form`, when present, is the form name from the
-   * species page: it becomes the descriptor, and `names` stays a search alias.
-   */
   forms: Record<string, BulbapediaSection & { form?: BulbapediaSection }>;
 }
 
@@ -60,11 +41,6 @@ interface My151Names {
   forms: Record<string, { basis: string; names: Partial<Record<string, string>> }>;
 }
 
-/**
- * English descriptors for app forms that no game-text row names. Each locale
- * shows its official name from BULBAPEDIA_NAMES_PATH when it has one, and the
- * English words otherwise.
- */
 const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
   11105: { descriptor: 'Overdrive' },
   11106: { descriptor: 'Overdrive' },
@@ -75,47 +51,19 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11111: { descriptor: 'Zenith' },
 };
 
-/**
- * Stereo Rotom's compact code. The other Rotom forms show Latin codes in every
- * locale (H, W, FR, F, M). English keeps DJ (Michael, 2026-10-20: "for the
- * rotom short form i meant <DJ>"), and so does each locale whose character name
- * has DJ in it: DJ 로토무, DJ Motisma, DJ Rotom. The others take the initial of
- * their own name in Latin, like the other codes: ステレオロトム and 立体音响洛托姆
- * (stereo) give S, Discorotom gives D.
- */
 const STEREO_ROTOM_CODES: Readonly<Partial<Record<string, string>>> = { ja: 'S', 'zh-Hans': 'S', 'zh-Hant': 'S', it: 'D' };
 
-/**
- * The six Cosplay Pikachu. PokéAPI gives all six one German descriptor,
- * "Cosplayform", which names none of them. Omega Ruby and Alpha Sapphire game
- * text names each costume (Rocker-Pikachu, Damen-Pikachu, ...), so game text
- * wins for these forms in every locale that has it (Michael, 2026-10-20: "let's
- * fix the german cosplay pikachu names in the app", then "add both leftovers").
- * It also corrects English "Pikachu, Ph.D." and Japanese "マスク・ド・ピカチュウ".
- */
-const COSTUMES: ReadonlySet<string> = new Set([
+// platform: PokéAPI gives all six Cosplay Pikachu one German descriptor, "Cosplayform", so game text names these forms in every locale.
+const COSPLAY_PIKACHU_FORMS: ReadonlySet<string> = new Set([
   'pikachu-rock-star', 'pikachu-belle', 'pikachu-pop-star', 'pikachu-phd', 'pikachu-libre', 'pikachu-cosplay',
 ]);
 
-/**
- * Terastallized Ogerpon, by app id, with the mask each one wears. No game
- * names these battle forms. Each joins two official descriptors in the same
- * language: the mask, then Terapagos's Terastal Form. The full name lists
- * both after the species: Ogerpon (Wellspring Mask, Terastal Form).
- */
-const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
-const TERASTAL_FORM = 10276;
+const MASK_FORM_BY_TERASTAL_OGERPON: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
+const TERAPAGOS_TERASTAL_FORM = 10276;
 
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
 
-/**
- * Alcremie's six sweets, which are *items* in the games and so have an official
- * name in every language — `alcremie-berry` is the Alcremie holding a Berry
- * Sweet. The form descriptor cannot supply a marker for these (English
- * "Vanilla Cream Berry Sweet" abbreviates to `V` for all six), but the item
- * noun can, in the languages that lead with it.
- */
-const SWEET_ITEMS: Record<string, string> = {
+const SWEET_ITEM_BY_ALCREMIE_FORM: Record<string, string> = {
   'alcremie-berry': 'berry-sweet',
   'alcremie-love': 'love-sweet',
   'alcremie-star': 'star-sweet',
@@ -129,35 +77,8 @@ interface NameCatalog {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
-  /**
-   * A one-grapheme marker distinguishing an alt form from its species, for the
-   * tile label — `A` for Alolan, `ア` in Japanese, `阿` in Chinese.
-   *
-   * Only present where it can be *derived from an official noun*, which in
-   * practice means the regional forms: 57 of the app's 64. The reason is worth
-   * recording, because the obvious generalisation does not survive contact with
-   * the data. Abbreviating the composed form *label* works only in languages
-   * that put the distinguishing word first — English `Alolan Form`, Japanese
-   * `アローラのすがた` — and collapses in the ones that lead with a shared word:
-   * French `Forme d'Alola` and `Forme de Galar` both give `F`, and every one of
-   * Alcremie's six sweets gives `Z` in German (`Zucker-…`), `C` in Spanish
-   * (`Confite…`) and `B` in Italian (`Bonbon…`).
-   *
-   * So the marker comes from the region's own name, which is a bare noun in all
-   * nine languages and whose first grapheme is unique across the four regions in
-   * every one of them. Forms with no such noun get no marker rather than an
-   * invented one; their sprite and type badges carry the distinction, which is
-   * how the games distinguish them too.
-   */
   formMark: Record<string, string>;
   formCompact?: Record<string, string>;
-  /**
-   * Extra spellings a query might use, beyond the name itself: Hepburn romaji
-   * in Japanese, jamo initials in Korean, pinyin and its initials in Chinese.
-   * Dense and parallel to `species`, empty where there are none — and omitted
-   * entirely for the Latin locales, which need nothing past the folding the
-   * normalizer does. The name is NOT repeated here; names.ts joins it on load.
-   */
   affix?: string[];
 }
 
@@ -210,10 +131,7 @@ async function main(): Promise<void> {
       }
     }
   }
-  // Mega Meowstic has one design for both genders: PokéAPI's female Mega is a
-  // pixel copy of the male one. Its name still comes from PokéAPI's
-  // meowstic-male-mega row, but its identity names no gender, so its code is
-  // M rather than M ♂.
+  // platform: PokéAPI's female Mega Meowstic is a pixel copy of the male, so this identity names no gender.
   entries.find((entry) => entry.appId === 10314)!.formIdentifier = 'meowstic-mega';
   const xerneas = entries.find((entry) => entry.appId === 716)!;
   xerneas.formId = Number(formsBySlug.get('xerneas-active')!.id);
@@ -248,9 +166,7 @@ async function main(): Promise<void> {
     return match?.names[locale] || undefined;
   };
 
-  // Form names the Pokédex tables leave ambiguous, from newer game text: the
-  // three Paldean Tauros breeds are all "Paldean Form" in zkn_form, and
-  // Pokémon Champions names each breed (`npm run i18n:game-terms`).
+  // platform: Pokédex game text names all three Paldean Tauros breeds "Paldean Form"; Pokémon Champions names each breed.
   const sourcedForms = new Map(
     (JSON.parse(readFileSync(GAME_TERMS_PATH, 'utf8')) as GameTermsFixture).terms
       .filter((term) => term.key.startsWith('form.'))
@@ -281,21 +197,8 @@ async function main(): Promise<void> {
   let englishDescriptors: Record<string,string> = {};
 
   for (const [locale, langId] of Object.entries(LANGUAGE_IDS)) {
-    /**
-     * Learn this language's regional-form pattern from forms it documents,
-     * then *prove* it before trusting it.
-     *
-     * Deriving beats hardcoding: the result is built from the language's own
-     * published wording rather than ours. But a pattern learned from a single
-     * example can be badly wrong — English "Alolan Form" yields "{region}n
-     * Form", which would render "Galarn Form" — so a candidate is kept only if
-     * it reproduces *every* descriptor the language documents. English fails
-     * that (its region adjectives are irregular) and correctly composes
-     * nothing, which is harmless because it documents all 64 anyway.
-     */
     const regionName = (region: string): string | undefined =>
-      // Spanish has no rows in region_names.csv; these are proper nouns that
-      // fr/de/it all render identically, so English is a safe stand-in.
+      // platform: PokéAPI region_names.csv has no Spanish rows, so the English proper noun stands in.
       regionNames.get(`${REGIONS[region]}:${langId}`) ?? regionNames.get(`${REGIONS[region]}:${LANGUAGE_IDS.en}`);
 
     const documented = entries
@@ -303,7 +206,7 @@ async function main(): Promise<void> {
       .map((e) => ({ region: regionOf(e.appName), descriptor: formNames.get(`${e.formId}:${langId}`) }))
       .filter((d): d is { region: string; descriptor: string } => Boolean(d.region && d.descriptor));
 
-    let pattern: string | null = null;
+    let regionalFormPattern: string | null = null;
     for (const sample of documented) {
       const name = regionName(sample.region);
       if (!name || !sample.descriptor.includes(name)) continue;
@@ -312,7 +215,7 @@ async function main(): Promise<void> {
         const n = regionName(d.region);
         return n ? candidate.replace('{region}', n) === d.descriptor : true;
       });
-      if (reproducesAll) { pattern = candidate; break; }
+      if (reproducesAll) { regionalFormPattern = candidate; break; }
     }
 
     const catalog: NameCatalog = {
@@ -328,28 +231,16 @@ async function main(): Promise<void> {
       return [...seg.segment(text.normalize('NFC'))][0]?.segment ?? '';
     };
 
-    /**
-     * Sweet markers, but only where they actually distinguish.
-     *
-     * The first grapheme of the item name separates all six in the languages
-     * that put the distinguishing noun first — English `Berry Sweet`, Japanese
-     * `ベリーアメざいく`, Chinese `野莓糖饰` — and separates none of them in the
-     * ones that lead with the shared word: German `Zucker-Beere` and
-     * `Zucker-Herz` both give `Z`, Spanish `Confite…` gives `C` six times,
-     * Italian `Bonbon…` gives `B`. Rather than show six identical markers,
-     * which claims a distinction it is not making, those languages get none and
-     * fall back to the sprite.
-     */
     const sweetMarks = new Map<string, string>();
     {
-      const candidates = Object.entries(SWEET_ITEMS).map(([appName, slug]) => {
+      const candidates = Object.entries(SWEET_ITEM_BY_ALCREMIE_FORM).map(([appName, slug]) => {
         const id = itemIdBySlug.get(slug);
         const name = id === undefined ? undefined : itemNames.get(`${id}:${langId}`);
         return { appName, mark: name ? firstGrapheme(name) : '' };
       });
       const marks = candidates.map((c) => c.mark);
-      const usable = marks.every(Boolean) && new Set(marks).size === marks.length;
-      if (usable) for (const c of candidates) sweetMarks.set(c.appName, c.mark);
+      const everyMarkDistinct = marks.every(Boolean) && new Set(marks).size === marks.length;
+      if (everyMarkDistinct) for (const c of candidates) sweetMarks.set(c.appName, c.mark);
     }
 
     let official = 0;
@@ -374,20 +265,18 @@ async function main(): Promise<void> {
 
       const pokeapi = formNames.get(`${entry.formId}:${langId}`);
       const game = gameDescriptor(entry, locale);
-      // Japanese base forms such as Kyogre's are named "カイオーガのすがた",
-      // "Kyogre's form": no form name, so the descriptor is the species name
-      // and the label is the species alone, as English "Kyogre" is.
+      // platform: PokéAPI names Japanese base forms "<species>のすがた", so the descriptor is the species name alone.
       const speciesName = speciesNames.get(`${entry.speciesId}:${langId}`);
-      const bare = locale === 'ja' && speciesName && pokeapi === `${speciesName}のすがた` ? speciesName : undefined;
+      const japaneseBaseFormName = locale === 'ja' && speciesName && pokeapi === `${speciesName}のすがた` ? speciesName : undefined;
       const descriptor = sourcedForms.get(entry.appId)?.[locale as keyof typeof LANGUAGE_IDS]
-        ?? (COSTUMES.has(entry.formIdentifier) && game ? game : bare ?? pokeapi ?? game);
+        ?? (COSPLAY_PIKACHU_FORMS.has(entry.formIdentifier) && game ? game : japaneseBaseFormName ?? pokeapi ?? game);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';
         official += 1;
         continue;
       }
-      const sweetItem = SWEET_ITEMS[entry.appName];
+      const sweetItem = SWEET_ITEM_BY_ALCREMIE_FORM[entry.appName];
       if (sweetItem) {
         const vanilla = Object.values(gameText.forms).find((row) => row.species === 'Alcremie' && row.names.en === 'Vanilla Cream');
         const itemId = itemIdBySlug.get(sweetItem);
@@ -409,10 +298,10 @@ async function main(): Promise<void> {
         }
       }
       const region = regionOf(entry.appName);
-      if (!region || !pattern) continue;
+      if (!region || !regionalFormPattern) continue;
       const name = regionName(region);
       if (!name) continue;
-      catalog.forms[entry.appId] = pattern.replace('{region}', name);
+      catalog.forms[entry.appId] = regionalFormPattern.replace('{region}', name);
       catalog.formSource[entry.appId] = 'official-composed';
       composed += 1;
     }
@@ -429,11 +318,7 @@ async function main(): Promise<void> {
       catalog.forms['picker:10227'] = complete ? rapidDescriptor : `${rapidDescriptor} — ${styleDescriptor}`;
       catalog.formSource['picker:10227'] = complete ? 'official' : 'official-composed';
     }
-    // A cosmetic variant of a Mega has an official name in only some
-    // languages, and Japanese reuses the plain Mega's name for it. Compose
-    // "<Mega> — <variant>" from both official names where the language has no
-    // distinct name of its own.
-    for (const [variantId, megaId, formId] of MEGA_VARIANTS) {
+    for (const [variantId, megaId, formId] of COSMETIC_MEGA_VARIANTS) {
       const mega = catalog.forms[megaId];
       const variant = catalog.forms[formId];
       const own = catalog.forms[variantId];
@@ -441,11 +326,11 @@ async function main(): Promise<void> {
       catalog.forms[variantId] = `${mega} — ${variant}`;
       catalog.formSource[variantId] = 'official-composed';
     }
-    for (const [id, mask] of Object.entries(TERASTAL_MASKS)) {
+    for (const [id, mask] of Object.entries(MASK_FORM_BY_TERASTAL_OGERPON)) {
       if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Terastal form ${id} is not a picker form`);
       const maskName = catalog.forms[mask];
-      const terastal = catalog.forms[TERASTAL_FORM];
-      if (!maskName || !terastal) throw new Error(`${locale} has no official name for ${maskName ? TERASTAL_FORM : mask}`);
+      const terastal = catalog.forms[TERAPAGOS_TERASTAL_FORM];
+      if (!maskName || !terastal) throw new Error(`${locale} has no official name for ${maskName ? TERAPAGOS_TERASTAL_FORM : mask}`);
       catalog.forms[id] = `${maskName} — ${terastal}`;
       catalog.formSource[id] = 'official-composed';
     }
@@ -456,9 +341,7 @@ async function main(): Promise<void> {
       catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
       catalog.formSource[id] = 'english-only';
     }
-    // A sourced descriptor for an English-only form keeps its official prefix:
-    // ブラックキュレム — オーバードライブ.
-    const prefixed = (id: string, name: string): string => {
+    const withOfficialPrefix = (id: string, name: string): string => {
       const prefix = ENGLISH_ONLY_FORMS[Number(id)]?.officialPrefix;
       return prefix === undefined ? name : `${catalog.forms[prefix]} — ${name}`;
     };
@@ -479,7 +362,7 @@ async function main(): Promise<void> {
       if (catalog.formSource[id] && !['english-only', 'official-bulbapedia'].includes(catalog.formSource[id])) {
         throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the official-usage name`);
       }
-      catalog.forms[id] = prefixed(id, name);
+      catalog.forms[id] = withOfficialPrefix(id, name);
       catalog.formSource[id] = 'official-usage';
       usage += 1;
     }
@@ -489,20 +372,17 @@ async function main(): Promise<void> {
       if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
         throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the my151 name`);
       }
-      catalog.forms[id] = prefixed(id, name);
+      catalog.forms[id] = withOfficialPrefix(id, name);
       catalog.formSource[id] = 'idiomatic';
       idiomatic += 1;
     }
-    // A Pokopia character's name stays searchable after its form name replaces it.
     for (const [id, { names, form }] of Object.entries(bulbapedia)) {
       const character = names[locale];
       if (form && character && character !== catalog.forms[id]) formAlias[id] = character;
     }
-    // A form these files name in English, with no English-only fallback, needs
-    // a name in every locale.
-    const covered = [...Object.entries(bulbapedia), ...Object.entries(my151)]
+    const formsNeedingEveryLocale = [...Object.entries(bulbapedia), ...Object.entries(my151)]
       .filter(([id, row]) => row.names.en && !(Number(id) in ENGLISH_ONLY_FORMS)).map(([id]) => id);
-    for (const id of covered) {
+    for (const id of formsNeedingEveryLocale) {
       if (!catalog.forms[id]) throw new Error(`${locale} ${id}: no name; add one to ${BULBAPEDIA_NAMES_PATH} or ${MY151_NAMES_PATH}`);
     }
     const femaleDescriptor = catalog.forms[10025];
@@ -547,16 +427,14 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(usage).padStart(2)} official usage   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(usage).padStart(2)} official usage   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${regionalFormPattern ?? '(no pattern)'}`,
     );
   }
 
   const altForms = Object.fromEntries(
     entries.filter((e) => originalIds.has(e.appId) && e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
   );
-  // Outside OUT_DIR: names.ts glob-imports `names/*.json` as lazy per-locale
-  // chunks, and a file that is both statically imported and matched by that
-  // glob gets folded back into the main bundle.
+  // platform: Vite folds a glob-matched file that is also statically imported into the main bundle, so this file sits outside OUT_DIR.
   writeFileSync(ALT_FORM_OUT, `${JSON.stringify(altForms)}\n`);
 
   console.log(`${ALT_FORM_OUT}: ${Object.keys(altForms).length} alt forms`);

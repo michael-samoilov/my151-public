@@ -1,36 +1,4 @@
 #!/usr/bin/env node
-/**
- * Fails when a page's first-load download grows past its ceiling in
- * scripts/performance/budgets.json.
- *
- *   node scripts/check-bundle-budget.mjs            # build, measure, check
- *   node scripts/check-bundle-budget.mjs --dist d   # measure an existing build
- *                                                   # made with `--manifest`
- *
- * The script builds into a temporary directory with a Vite manifest, so the
- * deployed `dist/` stays unchanged. For each page it walks
- * the static import graph of the HTML entry plus the lazy modules the page
- * always loads at startup (`startup` in the budget file). It sums two numbers:
- *
- * - `text`: HTML, JavaScript, and CSS, compressed with Brotli quality 11, which
- *   is what Vercel sends.
- * - `images`: image files those modules import, as emitted. They are already
- *   compressed. Validated homepage alternatives count their largest complete
- *   pose/format set. Other `srcset` sizes all count. AVIF/WebP pictures count the larger format
- *   total, so this is what the page can load, not what one visitor does.
- *
- * Fonts are not counted. The CSS names every Inter subset, but a browser
- * downloads only the subsets its text needs.
- *
- * Each number has a `baseline` (the last measured value) and a `ceiling`. A
- * value over its ceiling fails. The report prints every page, so drift below
- * the ceiling stays visible. `lazy` lists modules that load on first use; the
- * report prints them but never fails on them.
- *
- * After a change that shrinks a page, or a size increase that was agreed on,
- * run with `--rebase`. It writes each baseline as measured and each ceiling
- * 5% above it.
- */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -43,6 +11,7 @@ import { brotliCompressSync, constants } from 'node:zlib';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const budgetsFile = join(root, 'scripts/performance/budgets.json');
 const HEADROOM = 1.05;
+const VERCEL_BROTLI_QUALITY = 11;
 const IMAGE = new Set(['.avif', '.gif', '.jpg', '.jpeg', '.png', '.svg', '.webp']);
 
 const distFlag = process.argv.indexOf('--dist');
@@ -63,13 +32,10 @@ const budgets = JSON.parse(readFileSync(budgetsFile, 'utf8'));
 
 const brotli = (file) =>
   brotliCompressSync(readFileSync(join(dist, file)), {
-    params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
+    params: { [constants.BROTLI_PARAM_QUALITY]: VERCEL_BROTLI_QUALITY },
   }).length;
 
-/** Rolldown may merge a dynamic catalog into a shared chunk with no source key.
- * Resolve its emitted glob loader instead of dropping that startup download.
- * Require one destination, since guessing by chunk name could select UI copy.
- */
+// platform: Rolldown can merge a dynamic catalog into a shared chunk with no source key, so this resolves its emitted glob loader.
 function manifestChunk(key) {
   if (manifest[key]) return manifest[key];
   const catalog = /^src\/i18n\/(names|picker-names)\/(.+)$/.exec(key);

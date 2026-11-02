@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ID_MAP_FIXTURE_PATH, type IdMapFixture } from './build-id-map-fixture';
 import type { IdMapEntry } from './propose-id-map';
 
-/**
- * 13 of the app's alt-form ids belong to a different creature in PokeAPI —
- * app 10254 is Alcremie Berry Sweet, upstream 10254 is Oinkologne Female. A
- * naive join would label six Alcremie forms as Gen 9 Pokémon in eight
- * languages, and nothing in English would ever show it, because English names
- * come from the app's own slug.
- */
+// platform: PokeAPI uses 13 of the app's alt-form ids for other creatures, so a naive id join mislabels forms in eight languages.
 
 interface AppPokemon { id: number; name: string }
 

@@ -14,10 +14,6 @@ import {
   type ExportSurveyTool,
 } from '@/lib/exportSurvey';
 
-/**
- * 4chan mark from Simple Icons (CC0).
- * https://simpleicons.org/icons/4chan
- */
 function FourChanMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">

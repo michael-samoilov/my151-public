@@ -20,7 +20,6 @@ type ShinyPicks = Readonly<Record<string, number>>;
 function post(snapshot: FavoritesSnapshot, shinyPicks: ShinyPicks, report?: FavoriteReport, capturedAt = Date.now()) {
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
-  // Like the Dex and the League, the Picker saves a visitor only after the first Pokémon.
   if (!Object.keys(fills).length) return;
   const shiny = Object.fromEntries(Object.entries(shinyPicks).filter(([key,id]) => fills[key]===id));
   const attention=attentionPayload('favorites');
@@ -38,8 +37,6 @@ export function useFavoriteBeacon() {
   const shiny=useFavoritesStore(state=>state.shiny);
   const [debouncer]=useState(()=>createBeaconDebouncer({delayMs:PROGRESS_DEBOUNCE_MS,maxWaitMs:PROGRESS_MAX_WAIT_MS}));
   useEffect(()=>{
-    // Counts the openers who leave before placing a Pokémon. A browser that
-    // already holds picks is a returning builder, not a new opener.
     if(!buildFavoritesSnapshot(useFavoritesStore.getState().fills).completion.filled)sendEventBeacon('favorites-visit',{once:true});
   },[]);
   useEffect(()=>{

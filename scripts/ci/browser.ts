@@ -36,8 +36,7 @@ try {
       await dev.listen();
     }
   }
-  // Vite adds process.exit callbacks. This entry point owns shutdown so the
-  // browser child stops and the final server record is written before exit.
+  // platform: Vite adds process.exit callbacks, so this entry point removes them to stop the browser child and write the server record first.
   for (const listener of process.listeners('SIGTERM')) {
     if (!terminationListeners.has(listener)) process.removeListener('SIGTERM', listener);
   }
