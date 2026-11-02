@@ -2,6 +2,8 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { t, tn, useLocale } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
+import { ChartTitle } from '@/components/shared/ChartTitle';
+import { CHIP_OFF, CHIP_ON } from './chipClasses';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
@@ -100,17 +102,14 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
 
   return (
     <section>
-      <h3 className="text-lg font-semibold mb-1">{t('stage.heading')}</h3>
-      <p className="text-sm text-muted-foreground mb-2">
-        {t('stage.desc')}
-      </p>
+      <ChartTitle as="h3" className="mb-2" text={t('stage.heading')} />
       <div className="flex items-center gap-1.5 mb-3">
         <button type="button"
           onClick={() => setExcludeSpecialMekko(!excludeSpecialMekko)}
           className={`px-2.5 py-1 rounded-full text-[0.6875rem] font-medium whitespace-nowrap transition-colors ${
             excludeSpecialMekko
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              ? CHIP_ON
+              : CHIP_OFF
           }`}
         >
           {t('analytics.excludeSpecial')}

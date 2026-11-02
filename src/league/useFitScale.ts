@@ -83,10 +83,6 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
-      const note = el.nextElementSibling;
-      if (note instanceof HTMLElement && note.hasAttribute('data-fit-reserve')) {
-        avail -= note.offsetHeight;
-      }
       const host = el.parentElement;
       let room = widthRef.current;
       if (host) {
