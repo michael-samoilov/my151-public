@@ -9,6 +9,7 @@ import { formatJson, readJson } from './json';
 import { loadOntology } from './load';
 import { AUDIT_REPORTS, type AuditReport } from './pokeapi/compare';
 import { dexJson } from './projections/dex';
+import { favoritesJson, favoritesMetadataJson } from './projections/favorites';
 import { leagueJson } from './projections/league';
 import { resolveOntology, type Ontology } from './resolve';
 
@@ -60,6 +61,8 @@ export function buildOntology(root: string): Built {
     files: [
       { path: 'src/data/pokemon.json', content: dexJson(resolution.ontology) },
       { path: 'src/data/generated/league.json', content: leagueJson(resolution.ontology) },
+      { path: 'src/data/generated/favorites.json', content: favoritesJson(resolution.ontology) },
+      { path: 'src/data/generated/favorites-metadata.json', content: favoritesMetadataJson(resolution.ontology) },
       { path: 'data/ontology/reports/tool-verdicts.json', content: verdictReport(resolution.ontology) },
     ],
   };

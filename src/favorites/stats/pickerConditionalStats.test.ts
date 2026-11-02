@@ -2,10 +2,12 @@
 import { expect, it } from 'vitest';
 import { buildFavoritesSnapshot } from '../export/snapshot';
 import { pickerConditionalStats } from './pickerConditionalStats';
-import formBst from '../data/formBst.json';
+import { getPickerMon } from '../model/catalog';
+import { pickerPokemonMetadata } from '../model/metadata';
+const bstOf=(id:number)=>pickerPokemonMetadata(getPickerMon(id)!)?.bst;
 it('uses exact sourced battle-form values and sourced cosmetic gender variants',()=>{
- expect(formBst[10008]).toBe(520);expect(formBst[10017]).toBe(540);expect(formBst[11004]).toBe(650);expect(formBst[888]).toBe(660);
- expect((formBst as Record<number,number>)[11067]).toBe(330);
+ expect(bstOf(10008)).toBe(520);expect(bstOf(10017)).toBe(540);expect(bstOf(11004)).toBe(650);expect(bstOf(888)).toBe(660);
+ expect(bstOf(11067)).toBe(330);
 });
 it('ignores pointers/singletons and uses actual Fire1 choices, preserving dual-type membership',()=>{
  const stats=pickerConditionalStats(buildFavoritesSnapshot({'fire|1':6,'ghost|2':200,'favorite|1':6}));

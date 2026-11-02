@@ -1,11 +1,10 @@
-import formBst from '../data/formBst.json';
 import { allPickerMons } from '../model/catalog';
 import { pickerEvolutionRole, pickerPokemonMetadata } from '../model/metadata';
 import { eligibleFor } from '../model/eligibility';
 import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot';
 import { computeConditionalStats } from './conditionalStats';
 import type { StatsBst } from '@/components/view/useDetailedStatsData';
-const sourcedBst=formBst as Record<number,number>;
+const sourcedBst=Object.fromEntries(allPickerMons().map(mon=>[mon.id,pickerPokemonMetadata(mon)?.bst])) as Record<number,number>;
 const entries=allPickerMons().map(mon=>{
  const data=pickerPokemonMetadata(mon);
  const evolution=pickerEvolutionRole(mon);
