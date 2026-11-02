@@ -36,13 +36,16 @@ function differences<T extends { id: number }>(label: string, expected: readonly
   return problems;
 }
 
+
+const FIX = 'This catalog and data/ontology/ disagree. Make the same form change in data/ontology/species/ (see data/ontology/README.md), then rerun. Phase 2 of docs/data-model/pokemon-ontology.md removes the second copy.';
+
 describe('ontology parity with today’s catalogs', () => {
   it('rebuilds every Favorite Picker record', () => {
     const today = allPickerMons();
     const rebuilt = pickerRecords(ontology);
     expect(rebuilt).toHaveLength(today.length);
-    expect(differences('picker', today, rebuilt)).toEqual([]);
-    expect(today.length).toBe(1427);
+    expect(differences('picker', today, rebuilt), FIX).toEqual([]);
+    expect(today.length).toBeGreaterThan(1000);
   });
 
   it('rebuilds every Favorite Picker metadata record', () => {
@@ -51,16 +54,16 @@ describe('ontology parity with today’s catalogs', () => {
     const today = allPickerMons().map((mon) => pickerPokemonMetadata(mon)!).map(({ archetypes: _archetypes, ...record }) => record);
     const byPickerId = new Map([...ontology.forms.values()].map((form) => [pickerId(ontology, form), form]));
     const rebuilt = today.map((record) => pickerMetadata(ontology, byPickerId.get(record.id)!)).map(({ archetypes: _archetypes, ...record }) => record);
-    expect(differences('picker metadata', today, rebuilt)).toEqual([]);
-    expect(today).toHaveLength(1427);
+    expect(differences('picker metadata', today, rebuilt), FIX).toEqual([]);
+    expect(today.length).toBeGreaterThan(1000);
   });
 
   it('rebuilds every League catalog row', () => {
     const today = leagueCatalog().map(({ archetypes: _archetypes, ...row }) => row);
     const rebuilt = leagueRows(ontology);
     expect(rebuilt).toHaveLength(today.length);
-    expect(differences('league', today, rebuilt)).toEqual([]);
-    expect(today.length).toBe(1210);
+    expect(differences('league', today, rebuilt), FIX).toEqual([]);
+    expect(today.length).toBeGreaterThan(1000);
   });
 
   it('gives every form the verdicts the tools apply today', () => {

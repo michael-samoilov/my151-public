@@ -96,7 +96,11 @@ function main(): void {
   }
   const forms = built.ontology.forms.size;
   if (stale.length) {
-    console.error(`${stale.join(', ')} differ(s) from the ontology. Run npm run ontology:build, then review the diff.`);
+    console.error(
+      `${stale.join(', ')} differ(s) from data/ontology/. These files are generated from it. ` +
+        'If you changed a Pokémon fact, make the change in its file under data/ontology/species/ instead, then run npm run ontology:build. ' +
+        'Running the build without that step overwrites a hand edit to a generated file.',
+    );
     process.exit(1);
   }
   console.log(`ontology ${write ? 'build' : 'check'}: ${built.ontology.species.size} species, ${forms} forms; ${built.files.map((file) => file.path).join(' and ')} ${write ? 'written' : 'match'}.`);
