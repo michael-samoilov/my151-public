@@ -6,16 +6,8 @@ export interface FavoriteUsageFunnel {
   opened: number;
   buckets: {label:string;count:number;exports:{full:number;simplified:number;both:number};notExported:number}[];
 }
-/** From this UTC day the server saves only Picker visitors who placed a
- *  Pokémon, and the `favorites-visit` count gives the rest. */
 const PICKER_VISIT_SINCE = Date.UTC(2026, 9, 23);
 
-/**
- * The Picker funnel of the records first seen in a range. `visits` is the
- * range's `favorites-visit` count. Bounces are the records that never placed a
- * Pokémon, plus the visits beyond the placers saved from PICKER_VISIT_SINCE.
- * The **Not started** bucket holds the bounces.
- */
 export function favoriteUsageFunnel(records: FavoriteRecord[], visits: number): FavoriteUsageFunnel {
   const savedPlacers = records.filter(r=>r.maxFilled>0 && r.firstTs>=PICKER_VISIT_SINCE).length;
   const unsaved = Math.max(0, visits-savedPlacers);
@@ -53,11 +45,8 @@ export function favoriteSummary(records: FavoriteRecord[]) {
 const byCharts = (a:[number,number], b:[number,number]) => b[1]-a[1] || a[0]-b[0];
 export interface FavoritePicks {
   preference?: FavoritePreference;
-  /** Charts with at least one filled cell. */
   charts: number;
-  /** Per cell key, each Pokémon a chart holds there and how many charts hold it. Never a count of 0. */
   cells: Record<string,[pokemonId: number, charts: number][]>;
-  /** The nine Pokémon the most charts hold in any cell, each chart counted once. */
   top: [pokemonId: number, charts: number][];
 }
 export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
@@ -82,7 +71,6 @@ export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
   };
 }
 export interface FavoritePreferenceEntry {
-  /** Official species ID; all eligible forms share this ranking entry. */
   id: number;
   score: number | null;
   picks: number;
@@ -203,9 +191,6 @@ export function fitFavoritePreference(input: FavoritePreferencePool[], lambda = 
   }
   const slope=dot(state.g,d);if(!(slope<0)){reason="non-descent direction";break;}
   let step=1, next: PreferenceState | undefined, nextTheta: Float64Array | undefined, accepted=false;
-  // Near the optimum a step's predicted decrease falls below the rounding of
-  // the objective value, so comparing values is decided by rounding and the
-  // search shrinks the step to nothing. Judge those steps by the gradient.
   const valueNoise=64*Number.EPSILON*Math.max(1,Math.abs(state.value));
   for(let backtrack=0;backtrack<40;backtrack++){
    if (Date.now() - started >= timeBudgetMs) {reason = 'time budget'; break optimization;}

@@ -14,7 +14,6 @@ export function useFullLeagueConfetti() {
   const exportOpen = useLeagueUi((s) => s.exportOpen);
   const browserOpen = useLeagueUi((s) => s.browserOpen);
   const isDesktop = useIsDesktop();
-  // A tooltip waits for the picker to close, so the burst waits with it.
   const summaryOnScreen = (isDesktop || openCard === null) && !exportOpen && !browserOpen;
 
   useEffect(() => {
@@ -26,7 +25,6 @@ export function useFullLeagueConfetti() {
     const timer = setTimeout(() => {
       markCelebrated();
       fireCompletionConfetti();
-      // The tooltip says what the burst celebrates, and offers the export.
       armNudge('full');
     }, REVEAL_DELAY_MS);
     return () => clearTimeout(timer);

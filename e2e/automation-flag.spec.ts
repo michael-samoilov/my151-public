@@ -1,10 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The page must do the same work for automation as for people: the speed-test
-// guard (scripts/check-speed-test-detection.mjs) allows src/lib/automation.ts
-// only on that condition. Automation differs in one body field, which tells
-// the server to store nothing.
-
 const SEEDS: [string, string][] = [
   ['personal-151-pokedex-v3', JSON.stringify({ state: { sections: { starter: [1] } }, version: 10 })],
   ['league-builder', JSON.stringify({

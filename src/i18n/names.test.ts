@@ -48,8 +48,6 @@ describe('name catalogs', () => {
     use('ja');
     expect(speciesName(25)).toBe('ピカチュウ');
     expect(speciesName(10100)).toBe('ライチュウ');
-    // The collision that a naive id join gets wrong: app 10254 is an Alcremie
-    // sweet, but upstream id 10254 is Oinkologne.
     expect(speciesName(10254)).toBe('マホイップ');
     expect(speciesName(10179)).toBe('マッギョ');
   });

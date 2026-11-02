@@ -49,17 +49,7 @@ function main(): void {
 
   writeFileSync(
     OUT,
-    `/**
- * GENERATED — do not edit by hand.
- *
- * Source: src/data/{slot-template,categories,archetypes,regional-dexes}.ts
- * Regenerate: npm run i18n:data
- *
- * These are the English strings authored in the data modules. They live here so
- * the other locales have keys to translate against; en.data.test.ts asserts
- * this file still matches its sources.
- */
-export const enData = {
+    `export const enData = {
 ${body}
 } as const;
 `,

@@ -181,7 +181,6 @@ function relativePath(segments: Segment[]): string {
   return out;
 }
 
-/** Each type's glyph shapes, as path data in the centered 100-unit frame. */
 export function typeGlyphPaths(): Record<string, string[]> {
   return Object.fromEntries(Object.entries(TYPE_ICONS).map(([type, { glyph }]) => {
     const svg = readFileSync(resolve('public', `.${glyph}`), 'utf8');

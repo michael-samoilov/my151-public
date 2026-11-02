@@ -35,8 +35,6 @@ if (!isOptedOut()) {
   });
 }
 
-// A first visit starts this code after the first paint (vite.config.ts), which
-// can be after `load` has fired.
 if ('serviceWorker' in navigator) {
   const register = () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); };
   if (document.readyState === 'complete') register();

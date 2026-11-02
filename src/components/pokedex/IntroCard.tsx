@@ -74,13 +74,6 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
 const SHOT_AVIFS = [shot45Avif, shot95Avif, shot151Avif] as const;
 
-/** Intrinsic pixel sizes of SHOT_SRCS, in the same order. The staircase sizes
- *  each card by height and leaves width to `w-auto`, so without these the
- *  browser has no aspect ratio until the WebP decodes and every card resolves
- *  to ~2px wide — the hero renders as three slivers, then snaps to its real
- *  332px. Width/height attributes give the ratio up front, so the cards hold
- *  their final size from first paint. Keep in sync with the files in
- *  src/assets/intro/ if they are ever re-exported. */
 // platform: Without width and height attributes, a w-auto image has no aspect ratio until it decodes, so the card collapses to a sliver.
 const SHOT_DIMS = [
   { width: 390, height: 620 },
@@ -88,32 +81,9 @@ const SHOT_DIMS = [
   { width: 555, height: 653 },
 ] as const;
 
-/** Parallel to SHOT_SRCS. These three screenshots show the product's progression
- *  (partial dex, sectioned dex, complete dex plus analytics), so they carry
- *  meaning and need real alt text rather than alt="". Bing Webmaster Tools
- *  reported all three as missing alt attributes.
- *
- *  Each string carries one target search phrase — "custom Pokédex", "region
- *  template", "generated Pokédex image" — but only because each phrase accurately
- *  describes that image. Do not add phrases the screenshot does not show, and do
- *  not list phrases: Google treats keyword-filled alt attributes as keyword
- *  stuffing.
- *
- *  "Template" is accurate: BUILD_GROUPS in src/data/slot-template.ts is a
- *  pre-structured set of region sections that each pre-filter the browser.
- *  "Generated image" is accurate: shot-151 is itself an export produced by
- *  generateExportImage, and carries the "made with my151.app" footer. Prefer
- *  "generate your Pokédex image" over a bare "generator" — the app has no
- *  randomiser, so the bare term invites visitors expecting one. The words are
- *  catalog keys, so each language describes the images in its own terms. */
 const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
 
-/** The export shot is two framed panels with rounded corners, transparent
- *  outside the frame and in the notches where the panels meet. A box shadow
- *  stops at the card's box, so those notches showed as white wedges inside the
- *  shadow. A drop shadow follows the image's own outline. Tuned by eye to
- *  match `shadow-lg` on the other two cards. */
-// platform: A CSS box shadow stops at the element's box, but a drop-shadow filter follows the image's transparent outline.
+// platform: A CSS box shadow stops at the element's box, but a drop shadow filter follows the image's transparent outline.
 const EXPORT_SHOT_SHADOW = 'drop-shadow(0 8px 8px rgb(0 0 0 / 0.1)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.08))';
 
 function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean }) {
@@ -237,10 +207,6 @@ const FINE_POINTER =
     ? window.matchMedia('(pointer: fine)')
     : null;
 
-// Each card floats at half the speed of its index.css class, as Michael asked
-// on 13 October. The classes keep the keyframes and the reduced-motion rule;
-// the timing lives here because index.css is an input of the pre-rendered
-// homepage artwork, and any edit to it means regenerating that artwork.
 const STAIR = [
   { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a', floatTiming: { animationDuration: '13s' } },
   { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c', floatTiming: { animationDuration: '17s', animationDelay: '-10s' } },

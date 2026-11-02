@@ -9,9 +9,6 @@ import { pickerOpenState, useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 
-// The page an empty cell's picker opens to, as long as the gym has a type. The
-// picker's other purposes show a subset of it, or the card's own Pokémon,
-// which the card already draws.
 function pickerPageSprites(cardIndex: number): string[] {
   const state = pickerOpenState(cardIndex, 'lines', useLeagueBrowserStore.getState(), 1);
   if (!state.typeFilter) return [];
@@ -21,17 +18,12 @@ function pickerPageSprites(cardIndex: number): string[] {
     dataSource,
   );
   const groups = groupEvolutionLines(filterPokemon(options), options);
-  // The picker files a line under each generation it matches in. The first
-  // match is close enough, because the order only decides what loads first.
   const generation = (group: EvolutionGroup) =>
     group.members.find((m) => group.matchedIds.has(m.id))?.generation ?? 0;
   groups.sort((a, b) => generation(a) - generation(b));
   return [...new Set(groups.flatMap((group) => group.members.map((m) => m.sprite)))];
 }
 
-// A picker tile whose sprite is not in the browser yet opens blank, and stays
-// blank for as long as the fetch takes. The phone keeps the last card mounted
-// after it closes, so only an open card warms its picker.
 export function usePickerPreload(cardIndex: number): void {
   const open = useLeagueUi((s) => s.openCard === cardIndex);
   const type = useLeagueStore((s) => s.cards[cardIndex]?.type);

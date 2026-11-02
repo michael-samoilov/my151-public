@@ -92,7 +92,6 @@ test('native detailed sheets use matching local axes and readable badge labels @
       expect(circles.length).toBeGreaterThanOrEqual(10);
       for (const circle of circles) expect(circle.r ** 2).toBeCloseTo(circles[0].r ** 2, 2);
     }
-    // The gen badge draws its numeral as an outline, so only the word is text.
     else expect(labels.map(label => label.trim())).toContain('GEN');
     const pairs = axes.filter((line, index) => index % 2 === 0 && axes[index + 1] && Math.abs(line.points[0].y - axes[index + 1].points[0].y) < .1).map(line => {
       const index = axes.indexOf(line); return { count: line.points[0].x, index: axes[index + 1].points[0].x, y: line.points[0].y, width: line.width };

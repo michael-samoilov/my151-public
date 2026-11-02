@@ -48,17 +48,10 @@ interface BootInputs {
   RETURNING_KEYS: readonly string[];
 }
 
-// The root font-size before the app mounts: the same layout-viewport width and formula as `src/lib/layoutFontSize.ts`.
 // platform: Reading visualViewport.width forces layout and Firefox paints once layout starts, so this runs after the inline stylesheet.
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
 
-/**
- * Writes the boot script's saved counts into the prerendered progress lines.
- * It runs where the parser meets it, before the end marker lets the hub paint,
- * so the first paint already shows them. HomePage hydrates from the same
- * counts. A null count is one the app may correct, so its line waits for the app.
- */
 const COUNTS_SCRIPT =
   "(function(){var c=window.p151HubCounts;if(c)for(var k in c){var p=document.querySelector('[data-card-progress=\"'+k+'\"]'),n=p&&p.querySelector('[data-progress-count] .text-primary');if(!n||c[k]==null)continue;n.textContent=String(c[k]);if(c[k]>0)p.removeAttribute('data-empty')}})()";
 
@@ -100,8 +93,6 @@ loaded();painted()
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
-  // `?trace` loads the hub load timeline, public/trace.js. It blocks the
-  // parser on purpose, so its observers exist before the body parses.
   return `(function(){
 if(new URLSearchParams(location.search).has('trace'))document.write('<script src="/trace.js"><\\/script>');
 var d=document.documentElement;

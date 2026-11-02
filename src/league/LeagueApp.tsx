@@ -303,17 +303,6 @@ export function LeagueApp() {
           </BottomSheet>
         )}
 
-        {/* The report form's only mount point on this entry.
-            `FeedbackButton` is just a trigger: it calls `openFeedback`, and
-            whichever `FeedbackHost` is mounted owns the sheet. The league
-            builder boots from its own root (`src/league/main.tsx`), not from
-            `App.tsx`, so it never inherited that app's host -- and every bug
-            button here did nothing at all, silently, because an unregistered
-            opener is a no-op rather than an error.
-
-            Outside the two panes on purpose. Each of them is `overflow-hidden`
-            and goes `inert` when the other is showing, so a sheet mounted in
-            one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
         {exportOpen && <ErrorBoundary where="league-export"><Suspense fallback={<ScreenSpinner />}><LeagueExportOverlay /></Suspense></ErrorBoundary>}
         <LeagueFunnelNudge />

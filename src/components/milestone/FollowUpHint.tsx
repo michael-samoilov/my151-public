@@ -4,7 +4,6 @@ import type { TipTarget } from './tipDots';
 
 const REVEAL_DELAY_MS = 260;
 
-/** A body-only tip that a finished step arms, and that opening its target fulfills. */
 export function FollowUpHint({
   id,
   armed,

@@ -139,10 +139,6 @@ export function ViewSettingsPane({
               const showResetInline =
                 value === 'custom' && hasCustomEffective;
 
-              // The custom row carries a nested Reset button, which can't
-              // legally live inside another <button>. Render that row as a
-              // keyboard-accessible div instead. All other rows remain
-              // plain buttons for simplicity.
               // platform: HTML does not allow a button inside another button, so the custom row is a keyboard-accessible div.
               const handleSelect = () => handleSelectSort(value);
               const commonClass = `w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${

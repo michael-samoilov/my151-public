@@ -13,17 +13,11 @@ export const LEAGUE_EXPORT_KINDS = ['card', 'league'] as const;
 export type LeagueExportKind = (typeof LEAGUE_EXPORT_KINDS)[number];
 
 export interface LeagueSummary {
-  /** Cards (of CARD_COUNT) holding at least one evolution line. */
   cards: number;
-  /** Evolution lines seated across every card. */
   seats: number;
-  /** Cards with a type chosen. */
   typed: number;
-  /** Cards with a badge name or a theme typed. */
   named: number;
-  /** Cards with an ace (signature) marked. */
   aces: number;
-  /** Whether the league itself has a name. */
   leagueNamed: boolean;
 }
 
@@ -34,43 +28,20 @@ const MAX_ROW = 20;
 export const LEAGUE_BOSS_ROW = 11;
 
 export interface LeagueLineShape {
-  /** Member ids, base form first. One branch of a chain, never a whole tree. */
   b: number[];
-  /**
-   * Per stage, the first row it may appear in — present ONLY when the user
-   * dragged a stage away from the level curve's default.
-   *
-   * Its absence is the fact worth recording: it means the line evolves where
-   * the curve put it, and the client is the only place that knows the default.
-   */
   bd?: number[];
-  /** Present when the line is shiny. */
   s?: 1;
 }
 
-/**
- * One trainer card's structure. No typed text: the badge name, the theme and
- * the league name stay in the browser, because free text is where a person
- * puts things about themselves. `named` in the summary still counts them.
- */
 export interface LeagueCardShape {
-  /** Slot index, 0-based, in league order. */
   i: number;
-  /** Card type, or 'none'. Absent when the user has not chosen one. */
   t?: string;
-  /** Seated lines. */
   l: LeagueLineShape[];
-  /** Seat carrying the ace mark. */
   ace?: number;
-  /** The line member picked as the ace, when the user picked one. */
   aceId?: number;
-  /** The partner sharing the ace's slot. */
   pa?: number;
-  /** The card's TM move. */
   tm?: number;
-  /** Legendaries on the endgame row, as [seat, pokemonId], with a third element of 1 when shiny. */
   lg?: [seat: number, pokemonId: number, shiny?: 1][];
-  /** Powerups, as [row, seat, formIndex, 0 for mega or 1 for dynamax]. */
   pw?: [row: number, seat: number, formIndex: number, isDynamax: number][];
 }
 
@@ -80,16 +51,7 @@ export interface LeagueSessionEntry {
   country?: string;
   dev?: string;
   page?: string;
-  /** Funnel events seen in this sitting (league-open, league-export-*,
-   *  export_survey_skipped, …). Names only, deduped per session, same as the
-   *  dex session log. Join the journal by cid for exportTool and reason. */
   events?: string[];
-  /** The league's structure at this session's last beacon: the same shape as
-   *  `latestCards`, kept per session so the admin scrubber can replay the board
-   *  at a past point, not only its counts. Absent on sessions logged before the
-   *  field existed, and on any beacon that carried no structure. Bounded by
-   *  LEAGUE_MAX_SESSIONS like the rest of the log; a full 14-card league is a
-   *  few KB, so a record with many sessions grows accordingly. */
   cards?: LeagueCardShape[];
 }
 
@@ -122,11 +84,6 @@ export interface LeagueRecord extends RecordingFields {
   device?: string;
   os?: string;
   browser?: string;
-  /** Host of the external site that first linked this browser here — a coarse
-   *  acquisition source, set once and never overwritten (forward-only), host
-   *  only. Mirrors ClientRecord.firstReferrer so a cross-tool browser reports
-   *  one acquisition source whichever tool it first hit. Absent on direct
-   *  visits, internal navigation, and legacy records. */
   firstReferrer?: string;
 }
 
@@ -194,15 +151,6 @@ function intInRange(v: unknown, lo: number, hi: number): number | null {
   return v;
 }
 
-/**
- * Sanitize the card structure a client sent.
- *
- * Every field is bounded and every malformed part is dropped rather than
- * rejecting the whole beacon: the summary counts beside it are still worth
- * recording when one card arrives mangled. Returns undefined when the beacon
- * carried no structure at all, which `mergeLeagueRecord` treats as "leave what
- * is stored alone" — distinct from an empty array, which means an empty league.
- */
 export function parseCards(v: unknown): LeagueCardShape[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out: LeagueCardShape[] = [];

@@ -1,28 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
 
-/**
- * Read what a control actually painted, not what its boxes say.
- *
- * Every layout check in this suite asks the DOM, and the DOM cannot see a
- * rasterisation fault: a disc and the mark inside it can be centred to the
- * pixel in layout and still land on the screen with the mark a pixel off,
- * because the two are painted separately at a fractional origin and snap to
- * the device grid independently. The only witness to that is the bitmap.
- *
- * These helpers screenshot one element at the test's device pixel ratio and
- * measure the ink in it. They return geometry -- centres, extents, ramps --
- * never a baseline to compare against, so nothing here churns when a colour
- * or a size changes on purpose. The bitmap is decoded in a scratch page with
- * a canvas, which keeps the suite free of an image library.
- *
- * Sub-pixel accuracy matters here, because the faults are sub-pixel. A
- * thresholded mask moves by a third of a pixel as the antialiased edge under
- * it shifts phase, which is the size of the fault being looked for. So the
- * measures below weight each pixel by how much of the colour it holds
- * rather than counting it in or out, and a disc's centre is read from where
- * its edges are, not from which pixels are blue.
- */
-
 type Coverage = string;
 
 export const INK = {

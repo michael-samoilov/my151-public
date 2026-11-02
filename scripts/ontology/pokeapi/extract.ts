@@ -1,13 +1,3 @@
-/**
- * Writes the pinned PokeAPI snapshot the ontology is audited against.
- *
- *   npm run ontology:extract -- <dir with the data/v2/csv tables> <commit sha>
- *
- * The tables are downloaded by hand from
- * https://raw.githubusercontent.com/PokeAPI/pokeapi/<commit>/data/v2/csv/<table>.csv. The script
- * records each file's sha256, so a rerun against the same commit reproduces the file byte for byte,
- * and keeps only what the audit and importer read.
- */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -172,7 +162,6 @@ export function extractPokeapi(directory: string, commit: string): PokeapiExtrac
   };
 }
 
-/** One record per line, so a diff of the snapshot reads row by row. */
 export function formatExtract(extract: PokeapiExtract): string {
   const section = <T>(rows: Record<string, T>) => `{\n${Object.entries(rows).map(([key, row]) => `    ${JSON.stringify(key)}: ${JSON.stringify(row)}`).join(',\n')}\n  }`;
   const head = ['repository', 'commit', 'files', 'abilities'].map((key) => `  ${JSON.stringify(key)}: ${JSON.stringify(extract[key as keyof PokeapiExtract])}`);

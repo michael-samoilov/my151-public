@@ -1,23 +1,4 @@
 #!/usr/bin/env node
-// Measures what a page costs per frame while the window width is dragged.
-//
-//   node scripts/performance/resize.mjs --dist dist --port 4320 --out run.json
-//
-// Serves a build with `vite preview`, opens the page in headless Chromium at
-// `--from` CSS px wide, then steps the width to `--to` and back, `--step` px
-// per animation frame. It records a Chrome trace of the drag and prints the
-// main-thread cost per frame by stage (script, style, layout, paint, image
-// decode, raster) and the callbacks, images, and layouts that take it.
-//
-//   --profile            also prints a CPU profile of the drag (slows it)
-//   --selectors          also prints the slowest CSS selectors (slows it)
-//   --shots 1280,1600    full-page screenshots at those widths, into --shot-dir
-//   --compare a.png b.png  counts the pixels that differ between two screenshots
-//   --geometry out.json  records every element's box at each width instead
-//   --compare-geometry a.json b.json  lists the boxes that differ between two sweeps
-//
-// Headless Chromium rasters in software, so the raster and decode columns are
-// an upper bound for a GPU desktop. The script and layout columns transfer.
 
 import { chromium } from '@playwright/test';
 import { chromiumPath } from './lab-server.mjs';
@@ -66,7 +47,6 @@ async function measure() {
     window.__resizeProbe = { frames, longTasks };
   });
 
-  // Harness floor: the same loop with no width change.
   const harnessFloor = [];
   for (let i = 0; i < 40; i++) {
     const start = performance.now();
@@ -462,7 +442,7 @@ function serve(outDir, listenPort) {
   child.stdout.on('data', (chunk) => { log += chunk; });
   child.stderr.on('data', (chunk) => { log += chunk; });
   const stop = () => {
-    try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ }
+    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
     child.stdout.destroy();
     child.stderr.destroy();
   };
@@ -473,7 +453,7 @@ function serve(outDir, listenPort) {
       try {
         const response = await fetch(`http://localhost:${listenPort}/`);
         if (response.ok) { resolve({ stop }); return; }
-      } catch { /* not up yet */ }
+      } catch {}
       if (Date.now() > deadline) { stop(); reject(new Error(`vite preview did not start: ${log}`)); return; }
       setTimeout(poll, 200);
     };

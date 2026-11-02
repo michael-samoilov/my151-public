@@ -1,26 +1,4 @@
 #!/usr/bin/env node
-/**
- * Google's own PageSpeed Insights run of a deployed site, phone and desktop.
- *
- *   node scripts/performance/psi.mjs                          # hub, 1 run each
- *   node scripts/performance/psi.mjs --page hub,dex --runs 3
- *   node scripts/performance/psi.mjs --url https://<public deployment>
- *
- * Google can load public previews. Verify direct access without a login, then
- * compare two previews with the same build mode and seeded inputs. See
- * docs/performance.md; keep production baselines separate.
- *
- * It needs PAGESPEED_API_KEY in the environment: a key restricted to the
- * PageSpeed Insights API, the one Google key Michael approved (October 8).
- * Set it in the Claude Code or Codex environment settings. Never print, log,
- * or commit it. The key goes to Google in a request header that curl reads
- * from stdin, so it is not in the command line either.
- *
- * Each page loads with `?notme`, so the runs stay out of the analytics.
- * "Field" is Chrome's real-user data for the whole origin over 28 days. A site
- * with few visits can have none. Use matched public previews with this script
- * to compare Google measurements before shipping.
- */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { tmpdir } from 'node:os';

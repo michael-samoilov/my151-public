@@ -1,8 +1,3 @@
-/**
- * What the ontology and the pinned PokeAPI snapshot disagree on. npm run ontology:audit writes the
- * disagreements to data/ontology/reports/, and npm run ontology:check proves every one is listed
- * there and reviewed, so a changed fact that no longer matches the source cannot ship unreviewed.
- */
 import type { FormId } from '../../../src/ontology/ids';
 import type { ResolvedForm } from '../../../src/ontology/model';
 import { INHERITED_UNSOURCED, type FormEntry, type SpeciesFile } from '../authored';
@@ -22,9 +17,7 @@ export interface Disagreement {
 
 export type Review =
   | { readonly status: 'unreviewed' }
-  /** The app keeps its value; the decision names where that was decided. auto marks a review a rule in audit.ts wrote. */
   | { readonly status: 'kept'; readonly decision: string; readonly note: string; readonly auto?: true }
-  /** The source cannot settle it. The note carries the evidence on each side for Michael. */
   | { readonly status: 'open'; readonly note: string };
 
 export interface AuditRow extends Disagreement {
@@ -39,10 +32,8 @@ export interface AuditReport {
   readonly rows: readonly AuditRow[];
   readonly unmatched?: readonly { readonly form: FormId; readonly inherits: readonly string[] }[];
   readonly missingStateForms?: readonly { readonly pokeapiForm: string; readonly species: string; readonly note: string }[];
-  /** Hand-written: what the snapshot cannot settle and no row carries. The audit script keeps this section as it finds it. */
   readonly questions?: readonly {
     readonly id: string; readonly question: string; readonly evidence: readonly string[]; readonly recommendation: string;
-    /** Who answered, when, the answer, and what changed because of it. */
     readonly review?: { readonly status: 'answered'; readonly by: string; readonly date: string; readonly decision: string; readonly outcome: string };
   }[];
 }
@@ -62,7 +53,6 @@ export interface Linked {
   readonly identity: PokeapiIdentity;
 }
 
-/** Every form with its authored entry and PokeAPI identity, in ontology order. */
 export function linkedForms(ontology: Ontology): Linked[] {
   const entries = new Map<string, FormEntry | SpeciesFile['forms'][0]>();
   for (const { data } of ontology.authored.species) for (const entry of data.forms) entries.set(entry.id, entry);
@@ -100,7 +90,6 @@ export function classificationDisagreements(ontology: Ontology): Disagreement[] 
   return rows;
 }
 
-/** Mega, Primal, and Gigantamax forms of app species that PokeAPI has and no app form claims. */
 export function missingStateForms(ontology: Ontology): NonNullable<AuditReport['missingStateForms']> {
   const claimed = new Set<string>();
   for (const { identity } of linkedForms(ontology)) if (identity.kind === 'form') claimed.add(identity.form.identifier);

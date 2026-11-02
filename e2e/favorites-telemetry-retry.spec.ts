@@ -1,5 +1,4 @@
 import { test, expect, type Page } from '@playwright/test';
-// The Picker sends no beacon until a Pokémon is placed.
 const seedPlacedFavorite=(page:Page)=>page.addInitScript(()=>localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7}},version:3})));
 for(const failure of ['network','500','429','contended'] as const){
  test(`retries ${failure} with one stable request identity`,async({page},testInfo)=>{

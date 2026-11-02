@@ -6,7 +6,6 @@ type Payload={attention?:{v:1;segments:Segment[]};seen?:number[];ts?:number};
 const tools=[{name:'Dex',path:'/pokedex-builder',api:'submit'},{name:'League',path:'/custom-gym-leader',api:'league'},{name:'Picker',path:'/favorite-pokemon-picker',api:'favorites'}];
 const minute=60_000;
 const t0=Date.UTC(2026,9,10)+1000,day0=Date.UTC(2026,9,10);
-// The page's static shell can show a <main> before React mounts the tool.
 const mounted=(page:Page)=>expect(page.locator('#root > .p151-boot, #root > .lg-shell, #root > .fv-shell')).toHaveCount(0);
 function measured(posts:Payload[]) {const segments=posts.at(-1)?.attention?.segments??[];return {segments,total:segments.reduce((sum,s)=>sum+s.end-s.start,0)};}
 async function boot(page:Page,tool:typeof tools[number],optedOut=false,input=true) {
@@ -95,7 +94,6 @@ for(const tool of tools) {
    await runTo(day1+20_000);
    await page.keyboard.press('ArrowRight');
    await page.clock.runFor(9_000);
-   // Wait for the input's beacon, sent after every beacon of the idle night.
    await expect.poll(()=>posts.some(p=>p.attention)).toBe(true);
    const idleNextDay=seenOn(day1);
    expect(idleNextDay).toBe(0);

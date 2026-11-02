@@ -147,8 +147,6 @@ function CardHelpDialog({ anchor, onClose }: { anchor: HTMLElement; onClose: () 
     );
   }
 
-  // Portalled: the card pane is its own stacking context (`relative z-20`), so
-  // a popup left inside it could not rise above the league pane beside it.
   return createPortal(
     <>
       <div className="fixed inset-0 z-[140]" onClick={onClose} aria-hidden />

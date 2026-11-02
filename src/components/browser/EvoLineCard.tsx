@@ -106,9 +106,7 @@ interface EvoLineGridProps {
   onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
-  /** Show every tile shiny, or faded under the no-shiny mark when it has no shiny. */
   shinyView?: boolean;
-  /** Load the shiny sprites of the rows on screen, so a press of the Shiny switch repaints at once. */
   preloadShinies?: boolean;
   cols?: number;
   variant?: EvoLineVariant;

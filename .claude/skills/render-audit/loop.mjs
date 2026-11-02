@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/**
- * The fix loop, one round per run: render, audit, and (once the audit is
- * clean) verify. The fix between rounds is yours, at the source; this runner
- * makes each round one command with its own evidence directory and a hard
- * cap on rounds, so a loop that is not converging says so instead of
- * spinning.
- *
- * Usage:
- *   node loop.mjs --out <dir> --render "<shell command>" \
- *     --audit "<audit.mjs arguments>" [--verify "<shell command>"] [--max-rounds 6] [--reset]
- *
- * Exit codes: 0 clean (and verify passed, when given); 1 the audit found
- * errors; 2 the verify command failed; 3 the round cap is spent.
- */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

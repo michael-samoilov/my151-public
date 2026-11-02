@@ -7,7 +7,6 @@ export interface ToolProgress { count: number; total: number }
 export interface SavedToolProgress {
   dex: ToolProgress;
   league: ToolProgress;
-  /** Null until the picker's validation module loads. */
   favorites: ToolProgress | null;
 }
 
@@ -52,11 +51,6 @@ async function readFavorites(): Promise<ToolProgress> {
   return { count: filled, total };
 }
 
-/**
- * Each tool's saved progress, read from the other tools' stores in
- * localStorage so a page never loads another tool's store. Reads again each
- * time `active` turns true and on writes from other tabs.
- */
 export function useSavedToolProgress(active = true): SavedToolProgress {
   const [progress, setProgress] = useState<SavedToolProgress>(() => ({
     dex: { count: 0, total: DEX_TOTAL }, league: { count: 0, total: SLOT_COUNT }, favorites: null,

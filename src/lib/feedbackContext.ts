@@ -98,7 +98,6 @@ export async function sendFeedback(body: FeedbackSubmission): Promise<FeedbackSe
   }
   if (res.ok) return { ok: true };
   if (res.status === 429) {
-    // The hourly cap for everyone sends no Retry-After.
     const seconds = Number(res.headers.get('Retry-After')) || HOURLY_CAP_RETRY_SECONDS;
     return { ok: false, reason: 'busy', retryMinutes: Math.max(1, Math.ceil(seconds / 60)) };
   }

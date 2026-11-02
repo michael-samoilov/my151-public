@@ -129,7 +129,6 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
             type="button"
             onClick={() => setTypePickerOpen(false)}
             aria-label={t('league.close')}
-            // Grows up and right to the sheet edge, and stops above the type grid.
             className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-top-4 before:-right-4 before:-bottom-2 before:-left-3.5 before:content-['']"
           >
             <X size={16} />
@@ -280,8 +279,6 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
         </div>
       )}
       <div className="px-3">
-        {/* The fit measures its parent, so the top gap it keeps below the
-            card is this frame's padding. */}
         <div {...frameProps} className="pt-2.5">
           <div ref={fitRef} style={fitStyle(fit, rendering, zoom)}>
             <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />

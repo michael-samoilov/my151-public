@@ -600,7 +600,6 @@ function drawTmSlot(
   };
   let nameScale = 1;
   if (widestAt(1) > bodyW) {
-    // Glyph widths do not scale exactly with the size, so step down to fit.
     nameScale = bodyW / widestAt(1);
     while (nameScale > 0.3 && widestAt(nameScale) > bodyW) nameScale -= 0.01;
   }
@@ -1313,13 +1312,6 @@ function drawLeagueHome(
   drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.homeCreditPrefix());
 }
 
-/**
- * Wait for the export's face.
- *
- * Text metrics decide every fit, so the real face has to be resident before
- * anything is measured. Without this the first export of a session measures a
- * fallback and lays the picture out to the wrong widths.
- */
 async function fontsReady(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts?.ready) return;
   try {

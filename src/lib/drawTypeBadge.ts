@@ -29,7 +29,6 @@ export function fillTypeGlyph(
   ctx.restore();
 }
 
-/** The colored type icon: the glyph's 44-unit frame centered on a 60-unit rounded square. */
 export function drawTypeIcon(
   ctx: CanvasRenderingContext2D,
   type: TypeName,

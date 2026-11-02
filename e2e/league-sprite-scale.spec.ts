@@ -199,9 +199,6 @@ test.describe('a Retina desktop with a gym card open', () => {
   test.use({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 });
 
   test('draws every card sprite at whole device pixels, with the hint lines only where they fit', async ({ page }, info) => {
-    // 1440x790 is a 13-inch MacBook Air window: there the card grows past
-    // its pane to reach 1x, where snapping down alone stayed soft, and the
-    // hint lines give way.
     const steps = await cardSprites(page, [[1920, 1080], [1440, 900], [1440, 812], [1440, 790]]);
     await info.attach('card-sprites.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
     expectWholeAndInPane(steps);

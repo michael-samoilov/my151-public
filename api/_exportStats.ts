@@ -80,7 +80,6 @@ export async function recordToolExport(
     const unseen = unique.filter((_, i) => !seenFlag(flags[i]));
     const fields = unseen.map(String);
     const [first, ...rest] = unique.map(String);
-    // SADD must follow SMISMEMBER, or every Pokémon in this export reads as seen.
     const [raw] = await Promise.all([
       fields.length > 0 ? (redis.hmget(DEX_EVER_FREQ_KEY, fields[0], ...fields.slice(1)) as Promise<unknown>) : null,
       first !== undefined ? redis.sadd(EXPORT_SEEN_KEY, first, ...rest) : null,

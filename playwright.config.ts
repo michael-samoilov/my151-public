@@ -28,7 +28,6 @@ if (PREVIEW_PORT === DEV_PORT) {
 }
 
 // platform: A preinstalled browser image pins its own Chromium revision, which drifts from @playwright/test's, so this lookup never names a revision.
-// Keep in sync with .claude/skills/verify-my151/harness/lib/engines.ts and scripts/generate-og-image.mjs, which carry the same lookup.
 const CHROMIUM_LAYOUTS = [
   ['chrome-linux', 'chrome'],
   ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],

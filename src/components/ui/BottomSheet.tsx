@@ -7,8 +7,6 @@ import './sheetMotion.css';
 
 const DISMISS_THRESHOLD = 120;
 
-// A finger held still drifts a few pixels in no set direction. Below this
-// distance a touch has no axis yet.
 const AXIS_SLOP_PX = 10;
 const UNZOOMED_SCALE_TOLERANCE = 0.05;
 
@@ -29,26 +27,10 @@ interface BottomSheetProps {
   exportChrome?: boolean;
   capHeightPx?: number;
   fitContent?: boolean;
-  /** Skips the entrance, for pickers that open many times a session. */
   instant?: boolean;
   children: React.ReactNode;
 }
 
-/**
- * The app's mobile bottom sheet: backdrop, rounded top, grab handle, and
- * drag-down-to-dismiss. Mobile-only (`md:hidden`) because every current caller
- * shows something else entirely at desktop widths — a side pane or a dropdown —
- * rather than the same sheet scaled up.
- *
- * Extracted from two near-identical copies (the builder's selection sheet and
- * the View settings sheet) that had drifted apart: only one handled Escape, and
- * only one exposed an accessible name for the handle. Both now get the better
- * of the two.
- *
- * Deliberately not `aria-modal`: that promises the rest of the page is inert,
- * which needs a focus trap this does not implement. `role="dialog"` plus
- * Escape and a labelled control is what is actually true here.
- */
 // platform: aria-modal promises an inert page, which needs a focus trap, so the sheet uses role dialog without aria-modal.
 export function BottomSheet({
   onClose,
@@ -115,9 +97,6 @@ export function BottomSheet({
     }
   }, [dragY, onClose]);
 
-  // A released swipe finishes its slide before the sheet unmounts.
-  // `transitionend` can be skipped (a hidden tab, an interrupted transition),
-  // so a timer closes the sheet regardless.
   // platform: Browsers can skip transitionend in a hidden tab or after an interrupted transition, so a timer also closes the sheet.
   useEffect(() => {
     if (!leaving) return;
@@ -153,59 +132,10 @@ export function BottomSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [requestClose]);
 
-  /**
-   * Stop the app behind the sheet from scrolling.
-   *
-   * The symptom was one bug and the cause was two, which is why the first fix
-   * appeared to do nothing and got briefly thrown away.
-   *
-   * **A hand-rolled scroll in `App.tsx`.** It forwards wheel events from the
-   * whitespace flanking the centred build page into that page's scroll
-   * container by assigning `scrollTop` directly. The sheet is `position: fixed`
-   * and so looks detached, but it is still a DOM descendant of that area, so
-   * its gestures were being forwarded. `preventDefault` cannot stop a handler
-   * that scrolls something by hand, so that one has to opt out by target — see
-   * `data-overlay` on the overlay below.
-   *
-   * **The browser's own scroll.** With that forwarder fixed, a wheel over the
-   * overlay still scrolled the pane natively, because Chromium has promoted it
-   * to the implicit root scroller and a fixed overlay's scroll chain ends at
-   * the viewport. That is what this listener is for. It only became visible
-   * once the first cause was gone — before that the forwarder was moving the
-   * page first, which made this look ineffective.
-   *
-   * Neither fix is sufficient alone; removing either one fails
-   * `e2e/sheet-behaviour.spec.ts`, and they fail it in different projects.
-   *
-   * On `document` in the capture phase rather than on the overlay, because the
-   * pane is the overlay's DOM *sibling* — cancelling on the overlay's own
-   * branch never reaches it. Registered natively rather than through React's
-   * `onWheel`/`onTouchMove`, which are passive, where `preventDefault()` is
-   * silently ignored. The sheet's own scrollable content is exempted so a long
-   * form still scrolls.
-   */
   // platform: Chromium makes the pane the implicit root scroller, and a fixed overlay's scroll chain ends at the viewport.
   // platform: React registers onWheel and onTouchMove as passive, so preventDefault needs a native capture listener on document.
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  /**
-   * Keep the sheet above the on-screen keyboard.
-   *
-   * `position: fixed` anchors to the *layout* viewport, which does not shrink
-   * when the keyboard opens, so a bottom-anchored sheet keeps its bottom edge
-   * underneath it. With the feedback form that hid the tail of the textarea,
-   * the "what gets sent" disclosure and the submit button — on the one surface
-   * whose whole purpose is typing into it. `100dvh` does not help: it accounts
-   * for browser chrome, not for the keyboard.
-   *
-   * The visual viewport is the only thing that reports the keyboard, so this is
-   * a deliberate exception to the rule in `layoutFontSize.ts` and
-   * `usePixelPerfectSprite.ts` that this app does not listen to it. Both of
-   * those avoid it because it fires on every frame of a pinch-zoom, and that
-   * reason is respected rather than overridden: updates are ignored while
-   * `scale` is not 1, so a pinch changes nothing here, and the listener only
-   * exists while a sheet is open rather than for the life of the page.
-   */
   // platform: position fixed and 100dvh ignore the on-screen keyboard; only the visual viewport reports it.
   const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
   const [textFocus, setTextFocus] = useState(false);
@@ -213,15 +143,6 @@ export function BottomSheet({
     const vv = window.visualViewport;
     if (!vv) return;
     const sync = () => {
-      // A pinch is not a keyboard. Leaving the sheet alone during one also
-      // keeps this off the per-frame path those other modules warn about.
-      //
-      // Compared with a tolerance, not with `!== 1`. Chromium reports exactly 1
-      // and iOS Safari does not: it routinely hands back 0.9999999 and similar,
-      // so an exact test bails on every sync and the sheet never learns the
-      // keyboard is there. That is precisely the bug this block was written to
-      // fix, and it survived because the test runs on the engine that reports
-      // the tidy number.
       // platform: iOS Safari reports an unzoomed visualViewport.scale as values such as 0.9999999, not exactly 1.
       if (Math.abs(vv.scale - 1) > UNZOOMED_SCALE_TOLERANCE) return;
       setViewport({ height: vv.height, top: vv.offsetTop });
@@ -243,25 +164,6 @@ export function BottomSheet({
     };
   }, []);
 
-  /**
-   * Leaving the field collapses the sheet again, but never under a press.
-   *
-   * What takes focus off the field is usually a press on another control in
-   * the same sheet: a category chip, a move in the TM list, a disclosure.
-   * Focus moves at `mousedown`, so collapsing on `blur` pulled that control out
-   * from under the pointer before the release. The release then landed on
-   * whatever had taken its place, and the click went nowhere.
-   *
-   * So the collapse waits until nothing is pressed, and then one frame more.
-   * A release and the click it produces are dispatched in the same task, and a
-   * frame callback only runs after that task. Compatibility mouse events count
-   * as a press as well, because a touch tap releases its pointer first and only
-   * then moves focus, on the `mousedown` the browser synthesizes after it.
-   *
-   * Focus arriving in a field before that frame cancels the collapse. That is
-   * also why moving from one field to the next never collapses at all: the
-   * `focus` follows the `blur` in the same task.
-   */
   // platform: Focus moves at mousedown, a release and its click share one task, and a touch tap synthesizes mousedown after pointerup.
   const collapsePending = useRef(false);
   const pressing = useRef(false);
@@ -332,17 +234,9 @@ export function BottomSheet({
       } else {
         const t = (e as TouchEvent).touches[0];
         if (!t) return;
-        // A touch that moves while text in the sheet is selected can be a
-        // drag of a selection handle. iOS WebKit drops that drag when the
-        // page cancels its touchmove, so the handle froze after a long press
-        // had made the selection. Most handle drags run sideways along a line,
-        // where no scroller takes them, so this walk cancelled them all.
         // platform: iOS WebKit drops a selection-handle drag when the page cancels its touchmove.
         const selection = document.getSelection();
         if (selection && !selection.isCollapsed && overlay.contains(selection.focusNode)) return;
-        // On a press-and-hold of a list's scroll thumb, the first move is
-        // that drift. A sideways guess cancelled it, and iOS then froze the
-        // thumb drag that followed.
         // platform: iOS freezes a scroll-thumb drag when the page cancels its first touchmove.
         const dx = Math.abs(t.clientX - startX);
         const dy = Math.abs(t.clientY - startY);
@@ -375,22 +269,6 @@ export function BottomSheet({
       ? Math.min(viewportMax, capHeightPx)
       : capHeightPx ?? viewportMax;
 
-  /*
-   * Portalled to the body, and that is the sheet's own job rather than each
-   * caller's.
-   *
-   * A `position: fixed` element anchors to the viewport only while no
-   * ancestor is transformed; a transformed one becomes its containing block
-   * instead. The league builder's mobile shell is exactly that — two panes on
-   * one 200%-wide track that the camera translates — so a sheet opened from
-   * inside it laid itself out against the track: 780px wide on a 390px phone,
-   * and pushed far enough down that its last line fell off the screen.
-   *
-   * Every caller could portal its own sheet, and two of them did. This is the
-   * version that cannot be got wrong: the sheet leaves the tree itself, so no
-   * ancestor a caller happens to sit under can move it. React context still
-   * reaches through, which is what `SheetKeyboardContext` needs.
-   */
   // platform: A transformed ancestor becomes the containing block of a position fixed element, so the sheet portals to the body.
   return createPortal(
     <div
@@ -437,14 +315,6 @@ export function BottomSheet({
         }`}
         data-sheet-keyboard={keyboardOpen ? '' : undefined}
         style={{
-          // `100dvh` accounts for browser chrome but not the keyboard, so the
-          // visible height wins whenever the visual viewport has reported one.
-          //
-          // A keyboard also switches a 'content'-sized sheet to a definite
-          // height. That is what lets a form inside it lay itself out to the
-          // space available — a percentage height needs a definite ancestor, and
-          // with `maxHeight` alone the chain stays `auto` and the form can only
-          // overflow and scroll, which is the fold the tail was hiding behind.
           // platform: 100dvh ignores the on-screen keyboard, and a percentage height needs an ancestor with a definite height.
           height:
             exportChrome && !fitContent && maxHeightPx != null

@@ -9,11 +9,6 @@ function overlayShown(): boolean {
   return false;
 }
 
-/**
- * Whether a sheet, pane, or dialog is on screen. A nudge belongs to the build
- * page itself, so it waits while anything covers that page. It watches only while
- * `enabled`, because a nudge is pending only briefly.
- */
 export function useOverlayOpen(enabled: boolean): boolean {
   const [open, setOpen] = useState(false);
   useEffect(() => {

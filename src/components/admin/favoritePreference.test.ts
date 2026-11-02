@@ -29,9 +29,6 @@ describe('favorite preference evidence', () => {
   });
 
   it('counts a species once per selector pane, however many forms the pane lists', () => {
-    // A pick of another Pokémon must not count as one loss per listed form of a
-    // repeated species (psychic|2 lists 26 Unown forms). One chart picks another
-    // Pokémon in every such pane; a second picks the repeated species itself.
     const panes = Object.entries(cells).filter(([, cell]) =>
       cell.kind === 'pick' && new Set(cell.ids!.map(favoriteSpeciesId)).size < cell.ids!.length);
     expect(panes.length).toBeGreaterThan(100);
@@ -167,10 +164,6 @@ describe('favorite preference evidence', () => {
 
 describe('favorite preference numerical fit', () => {
   it('finishes a fit whose last Newton step gains less than the objective value can resolve', () => {
-    // Near the optimum of this seeded 120-chart cohort, a step's predicted gain
-    // is below the rounding of the objective value. A value-only line search
-    // shrank every step to nothing and stopped at the iteration limit, so the
-    // admin showed "Preference strength unavailable".
     let seed = 4;
     const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
     const keys = Object.keys(cells);

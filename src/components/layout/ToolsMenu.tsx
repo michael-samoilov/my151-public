@@ -16,7 +16,6 @@ const TOOLS = [
 
 type ToolId = (typeof TOOLS)[number]['id'];
 
-/** `hover` closes when the mouse leaves; `pinned` (a click or tap) waits for a click elsewhere. */
 type MenuState = 'closed' | 'hover' | 'pinned';
 
 const MOUSE_REST_OPEN_DELAY_MS = 100;
@@ -27,7 +26,6 @@ type Point = { x: number; y: number };
 
 const inRect = (p: Point, r: DOMRect) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
 
-/** Whether `p` lies in the triangle from `apex` to the panel's top edge: the mouse is still on its way to an item. */
 function aimsAtPanel(p: Point, apex: Point, panel: DOMRect) {
   const b = { x: panel.left, y: panel.top };
   const c = { x: panel.right, y: panel.top };
@@ -147,10 +145,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
         lastPoint.current = { x: e.clientX, y: e.clientY };
         window.clearTimeout(openTimer.current);
         if (e.pointerType !== 'mouse' || open || callout) return;
-        // Never open over the language menu or another menu beside this one.
         if (menuRef.current?.parentElement?.querySelector('[aria-expanded="true"]')) return;
-        // Opens once the mouse stops on the button, so a mouse that crosses
-        // it on the way to the toolbar below never opens the menu over it.
         openTimer.current = window.setTimeout(() => setMenu('hover'), MOUSE_REST_OPEN_DELAY_MS);
       }}
       onPointerLeave={() => window.clearTimeout(openTimer.current)}
@@ -181,9 +176,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
               data-testid={callout.testId}
               data-callout-click-through={callout.allowThrough || undefined}
               role="status"
-              // Radix mirrors the content into a hidden copy for screen
-              // readers; with a label it mirrors only the words, not the
-              // close button.
               // platform: Radix mirrors popover content into a hidden copy for screen readers; an aria-label limits the copy to the words.
               aria-label={callout.text}
               className={cn('z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary', callout.allowThrough && 'pointer-events-none')}

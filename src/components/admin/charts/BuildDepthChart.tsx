@@ -17,7 +17,6 @@ export function BuildDepthChart({
   ariaLabel: string;
 }) {
   const { pts, startCount, endCount, xMin, xMax, quartiles, scrubLabel, build } = useMemo(() => {
-    // Not 1, even when everyone has 1: a quartile at 1 would draw its guide on the y-axis.
     const xMin = 0;
     const pts = curve.survival.map((p) => [p.t, Math.round(p.s * 1000) / 10] as [number, number]);
     const startCount = pts.length ? Math.round((pts[0][1] / 100) * curve.n) : 0;

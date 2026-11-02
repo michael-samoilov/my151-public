@@ -54,10 +54,6 @@ async function main() {
     const id = Number(rawId);
     const label = match.label(titleCase(owner.name));
 
-    // Forms of a *form* — meowstic-male-mega, tatsugiri-curly-mega — are the
-    // same Mega wearing a cosmetic variant, and they read identically. One
-    // per label, lowest id, which keeps Charizard's X and Y (their labels
-    // differ) and collapses Tatsugiri's three into one.
     const key = `${owner.id}:${label}`;
     if (seen.has(key)) {
       duplicate++;

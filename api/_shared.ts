@@ -28,17 +28,10 @@ export interface ClientRecord extends RecordingFields {
   lastTs: number;
   lastAt: string;
   submits: number;
-  /** Number of distinct sessions (visits). A gap > SESSION_GAP_MS between
-   *  beacons starts a new session. Absent on legacy records. */
   sessions?: number;
   curSessionStart?: number;
   maxSessionMs?: number;
-  /** Duration (ms) of each session, in order; the last entry is the session
-   *  currently in progress. Capped at the most recent MAX_SESSIONS_TRACKED.
-   *  Absent on legacy records. */
   sessionMs?: number[];
-  /** Peak depth (max evolution lines) reached within each session, parallel to
-   *  sessionMs. Most-recent MAX_SESSIONS_TRACKED. Absent on legacy records. */
   sessionDepth?: number[];
   sessionLog?: {
     ts: number;
@@ -47,53 +40,24 @@ export interface ClientRecord extends RecordingFields {
     dev?: string;
     events?: string[];
     page?: string;
-    /** The section placement (groupId -> ids) at this session's last build
-     *  beacon, so the scrubber can regroup the build at that point, not just
-     *  replay its flat ids. Carried forward within a session; absent on legacy
-     *  sessions and on any session with no build beacon. */
     sections?: Record<string, number[]>;
   }[];
   maxDepth: number;
-  /** Hour-of-day (0–23) in the user's own local time at their last submit. */
   localHour: number;
-  /** Day-of-week (0=Sun…6=Sat) in the user's own local time at their last
-   *  submit. Absent on records that predate the heatmap. */
   localDow?: number;
   country?: string;
   region?: string;
   tz?: string;
   lang?: string;
-  /** The locale the app actually rendered in at the last beacon, as resolved
-   *  client-side (`?lang=` > manual pick > browser). Distinct from `lang`,
-   *  which is only the Accept-Language header. Absent on legacy records. */
   locale?: string;
-  /** Locale the visitor pinned in the language picker. Absent when they still
-   *  follow the browser (store.locale is null), and on every record written
-   *  before this field existed. Lets admin tell "picked English" from
-   *  "unsupported browser language fell back to English". */
   switched?: string;
   device?: string;
   os?: string;
   browser?: string;
-  /** Host of the external site that first linked this browser here — a coarse
-   *  acquisition source (`reddit.com`, `t.co`). Set once, never overwritten
-   *  (forward-only), and host-only by design: the path and query of a referring
-   *  URL can carry personal data, so they are dropped, the same low-sensitivity
-   *  rule as getGeo. Absent on direct visits, internal navigation, and every
-   *  record written before the field existed. */
   firstReferrer?: string;
-  /** Union of every Pokemon this client has ever placed, across all submits.
-   *  Compared against latestIds to surface "tried then dropped" picks — the
-   *  real adjustment signal (order-independent, starter-prompt-immune). */
   everIds: number[];
-  /** Union, per section, of every Pokemon ever placed INTO that section
-   *  (sectionId -> ids). Diffing against latestSections gives "dropped from
-   *  section X". Absent on records that predate section tracking. */
   everSections?: Record<string, number[]>;
   latestIds: number[];
-  /** The user's actual section placement at their last build beacon
-   *  (groupId -> ids). Captures where they put each Pokemon, including
-   *  non-default-for-that-section choices. Absent on legacy records. */
   latestSections?: Record<string, number[]>;
   completed: boolean;
   completedAt?: string;
@@ -101,14 +65,10 @@ export interface ClientRecord extends RecordingFields {
   exported: boolean;
   exportedAt?: string;
   exportedIds?: number[];
-  /** The View settings in effect at the user's last export: which sort order,
-   *  whether the build-section outlines overlay was on, and whether specials were
-   *  grouped at the end. Absent on records that predate export-settings capture. */
   exportSettings?: {
     sort: string;
     outlines: boolean;
     groupSpecial: boolean;
-    /** Whether the detailed-stats panel was included. Absent on older records. */
     showStats?: boolean;
   };
 }
@@ -127,10 +87,6 @@ function headerValue(req: VercelRequest, name: string): string | undefined {
 
 const LIVE_HOSTS = new Set(['my151.app', 'www.my151.app']);
 
-/** True on a Vercel deployment reached by any address but the live site: a
- *  preview, or a production deployment's own `*.vercel.app` URL. Only agents,
- *  reviewers, and tests visit those, so they record nothing. Local builds
- *  (no VERCEL_ENV) are never blocked. */
 export function isReadOnlyDeployment(req: VercelRequest): boolean {
   const env = process.env.VERCEL_ENV;
   if (env !== 'preview' && env !== 'production') return false;
@@ -147,8 +103,6 @@ export function getClientIp(req: VercelRequest): string {
   return req.socket?.remoteAddress ?? 'unknown';
 }
 
-/** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
- *  deliberately skip city + lat/long to keep this low-sensitivity. */
 // platform: Vercel sends the placeholder 'XX' as the country when it does not know it.
 export function getGeo(req: VercelRequest) {
   const country = headerValue(req, 'x-vercel-ip-country');
@@ -222,12 +176,6 @@ const adminLimiter = new Ratelimit({
   prefix: 'rl:admin',
 });
 
-/**
- * Gate an admin endpoint: rate-limit, then require a valid Bearer token. Writes
- * the appropriate error response and returns false when not authorized; returns
- * true when the caller may proceed. The token is accepted ONLY via the
- * Authorization header (never a query string) so it can't land in access logs.
- */
 export async function requireAdmin(req: VercelRequest, res: VercelResponse): Promise<boolean> {
   const adminToken = process.env.ADMIN_TOKEN;
   if (!adminToken) {

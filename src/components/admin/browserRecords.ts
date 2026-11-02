@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import type { FavoriteUser } from '../../../api/_favoriteAggregate';
 import type { ClientRecord, LeagueUser } from './AdminPage';
 
-/** One browser's full records from `/api/submissions?cid=`, for its detail
- *  page. A tool the browser never used is null. */
 export interface BrowserRecords {
   cid: string;
   dex: ClientRecord | null;

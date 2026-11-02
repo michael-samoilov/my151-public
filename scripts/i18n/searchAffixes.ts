@@ -8,7 +8,6 @@ const CHOSEONG = [
 ];
 const HANGUL_BASE = 0xac00;
 const HANGUL_LAST = 0xd7a3;
-/** Each lead consonant spans 21 medials x 28 finals. */
 const HANGUL_MEDIALS = 21;
 const HANGUL_FINALS = 28;
 const CHOSEONG_SPAN = HANGUL_MEDIALS * HANGUL_FINALS;

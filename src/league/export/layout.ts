@@ -257,21 +257,6 @@ export interface Box {
   h: number;
 }
 
-/**
- * The ace's and the partner's squares, in picture pixels, for a grid whose
- * top-left corner is at (`ox`, `oy`).
- *
- * The partner sits in the panel's bottom-right cell, centred on column 3, so
- * it stands over the team sprite below it. That centring leaves a gap to the
- * panel's right edge, and the partner keeps the same gap to the bottom edge.
- *
- * The ace is centred on the panel's top-left 2×2 cells. Inside the cell
- * insets those cells are 178px tall. A centred 192px square would start 7px
- * above the panel, and the panel would clip a sprite drawn up to the top of
- * its frame, such as Celesteela or Raging Bolt. So the ace moves down until
- * it keeps the partner's gap to the top edge. Its left edge is rounded to a
- * whole pixel, which keeps its 2× pixels square.
- */
 export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Box } {
   const box = showcaseBox();
   const partnerCx = 2.5 * COL;

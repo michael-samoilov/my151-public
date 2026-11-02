@@ -476,14 +476,8 @@ const MARK_PAD_REM = 0.1875;
 // platform: Under CSS `zoom`, a renderer may shave a round shape whose outermost pixels land on its box edge, so the paint keeps a pixel off.
 const MARK_EDGE_REM = 0.0625;
 
-/**
- * A cell with a reset shows three discs on its top edge, and a phone narrower than 390px has no room
- * for three 1rem discs: at 320px a cell is 2.5rem wide. There that cell's discs shrink to fit, side by
- * side with `MARK_EDGE_REM` of ground at each end. Two discs fit at every width, so they keep 1rem.
- */
 const THREE_MARKS = `min(${MARK_REM}rem, (100% - ${2 * MARK_EDGE_REM}rem) / 3)`;
 
-/** No height: the disc's square svg sets it, so a disc that shrinks keeps its top edge. */
 function markBox(side: 'left' | 'center' | 'right', inset: number, size = `${MARK_REM}rem`): React.CSSProperties {
   const pad = `${MARK_PAD_REM}rem`;
   const edge = `${MARK_EDGE_REM}rem`;
@@ -506,7 +500,6 @@ interface ShinyButtonProps {
   onToggle: () => void;
 }
 
-/** The top-left control of a line, legend, ace, or partner. With no shiny art it is the crossed-out mark, not a control. */
 function ShinyButton({ mark, onToggle, name, place }: ShinyButtonProps & { name: string; place: React.CSSProperties }) {
   const t = useT();
   if (mark === 'none') {
@@ -1514,18 +1507,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   );
 }
 
-/**
- * How the hint lines under the card draw. `loose` on a phone. On a desktop
- * they show only where they fit below the card at its sharp size
- * (`useFitScale`'s `tail`): `tight` packs them so they fit in more windows,
- * and `off` keeps them at zero height, still measurable.
- */
 export type CardHints = 'loose' | 'tight' | 'off';
 
-/**
- * Every sprite a card can put in a cell, as one sorted key: each line member, legend, and the
- * partner, with their powerup forms, in the look they have now or, with `flip`, the other one.
- */
 function cardSprites(card: GymCard, flip: boolean): string {
   const members = [
     ...card.lines.flatMap((line) => line.branch.map((id) => ({ id, shiny: line.shiny === true }))),
@@ -1563,9 +1546,6 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
     warmedSprites.current = warmImages(warmable.split('|').filter(Boolean));
     return () => { warmedSprites.current = []; };
   }, [warmable]);
-  // The other look of each, so the first press on a shiny disc swaps in art the browser already
-  // has. Without it, that press waited a round trip: 164 to 182 ms at 150 ms of latency, against
-  // 7 to 18 ms once the art was in. It queues behind the sprites on screen.
   const otherLook = cardSprites(card, true);
   usePreloadImages(useMemo(() => otherLook.split('|').filter(Boolean), [otherLook]));
 
@@ -1777,7 +1757,6 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
     (seat: number) => (previewMove ? seatAfterMove(seat, previewMove.from, previewMove.to) ?? seat : seat),
     [previewMove],
   );
-  // A lifted legendary takes its form along, so the line it uncovers shows none.
   const previewPowerups = useCallback(
     (row: number) => powerupsAt(card, row)
       .filter((p) => !(legendDrag && row === BOSS_ROW && legendAt(card, p.seat)))
@@ -1954,8 +1933,6 @@ export function CardGrid({ cardIndex, view, hints = 'loose' }: { cardIndex: numb
           )}
         </div>
       </div>
-      {/* Portalled out of the card's `zoom` so its pixel size is the one
-          measured from the cell, not that size zoomed a second time. */}
       {createPortal(
         <DragOverlay dropAnimation={null}>
           {held && heldPokemon.length > 0 ? (

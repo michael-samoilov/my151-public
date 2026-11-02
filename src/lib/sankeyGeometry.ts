@@ -7,7 +7,6 @@ function sankeyDesktopHeight(stack: number, kind: 'funnel' | 'referrer'): number
   return Math.max(520, Math.min(740, 200 + stack * 80));
 }
 
-/** Room on a phone for the referrer bars themselves, beside the gaps that keep their labels apart. */
 const REFERRER_COMPACT_BARS = 80;
 
 function sankeyMinHeight(stack: number, kind: 'funnel' | 'referrer'): number {
@@ -35,7 +34,6 @@ export function sankeyGeometry(width: number, kind: 'funnel' | 'referrer') {
   const scale = Math.min(1, width / SANKEY_DESKTOP_WIDTH);
   if (kind === 'referrer') {
     return compact
-      // The gap exceeds a label's 11px line, so labels of the smallest sources never overlap; top fits Dex's label.
       ? { compact, left: 92, right: 48, top: 22, bottom: 28, nodeWidth: 8, nodeGap: 13, fontSize: 9 }
       : { compact, left: 128, right: 72, top: 20, bottom: 36, nodeWidth: 12, nodeGap: 18, fontSize: 11 };
   }

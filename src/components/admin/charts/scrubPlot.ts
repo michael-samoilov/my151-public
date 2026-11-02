@@ -27,8 +27,6 @@ export function categoryIndexAtX(x: number, rect: PlotRect, lastIndex: number): 
 }
 
 // platform: ECharts draws a lone category in the middle of the plot.
-/** Plot x of category `index`, the inverse of `categoryIndexAtX`. A lone
- *  category sits mid-plot, where echarts draws it. */
 export function categoryX(index: number, rect: PlotRect, lastIndex: number): number {
   if (lastIndex <= 0) return rect.x + rect.width / 2;
   return rect.x + (index / lastIndex) * rect.width;

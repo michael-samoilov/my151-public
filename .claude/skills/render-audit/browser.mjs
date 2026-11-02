@@ -1,18 +1,3 @@
-/**
- * The one browser this skill drives, behind a small uniform page API.
- *
- * Vercel's agent-browser CLI is the default driver. Playwright is the fallback,
- * for a machine where the CLI is absent or cannot start. Both drive the same
- * Chromium, so a finding does not depend on which one ran; `driver` on the
- * returned object records which one did.
- *
- * Two CLI rules are load-bearing, both measured rather than assumed:
- *   1. Configure through AGENT_BROWSER_* environment variables, never flags.
- *      The CLI keeps a background daemon and reads its flags only when that
- *      daemon starts, so a flag on a later call is dropped with a warning.
- *   2. Judge a command by the JSON `success` field, never the exit code. A
- *      failed command exits 0.
- */
 import { execFile } from 'node:child_process';
 import { chromium } from 'playwright';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -71,8 +56,6 @@ function agentBrowserPage(bin, env, session) {
       await this.evalJson(`(function(){ const s=document.createElement('style'); s.textContent=${JSON.stringify(css)}; document.head.appendChild(s); return true; })()`);
     },
     async fontsReady(timeoutMs = 10_000) {
-      // `eval` returns the expression, and never awaits a promise, so poll the
-      // status that document.fonts.ready resolves on.
       // platform: agent-browser eval never awaits a promise, so poll the status that document.fonts.ready resolves on.
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {

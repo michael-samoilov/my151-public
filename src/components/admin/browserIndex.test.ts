@@ -154,11 +154,8 @@ describe('Active users count engaged days only', () => {
     sessionLog: [{ ts: day1, ids: [1, 4, 7] }, { ts: day2, ids: [1, 4, 7] }], ...extra,
   });
   const clients = {
-    // Built a Dex on day 1, then glanced at it for 3 seconds on day 2.
     glance: visits('glance', { attention: attention([[day1, day1 + 5 * MIN], [day2, day2 + 3_000]]) }),
-    // Read the same Dex for 20 seconds on day 2 without changing it.
     reader: visits('reader', { attention: attention([[day1, day1 + 5 * MIN], [day2, day2 + 20_000]]) }),
-    // No input timing: both days keep the earlier rule.
     legacy: visits('legacy', {}),
   };
 
@@ -172,7 +169,6 @@ describe('Active users count engaged days only', () => {
   });
 
   it('counts a day the page stayed on screen 10 seconds, with no input or pick change that day', () => {
-    // Built a Dex on day 1, then kept it on screen on day 2 without input.
     const viewer = visits('viewer', { attention: attention([[day1, day1 + 5 * MIN]]), seenDays: [Date.UTC(2026, 9, 9)] });
     const d = dash(source({ clients: { viewer, glance: clients.glance } }), 'all');
     const dau = (ts: number) => d.byTool.dex.activity.find((p) => p.day === Date.UTC(2026, 9, new Date(ts).getUTCDate()))?.dau;
@@ -184,8 +180,6 @@ describe('Active users count engaged days only', () => {
     const oct = (date: number) => Date.UTC(2026, 9, date);
     const built = oct(7) + 12 * 60 * MIN;
     const sent = oct(9) + 4_000;
-    // Built a Dex on October 7. On October 8 the tab came back on screen for
-    // the last 10 seconds before midnight, and its beacon left on October 9.
     const late = dex('late', sent, {
       firstTs: built, sessions: 2, sessionMs: [5 * MIN, 0],
       sessionLog: [{ ts: built, ids: [1, 4, 7] }, { ts: sent, ids: [1, 4, 7] }],
@@ -218,7 +212,6 @@ describe('The Picker saves a visitor only after the first Pokémon', () => {
   const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
 
   it('opens the funnel at placers plus bounces: saved no-pick records and visits beyond the placers saved after October 23', () => {
-    // Before October 23 the server saved every Picker visitor.
     const legacy = mergeFavoriteRecord(null, { cid: 'p-legacy', id: 'p-legacy-0', now: oct(20), kind: 'progress', snapshot: empty, events: ['favorites-open'], country: 'US' });
     const src = { ...source({ picker: { 'p-legacy': legacy, 'p-a': picker('p-a', oct(24)), 'p-b': picker('p-b', oct(24, 14)) } }), funnelWindow: { 'favorites-visit': 4 } };
     const funnel = buildDashboard(src, { range: '7d' }, oct(25)).favoriteFunnel;

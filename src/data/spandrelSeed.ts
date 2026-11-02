@@ -1,6 +1,3 @@
-// Auto-generated test fixture (scripts/genseed). A crafted dex where each
-// section spans a 2x2 block with a banded row beneath it, so every section
-// renders its corner spandrel at least once. Loaded only via ?demo=spandrels.
 export const SPANDREL_SEED_SECTIONS: Record<string, number[]> = {
   "starter": [
     10,

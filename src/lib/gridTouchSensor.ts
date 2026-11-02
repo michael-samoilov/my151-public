@@ -56,7 +56,6 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     this.win.addEventListener('contextmenu', preventDefault);
     this.win.addEventListener('dragstart', preventDefault);
     this.doc.addEventListener('keydown', this.onKeydown);
-    // On the document, because the second finger can land on any element.
     this.doc.addEventListener('touchstart', this.onTouchStart, { capture: true, passive: true });
 
     this.timer = setTimeout(this.start, props.options.delay);

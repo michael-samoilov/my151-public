@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * PreToolUse hook for Bash. Before a `git push`, it runs lint and the type check
- * (`scripts/ci/pre-push.ts`) and blocks the push when either fails. Agents skip
- * steps that are only written down, so the check lives in a hook.
- *
- * Other commands pass through at once. Any error in the hook or the checker fails
- * open (exit 0), so a bug here never blocks unrelated work.
- */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
@@ -18,7 +10,6 @@ const SEPARATOR = /&&|\|\||[;|&\n()]/;
 const OPTION_WITH_VALUE = new Set(['-C', '-c']);
 const CHECKS_FAILED_STATUS = 2;
 
-// Quoted text and heredoc bodies hold commit messages, so a message that mentions a push is not a push.
 export function isGitPush(command) {
   const unquotedCommand = command.replace(HEREDOC, ' ').replace(QUOTED, ' ');
   for (const segment of unquotedCommand.split(SEPARATOR)) {
@@ -47,7 +38,6 @@ function main() {
   const root = repositoryRoot(input.cwd ?? process.env.CLAUDE_PROJECT_DIR ?? process.cwd());
   if (!root || !existsSync(join(root, 'scripts', 'ci', 'pre-push.ts'))) return 0;
   const result = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/ci/pre-push.ts'], { cwd: root, encoding: 'utf8', timeout: 270_000 });
-  // The checker exits 2 only when a check fails. Any other failure is the checker's own, so the push goes ahead.
   if (result.status !== CHECKS_FAILED_STATUS) return 0;
   process.stderr.write(`${result.stdout}${result.stderr}`.trim()
     + '\n\nPush blocked: fix the errors above, then push again. Run `npm run ci:pre-push` to recheck.\n');
@@ -58,8 +48,6 @@ if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.me
   let code = 0;
   try {
     code = main();
-  } catch {
-    // Fail open.
-  }
+  } catch {}
   process.exit(code);
 }

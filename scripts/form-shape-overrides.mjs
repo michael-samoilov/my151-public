@@ -7,7 +7,6 @@ if (Object.keys(formShapes).length !== identities.size || [...identities].some((
   throw new Error('Form-shape overrides differ from the reviewed identities and classifications.');
 }
 
-/** Refreshes must preserve reviewed local identities, including regional forms. */
 export function refreshedShape(pokemon, fallback) {
   const reviewed = identities.get(pokemon.id);
   if (!reviewed) return fallback;

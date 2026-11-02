@@ -1,7 +1,3 @@
-/**
- * Today's League catalog rows, rebuilt from the ontology: what getAllPokemon() in
- * src/league/data/catalog.ts returns, minus the archetype lists the app layers on at runtime.
- */
 import { revisedSprite } from '../../../src/lib/spriteUrl';
 import type { Pokemon } from '../../../src/types/pokemon';
 import type { ResolvedForm } from '../../../src/ontology/model';
@@ -9,7 +5,6 @@ import type { Ontology } from '../resolve';
 import { dexRows, parentInTool, stageOf } from './dex';
 import { isPowerUp } from './legacy-picker';
 
-/** A League catalog row: in the League and not a Mega, Primal, or Gigantamax power-up. Crowned Zacian is a row. */
 export const inLeague = (form: ResolvedForm): boolean => form.tools.league === 'in' && !isPowerUp(form);
 
 export type LeagueRow = Omit<Pokemon, 'archetypes'>;

@@ -1,38 +1,3 @@
-/**
- * Writes src/data/bundleCredits.json: for each sprite bundle in the
- * Acknowledgements panel, the app's fan-made sprite files credited through
- * it, and its artists ranked by those files.
- *
- * Every shown fan-made file counts under exactly one entry:
- *
- * - a direct upload counts under its artist's own entry;
- * - any other file counts under the bundle whose records credit its artist
- *   (`via` in src/data/spriteAttribution.json): the Smogon Sprite Project for
- *   its four sheets, PokéAPI for its own credits, or the Generation 9
- *   Resource Pack for its sheet;
- * - a fan-made file with no attribution row counts under PokéAPI when it came
- *   from PokéAPI's files, and otherwise must be in GAME_FREAK.
- *
- * A shiny counts only for an artist who did not draw its normal sprite. When
- * the artist is the same, or not confirmed, the normal sprite's credit covers
- * the shiny, which then counts nowhere (Michael, 2026-10-26). Only a shiny
- * that names another confirmed artist keeps a row in
- * src/data/spriteAttribution.json.
- *
- * Game Freak's own sprites and my151's own drawing count nowhere. An artist
- * counts a file only when docs/credits/sprite-evidence.json confirms it;
- * every other file counts under its entry as "artist not confirmed". The
- * panel never says which files my151 changed (`changedBy`).
- *
- * `pokeapi` counts the files PokéAPI delivers, from
- * docs/credits/pokeapi-delivery.json (scripts/credits/pokeapi-delivery.py):
- * Game Freak's sprites, the Smogon Sprite Project's, and PokéAPI's own.
- *
- * Usage: npx tsx scripts/credits/bundle-credits.ts [--check]
- * --check writes nothing. It fails when the partition has a gap or an
- * overlap, when a shiny's row repeats its normal sprite's credit, or when the
- * JSON file is out of date.
- */
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -50,7 +15,6 @@ interface AttributionRow {
 }
 interface DeliveryRow {
   sha256: string;
-  /** The PokéAPI commit and file with the same pixels, or null. */
   pokeapi: string | null;
 }
 interface ArtistTerms {
@@ -61,23 +25,17 @@ interface ArtistTerms {
 export interface BundleEntry {
   sprites: number;
   unconfirmed: number;
-  /** [artist, files], most files first, ties by name. */
   artists: [artist: string, files: number][];
 }
-/** The shown files that PokéAPI delivers. */
 export interface PokeApiDelivery {
-  /** Game Freak's sprites. */
   official: number;
-  /** Files credited through the Smogon Sprite Project. */
   smogon: number;
-  /** Files credited through PokéAPI itself. */
   own: number;
 }
 export interface BundleCredits {
   note: string;
   entries: Record<string, BundleEntry>;
   pokeapi: PokeApiDelivery;
-  /** Each listed artist's profile, only where it is proven to be theirs. */
   links: Record<string, string>;
 }
 
@@ -95,11 +53,6 @@ const ENTRY_BY_VIA: Record<string, string> = {
 };
 const OWN_UPLOAD = 'own upload';
 const OUR_OWN = 'my151';
-/**
- * Fan-made by the ledger, but Game Freak's battle-animation frames: the
- * sprite lab's credit sheet measured both (Michael, 2026-10-12: the
- * Overdrive forms get no separate credit).
- */
 const GAME_FREAK_ANIMATION_FRAMES: Record<string, string> = {
   '11107': "Black Kyurem Overdrive: Game Freak's frame 0 of PokéAPI's 10022.gif, cropped",
   '11108': "White Kyurem Overdrive: Game Freak's frames 0, 76 and 120 of PokéAPI's 10023.gif",
@@ -111,7 +64,6 @@ const terms = read<{ artists: Record<string, ArtistTerms> }>('src/data/creditTer
 const DELIVERY = 'docs/credits/pokeapi-delivery.json';
 const delivery = read<{ files: Record<string, DeliveryRow> }>(DELIVERY).files;
 
-/** A ledger file's key in src/data/spriteAttribution.json: `650`, or `shiny/650` for its shiny. */
 const fileId = (file: string) => file.replace(/^public\/sprites\/pokemon\/|\.png$/g, '');
 const fromPokeApi = (row: LedgerRow) => row.sources.some((s) => s.url?.startsWith('https://github.com/PokeAPI/sprites/'));
 
@@ -131,10 +83,8 @@ for (const row of ledger) {
     problems.push(`${row.file}: names no confirmed artist beyond its normal sprite's, whose credit covers it. Remove its row from src/data/spriteAttribution.json.`);
   }
 }
-/** The shown files that the panel counts: all but the shinies their normal sprite's credit covers. */
 const panelFiles = ledger.filter((row) => !covered.has(fileId(row.file)));
 
-/** The entry each counted fan-made file counts under; Game Freak's and my151's files are absent. */
 const entryOf = new Map<string, string>();
 for (const row of panelFiles) {
   const id = fileId(row.file);
@@ -180,8 +130,6 @@ const links = Object.fromEntries([...listed].sort().flatMap((name) => {
 
 const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b)));
 
-// PokéAPI's deliveries. A file that my151 changed is not PokéAPI's file. Any
-// other file that these counts can include needs a current delivery row.
 const pokeapi: PokeApiDelivery = { official: 0, smogon: 0, own: 0 };
 const DELIVERY_COUNT: Record<string, keyof PokeApiDelivery> = { 'smogon-sprite-project': 'smogon', 'pokeapi-sprites': 'own' };
 for (const row of panelFiles) {
@@ -193,8 +141,6 @@ for (const row of panelFiles) {
     problems.push(`${row.file}: ${DELIVERY} has no current row. Run python3 scripts/credits/pokeapi-delivery.py (see its header).`);
     continue;
   }
-  // The four Overdrive stills are frames of PokéAPI's animated GIFs: their
-  // ledger rows and GAME_FREAK say so.
   if (delivered.pokeapi || (count === 'official' && (fromPokeApi(row) || GAME_FREAK_ANIMATION_FRAMES[id]))) pokeapi[count] += 1;
 }
 
@@ -205,7 +151,6 @@ const credits: BundleCredits = {
   links,
 };
 
-// The partition: every fan-made file under one entry, and the totals add up.
 const fanFiles = panelFiles.filter((row) => {
   const id = fileId(row.file);
   return row.evidenceType !== 'official-game-freak' && !GAME_FREAK_ANIMATION_FRAMES[id] && attribution[id]?.via !== OUR_OWN;
@@ -233,9 +178,7 @@ if (process.argv.includes('--check')) {
   let current = '';
   try {
     current = readFileSync(path.join(root, OUT), 'utf8');
-  } catch {
-    // Reported below.
-  }
+  } catch {}
   if (current !== json) problems.push(`${OUT} is out of date. Run npx tsx scripts/credits/bundle-credits.ts.`);
 } else if (!problems.length) {
   writeFileSync(path.join(root, OUT), json);

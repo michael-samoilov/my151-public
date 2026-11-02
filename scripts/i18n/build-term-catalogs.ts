@@ -1,29 +1,3 @@
-/**
- * Generates `src/i18n/catalogs/terms/<locale>.json` — the `official` tier:
- * type names, Pokédex colours, egg groups and regions, in all nine locales.
- *
- * These are the strings the launch scope cares most about and the only ones
- * that need no translation at all: PokeAPI publishes the terms the games
- * themselves use. Sourcing beats translating here — a machine-translated
- * "Fire" might read fine and still be the wrong word for a Pokémon type.
- *
- * Egg groups have no row for language 11 (Japanese kanji); the app uses
- * language 1 (ja-Hrkt) throughout, which is both what the games show and what
- * is fully populated.
- *
- * On top of PokeAPI go the terms sourced from the games' own text in
- * `docs/i18n/sources/game-terms.json` (`npm run i18n:game-terms`): move
- * categories, contest conditions, and the build page's game-title, villain and
- * Milcery sub-labels. The same run writes the move names from
- * `move-names.json` to `src/i18n/moves/<locale>.json`, which the league
- * builder loads on demand.
- *
- * Region names are checked against Pokémon HOME's box list. A language whose
- * PokeAPI name differs from HOME's takes HOME's: PokeAPI has no Spanish
- * regions, and the Spanish games call Unova Teselia.
- *
- * Run: npm run i18n:terms
- */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import type { Locale } from '../../src/i18n/config';
 import {
@@ -34,10 +8,6 @@ import { LANGUAGE_IDS, ensureCsvs, readCsv } from './pokeapi';
 const OUT_DIR = 'src/i18n/catalogs/terms';
 const MOVES_DIR = 'src/i18n/moves';
 
-/**
- * The word HOME's box list adds after a region name ("Unova Region",
- * イッシュ地方). A name that differs only by it is the same name.
- */
 const HOME_REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };

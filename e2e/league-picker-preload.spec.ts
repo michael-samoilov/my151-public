@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// Every response waits this long, so a picker tile whose sprite was not
-// fetched before the picker opened stays blank for at least this long.
 const LATENCY_MS = 250;
 const INSTANT_MS = 100;
 const WATCH_MS = 4000;
@@ -48,7 +46,6 @@ async function chooseType(page: Page, name: string) {
   await expect(page.locator(`button[aria-label="Gym type: ${name}"]:visible`)).toHaveCount(1);
 }
 
-/** How long each picker tile on screen waited for its sprite after it appeared. */
 async function openPickerTimingTileWaits(page: Page) {
   await page.evaluate((watchMs) => {
     const waits: { sprite: string; waitedMs: number }[] = [];

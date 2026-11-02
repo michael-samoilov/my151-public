@@ -11,7 +11,6 @@ import zlib from 'node:zlib';
 export const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const PRODUCTION = 'origin/claude/pokedex-region-builder-AviYF';
 
-/** Builds the working tree (no ref), or `ref` in a temporary worktree. */
 export function build(work, label, ref) {
   const out = path.join(work, `${label}-dist`);
   let cwd = root;
@@ -46,10 +45,6 @@ const TYPES = {
   '.xml': 'application/xml', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
 };
 
-/**
- * Serves `dist` over HTTP/2 with Brotli and the cache headers in vercel.json,
- * like the Vercel edge. API routes answer `{}`.
- */
 export function serve(dist, tls) {
   const brotli = new Map();
   const server = http2.createSecureServer({ ...tls, allowHTTP1: true }, (req, res) => {
@@ -104,10 +99,6 @@ export const median = (values) => {
   return sorted[Math.floor((sorted.length - 1) / 2)];
 };
 
-/**
- * A change is marked only when every candidate sample falls outside the range
- * of the base samples, and the medians differ by more than 5%.
- */
 export function compare(base, cand) {
   const mid = median(base);
   const c = median(cand);

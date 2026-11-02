@@ -145,7 +145,6 @@ export function parseBingDate(value: unknown): string | null {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
-/** Bing's dated rows, oldest first. Page and query rows carry their key in `Query`. */
 export function bingBucketRows(payload: unknown): SearchBucketRow[] {
   return bingRows(payload)
     .map((row): SearchBucketRow | null => {

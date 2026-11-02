@@ -1,14 +1,9 @@
 import { LEAGUE_BOSS_ROW, type LeagueCardShape, type LeagueLineShape, type LeagueRecord } from './_leagueRecord.js';
 
-/** `[pokemonId, leagues]`, most leagues first, then lowest id. */
 export type LeaguePickRows = [pokemonId: string, leagues: number][];
 
 export interface LeaguePicks {
   ace: LeaguePickRows;
-  /**
-   * Each league's seated Pokémon, by the card's chosen type. `none` is the
-   * explicit "no type" choice. A card with no type chosen is in no section.
-   */
   byType: Record<string, LeaguePickRows>;
 }
 

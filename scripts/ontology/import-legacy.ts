@@ -1,13 +1,3 @@
-/**
- * One-time importer: writes data/ontology/ from today's three catalogs.
- *
- *   node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.node.json scripts/ontology/import-legacy.ts
- *
- * Every identity the Favorite Picker knows (1,427) becomes a form. Where the legacy files disagree
- * on a fact, the value today's consumer shows wins and the disagreement goes to
- * data/ontology/reports/legacy-disagreements.json. A form the classification table does not cover
- * stops the import.
- */
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,7 +29,6 @@ import { mechanicallyEqual } from './resolve';
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const out = join(root, 'data', 'ontology');
 
-/** The one PokeAPI commit every imported fact cites. npm run ontology:extract writes its snapshot. */
 const POKEAPI_COMMIT = 'bc92d3b6029ef1abe9e7ad424c400b338f3c11fe';
 const pokeapi = readJson(join(root, pokeapiExtractPath(POKEAPI_COMMIT))) as PokeapiExtract;
 if (pokeapi.commit !== POKEAPI_COMMIT) throw new Error(`${pokeapiExtractPath(POKEAPI_COMMIT)} holds commit ${pokeapi.commit}`);
@@ -59,11 +48,8 @@ const idMapByAppId = new Map(idMap.entries.map((entry) => [entry.appId, entry]))
 const provenanceById = new Map(powerupProvenance.forms.map((form) => [form.id, form]));
 const leagueMetadata = new Map(leagueForms.map((form) => [form.id, form]));
 
-/** The Picker's three hand remaps of Dex numbers, so a Picker number finds its Dex row. */
 const dexIdByPickerId = new Map(dex.map((row) => [row.id === 10178 ? 10179 : row.id === 10179 ? 10180 : row.id === 10227 ? 10191 : row.id, row.id]));
 const dexRowOf = (mon: Mon): Pokemon | undefined => dexById.get(dexIdByPickerId.get(mon.id) ?? -1);
-
-// ── Sources ──────────────────────────────────────────────────────────────────────────────────
 
 const SOURCE = {
   dex: 'legacy:src/data/pokemon.json',
@@ -143,16 +129,12 @@ const DECISIONS = [
   },
 ];
 
-/** PokeAPI forms the legacy identity maps name wrongly or not at all. */
 const POKEAPI_FORM_OVERRIDES: Record<string, { form: string; why: string }> = {
   xerneas: { form: 'xerneas-active', why: 'The app shows Xerneas as Active Mode (sprite 716) and lists Neutral Mode as its own form; the legacy map picked PokeAPI\'s default form, Neutral Mode.' },
   'vivillon-pokeball': { form: 'vivillon-poke-ball', why: 'The app spells the pattern "pokeball"; PokeAPI spells it "poke-ball".' },
 };
-/** Cosmetic females that PokeAPI keeps on the species' pokemon record, with no form of their own. */
 const COSMETIC_FEMALE_POKEAPI_POKEMON: Record<string, string> = { 'combee-female': 'combee', 'hippopotas-female': 'hippopotas', 'hippowdon-female': 'hippowdon', 'unfezant-female': 'unfezant' };
 const heldShiny = (shinySources as { held: Record<string, string> }).held;
-
-// ── Games ────────────────────────────────────────────────────────────────────────────────────
 
 interface Game { id: string; series: 'mainline' | 'spinoff' | 'mobile'; generation: number | null; region: string | null }
 const GAMES: Game[] = [
@@ -201,7 +183,6 @@ const GENERATION_GAME: Record<number, string> = { 1: 'RB', 2: 'GS', 3: 'RS', 4: 
 const REGION_GAME: Record<string, string> = { alola: 'SM', galar: 'SwSh', hisui: 'PLA', paldea: 'SV' };
 const OBTAIN: Record<string, Obtain | null> = { 'spin-off': 'spinoff-only', event: 'event-only', story: 'story-only', state: null };
 
-/** The two tables in src/favorites/model that no module exports, read from the source text. */
 function readUnexportedPickerTables() {
   const debutText = readFileSync(join(root, 'src/favorites/model/debut.ts'), 'utf8');
   const laterDebuts = [...debutText.matchAll(/\[(\d+), (\d+), '(\w+)'\]/g)].map((m) => [Number(m[1]), Number(m[2]), m[3]] as const);
@@ -233,8 +214,6 @@ function sourceOfMon(mon: Mon): { game: string; group: string } | undefined {
   return { game, group: row.group };
 }
 
-// ── Classification ───────────────────────────────────────────────────────────────────────────
-
 interface Coordinates { region?: string; variety?: Record<string, string>; sex?: Sex; fusion?: string }
 interface StateSpec { kind: StateEntry['kind']; from?: readonly string[] | 'any'; letter?: 'x' | 'y' | 'z'; teraType?: string }
 type Classification = { kind: 'permanent'; coordinates: Coordinates } | { kind: 'state'; state: StateSpec };
@@ -243,7 +222,6 @@ const REGIONS = ['alola', 'galar', 'hisui', 'paldea'];
 const FORME = (value: string): Coordinates => ({ variety: { forme: value } });
 const LOOK = (value: string): Coordinates => ({ variety: { look: value } });
 
-/** Permanent forms whose slug does not follow a pattern rule. */
 const IRREGULAR_COORDINATES: Record<string, Coordinates> = {
   'deoxys-attack': FORME('attack'), 'deoxys-defense': FORME('defense'), 'deoxys-speed': FORME('speed'),
   'wormadam-sandy': { variety: { cloak: 'sandy' } }, 'wormadam-trash': { variety: { cloak: 'trash' } },
@@ -268,7 +246,6 @@ const IRREGULAR_COORDINATES: Record<string, Coordinates> = {
   'lugia-shadow': LOOK('shadow'), 'mewtwo-shadow': LOOK('shadow'), 'dialga-primal': LOOK('primal'), 'pichu-ukulele': LOOK('ukulele'),
   'kecleon-purple': { variety: { color: 'purple' } },
 };
-/** Where the default form sits on an axis its other forms use, or is the male of a sex pair. */
 const DEFAULT_COORDINATES: Record<string, Coordinates> = {
   unown: { variety: { letter: 'a' } }, urshifu: { variety: { style: 'single-strike' } },
   alcremie: { variety: { cream: 'vanilla', sweet: 'strawberry' } }, deoxys: FORME('normal'), wormadam: { variety: { cloak: 'plant' } },
@@ -284,7 +261,6 @@ const DEFAULT_COORDINATES: Record<string, Coordinates> = {
 };
 const BATTLE: StateSpec = { kind: 'battle-mode' };
 const MOVE_LOOK: StateSpec = { kind: 'move-look' };
-/** Temporary forms. `from` defaults to the species' default form. */
 const STATES: Record<string, StateSpec> = {
   'castform-sunny': BATTLE, 'castform-rainy': BATTLE, 'castform-snowy': BATTLE,
   'darmanitan-zen': BATTLE, 'darmanitan-galar-zen': { ...BATTLE, from: ['darmanitan-galar'] },
@@ -306,7 +282,6 @@ const STATES: Record<string, StateSpec> = {
   'solgaleo-radiant-sun': MOVE_LOOK, 'lunala-full-moon': MOVE_LOOK, 'marshadow-zenith': MOVE_LOOK,
   'koraidon-limited-build': { kind: 'ride' }, 'miraidon-low-power-mode': { kind: 'ride' },
 };
-/** Power-up entry forms that are not the species' default form. */
 const POWERUP_FROM: Record<string, readonly string[] | 'any'> = {
   'floette-mega': ['floette-eternal'],
   'magearna-original-mega': ['magearna-original'],
@@ -355,8 +330,6 @@ function classify(formId: string, species: string, mon: Mon): Classification {
   throw new Error(`no classification rule covers "${formId}"`);
 }
 
-// ── Identities ───────────────────────────────────────────────────────────────────────────────
-
 interface Identity {
   mon: Mon;
   formId: string;
@@ -367,7 +340,6 @@ interface Identity {
   classification: Classification;
   appId: number;
   inLeague: boolean;
-  /** The PokeAPI form the legacy identity maps name, when they name one. */
   legacyPokeapiForm?: string;
   externalIds?: ExternalIds;
   pokeapi: PokeapiIdentity;
@@ -436,8 +408,6 @@ if (identities.length !== new Set(identities.map((identity) => identity.formId))
   }
 }
 
-// ── Disagreements ────────────────────────────────────────────────────────────────────────────
-
 interface Disagreement { fact: string; form: string; values: Record<string, unknown>; chosen: unknown; reason: string }
 const disagreements: Disagreement[] = [];
 const disagree = (fact: string, form: string, values: Record<string, unknown>, chosen: unknown, reason: string) => disagreements.push({ fact, form, values, chosen, reason });
@@ -494,15 +464,12 @@ for (const [speciesId, standIn] of [[746, 10127], [964, 10256], [1024, 10276]] a
   disagree('sprite', row.name, { 'pokemon.json': row.sprite, 'favorites/model/catalog.ts': `/sprites/pokemon/${speciesId}.png` }, `${speciesId}, with species.standIn.dex = ${identityByPickerId.get(standIn)!.formId}`, 'The Dex shows a stand-in form; the Picker shows the default form’s own sprite.');
 }
 
-// ── Species files ────────────────────────────────────────────────────────────────────────────
-
 const stem = (sprite: string): string => {
   const match = /^\/sprites\/pokemon\/([^?]+)\.png/.exec(sprite);
   if (!match) throw new Error(`unexpected sprite path ${sprite}`);
   return match[1];
 };
 
-/** What today's catalogs state about a form. */
 type LegacyFacts = Pick<FormFacts, 'types' | 'baseStats' | 'color' | 'shape' | 'eggGroups' | 'debut' | 'obtain'>;
 function legacyFactsOf(identity: Identity): LegacyFacts {
   const { mon, shown } = identity;
@@ -519,15 +486,9 @@ function legacyFactsOf(identity: Identity): LegacyFacts {
 }
 
 type UnsourcedKey = 'abilities' | 'heightDm' | 'weightHg';
-/** A form's complete facts, and which of the PokeAPI ones it inherits with no source. */
 interface Imported { facts: FormFacts; unsourced: readonly UnsourcedKey[] }
 const factsCache = new Map<string, Imported>();
 
-/**
- * Today's facts plus the PokeAPI ones. A form PokeAPI does not know inherits the new facts from
- * its base and says so; so does a Mega whose abilities the snapshot lacks. Gigantamax and Eternamax
- * weights are null because the games show "????.? kg".
- */
 function factsOf(identity: Identity): Imported {
   const cached = factsCache.get(identity.formId);
   if (cached) return cached;
@@ -590,7 +551,6 @@ function verdicts(identity: Identity, defaultIdentity: Identity, facts: FormFact
   };
 }
 
-/** The League's parent for a row, as src/league/data/catalog.ts computes it. */
 function leagueParentPickerId(identity: Identity): number | null | undefined {
   const { mon, dexRow } = identity;
   if (dexRow) {
@@ -670,7 +630,6 @@ const legacyNames: Record<string, string> = {};
 const legacyOwners: Record<string, string> = {};
 const legacyIds: Record<string, number> = {};
 const chains: Record<string, number> = {};
-/** The Dex shows these species as another form: the stand-in form, and the file the Dex uses when it is not the form's own file. */
 const standInOf = new Map<string, string>([[746, 10127], [964, 11004], [1024, 10276]].map(([species, form]) => [speciesSlug.get(species)!, identityByPickerId.get(form)!.formId]));
 const standInSprites: Record<string, string> = {};
 for (const [species, formId] of standInOf) {
@@ -748,7 +707,6 @@ for (const [species, members] of bySpecies) {
   speciesFiles.push({ file: `${String(row.id).padStart(4, '0')}-${species}.json`, data });
 }
 
-/** The Picker's ownerId as a rule: a Dex row owns itself; a form of a regional Dex row belongs to it; everything else to the species. */
 function expectedOwnerPickerId(identity: Identity, members: Identity[]): number {
   if (identity.dexRow) return identity.mon.id;
   const region = regionOf(identity);
@@ -765,17 +723,12 @@ function regionOf(identity: Identity): string | undefined {
   return regionOf(identityByForm.get(from[0])!);
 }
 
-// ── Write ────────────────────────────────────────────────────────────────────────────────────
-
-// Since 2026-11-02 the ontology holds forms, facts, sources, and decisions no legacy catalog has, such as
-// the female Mega Pyroar, so a rerun over an existing ontology would erase them.
 const ledgerPath = join(out, 'ids', 'app-ids.json');
 if (existsSync(ledgerPath) && !process.argv.includes('--overwrite')) {
   const written = new Set(identities.map((identity) => identity.formId));
   const lost = (readJson(ledgerPath) as { rows: [number, string][] }).rows.filter(([, form]) => !written.has(form));
   throw new Error(`data/ontology/ already exists, and this one-time import would erase authored data, including ${lost.length} form(s) no legacy catalog has (${lost.map(([, form]) => form).join(', ') || 'none'}). Edit the species files instead. Pass --overwrite only to start the ontology over.`);
 }
-// Only the species folder is emptied, so a renamed species leaves no stale file. reports/tool-verdicts.json belongs to ontology:build.
 rmSync(join(out, 'species'), { recursive: true, force: true });
 for (const { file, data } of speciesFiles) writeJson(join(out, 'species', file), data);
 writeJson(join(out, 'ids', 'app-ids.json'), {

@@ -71,19 +71,12 @@ export function hasSpriteRows(source: string): boolean {
   return data().sources.has(source);
 }
 
-/**
- * A bundle's share of the app's fan-made sprite files, from
- * scripts/credits/bundle-credits.ts: each file counts under one entry, and an
- * artist counts a file only when the ledger confirms it.
- */
 export interface BundleCredit {
   sprites: number;
   unconfirmed: number;
-  /** [artist, files], most files first, ties by name. */
   artists: [artist: string, files: number][];
 }
 
-/** The shown files that PokéAPI delivers: Game Freak's, the Smogon Sprite Project's, and its own. */
 export interface PokeApiDelivery {
   official: number;
   smogon: number;
@@ -100,10 +93,8 @@ export const bundleCredit = (id: string): BundleCredit | undefined => BUNDLES.en
 
 export const pokeapiDelivery = (): PokeApiDelivery => BUNDLES.pokeapi;
 
-/** An artist's profile, only where it is proven to be theirs. */
 export const artistProfile = (name: string): string | undefined => BUNDLES.links[name];
 
-/** The bundles that credit an artist, most files first. */
 export function bundlesCrediting(name: string, ids: readonly string[]): [bundle: string, files: number][] {
   return ids
     .flatMap((id): [bundle: string, files: number][] => {

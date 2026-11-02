@@ -1,23 +1,3 @@
-/**
- * Keeps the files of the deploys from the last 7 days in each new deploy.
- *
- * A browser tab loads parts of the app only when they are needed: Export,
- * Analytics, an export renderer. Vercel serves only the newest deploy, so
- * once a deploy renamed a file, a tab opened before it got a 404 for that
- * file and crashed or reloaded. With the old files still in place, the tab
- * keeps running the code it started with, and a deploy changes nothing for
- * it. src/lib/staleDeploy.ts still reloads a tab older than the window.
- *
- * Runs after `vite build` on Vercel production builds (vercel.json
- * buildCommand). It reads the live site's /deploy-files.json, which lists
- * every file under /assets the live deploy serves, its own and the ones it
- * kept, downloads the ones this build lacks that left a live deploy less than
- * 7 days ago, and writes the new list. When the list cannot be read, it reads
- * the live pages instead; when they cannot be read either, this deploy keeps
- * nothing.
- *
- * Run locally: KEEP_ASSETS_FROM=http://127.0.0.1:4799 tsx scripts/keep-previous-assets.ts <dist>
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -26,19 +6,9 @@ export const LIST_FILE = 'deploy-files.json';
 export const KEEP_MS = 7 * 24 * 60 * 60 * 1000;
 export const KEEP_BYTES = 50 * 1024 * 1024;
 
-/**
- * Each file under /assets: `live` for the files of the deploy that wrote the
- * list, or the time (ISO) a deploy dropped it, for a file kept since.
- */
 export type DeployFiles = Record<string, string>;
 export const LIVE = 'live';
 
-/**
- * The new list and the old files to copy in. A file of the live deploy that
- * this build drops was served until now, so its 7 days start now. A file kept
- * already keeps its time, so it leaves the list 7 days after it was dropped,
- * however many deploys follow. `keep` lists the most recently dropped first.
- */
 export function planKept(previous: DeployFiles, built: string[], now: Date, keepMs = KEEP_MS) {
   const next: DeployFiles = {};
   for (const file of built) next[file] = LIVE;

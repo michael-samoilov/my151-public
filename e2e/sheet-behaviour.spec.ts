@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-// Focusing a field must not zoom the page.
 // platform: iOS Safari zooms the page when a field under 16px takes focus; Chromium does not, so the test checks the computed font size.
 
 test.describe('mobile sheet', () => {

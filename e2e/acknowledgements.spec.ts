@@ -33,16 +33,13 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(smogonUse).toBeVisible();
     expect((await smogonUse.textContent())!).toContain(`drew ${(await smogonArtists.getByTestId('ack-artists-summary').textContent())!.match(/^\d+/)![0]} of`);
     await expect(smogonArtists.getByTestId('ack-artists-summary')).toHaveText(/^\d+ fan-made sprites in the app are credited through this project\.$/);
-    // The threads and the license come before the artists, and the list shows every artist.
     const artistSection = dialog.getByTestId('ack-detail').locator('section').filter({ has: page.getByTestId('ack-artists') });
     const artistTotal = Number(await artistSection.locator('h4 > span').last().textContent());
     expect(artistTotal).toBeGreaterThan(10);
     await expect(smogonArtists.locator(':scope > ol > li')).toHaveCount(artistTotal);
-    // A shiny counts on its own only for a "(shiny)" artist who did not draw the normal sprite.
     await expect(smogonArtists.locator(':scope > ol > li').filter({ hasText: 'TheAetherPlayer' })).toHaveText(/^TheAetherPlayer.*75 sprites$/);
     expect(await top(dialog.getByRole('link', { name: 'Generation 8 and later thread' }))).toBeLessThan(await top(artistSection));
     expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(artistSection));
-    // The panel never says which sprites my151 changed (Michael, 2026-10-20).
     await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
     await expect(smogonArtists.getByTestId('ack-artists-unconfirmed')).toHaveText(/^Artist not confirmed\d+ sprites?$/);
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
@@ -92,7 +89,6 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(sprites.getByTestId('ack-sprites-generation'), '12 sprites fit one list without generation folds').toHaveCount(0);
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Stereo Rotom');
     await expect(sprites.getByRole('listitem')).toHaveCount(12);
-    // Their shinies share the normal sprites' credit, so the entry lists none (Michael, 2026-10-26).
     await expect(sprites.getByTestId('shiny-star')).toHaveCount(0);
     await expect(dialog.getByTestId('ack-also-credited').getByRole('listitem')).toHaveCount(3);
     const kingSprites = await sprites.getByRole('listitem').count();

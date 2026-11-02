@@ -1,15 +1,3 @@
-/**
- * The render audit's in-page measurement, as source text.
- *
- * Two callers run it inside a page: audit.mjs through Playwright, and the
- * verify-my151 harness through its Session.evalJson on Blink, WebKit and
- * Gecko. Nothing here touches Node: the function reads the DOM, measures
- * boxes, and returns plain JSON.
- *
- * cfg: { frame?: {w, h}, family?: string, minFont: number,
- *        annotate?: boolean (default true), checkFrame?: boolean (default true),
- *        offCanvasOk?: boolean (default false; a running app parks panes off-canvas) }
- */
 export const IN_PAGE_SOURCE = `function inPage(cfg) {
   const out = [];
   const seen = new Set();
@@ -364,7 +352,6 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
 }
 `;
 
-/** A function body: runs the audit with cfg and returns { frame, findings }. */
 export function auditBody(cfg) {
   return `${IN_PAGE_SOURCE}\nreturn inPage(${JSON.stringify(cfg)});`;
 }
@@ -373,7 +360,6 @@ export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-fra
 
 export const APP_HARD_KINDS = ['clipped', 'text-cut', 'image-broken', 'overlap'];
 
-/** One stable line per finding, for set comparison across runs. */
 export function findingKey(f) {
   return `${f.kind} ${f.path}${f.text ? ` "${f.text}"` : ''}`;
 }

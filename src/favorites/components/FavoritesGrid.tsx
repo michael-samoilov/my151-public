@@ -57,8 +57,6 @@ const MINIMAP_HOVER_MS = 200;
 const WHEEL_SETTLE_MS = 120;
 const MINIMAP_LINGER_MS = 1200;
 const MINIMAP_PAD = 3;
-// On desktop, the minimap centers on favorite × legendary and favorite ×
-// gimmick, the two disabled cells beside favorite × favorite.
 function minimapRight(base: number, mapWidth: number, desktop: boolean): number {
   const outer = mapWidth + 2 * MINIMAP_PAD;
   return Math.max(0, Math.round(desktop ? 2 * base - outer / 2 : 2.57 * base - 0.67 * outer));
@@ -114,7 +112,6 @@ type Preview = {
 
 const NO_SHINY_PICKS: Readonly<Record<string, number>> = {};
 
-/** The edits a filled cell's hover controls make. The admin chart passes none and shows no controls. */
 type CellEdits = {
   clear: (type: TypeAxisId, gen: GenAxisId) => void;
   place: (type: TypeAxisId, gen: GenAxisId, id: number, shiny: boolean) => void;
@@ -304,9 +301,6 @@ function useZoomFrame(
       if (!map || !view) return;
       map.style.display = overflows ? '' : 'none';
       if (!overflows) return;
-      // The offset counts from the grid's right edge at zoom 1, so the minimap
-      // covers the disabled cells beside favorite × favorite. A centered grid
-      // narrower than the frame leaves a gap on its right.
       const gap = desktop || fitFrame ? Math.max(0, (el.clientWidth - base * COLS) / 2) : 0;
       map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + Math.round(gap) + minimapRight(base, box.width, desktop)}px`;
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop}px`;
@@ -324,9 +318,6 @@ function useZoomFrame(
     const showMap = () => {
       const map = mapRef.current;
       if (!map) return;
-      // A scroll does not draw the minimap over an open selector's tiles. The
-      // check repeats each frame while the minimap shows, because opening a
-      // selector scrolls the grid before the selector grows to full size.
       const hideUnderPane = () => {
         if (armed || drag || !overlapsPane(map, el)) return false;
         map.style.transition = 'none';
@@ -555,8 +546,6 @@ function useZoomFrame(
       const rect = map.getBoundingClientRect();
       return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
     };
-    // An open selector wins where it overlaps the minimap, so every tile in it
-    // stays clickable: the minimap does not arm under the selector.
     const overSelector = (x: number, y: number) => {
       const rect = el.querySelector('[data-testid="favorites-picker"]')?.getBoundingClientRect();
       return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
@@ -894,7 +883,6 @@ function BodyCell({
   if (!mon || locked) return cell;
   const named = <NameTooltip mon={mon}>{cell}</NameTooltip>;
   if (!edits) return named;
-  // A pointer cell takes its look from the cells it points at, and its sheet chooses between two looks, so it has no shiny control of its own.
   const mark: ShinyMark | null = kind === 'pointer' ? null
     : pickerShinySprite(mon.id) === null ? 'none' : shinyHere ? 'on' : 'off';
   return (
@@ -904,7 +892,6 @@ function BodyCell({
       onShiny={(on) => edits.place(type, gen, mon.id, on)}
       onRemove={(keyboard) => {
         edits.clear(type, gen);
-        // Clearing remounts the cell's button, so focus goes back to it after a keyboard remove.
         if (keyboard) requestAnimationFrame(() => cellRef.current?.focus({ preventScroll: true }));
       }}
     >
@@ -914,15 +901,9 @@ function BodyCell({
 }
 
 const CONTROL_SHOWN = 'opacity-0 transition-opacity group-hover/cell:opacity-100 group-has-[:focus-visible]/cell:opacity-100';
-// A screen with no hover never shows the controls, so they must not catch its taps either.
 const CONTROL_PRESSABLE = 'cursor-pointer touch-manipulation pointer-events-none group-hover/cell:pointer-events-auto';
 const SHINY_CORNER = cn(TILE_ACTION_BUTTON_CLASS, 'right-auto left-[calc(var(--tile-sprite)*0.05)]');
 
-/**
- * Wraps a filled cell with the shiny and remove controls that a mouse over it shows, sized like
- * the Dex tile's remove button. A span, not a div: the zoom and picker specs read the grid's div
- * children as its headers.
- */
 function HoverControls({ children, name, mark, onShiny, onRemove }: {
   children: ReactElement;
   name: string;

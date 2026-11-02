@@ -64,7 +64,6 @@ export function takePendingEvents(): string[] {
   }
 }
 
-/** Puts events back after a send the server did not store, so the next beacon carries them. */
 export function returnPendingEvents(events: string[] | undefined) {
   if (!events?.length) return;
   try {
@@ -234,9 +233,7 @@ export function sendEventBeacon(
       const k = EVENT_SENT_PREFIX + event;
       if (localStorage.getItem(k)) return;
       localStorage.setItem(k, '1');
-    } catch {
-      // storage unavailable — fall through and send (may double-count)
-    }
+    } catch {}
   }
   bufferPendingEvent(event);
   void fetch('/api/event', {

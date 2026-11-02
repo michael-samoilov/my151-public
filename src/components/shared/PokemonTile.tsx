@@ -64,7 +64,6 @@ interface PokemonTileContentProps {
   pokemon: Pokemon;
   spriteUrl?: string;
   spriteStyle?: CSSProperties;
-  /** Drawn over the sprite, positioned in the sprite's own box. */
   spriteOverlay?: ReactNode;
   contentClassName?: string;
   afterTypes?: ReactNode;
@@ -86,16 +85,6 @@ export function PokemonTileContent({
   const label = displayLabel ?? pokemonLabel(pokemon.id, pokemon.name);
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
-      {/*
-        Native lazy-loaded <img> rather than a CSS background-image on a
-        <div>. CSS backgrounds bypass `loading="lazy"` and fire off all
-        ~151 sprite requests on initial paint, swamping the browser's
-        request queue and starving the lazy type-badge <img>s behind them
-        (the symptom: type badges load long after sprites on desktop).
-        With <img loading="lazy">, only tiles near the viewport request
-        their sprite at first paint; off-screen tiles defer until scrolled
-        into view.
-      */}
       {/* platform: A CSS background-image ignores loading="lazy", so the sprite is an img element to defer off-screen requests. */}
       <div
         style={{
@@ -115,8 +104,6 @@ export function PokemonTileContent({
           loading={imgLoading}
           decoding="async"
           draggable={false}
-          // Tailwind's reset constrains img to `max-width: 100%`; override
-          // so the 2× sprite can overflow its narrower flex parent.
           // platform: The Tailwind reset sets img max-width to 100%, so maxWidth none lets the 2x sprite overflow its parent.
           style={{ imageRendering: 'pixelated', maxWidth: 'none', ...spriteStyle }}
         />

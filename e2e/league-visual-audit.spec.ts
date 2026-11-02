@@ -95,11 +95,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
         const label = await buttons.nth(i).getAttribute('aria-label');
         const m = await discMark(page, buttons.nth(i).locator('svg'), disc, mark);
         expect(m.offset, `${label}: a mark was found in the disc`).not.toBeNull();
-        // Within a seventh of the radius. A glyph with a head on one side
-        // is allowed its fixed bias, and at scale 1 a seven-pixel disc's
-        // extent is read to one antialiased pixel, which is a seventh of
-        // it; a mark two pixels off is not. Soft, so every disc's number
-        // is reported.
         const off = Math.hypot(m.offset!.box.dx, m.offset!.box.dy);
         expect.soft(off, `${label}: mark ${off.toFixed(2)}px from the disc's centre, radius ${m.disc.r}px`)
           .toBeLessThanOrEqual(m.disc.r * MAX_MARK_OFFSET_PER_DISC_RADIUS);
@@ -125,17 +120,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
   });
 });
 
-/**
- * The pill's own describe, because it is measured densely.
- *
- * On screen the pill is about 40px wide, so its corner radius is 4px. At one
- * device pixel per CSS pixel the whole ramp is three or four columns, and a
- * pixel of drift — the card is fitted to its pane, so any change in the
- * chrome rescales it — moves that count without changing the shape. The
- * mobile project already samples at 2.6x and reads the pill correctly; this
- * fixes the density for every project instead of leaving it to the device.
- * The thresholds are the ones the test has always used, in CSS pixels.
- */
 const PILL_DSF = 4;
 
 test.describe('the card paints its TM pill', { tag: '@viewport' }, () => {

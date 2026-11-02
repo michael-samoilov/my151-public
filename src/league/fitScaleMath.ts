@@ -3,7 +3,6 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 export interface FitProposal {
   scale: number;
   width: number;
-  /** Whether the block's hint lines show. Only a grow fit with a tail decides it. */
   tail?: boolean;
 }
 
@@ -39,20 +38,9 @@ interface GrowInput {
   floor: number;
   baseWidth: number;
   spriteCeil: number;
-  /** The sprite's CSS px at zoom 1. */
   spritePx: number;
   dpr: number;
-  /**
-   * The hint lines' height, or 0 for a block without them. `natural` then
-   * leaves them out: the sprites size from the block alone, and the lines
-   * show only where they fit whole below it.
-   */
   tail?: number;
-  /**
-   * The height the block and its lines may take together: the pane's
-   * current height, down to its bottom padding. Not held still like
-   * `avail`, since showing the lines never changes it.
-   */
   tailRoom?: number;
   prevTail?: boolean;
   prevScale: number;
@@ -91,8 +79,6 @@ export function proposeFit(input: FitInput): FitProposal | null {
       if (whole === input.prevScale && Math.abs(width - input.prevWidth) <= WIDTH_EPS && tail === (input.prevTail ?? tail)) return null;
       return lines > 0 ? { scale: whole, width, tail } : { scale: whole, width };
     }
-    // No whole size fits, so the sprites cannot be sharp: the fluid fit
-    // keeps the lines and shrinks the block to make room for them.
     scale = Math.max(input.floor, Math.min(wScale, input.avail / (input.natural + lines), input.spriteCeil));
     if (lines > 0 && input.prevTail === false) return { scale: quantizeScale(scale), width, tail: true };
   } else {
@@ -113,16 +99,8 @@ export function proposeFit(input: FitInput): FitProposal | null {
   return { scale, width };
 }
 
-/** How much taller than its pane a block may grow to reach the next whole pixel. The pane scrolls. */
 const WHOLE_PIXEL_OVERFLOW = 1.1;
 
-/**
- * A zoom that draws each sprite pixel as a whole number of device pixels: the
- * next multiple up when the block stays inside the pane's width and at most
- * `WHOLE_PIXEL_OVERFLOW` taller than its height, else the largest multiple at
- * or under `fluid`. Null when even 1x needs more room than that: the fluid fit
- * is then the fallback.
- */
 function wholePixelScale(fluid: number, input: GrowInput): number | null {
   const devicePerSpritePx = (input.spritePx * input.dpr) / SPRITE_NATIVE;
   const up = Math.ceil(fluid * devicePerSpritePx - 1e-6) / devicePerSpritePx;

@@ -1,14 +1,6 @@
 import { expect, test, type CDPSession, type Page, type TestInfo } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
-/**
- * A pinch over the gym card zooms the card inside its own frame, and never
- * the page. Under a zoomed page, a finger on a cell panned the page instead of
- * dragging: at page zoom 2, a column hold-and-drag moved the page 92 px and
- * left the card as it was. With the card zoomed instead, one finger keeps the
- * gestures it has at the fit.
- */
-
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 type Line = { branch: number[]; boundaries: number[] };
@@ -53,7 +45,6 @@ const touch = (cdp: CDPSession, type: 'touchStart' | 'touchMove' | 'touchEnd', p
     touchPoints: points.map((p, i) => ({ x: p.x, y: p.y, radiusX: 10, radiusY: 10, force: 1, id: i + 1 })),
   });
 
-/** Two fingers about a centre, the second landing `lag` ms after the first, spread from one distance to another. */
 async function pinch(page: Page, center: { x: number; y: number }, from: number, to: number, lag = 40) {
   const cdp = await page.context().newCDPSession(page);
   const fingers = (d: number) => [
@@ -80,7 +71,6 @@ const pinchCenter = async (page: Page) => {
 
 const zoomToTwo = async (page: Page) => pinch(page, await pinchCenter(page), 60, 120);
 
-/** Where a client point sits on cell 8-3, in cell widths and heights from its corner. */
 const onCell = (page: Page, point: { x: number; y: number }) =>
   page.evaluate(({ x, y }) => {
     const r = document.querySelector('[data-testid="card-cell-8-3"]')!.getBoundingClientRect();
@@ -141,7 +131,6 @@ test.describe('one finger keeps its gestures on a zoomed card', () => {
       const f = document.querySelector('[data-testid="card-zoom-frame"]')!.getBoundingClientRect();
       const inside = (r: DOMRect) =>
         r.left >= f.left && r.right <= f.right && r.top >= f.top && r.bottom <= Math.min(f.bottom, window.innerHeight);
-      // Seats count from the right, so the seat on the left is the next one up.
       for (const cell of document.querySelectorAll('[data-testid^="card-cell-"]')) {
         const [, , row, seat] = cell.getAttribute('data-testid')!.split('-').map(Number);
         const left = document.querySelector(`[data-testid="card-cell-${row}-${seat + 1}"]`);
@@ -185,8 +174,6 @@ test.describe('one finger keeps its gestures on a zoomed card', () => {
     await zoomToTwo(page);
     const zoom = (await frameState(page)).cardZoom;
 
-    // The first stage that can start a row earlier and still leave the one
-    // before it a row, brought into the frame's view by scrolling the frame.
     const target = await page.evaluate((held) => {
       const frame = document.querySelector<HTMLElement>('[data-testid="card-zoom-frame"]')!;
       const inside = (r: DOMRect) => {

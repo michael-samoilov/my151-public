@@ -9,7 +9,6 @@ const DAY_MS = 86_400_000;
 const GOOGLE_FIRST_DAY = '2026-03-01';
 const BING_FIRST_DAY = '2026-05-01';
 const LAST_REPORTED_DAY = '2026-09-26';
-/** Search Console has finalized days through this one; later days come back only as fresh data. */
 const LAST_FINAL_DAY = '2026-09-25';
 const LAST_REPORTED_HOUR = Date.parse('2026-09-27T15:00:00Z');
 const HOME = 'https://my151.app/';

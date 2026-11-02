@@ -8,7 +8,6 @@ export interface Fit {
   width: number;
   budgetRem: number;
   gutterPx: number;
-  /** Whether the block's `[data-fit-tail]` hint lines show. See `Grow.tail`. */
   tail: boolean;
 }
 
@@ -18,12 +17,6 @@ interface Grow {
   spriteRem: number;
   targetSpritePx: number;
   dpr: number;
-  /**
-   * The block's `[data-fit-tail]` hint lines show only where they fit whole
-   * below the block at its sharp size, so they never cost the sprites their
-   * whole pixels. Hidden, the tail stays in the block at zero height, and its
-   * `scrollHeight` still measures it.
-   */
   tail?: boolean;
 }
 
@@ -35,12 +28,6 @@ interface Compact {
 // platform: `offsetHeight` rounds to whole px, so a smaller gap between measured and layout height is rounding.
 const OFFSET_HEIGHT_ROUNDING_PX = 2;
 
-/**
- * `held` keeps the last fit and measures nothing while it is set. A card
- * zoomed past its fit moves the block's rects with the zoom and with its
- * frame's scroll, and the fit must not follow either. It measures once more
- * when `held` clears.
- */
 export function useFitScale(
   ref: React.RefObject<HTMLDivElement | null>,
   floor = 0.55,
@@ -182,8 +169,6 @@ export function useFitScale(
           spritePx: spriteRem * rootFont,
           dpr,
           tail: hints?.scrollHeight ?? 0,
-          // The lines may take the gap kept under the block, down to the
-          // pane's bottom padding, so the pane never scrolls for them.
           tailRoom: liveAvail + 2 + gapBelow,
           prevTail: last.tail,
           prevScale: last.scale,
@@ -207,12 +192,6 @@ export function useFitScale(
       if (next || budgetRef.current !== Infinity) commit(next ?? last, Infinity);
     };
     compute();
-    // The parent as well as the block. Pinning the block's width is what
-    // makes it stop following its parent: it no longer resizes when the pane
-    // does, so an observer on the block alone goes quiet and keeps a width
-    // measured against a pane that has since changed. On a desktop card that
-    // left the card 52px wider than the pane it sits in, hanging over the
-    // edge where nothing could be pressed.
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     if (el.parentElement) ro.observe(el.parentElement);
@@ -258,7 +237,6 @@ function containerUnitsZoomed(): boolean {
   return cqUnitsZoomed;
 }
 
-/** `cardZoom` is the card's own zoom on top of its fit (`useCardZoom`). */
 export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto', cardZoom = 1): React.CSSProperties {
   const zoom = fit.scale * cardZoom;
   return {

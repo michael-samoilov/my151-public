@@ -66,10 +66,6 @@ test.describe('section outline labels in every language', () => {
     volcanic: [58], tundra: [124], industrial: [81], mimic: [132], 'rivalry-pair': [115], 'evil-team': [109],
     other: [200], fossil: [138], 'pseudo-legendary': [147], legendary: [144], mythical: [151],
   };
-  // Michael's rule (October 23): a short name keeps the section's meaning. A
-  // full name stays even when squeezed to about 60% of its width (Evil Team,
-  // Domestic). Below 54% it is too long, and its one-cell form keeps the same
-  // words (Legend for Legendary), never a different word (Pets, Lava).
   const MIN_FULL_NAME_SCALE = 0.54;
   const CELL_EM = 0.86 / 0.26;
 

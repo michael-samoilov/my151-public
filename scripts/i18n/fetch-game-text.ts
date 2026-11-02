@@ -13,11 +13,6 @@ const COLLECTION = 'ScarletViolet';
 
 export const GAME_TEXT_PATH = 'docs/i18n/sources/scarlet-violet-typenames.json';
 
-/**
- * The corpus labels Japanese `ja`; every other code matches ours. The corpus
- * has no `ja-Hrkt` for Scarlet/Violet at all — Gen IX dropped the kanji/kana
- * split that made two Japanese columns necessary in the first place.
- */
 const CORPUS_LANG: Record<Locale, string> = {
   en: 'en', ja: 'ja', ko: 'ko', 'zh-Hans': 'zh-Hans', 'zh-Hant': 'zh-Hant',
   fr: 'fr', de: 'de', es: 'es', it: 'it',
@@ -40,10 +35,8 @@ export interface GameTextSource {
     readonly file: string;
     readonly table: string;
     readonly retrieved: string;
-    /** SHA-256 of each gzipped file as fetched, so a re-run is checkable. */
     readonly sha256: Record<string, string>;
   };
-  /** `term.type.<slug>` -> locale -> the string the game paints. */
   readonly types: Record<string, Record<string, string>>;
 }
 
@@ -62,8 +55,6 @@ async function fetchLines(lang: string): Promise<{ lines: string[]; sha256: stri
 async function main(): Promise<void> {
   const sha256: Record<string, string> = {};
 
-  // The identifier file. Every language file is line-aligned against it, which
-  // is what makes a single line number mean the same message in all nine.
   const qidFile = await fetchLines('qid');
   sha256['qid'] = qidFile.sha256;
 

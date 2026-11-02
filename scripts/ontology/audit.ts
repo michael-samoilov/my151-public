@@ -1,14 +1,3 @@
-/**
- * Writes data/ontology/reports/classification-audit.json and fact-audit.json: every disagreement
- * between the ontology and the pinned PokeAPI snapshot, each with a review.
- *
- *   npm run ontology:audit
- *
- * A review survives a rerun while the row's values are unchanged. The rules below write a review
- * where the evidence is mechanical; every other new row starts unreviewed, and ontology:check fails
- * until a person sets it to kept (with a decision from decisions.json) or open (with the evidence
- * on each side).
- */
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,15 +8,12 @@ import { resolveOntology, type Ontology } from './resolve';
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** One row of docs/favorite-picker-work/form-metadata-audit/inventory.json: the PKHeX game record each Picker identity was checked against. */
 interface PkhexInventoryRow {
   readonly id: number;
   readonly gamePersonal?: { readonly game: string; readonly stats?: unknown; readonly color?: string; readonly captureRate?: number; readonly growthRate?: string; readonly eggGroups?: readonly string[] };
 }
 const PKHEX_INVENTORY_PATH = 'docs/favorite-picker-work/form-metadata-audit/inventory.json';
-/** The inventory record field that holds each audited fact. */
 const INVENTORY_FIELD_OF_FACT: Readonly<Record<string, keyof NonNullable<PkhexInventoryRow['gamePersonal']>>> = { baseStats: 'stats', color: 'color', captureRate: 'captureRate', growthRate: 'growthRate', eggGroups: 'eggGroups' };
-/** The PKHeX personal table each inventory record names. */
 const PKHEX_GAME_TITLE: Readonly<Record<string, string>> = {
   sv: 'Scarlet and Violet', swsh: 'Sword and Shield', la: 'Legends: Arceus', uu: 'Ultra Sun and Ultra Moon', ao: 'Omega Ruby and Alpha Sapphire',
   za: 'Legends: Z-A', hgss: 'HeartGold and SoulSilver',
@@ -51,7 +37,6 @@ const NOTES: Record<AuditKind, readonly string[]> = {
 
 function rules(ontology: Ontology, inventory: ReadonlyMap<number, PkhexInventoryRow>): (row: Disagreement) => Review | null {
   const entries = new Map(ontology.authored.species.flatMap(({ data }) => data.forms.map((entry) => [entry.id, entry] as const)));
-  /** The source of the entry that states a fact: the form's own, or the first base up the inheritance chain that states it. */
   const sourceOfStated = (formId: string, fact: 'shape'): string | undefined => {
     const entry = entries.get(formId as never)!;
     if (fact in entry) return entry.sourceOf?.[fact] ?? entry.source;

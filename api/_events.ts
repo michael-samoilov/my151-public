@@ -261,13 +261,6 @@ export interface JournalEntry {
   reason?: ExportSurveySkipReason;
 }
 
-/**
- * Which record stores a browser ended up in, as a bitmask on the journal
- * response's `membership` map.
- *
- * The join lives on the server because only the server holds the two record
- * hashes; the constants live here because the client reads the result.
- */
 export const HAS_DEX = 1;
 export const HAS_LEAGUE = 2;
 

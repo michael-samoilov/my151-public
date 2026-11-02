@@ -6,12 +6,6 @@ import { badgePillRadius, PILL_CLASS, PILL_OFF, pillIcon, pillStyle } from './pi
 import { NoShinyGlyph, ShinyGlyph } from './ShinyMarks';
 import { SHINY_ON } from './shinyMarks';
 
-/**
- * The on pill's 1.5 px ring, drawn over its 1 px transparent border. A thicker border made the pill
- * narrower, because browsers round a border to whole pixels and leave padding as it is. The ring is
- * the inner half of a 3 px stroke on the border edge. A CSS mask or an inset box snaps to whole
- * pixels at fractional positions, and drew the ring 2 px wide on one side and 1 px on the other.
- */
 // platform: Browsers round a border to whole pixels and snap masks and inset boxes at fractional positions, so the ring is an SVG stroke.
 function Ring({ stroke, badgePx }: { stroke: string; badgePx?: number }) {
   const clip = useId();
@@ -29,7 +23,6 @@ export function ShinyToggle({ on, onToggle, badgePx, iconOnly = false, testId }:
   on: boolean;
   onToggle: () => void;
   badgePx?: number;
-  /** Keeps the label for screen readers only. */
   iconOnly?: boolean;
   testId: string;
 }) {

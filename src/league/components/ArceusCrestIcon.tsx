@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 let loaded: string | null = null;
 const load = () => import('../icons/arceus-crest.svg?url').then((m) => (loaded = `url(${m.default})`));
 
-/** Arceus's ring, the app's legendary mark, in the text colour through a CSS mask. */
 export function ArceusCrestIcon({ className }: { className?: string }) {
   const [mask, setMask] = useState(loaded);
   useEffect(() => {

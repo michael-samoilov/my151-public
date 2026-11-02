@@ -42,7 +42,7 @@ export const DEX_EXPORT_FRAME_RED = '#DC2626';
 const SPRITE = TILE;
 const BG = '#ffffff';
 const ROTATION = -30 * (Math.PI / 180);
-const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
+const SCALE = DEX_EXPORT_SCALE;
 // platform: Every iOS browser caps a canvas backing store near 16.7M px; past it, canvas calls do nothing and toBlob never calls back.
 const MAX_CANVAS_AREA = 16_000_000;
 
@@ -288,8 +288,6 @@ export async function generateExportImage(
   const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
   const framedH = h + 2 * DEX_EXPORT_FRAME + DEX_EXPORT_HEADER;
 
-  // Cap the backing store to the iOS canvas-area limit. Every export today stays
-  // under it at SCALE, so the sprites keep their whole 1× scale.
   const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (framedW * framedH)));
 
   const canvas = document.createElement('canvas');

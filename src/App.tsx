@@ -80,7 +80,6 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
   );
 }
 
-/** Hidden content renders at the lowest priority, after everything else; 5 s covers the lab phone. */
 const PRACTICE_RENDER_MS = 5000;
 
 // platform: React renders hidden <Activity> content at the lowest priority, without effects or layout, and yields it to any input.
@@ -91,7 +90,6 @@ function PickerPracticeRender({ onDone }: { onDone: () => void }) {
     activeSection: 'starter', activeCategoryFilter: 'starter', activeArchetypeFilter: null,
     searchQuery: '', typeFilter: ['grass'], typeFilterMode: 'any', generationFilter: null,
     shapeFilter: null, colorFilter: null, eggGroupFilter: null, evoLineSizeFilter: null,
-    // Never the visitor's own Pokédex: nothing here may write to it.
     addToSection: () => {}, removeEvoLine: () => {}, setActiveSection: () => {}, setMobileBrowserOpen: () => {},
   })));
   useEffect(() => {

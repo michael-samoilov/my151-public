@@ -82,7 +82,6 @@ export function acknowledgeMinuteActivity(tool:MinuteActivityTool,value:unknown)
  const ack=value as MinuteActivityAck,state=states[tool];
  if(!Array.isArray(ack.accepted)||!['recorded','paused','disabled','invalid'].includes(ack.status))return;
  state.pending=state.pending.filter(b=>!ack.accepted.includes(b.id));
- // The server never stores a batch it called invalid, so sending it again would repeat forever.
  if(ack.status==='invalid'){const before=state.pending.length;state.pending=state.pending.filter(b=>!sent[tool].includes(b.id));if(state.pending.length<before)state.incomplete=true;}
  if(ack.status==='paused'){state.pauseUntil=Number.isFinite(ack.retryAt)?Math.max(Date.now(),ack.retryAt!):Date.now()+60*60_000;state.incomplete=true;}
  if(ack.status==='disabled'){state.pauseUntil=Date.now()+60*60_000;state.incomplete=true;}

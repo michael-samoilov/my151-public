@@ -1,7 +1,3 @@
-/**
- * Own picture resources independently of live media queries after parsing.
- * This self-contained function also runs inline before the app downloads.
- */
 export function installHomeArtwork(poses) {
   if (window.p151HomeArtwork) {
     return window.p151HomeArtwork.refresh();
@@ -184,9 +180,7 @@ export function installHomeArtwork(poses) {
         root.classList.add('p151-hub-' + key + '-ready');
       });
       currentNodes = active();
-    } catch {
-      // A failed replacement leaves the committed, decoded bank visible.
-    }
+    } catch {}
   }
   function request() {
     generation++;

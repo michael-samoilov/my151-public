@@ -1,19 +1,7 @@
-// Service worker: keep sprites on the device to reduce edge requests.
-//
-// Built files under /assets/ stay with the browser's HTTP cache: their names
-// carry a content hash and they are cached as immutable for a year.
-//
-// Sprites live in IndexedDB, one record per sprite URL, not in Cache Storage.
-// On an iPhone, the first Cache Storage read after idle took about 0.5 s at
-// 1,068 entries and grows with every entry; an IndexedDB read stays near
-// constant (docs/performance.md, "iPhone home page wait"). Any storage error
-// falls back to the network, so a sprite always loads.
 // platform: On iOS, the first Cache Storage read after idle grows with every entry, so sprites live in IndexedDB.
 const DB_NAME = 'p151-sprites';
 const STORE = 'sprites';
 
-// A database that exists without the store (opened elsewhere before this
-// worker created it) is upgraded to add the store.
 function openAt(version) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, version);
@@ -48,7 +36,6 @@ function run(mode, action) {
     transaction.onabort = () => reject(transaction.error);
   }));
 }
-// Each record is { type, bytes }: WebKit does not store a Blob from a worker.
 // platform: WebKit does not store a Blob from a worker, so each record holds { type, bytes }.
 const read = (url) => run('readonly', (store) => store.get(url));
 const keep = (url, type, bytes) => run('readwrite', (store) => store.put({ type, bytes }, url));
@@ -64,7 +51,6 @@ async function respond(request) {
   return response;
 }
 
-// Replace the previous worker on this visit, so its caches go now.
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('fetch', (event) => {
@@ -82,8 +68,6 @@ self.addEventListener('fetch', (event) => {
   if (shouldKeep) event.respondWith(respond(event.request));
 });
 
-// The picker hands over sprites it already holds, so a returning visitor's
-// picks draw with no request.
 self.addEventListener('message', (event) => {
   const { keep: url, blob } = event.data || {};
   if (typeof url === 'string' && blob instanceof Blob) {
@@ -91,8 +75,6 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Earlier workers kept sprites in Cache Storage. Its first read after idle is
-// the cost this worker avoids, so every cache goes.
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name)))));
 });

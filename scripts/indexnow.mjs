@@ -1,24 +1,4 @@
 #!/usr/bin/env node
-/**
- * Tells IndexNow-participating search engines that my151.app changed, so they
- * recrawl in hours instead of on their own schedule.
- *
- *   npm run indexnow            # submit every URL in public/sitemap.xml
- *   npm run indexnow -- --dry-run
- *   npm run indexnow -- https://my151.app/     # submit specific URLs instead
- *
- * Bing, Yandex, Seznam and Naver participate. Google does NOT — it ignores
- * IndexNow, so Google still recrawls on its own schedule or via Search Console's
- * "Request indexing". Bing is this app's largest search referrer, which is why
- * this exists.
- *
- * Run it AFTER a production deploy is live and verified. Submitting a URL whose
- * new content has not shipped yet just gets the old page recrawled.
- *
- * The key is deliberately public: the protocol authenticates by serving the key
- * back from the host itself (public/<key>.txt), which proves control of the
- * domain. It is not a secret and belongs in version control.
- */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

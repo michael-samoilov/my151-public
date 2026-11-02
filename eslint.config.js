@@ -6,7 +6,8 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-const unusedVars = {
+const sharedRules = {
+  'no-empty': ['error', { allowEmptyCatch: true }],
   '@typescript-eslint/no-unused-vars': ['error', {
     argsIgnorePattern: '^_',
     varsIgnorePattern: '^_',
@@ -30,7 +31,7 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
-    rules: { ...unusedVars },
+    rules: { ...sharedRules },
   },
 
   {
@@ -67,7 +68,7 @@ export default defineConfig([
       ecmaVersion: 2022,
       globals: { ...globals.node, ...globals.browser },
     },
-    rules: { ...unusedVars },
+    rules: { ...sharedRules },
   },
 
   {

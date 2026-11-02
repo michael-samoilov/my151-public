@@ -1,4 +1,3 @@
-// Minimal indexed-colour PNG encoder (colour type 3, 8-bit, with tRNS).
 import zlib from 'zlib';
 const BIT_DEPTH = 8;
 const COLOUR_TYPE_INDEXED = 3;
@@ -10,7 +9,6 @@ function chunk(type, data) {
   const c = Buffer.alloc(4); c.writeUInt32BE(crc(td));
   return Buffer.concat([len, td, c]);
 }
-// pixels: rows of palette indices; palette: [[r,g,b,a], ...]
 export function encodePng(indexRows, rgbaPalette) {
   const h = indexRows.length, w = indexRows[0].length;
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = BIT_DEPTH; ihdr[9] = COLOUR_TYPE_INDEXED; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;

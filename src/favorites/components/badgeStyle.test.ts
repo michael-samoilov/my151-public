@@ -4,7 +4,6 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { GEN_BADGE_FILL, generationOutlined } from './badgeStyle';
 import type { GenNumber } from '../model/cells';
 
-// WCAG 2 contrast of white text on a fill.
 function whiteTextWcagContrast(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255;

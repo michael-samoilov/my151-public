@@ -1,7 +1,3 @@
-// Lint and type check before a push, at the same time. The Claude Code hook in
-// .claude/hooks/pre-push-checks.mjs runs this; people and other agents run `npm run ci:pre-push`.
-// It reuses the CI runner's lint cache and type-check state, so a repeat check takes seconds.
-// Exit 2 means a check failed. Any other non-zero exit is a failure of this script itself.
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

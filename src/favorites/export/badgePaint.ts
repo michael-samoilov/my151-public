@@ -16,7 +16,6 @@ export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeSt
 
 type Fit = ReturnType<typeof typeBadgeFit>;
 
-// Draws the word centred on `x`, in badge units, with the condense applied.
 function paintWord(c: CanvasRenderingContext2D, spoken: string, numeral: GenerationWord | undefined, fit: Fit, x: number, stroke: boolean): void {
   const text = (content: string, at: number) => stroke ? c.strokeText(content, at, fit.baseline) : c.fillText(content, at, fit.baseline);
   c.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize}px ${typeBadgeFontStack()}`;

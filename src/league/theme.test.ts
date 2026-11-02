@@ -5,9 +5,7 @@ import { cardShades } from './theme';
 
 const MIN_SEPARATION = 5;
 
-/** The cell holds white glyphs and white text (WCAG AA large text). */
 const CELL_CONTRAST_WCAG_AA_LARGE_TEXT = 3;
-/** The spacer band holds small bold white text (WCAG AA normal text). */
 const BAND_CONTRAST_WCAG_AA_NORMAL_TEXT = 4.5;
 
 function closestPair(key: 'cell' | 'band'): { pair: string; distance: number } {

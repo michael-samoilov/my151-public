@@ -5,10 +5,6 @@ const DESKTOP = { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 }
 
 interface Requests { bulk: string[]; cells: string[]; files: string[]; firstBulkCount: Promise<number> | null }
 
-/**
- * Requests that reach the server, by kind. A request the service worker
- * answers from its cache does not count; one it passes to the network does.
- */
 function countServerRequests(target: Page | BrowserContext): Requests {
   const seen: Requests = { bulk: [], cells: [], files: [], firstBulkCount: null };
   let firstBulk: string | null = null;
@@ -24,7 +20,6 @@ function countServerRequests(target: Page | BrowserContext): Requests {
       seen.bulk.push(url);
       if (url === firstBulk) seen.firstBulkCount = response.body().then((body) => body.readUInt32LE(0));
     } else if (url.includes('/sprites/packs/picker-cell-')) seen.cells.push(url);
-    // An open pick sheet also loads its shiny sprites, which have no packs.
     else if (url.includes('/sprites/pokemon/') && !url.includes('/sprites/pokemon/shiny/')) seen.files.push(url);
   });
   return seen;
@@ -137,7 +132,6 @@ test('a returning visitor’s picks draw from the service worker, with no reques
   await pick.click();
   const sprite = page.getByTestId('favorites-cell-water-1').locator('img[alt]:not([alt=""])');
   await expect(sprite).toHaveAttribute('alt', name!);
-  // The service worker keeps sprites in IndexedDB (public/sw.js).
   await expect.poll(() => page.evaluate(async () => {
     if (!(await indexedDB.databases()).some((db) => db.name === 'p151-sprites')) return 0;
     return new Promise<number>((resolve) => {

@@ -23,11 +23,6 @@ const COPY: Record<LeagueNudgeId, NudgeCopy> = {
 };
 export const REVEAL_DELAY_MS = 360;
 
-/**
- * Whether a nudge floats under an Export button rather than sitting under the
- * league summary. The summary beside an open card on desktop is too narrow
- * for the full-league nudge, so it points at the league's Export button.
- */
 function useFloats() {
   const openCard = useLeagueUi((s) => s.openCard);
   const isDesktop = useIsDesktop();
@@ -172,8 +167,6 @@ export function LeagueRosterNudge({ fit }: { fit: Fit }) {
     return () => window.removeEventListener('resize', measure);
   }, [ready, fit.scale, fit.width, fit.budgetRem]);
 
-  // The card sizes to its title, so a long one keeps one line. Its notch points at
-  // Export only when Export sits above the card and inside its width.
   const tipRef = useRef<HTMLDivElement>(null);
   const [tipWidth, setTipWidth] = useState(0);
   const beside = place?.kind === 'beside' ? place : null;

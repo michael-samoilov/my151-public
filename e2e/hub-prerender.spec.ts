@@ -27,7 +27,6 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
 });
 
 // platform: Firefox paints as soon as a script forces layout, even while the stylesheet still loads.
-// Every layout read must come after the stylesheet link, where the browser holds the script until the stylesheet loads.
 test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
   const html = await (await request.get('/')).text();
   const styles = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)];
@@ -149,8 +148,6 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
   });
 }
 
-// The boot script counts saved work and writes it into the page before its
-// first paint, so the counts need no app code.
 test('before the app runs, the hub already shows the saved counts', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));
@@ -181,10 +178,6 @@ test('before the app runs, the hub already shows the saved counts', async ({ bro
   for (const line of lines) expect(line.height).toBeGreaterThan(0);
 });
 
-// The boot script cannot check picks the way the app does, so before the app
-// runs it shows only the count the app recorded for the same saved picks.
-// Without that record the line waits for the app, and never shows a number
-// the app then corrects.
 test('before the app runs, the picks line shows only the count the app recorded for the same picks', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));

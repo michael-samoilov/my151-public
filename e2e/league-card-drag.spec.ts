@@ -32,8 +32,6 @@ test.describe('a card cell owns the touch it starts', () => {
         .filter((el) => el.querySelector('img'))
         .map((el) => getComputedStyle(el).touchAction));
     expect(actions.length, 'the seeded card has lines to drag').toBeGreaterThan(20);
-    // `pan-y` is what let the pane scroll under a drag, and the browser's
-    // pinch-zoom let a zoomed page pan under it. The card zooms itself.
     for (const a of new Set(actions)) {
       expect(a, 'a filled cell must not hand the browser a pan').toBe('none');
     }

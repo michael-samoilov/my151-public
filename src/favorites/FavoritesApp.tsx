@@ -37,7 +37,6 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
-// v2: Icons now starts off. v1 held `1` for nearly everyone, written on the first visit, not chosen.
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v2';
 const FavoritesAnalyticsDashboard = lazy(() => loadChunk(() => import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => loadChunk(() => import('./components/FavoritesExportOverlay')));
@@ -117,7 +116,6 @@ function FavoritesContent({ sel, setSel }: {
   const t = useT();
   useTipVisit('favorites-analytics', currentView === 'analytics');
   useTipVisit('favorites-export', exportOpen);
-  // Opening Analytics is what the unlock tip asked for.
   const dismissAnalyticsTip = analytics.dismiss;
   useEffect(() => {
     if (currentView === 'analytics') dismissAnalyticsTip();

@@ -1,6 +1,3 @@
-// Subsets Press Start 2P (OFL-1.1, Reserved Font Name "Press Start 2P") to the
-// characters the 404 page draws, and renames it, as the OFL requires of a
-// modified version that would otherwise carry a reserved name.
 import fs from 'fs';
 import subsetFont from 'subset-font';
 import opentype from 'opentype.js';

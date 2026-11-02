@@ -23,13 +23,6 @@ const CSVS = [
 
 type CsvName = (typeof CSVS)[number];
 
-/**
- * Populate the local cache, fetching anything missing.
- *
- * The cache is gitignored, so on a fresh clone this is a network call. That is
- * the same deal `npm run cache-sprites` makes, and these generators are already
- * manual, deliberate steps rather than part of the build.
- */
 export async function ensureCsvs(force = false): Promise<void> {
   mkdirSync(CACHE_DIR, { recursive: true });
   for (const name of CSVS) {
