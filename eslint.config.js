@@ -5,6 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import my151 from './scripts/eslint/plugin.mjs'
 
 const sharedRules = {
   'no-empty': ['error', { allowEmptyCatch: true }],
@@ -76,4 +77,17 @@ export default defineConfig([
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 
+  {
+    files: [
+      'src/**/*.{ts,tsx}',
+      'api/**/*.ts',
+      'scripts/**/*.ts',
+      'e2e/**/*.ts',
+      '*.config.ts',
+      '**/*.{js,mjs,cjs}',
+    ],
+    ignores: ['.claude/vendor/**', 'src/components/export/hover-tilt/**'],
+    plugins: { my151 },
+    rules: { 'my151/no-comments': 'error' },
+  },
 ])
