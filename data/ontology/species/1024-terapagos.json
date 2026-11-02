@@ -34,6 +34,7 @@
       "id": "terapagos-terastal",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "tera-shift" },
         "from": ["terapagos"]
       },
       "abilities": { "first": "tera-shell" },

@@ -42,7 +42,6 @@
     "scripts/league/fetch-moves.ts",
     "scripts/level-model-report.ts",
     "scripts/ontology/build.ts",
-    "scripts/ontology/import-legacy.ts",
     "scripts/measure-badge-art.ts",
     "scripts/sync-baby.mjs",
     "e2e/preview.config.ts"

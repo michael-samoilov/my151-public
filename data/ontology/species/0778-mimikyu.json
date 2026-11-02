@@ -35,6 +35,7 @@
       "id": "mimikyu-busted",
       "state": {
         "kind": "battle-mode",
+        "trigger": { "ability": "disguise" },
         "from": ["mimikyu"]
       },
       "sprite": "10143",

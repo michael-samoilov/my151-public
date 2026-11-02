@@ -29,7 +29,7 @@ This section records what the code does on 2026-11-01. Each claim cites the file
 | --- | ---: | --- | --- |
 | Dex catalog, `src/data/pokemon.json` | 1,089: 1,025 species and 64 forms | Dex app ID | Hand-typed Python tuples, then several partial refresh scripts and hand edits |
 | Favorite Picker catalog, `src/favorites/model/catalog.ts` | 1,427: 1,296 Dex-derived and 131 power-up forms | Picker ID | The Dex catalog, about 200 hand-written forms in `alternateForms.ts`, and `powerupForms.json` |
-| League catalog, `src/league/data/catalog.ts` | 1,210: the Dex rows plus 121 forms | Dex app ID | The Dex catalog plus `src/league/data/alternateForms.json`, generated from the Picker forms |
+| League catalog, `src/league/data/catalog.ts` | 1,210: the Dex rows plus 121 forms | Dex app ID | The Dex catalog plus `src/data/generated/league.json`, which `npm run ontology:build` writes. Until phase 2 it read `src/league/data/alternateForms.json`, generated from the Picker forms. |
 
 The Dex catalog has no Mega, Gigantamax, or battle forms. Those exist only in the Picker and League form lists. The Dex catalog also has no species ID field. The form-to-species link lives in `src/i18n/alt-form-species.json` and `scripts/i18n/pokemon-id-map.json`.
 
@@ -613,11 +613,11 @@ Each row is a hard-coded list in app code or scripts today, and the field or lin
 
 | Today | Entries | Replaced by |
 | --- | ---: | --- |
-| `TEMPORARY_FORM_IDS`, `src/league/data/formPolicy.ts:3` | 40 | A state step, and the derived `is.battleOnly` |
-| `FUSION_FORM_IDS`, `formPolicy.ts:11` | 6 | The `fusion` coordinate |
-| `PICKER_ONLY_FORM_IDS`, `formPolicy.ts:17` | 13 | `tools.league` verdict `spinoff-only`, proved from `debut` |
-| `STANDALONE_FORM_IDS`, `formPolicy.ts:27` | 17 | Derived: a form with no evolution links |
-| `FORM_PARENT_IDS` and `ADDITIONAL_EVOLUTION_EDGES`, `formPolicy.ts:33,46` | 31 | `Evolution` objects, with `preserves` for edges that keep a facet such as sex or season |
+| `TEMPORARY_FORM_IDS`, `src/league/data/formPolicy.ts:3` | 40 | A state step, and the derived `is.battleOnly`. Deleted in phase 2: the League reads its forms from the ontology's `tools.league` verdict. |
+| `FUSION_FORM_IDS`, `formPolicy.ts:11` | 6 | The `fusion` coordinate. Deleted in phase 2, as above. |
+| `PICKER_ONLY_FORM_IDS`, `formPolicy.ts:17` | 13 | `tools.league` verdict `spinoff-only`, proved from `debut`. Deleted in phase 2, as above. |
+| `STANDALONE_FORM_IDS`, `src/league/data/formPolicy.ts:1` | 17 | Derived: a form with no evolution links |
+| `FORM_PARENT_IDS` and `ADDITIONAL_EVOLUTION_EDGES`, `formPolicy.ts:33,46` | 31 | `Evolution` objects, with `preserves` for edges that keep a facet such as sex or season. Deleted in phase 2: `src/data/generated/league.json` carries each League row's parent and the evolutions beyond its first. |
 | `TERASTAL_FORM_IDS`, Ultra Necrozma, Eternamax, `favorites/model/catalog.ts:173,180`, `sortKeys.ts:28` | 8 | State steps: `terastal`, `ultra-burst`, `eternamax` |
 | `EXCLUSIVE_FORM_GROUPS`, `src/hooks/usePokemonData.ts:36` | 9 | Derived: sibling evolutions that need different items |
 | `ALTERNATE_PICKER_FORMS`, `favorites/model/alternateForms.ts:39-208` | 211 | Form records in the ontology |
