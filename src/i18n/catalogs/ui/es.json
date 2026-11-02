@@ -745,7 +745,6 @@
   "chart.header.underIndexed1": "BAJO",
   "chart.header.underIndexed2": "← LA MEDIA",
   "chart.header.evolution": "ETAPA",
-  "analytics.avgCompare": "Tu media: {yours}, media nacional: {national}.",
   "analytics.bst.heading": "Distribución del total de estadísticas",
   "analytics.dex.national": "Pokédex Nacional",
   "analytics.meanNational": "Media nacional",

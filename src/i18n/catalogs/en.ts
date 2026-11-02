@@ -63,7 +63,6 @@ export const enUi = {
   'advisor.starterLines_one': '{count} Starter line represented',
   'advisor.starterLines_other': '{count} Starter lines represented',
   'advisor.starterProgress': '{count}/3 Starter lines (need 3)',
-  'analytics.avgCompare': 'Yours avg: {yours}, National avg: {national}.',
   'analytics.bst.heading': 'Base Stat Total Distribution',
   'analytics.dex.national': 'National Dex',
   'analytics.meanNational': 'National Avg',
