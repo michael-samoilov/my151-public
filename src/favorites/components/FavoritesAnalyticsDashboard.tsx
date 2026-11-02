@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ChartTitle } from '@/components/shared/ChartTitle';
 import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
 import { CHART_BAR_RED } from '@/components/analytics/butterflyRow';
 import { PickerBstHistogram } from './PickerBstHistogram';
@@ -8,8 +9,7 @@ import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
 import type { EvolutionRole } from '@/lib/attributeBadgeStyle';
 import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { colorLabel, formatNumber, localeUppercase, shapeLabel, typeLabel, useT } from '@/i18n';
-import { MAX_LABEL_STRETCH, measureLabelWidth } from '@/lib/sectionOutlines';
+import { colorLabel, formatNumber, shapeLabel, typeLabel, useT } from '@/i18n';
 import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
 import { buildFavoritesSnapshot } from '../export/snapshot';
 import { pickerConditionalStats, pickerConditionalContributors, type PickerConditionalStats } from '../stats/pickerConditionalStats';
@@ -18,26 +18,6 @@ import { pickerIndexDomain } from '../stats/pickerIndexDomain';
 type Dimension = 'type' | 'color' | 'shape' | 'evolution';
 type Sort = 'count' | 'deviation' | 'label';
 const TEXT = 'text-xs';
-function ChartTitle({ text }: { text: string }) {
-  const ref = useRef<HTMLHeadingElement>(null);
-  const [stretch, setStretch] = useState(1);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      const width = measureLabelWidth(localeUppercase(text), parseFloat(getComputedStyle(el).fontSize) || 14);
-      if (width > 0 && el.clientWidth > 0) setStretch(Math.min(MAX_LABEL_STRETCH, el.clientWidth / width));
-    };
-    let active = true;
-    measure();
-    void document.fonts.ready.then(() => { if (active) measure(); });
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => { active = false; observer.disconnect(); };
-  }, [text]);
-  return <h2 ref={ref} className="text-sm mb-1 overflow-hidden"><span className="inline-block font-black uppercase leading-none whitespace-nowrap origin-left" style={{ transform: `scaleX(${stretch})` }}>{text}</span></h2>;
-}
-
 function Card({ dimension, title, covered, excluded, children }: { dimension: string; title: string; covered: number; excluded: number; children: ReactNode }) {
   return <section data-favorite-chart={dimension} data-favorite-covered={covered} data-favorite-excluded={excluded} aria-label={title} className="relative bg-card rounded-lg shadow-elevated py-3 px-4 sm:px-5 min-w-0">
     <ChartTitle text={title} />

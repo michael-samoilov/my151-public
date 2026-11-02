@@ -35,26 +35,47 @@ interface ButterflyChartProps {
 }
 
 let countMeasureCanvas: HTMLCanvasElement | undefined;
+function textPx(textClass: string | undefined): number {
+  const size = textClass?.match(/text-\[([\d.]+)(rem|px)\]/);
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  return size ? Number(size[1]) * (size[2] === 'rem' ? rootPx : 1) : textClass === 'text-xs' ? rootPx * .75 : rootPx * .6875;
+}
+
+function headerWidth(lines: string[], textClass: string | undefined): number {
+  countMeasureCanvas ??= document.createElement('canvas');
+  const ctx = countMeasureCanvas.getContext('2d');
+  const fontSize = textPx(textClass);
+  const tracking = (line: string) => line.length * fontSize * .05;
+  if (!ctx) return Math.max(...lines.map(line => line.length * fontSize * .7));
+  ctx.font = `600 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
+  return Math.max(...lines.map(line => ctx.measureText(line).width + tracking(line)));
+}
+
 function countLabelPadding(data: ButterflyRow[], textClass: string | undefined): number {
   countMeasureCanvas ??= document.createElement('canvas');
   const ctx = countMeasureCanvas.getContext('2d');
-  const size = textClass?.match(/text-\[([\d.]+)(rem|px)\]/);
-  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const fontSize = size ? Number(size[1]) * (size[2] === 'rem' ? rootPx : 1) : textClass === 'text-xs' ? rootPx * .75 : rootPx * .6875;
+  const fontSize = textPx(textClass);
   if (!ctx) return (Math.max(1, ...data.map(row => String(row.count).length)) * fontSize * .65 + 6);
   ctx.font = `400 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
   return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6);
 }
 
+function fitAround(x: number, y: number, scale: number) {
+  return scale < 1 ? `translate(${x} ${y}) scale(${scale}) translate(${-x} ${-y})` : undefined;
+}
+
 function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  const [edgeRoom, setEdgeRoom] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
       if (w > 0) setWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
+      const parent = containerRef.current?.parentElement;
+      setEdgeRoom(parent ? parseFloat(getComputedStyle(parent).paddingRight) || 0 : 0);
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
@@ -178,6 +199,14 @@ function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, ro
     .range([barPad, chart2Width - barPad]);
 
   const zeroX = devScale(0);
+  const devHeaderClass = textClass ?? 'text-[0.6875rem]';
+  const leftHeader = scoreMode ? [t('chart.header.weakerHere1'), t('chart.header.weakerHere2')] : [t('chart.header.underIndexed1'), t('chart.header.underIndexed2')];
+  const rightHeader = scoreMode ? [t('chart.header.strongerHere1'), t('chart.header.strongerHere2')] : [t('chart.header.overIndexed1'), t('chart.header.overIndexed2')];
+  const leftHeaderX = devSectionStart + zeroX - 5;
+  const rightHeaderX = devSectionStart + zeroX + 5;
+  const devHeaderFit = hideDeviation ? 1 : Math.max(.5, Math.min(1,
+    devHasLeft ? (leftHeaderX - 2) / headerWidth(leftHeader, devHeaderClass) : 1,
+    devHasRight ? (width + Math.max(0, edgeRoom - 4) - rightHeaderX) / headerWidth(rightHeader, devHeaderClass) : 1));
 
   return (
     <div ref={containerRef} className="w-full">
@@ -218,34 +247,36 @@ function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, ro
           {!hideDeviation && (<>
           {devHasLeft && (
           <text
-            x={devSectionStart + zeroX - 5}
+            transform={fitAround(leftHeaderX, headerBaseline, devHeaderFit)}
+            x={leftHeaderX}
             y={headerBaseline}
             textAnchor="end"
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer hover:underline')}
+            className={cn(devHeaderClass, onSortChange && 'cursor-pointer hover:underline')}
             textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? t('chart.header.weakerHere1') : t('chart.header.underIndexed1')}</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? t('chart.header.weakerHere2') : t('chart.header.underIndexed2')}</tspan>
+            <tspan x={leftHeaderX} dy="-1.1em">{leftHeader[0]}</tspan>
+            <tspan x={leftHeaderX} dy="1.1em">{leftHeader[1]}</tspan>
           </text>
           )}
           {devHasRight && (
           <text
-            x={devSectionStart + zeroX + 5}
+            transform={fitAround(rightHeaderX, headerBaseline, devHeaderFit)}
+            x={rightHeaderX}
             y={headerBaseline}
             textAnchor="start"
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer hover:underline')}
+            className={cn(devHeaderClass, onSortChange && 'cursor-pointer hover:underline')}
             textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
-            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? t('chart.header.strongerHere1') : t('chart.header.overIndexed1')}</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? t('chart.header.strongerHere2') : t('chart.header.overIndexed2')}</tspan>
+            <tspan x={rightHeaderX} dy="-1.1em">{rightHeader[0]}</tspan>
+            <tspan x={rightHeaderX} dy="1.1em">{rightHeader[1]}</tspan>
           </text>
           )}
 
