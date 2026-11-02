@@ -1,33 +1,5 @@
 import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 
-/**
- * How the league draws its 96px sprites on each kind of screen.
- *
- * The rule is Michael's, and it is by screen, because the three screens fail
- * pixel art in different ways:
- *
- * - `phone`: the mobile layout. The fluid squash fit, sprites pixelated.
- * - `standard`: desktop under 2 device px per CSS px (a 1080p monitor). The
- *   fluid zoom up to a 96 CSS px sprite, which is 1x there. Below 1x a
- *   pixelated sprite drops whole rows and columns of its pixels, so it is
- *   smoothed instead.
- * - `retina`: desktop at 2 or more. A 96 CSS px ceiling would be 2x, and
- *   the zoom that fits the pane lands between 1x and 2x, where every source
- *   pixel draws as an uneven block. So the league summary holds its sprites
- *   at exactly 1x, and gives up its own spacing to keep every row on screen
- *   (`homeLayout.ts`). Only when even that cannot fit does it zoom, and then
- *   it stays pixelated down to 0.75x.
- *
- * The phone and standard summaries give up the same spacing, but only once
- * their zoom reaches the fit's floor.
- *
- * On both desktop screens, a block that grows to fill its pane (the gym card,
- * and the standard summary) draws each sprite pixel as a whole number of
- * device pixels (`fitScaleMath.ts`): the next whole size up when the pane
- * scrolls 10% or less for it, else the largest one that fits. Michael picked
- * this over snapping down only, which left a 13-inch MacBook Air soft. Only
- * a pane too small for 1x keeps the fluid fit.
- */
 type SpriteScreen = 'phone' | 'standard' | 'retina';
 
 interface ScreenRule {

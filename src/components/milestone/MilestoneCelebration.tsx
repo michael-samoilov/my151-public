@@ -12,7 +12,6 @@ import { useOverlayOpen } from './useOverlayOpen';
 interface Nudge {
   nav: Extract<AppView, 'analytics' | 'view'>;
   target: TipTarget;
-  /** What the View page marks once the person gets there: no popup appears on that page. */
   then: readonly TipTarget[];
   titleKey: NoArgKey;
   bodyKey?: NoArgKey;
@@ -38,7 +37,6 @@ export function MilestoneCelebration({ view, onNavigate }: { view: AppView; onNa
 
   const confettiFor = useRef<number | null>(null);
 
-  // Opening the tab the tip points at is what the tip asked for.
   const visited = nudge != null && view === nudge.nav;
   useEffect(() => {
     if (visited) dismiss();

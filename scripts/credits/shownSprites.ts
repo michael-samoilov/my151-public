@@ -47,9 +47,7 @@ export type Tool = 'Pokédex builder' | 'League builder' | 'Favorite picker';
 
 export interface SpriteUse {
   tool: Tool;
-  /** The Pokémon or form the file stands for there, as the catalog names it. */
   as: string;
-  /** The catalog rule that requests the file. */
   via: string;
 }
 
@@ -99,7 +97,6 @@ export async function shownSprites(root = process.cwd()): Promise<Map<string, Sp
     if (!list.some((u) => u.tool === use.tool && u.as === use.as)) list.push(use);
     uses.set(key, list);
   };
-  // The league builder and the Favorite picker show each sprite's shiny when their Shiny switch is on.
   const addWithShiny = (url: string, use: SpriteUse) => {
     add(url, use);
     const shiny = shinySpriteUrl(url);

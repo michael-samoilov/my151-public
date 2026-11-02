@@ -68,8 +68,7 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     links: ['https://eeveeexpo.com/resources/1101/'],
   },
   {
-    // Its terms ask to credit the spriter or the project; this credits the
-    // project.
+    // platform: The Smogon Sprite Project's terms ask for credit to the spriter or the project; this entry credits the project.
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
     license: 'Non-profit use, with credit',
@@ -247,7 +246,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         by: 'Simon Goellner',
         usedFor: 'The tilt, springs, drop shadow, and glare of the export card.',
         license: 'MIT (repository) · MPL-2.0 (package)',
-        // MPL-2.0 section 3.2(a): say where the source of the changed files is.
+        // platform: MPL-2.0 section 3.2(a) requires a notice that says where the source of the changed files is.
         note: "my151's changed hover-tilt files are available as source at the links above.",
         texts: [
           { name: 'MIT (repository)', file: 'hover-tilt-MIT.txt' },

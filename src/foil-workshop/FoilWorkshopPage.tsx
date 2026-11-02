@@ -146,9 +146,7 @@ function readStoredFoil(): FoilRecipe {
   try {
     const stored = localStorage.getItem(FOIL_WORKSHOP_STORAGE_KEY);
     if (stored) return workshopFoil(parseFoilRecipe(JSON.parse(stored) as unknown));
-  } catch {
-    /* quota or private mode */
-  }
+  } catch {}
   return cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
 }
 
@@ -158,9 +156,7 @@ function readStoredTilt(): HoverTiltRecipe {
   try {
     const stored = localStorage.getItem(HOVER_TILT_WORKSHOP_STORAGE_KEY);
     if (stored) return workshopTilt(parseHoverTiltRecipe(JSON.parse(stored) as unknown));
-  } catch {
-    /* quota or private mode */
-  }
+  } catch {}
   return cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE);
 }
 
@@ -227,9 +223,7 @@ function persistWorkshop(
   try {
     localStorage.setItem(FOIL_WORKSHOP_STORAGE_KEY, JSON.stringify(recipe));
     localStorage.setItem(HOVER_TILT_WORKSHOP_STORAGE_KEY, JSON.stringify(tilt));
-  } catch {
-    /* quota or private mode */
-  }
+  } catch {}
 }
 
 async function copyText(text: string): Promise<boolean> {

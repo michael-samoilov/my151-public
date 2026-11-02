@@ -22,7 +22,7 @@ export function initialSortOrder(): SortOrder {
 export function saveSortOrder(order: SortOrder): void {
   const text = formatSortOrder(order);
   try { window.localStorage.setItem(STORAGE_KEY, text); }
-  catch { /* Storage can be unavailable in private browsing. */ }
+  catch { /* platform: Storage access can throw in private browsing. */ }
   const url = new URL(window.location.href);
   url.searchParams.set('sort', text);
   url.search = url.searchParams.toString().replace(/%2C/gi, ',');

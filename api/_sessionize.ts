@@ -104,9 +104,7 @@ export function withoutDropRestorePhantoms<T>(
 
 export interface RecordingCheckpoint {
   v: 1;
-  /** Earliest retained baseline span. Older history can be missing. */
   coverageFrom: number;
-  /** First upgraded server receipt, independent of client clock skew. */
   checkpointFrom: number;
   totalMs: number;
   asOf: number;
@@ -117,13 +115,10 @@ export interface RecordingFields {
   recording?: RecordingCheckpoint;
   activeDays?: number[];
   activityCoverageFrom?: number;
-  /** UTC days on which one page load stayed on screen 10 seconds or more, for 400 days. */
   seenDays?: number[];
 }
 type RecordingSpan = {start: number; end: number};
 const UTC_DAY_MS = 86_400_000;
-// Kept longer than the 90 days of `activeDays`, because DAU older than that
-// comes from session logs, and a logged day engaged only by being seen needs it.
 const SEEN_DAYS_KEPT = 400;
 const stamp = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= 8_640_000_000_000_000;
 const utcDay = (n: number) => Math.floor(n / UTC_DAY_MS) * UTC_DAY_MS;
@@ -152,7 +147,6 @@ export function parseRecordingFields(raw: unknown): RecordingFields {
   return out;
 }
 
-/** Reads a beacon's `seen` days. A bad entry is dropped, never the beacon. */
 export function parseSeenDays(raw: unknown, receivedAt: number): number[] | undefined {
   if (!Array.isArray(raw) || raw.length > 8) return undefined;
   const today = utcDay(receivedAt);
@@ -199,7 +193,6 @@ export function checkpointRecording(
   return {recording,activeDays,activityCoverageFrom:previous.activityCoverageFrom ?? receivedAt};
 }
 
-/** Adds a beacon's seen days to a record's, and keeps the last 400 UTC days. */
 export function mergeSeenDays(previous: number[] | undefined, seen: number[] | undefined, receivedAt: number): number[] | undefined {
   const earliest = utcDay(receivedAt)-(SEEN_DAYS_KEPT-1)*UTC_DAY_MS;
   const days = [...new Set([...(previous ?? []),...(seen ?? [])])].filter(d => d >= earliest).sort((a,b)=>a-b);

@@ -2,9 +2,6 @@ import { useT } from '@/i18n';
 
 export const MAIN_ID = 'main-content';
 
-// The click moves focus itself, so the URL keeps no `#main-content`. Before
-// React attaches the handler (the hub's prerendered markup), the plain link
-// does the same job.
 export function SkipLink() {
   const t = useT();
   return (

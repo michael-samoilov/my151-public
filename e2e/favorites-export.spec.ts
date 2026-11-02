@@ -71,8 +71,7 @@ test.describe('full favorite chart export', () => {
 
   test('a failed sprite load retries without changing saved picks', async ({ page }, testInfo) => {
     await page.addInitScript(() => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'fire|1': 4 } }, version: 3 })));
-    // Intercept before navigation: the grid loads this sprite too, so a later
-    // route can miss the export request when the decoded image is cached.
+    // platform: Playwright can miss a route added after the image is cached, so the route goes in before navigation.
     await page.route('**/sprites/pokemon/4.png', route => route.abort());
     await page.goto('/favorite-pokemon-picker?lang=en');
     const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));

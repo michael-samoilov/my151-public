@@ -4,7 +4,6 @@ async function pinchBlockers(page: Page) {
   return page.evaluate(() => {
     const bad: Array<{ id: string; touchAction: string; area: number }> = [];
     for (const el of document.querySelectorAll<HTMLElement>('*')) {
-      // The gym card takes a pinch and zooms itself.
       if (el.closest('[data-testid="card-zoom-frame"]')) continue;
       const ta = getComputedStyle(el).touchAction;
       if (ta === 'auto' || ta === 'manipulation' || ta.includes('pinch-zoom')) continue;

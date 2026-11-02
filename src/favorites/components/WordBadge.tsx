@@ -8,12 +8,8 @@ import { AXIS_FILL, GEN_BADGE_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, gen
 
 const OUTLINE_PER_FONT = 1.25 / 15;
 const OUTLINE_MIN_PX = 0.6;
-// The word is condensed sideways, and a stroke on it is condensed with it:
-// about 0.7 as thick at the sides as at the top. So the outline repeats the
-// stroked word at small steps left and right, until the sides match the top.
-// Only horizontal steps: browsers snap text to whole pixels vertically, and
-// vertical steps would round unevenly.
-const OUTLINE_SPREAD = [-1, -0.5, 0, 0.5, 1];
+// platform: A stroke on condensed text is thinner at the sides, and browsers snap text to whole pixels vertically, so the outline steps only sideways.
+const OUTLINE_X_STEPS = [-1, -0.5, 0, 0.5, 1];
 const EDGE = 1;
 
 type Sizing = {
@@ -68,8 +64,7 @@ function WordBadge({
   );
   const word = (color: string, stroke?: number) => {
     if (!numeral) return text(color, stroke, centerX, 'middle', label);
-    // Each text part is anchored at its outer end, so SVG's whitespace
-    // collapsing cannot move it against the numeral.
+    // platform: SVG collapses whitespace, so each text part anchors at its outer end to keep its place against the numeral.
     const before = typeBadgeTextWidth(numeral.before, fit.fontSize);
     const glyphs = numeral.width * fit.fontSize;
     const total = before + glyphs + typeBadgeTextWidth(numeral.after, fit.fontSize);
@@ -92,8 +87,7 @@ function WordBadge({
       viewBox={`0 0 ${units} ${TYPE_BADGE_H}`}
       className={`${height == null ? 'h-auto' : ''} ${className ?? ''}`}
       style={style}
-      // At some sub-pixel offsets Chrome clips the SVG box short of the
-      // pill's rounded end. Nothing draws outside the pill.
+      // platform: At some sub-pixel offsets Chrome clips the SVG box short of the pill's rounded end.
       overflow="visible"
       role="img"
       aria-label={spoken}
@@ -125,7 +119,7 @@ function WordBadge({
       />
       {outlined ? (
         <g opacity={0.85} aria-hidden>
-          {OUTLINE_SPREAD.map((step) => (
+          {OUTLINE_X_STEPS.map((step) => (
             <g key={step} transform={`translate(${step * spread} 0)`}>
               <g transform={condense}>{word('#000000', 2 * outline)}</g>
             </g>

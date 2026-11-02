@@ -129,7 +129,6 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
             type="button"
             onClick={() => setTypePickerOpen(false)}
             aria-label={t('league.close')}
-            // Grows up and right to the sheet edge, and stops above the type grid.
             className="relative cursor-pointer text-muted-foreground hover:text-foreground before:absolute before:-top-4 before:-right-4 before:-bottom-2 before:-left-3.5 before:content-['']"
           >
             <X size={16} />
@@ -220,16 +219,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
               aria-label={t('league.card.themeLabel')}
               enterKeyHint="done"
               onKeyDown={confirmOnEnter}
-              // The words are clipped at the field's own box, and a clip
-              // lands mid-glyph — which reads as the name running under
-              // whatever sits next in the bar rather than ending. An
-              // ellipsis says it ends. Browsers draw it only while the
-              // field is not focused, which is the behaviour to want: once
-              // you are typing you need to see the caret's end of the text,
-              // not a mark saying there is more.
-              //
-              // Only the drawing is cut. `value` is the whole name, and the
-              // store keeps it — the export renders from the store.
+              // platform: Browsers draw a `text-overflow` ellipsis only while the field is not focused, so typing shows the caret end of the text.
               className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight text-ellipsis outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
             />
           </span>
@@ -289,20 +279,13 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
         </div>
       )}
       <div className="px-3">
-        {/* The fit measures its parent, so the top gap it keeps below the
-            card is this frame's padding. */}
         <div {...frameProps} className="pt-2.5">
           <div ref={fitRef} style={fitStyle(fit, rendering, zoom)}>
             <CardGrid cardIndex={cardIndex} view={view} hints={isDesktop && !withBar ? (fit.tail ? 'tight' : 'off') : 'loose'} />
           </div>
         </div>
       </div>
-      {/* Both pickers are `position: fixed`, and a transformed ancestor
-          becomes the containing block for fixed descendants. Mobile puts the
-          card inside a translated two-pane track, which anchored them to the
-          200%-wide track instead of the viewport — the type picker spanned
-          both panes. A portal takes them out of the tree entirely, so no
-          ancestor can move them again. React context still reaches them. */}
+      {/* platform: A transformed ancestor becomes the containing block for `position: fixed`, so both pickers portal out of the translated two-pane track. */}
       {typePickerOpen && createPortal(<TypePicker cardIndex={cardIndex} />, document.body)}
       {movePickerOpen && createPortal(<MovePicker cardIndex={cardIndex} />, document.body)}
     </div>

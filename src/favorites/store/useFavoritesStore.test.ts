@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The store finds window.localStorage when its module loads, so the stand-in comes first.
 const saved = vi.hoisted(() => {
   const items = new Map<string, string>();
   const localStorage = {

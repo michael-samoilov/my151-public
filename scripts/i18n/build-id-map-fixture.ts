@@ -10,11 +10,8 @@ export const ID_MAP_FIXTURE_PATH = 'scripts/i18n/id-map-fixture.json';
 
 export interface IdMapFixture {
   readonly source: string;
-  /** By app id — only those the map references. `speciesId` is upstream's. */
   readonly pokemon: Record<string, { identifier: string; speciesId: number }>;
-  /** Referenced form ids that exist upstream. Absence is a test failure. */
   readonly forms: number[];
-  /** By species id — identifier plus the English name. */
   readonly species: Record<string, { identifier: string; en: string }>;
 }
 

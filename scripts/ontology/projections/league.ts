@@ -1,22 +1,13 @@
-/**
- * The League projection, src/data/generated/league.json. The League catalog starts from the Dex
- * rows in src/data/pokemon.json, so this file holds only what differs: the fields of a Dex row the
- * League shows differently, each form the League adds as the fields that differ from its owner's
- * row, and the evolutions beyond a form's first.
- */
 import type { Pokemon } from '../../../src/types/pokemon';
 import type { ResolvedForm } from '../../../src/ontology/model';
 import type { Ontology } from '../resolve';
 import { dexRows, parentInTool, stageOf } from './dex';
 import { isPowerUp, pickerOwner } from './owner';
 
-/** A League catalog row: in the League and not a Mega, Primal, or Gigantamax power-up. Crowned Zacian is a row. */
 export const inLeague = (form: ResolvedForm): boolean => form.tools.league === 'in' && !isPowerUp(form);
 
-/** A League catalog row, with its sprite path before the revision query that src/lib/spriteUrl.ts adds. */
 export type LeagueRow = Omit<Pokemon, 'archetypes'>;
 
-/** Every League catalog row in catalog order: the Dex rows first, then the forms the League adds. */
 export function leagueRows(ontology: Ontology): LeagueRow[] {
   const dex = new Map(dexRows(ontology).map((row) => [row.id, row]));
   const defaults: LeagueRow[] = [];
@@ -52,19 +43,14 @@ type Fields = Partial<Omit<LeagueRow, 'id' | 'name' | 'sprite'>>;
 
 export interface LeagueForm extends Fields {
   readonly id: number;
-  /** The row the form copies every field it does not state. The League groups archetypes and names under it. */
   readonly owner: number;
   readonly name: string;
-  /** The sprite file name, when it is not the id. */
-  readonly sprite?: string;
+  readonly spriteStem?: string;
 }
 
 export interface LeagueProjection {
-  /** A Dex row's fields that the League shows differently, by AppId. */
-  readonly dex: Record<string, Fields>;
-  /** In AppId order. */
+  readonly dexOverrides: Record<string, Fields>;
   readonly forms: readonly LeagueForm[];
-  /** [source, target] evolutions beyond the target's first, which a row's single evolvesFrom cannot hold. */
   readonly extraEvolutions: readonly (readonly [number, number])[];
 }
 
@@ -82,13 +68,13 @@ export function leagueProjection(ontology: Ontology): LeagueProjection {
   const rows = leagueRows(ontology);
   const shown = new Map(rows.map((row) => [row.id, row]));
   const byAppId = new Map<number, ResolvedForm>([...ontology.forms.values()].map((form) => [form.appId, form]));
-  const dexChanges: Record<string, Fields> = {};
+  const dexOverrides: Record<string, Fields> = {};
   const forms: LeagueForm[] = [];
   for (const row of rows) {
     const form = byAppId.get(row.id)!;
     if (form.tools.dex === 'in') {
       const fields = differingFields(row, dex.get(row.id)!);
-      if (Object.keys(fields).length) dexChanges[row.id] = fields;
+      if (Object.keys(fields).length) dexOverrides[row.id] = fields;
       continue;
     }
     const owner = pickerOwner(ontology, form);
@@ -98,7 +84,7 @@ export function leagueProjection(ontology: Ontology): LeagueProjection {
       id: row.id,
       owner: owner.appId,
       name: row.name,
-      ...(form.sprite === String(form.appId) ? {} : { sprite: form.sprite }),
+      ...(form.sprite === String(form.appId) ? {} : { spriteStem: form.sprite }),
       ...differingFields(row, ownerRow),
     });
   }
@@ -112,7 +98,7 @@ export function leagueProjection(ontology: Ontology): LeagueProjection {
     }
   }
   forms.sort((a, b) => a.id - b.id);
-  return { dex: dexChanges, forms, extraEvolutions };
+  return { dexOverrides, forms, extraEvolutions };
 }
 
 export const leagueJson = (ontology: Ontology): string => `${JSON.stringify(leagueProjection(ontology))}\n`;

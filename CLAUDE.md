@@ -60,6 +60,20 @@ Two boundaries:
 - The Response style section wins when the two guides conflict.
 - App UI strings and i18n content are out of scope. Game terminology and the `docs/i18n` fixtures stay authoritative there.
 
+## Rules live in checks
+
+Michael set this standard on 2026-11-02. An agent can miss a written rule. A failing check stops the change.
+
+1. When you fix a bug, or when Michael corrects an agent, add a check that fails on the old code.
+2. Use the first level that works: an architecture or type change that makes the mistake impossible, an ESLint rule, a repository check script, then a test.
+3. Add a source-code rule to `WRITTEN_RULES` in `scripts/eslint/writtenRules.mjs`. Give the rule text, its source document, the files, the AST selectors, and the fix. The lint error shows all of them.
+4. Add a bad sample and a good sample for the rule to `scripts/eslint/writtenRules.test.ts`. The test fails when a rule has no sample, or when a sample gives the wrong result.
+5. Fix existing violations in the same change. When a fix needs its own review, record it with `npx eslint <file> --suppress-rule written/<id> --suppressions-location eslint-suppressions.json`, and report it as open work.
+
+Write a prose rule only for a judgment that no check can make. The `/correct` skill runs this process over past mistakes.
+
+Code comments are banned. `my151/no-comments` in `scripts/eslint/plugin.mjs` fails every comment except tool directives and one line of `// platform: <reason>`. Use the platform tag only for behavior that a browser, a vendor, or a protocol forces on us. Say everything else with a name, a type, or a test. `npx eslint --fix` deletes a banned comment.
+
 ## Work reports
 
 End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy. Show the whole screen with the place to look marked on it, never only a crop — see "Showing a defect" in the same file. Any visual change (bugfix, feature, polish) must run `/verify-my151` and show the same input on the old build, then the new build. Paint those shots in the chat. Do not only link PNG paths. Do not ask Michael to retest a change you can drive here. **You test** is `Nothing` unless the hand-off test names a device-only gap.
@@ -180,7 +194,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 
 | Command | Covers |
 |---|---|
-| `npm run lint` | ESLint. Pre-existing violations are recorded in `eslint-suppressions.json`, so this passes today and any *new* violation fails. Regenerate with `npx eslint . --suppress-all` only when deliberately accepting a new one. **If you *fix* a suppressed violation, run `npx eslint . --prune-suppressions`** — a stale entry exits 2 and fails CI just as loudly as a new violation. |
+| `npm run lint` | ESLint, including the comment ban and the written rules (see "Rules live in checks"). Pre-existing violations are recorded in `eslint-suppressions.json`, so this passes today and any *new* violation fails. Regenerate with `npx eslint . --suppress-all` only when deliberately accepting a new one. **If you *fix* a suppressed violation, run `npx eslint . --prune-suppressions`** — a stale entry exits 2 and fails CI just as loudly as a new violation. |
 | `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
 | `node scripts/check-viewport-tags.mjs` | Fails when a test that is not tagged `@viewport` skips `desktop`. That test runs in no project. Tag a test or describe `@viewport` when its result depends on the project width or device: a measured box, overflow, wrap, scroll, fit, touch, or a sheet-versus-pane branch. Leave a test untagged when it checks only state, copy, storage, or network, or when it pins its own viewport. |
 | `node scripts/check-test-rules.mjs` | Enforces two rules from `AGENTS.md` section 4. It fails on a committed proof test: a test or spec named `proof-*` or `zz-proof*`, or one with a `// proof:` comment. It also fails on a unit test that is new since the merge base with production, unless the test imports `api/` or `scripts/` code, touches saved data (`store`, `persist`, `migrat`), or has `// keeps: <bug E2E misses>` in its first 5 lines. |

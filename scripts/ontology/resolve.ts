@@ -1,8 +1,3 @@
-/**
- * The resolver: authored species files to complete forms. One inheritance rule: a permanent form
- * inherits every unstated fact from its species' default form, and a state form from the first form
- * it is entered from. Pure and total over a linked ontology; structural problems come back as a list.
- */
 import type { AppId, FormId, SpeciesId, SpriteStem } from '../../src/ontology/ids';
 import type { Coordinates, FormFacts, FormFlags, FormState, Persistence, ResolvedEvolution, ResolvedForm, ResolvedSpecies, ToolInclusion } from '../../src/ontology/model';
 import { FACT_KEYS, MECHANICAL_FACT_KEYS } from '../../src/ontology/model';
@@ -11,7 +6,6 @@ import type { AuthoredOntology, FormEntry, Problem, SpeciesFile } from './author
 export interface Ontology {
   readonly authored: AuthoredOntology;
   readonly species: ReadonlyMap<SpeciesId, ResolvedSpecies>;
-  /** Species file order: National Dex order, then each file's form order. */
   readonly forms: ReadonlyMap<FormId, ResolvedForm>;
   readonly fileOf: ReadonlyMap<FormId, string>;
 }
@@ -25,7 +19,6 @@ export function persistenceOf(states: readonly FormState[]): Persistence {
   return states.every((state) => state.kind === 'ride') ? 'field' : 'battle';
 }
 
-/** The coordinates every entry form of a state shares. A facet where they differ becomes none. */
 export function sharedCoordinates(entries: readonly Coordinates[]): Coordinates {
   const [first, ...rest] = entries;
   const agree = <K extends keyof Coordinates>(key: K) => rest.every((entry) => same(entry[key], first[key]));
@@ -75,7 +68,6 @@ function flagsOf(coordinates: Coordinates, states: readonly FormState[], persist
   };
 }
 
-/** Every mechanical fact equal: the form differs in looks or availability only. */
 export const mechanicallyEqual = (a: FormFacts, b: FormFacts): boolean => MECHANICAL_FACT_KEYS.every((key) => same(a[key], b[key]));
 
 export function resolveOntology(authored: AuthoredOntology): Resolution {

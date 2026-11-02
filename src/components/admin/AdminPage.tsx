@@ -1616,7 +1616,7 @@ export function AdminPage() {
       try {
         localStorage.setItem(RANGE_KEY, next);
       } catch {
-        // localStorage may be unavailable
+        // platform: localStorage throws when the browser blocks or disables storage.
       }
       if (!token) return;
       const hit = rangeCache.get(next);
@@ -1722,7 +1722,7 @@ export function AdminPage() {
     try {
       if (!demo) localStorage.removeItem(TOKEN_KEY);
     } catch {
-      // localStorage may be unavailable
+      // platform: localStorage throws when the browser blocks or disables storage.
     }
     setToken(null);
     setAuthed(false);

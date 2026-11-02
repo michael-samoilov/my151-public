@@ -78,7 +78,7 @@ test.describe('completion confetti', () => {
     await expect(dexPopup(page)).toBeVisible();
     const seen = await settledBursts(page);
     expectStickerBurst(seen, 2);
-    // The library counts frames, not time, so wait for the canvas to go.
+    // platform: canvas-confetti counts frames, not time, so the test waits for the canvas to go.
     await expect(page.getByTestId('completion-confetti')).toHaveCount(0, { timeout: 20_000 });
     expect(await bursts(page), 'still one burst').toHaveLength(1);
     await reloadAndAttach(page, testInfo, seen);

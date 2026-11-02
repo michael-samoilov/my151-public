@@ -24,9 +24,7 @@ export function useAnchoredCard(anchor: HTMLElement | null, enabled: boolean) {
     };
 
     place();
-    // The anchor sits in a page row rather than fixed chrome, so a scroll
-    // behind the card moves it. Capture, because the scroll that matters is an
-    // inner container's, and a scroll event does not bubble.
+    // platform: A scroll event does not bubble, so only a capture listener on window sees an inner container's scroll.
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);

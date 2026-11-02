@@ -22,10 +22,8 @@ import { NoShinyMark } from '@/components/shiny/ShinyMarks';
 import { NO_SHINY } from '@/components/shiny/shinyMarks';
 
 const ROW_GAP_PX = 4;
-/** Matches 35% opacity over white but stays opaque, so the selection ring under the sprite stays hidden. */
 const FADED_SPRITE = { filter: 'contrast(0.212) brightness(1.65)' } as const;
 
-/** One tile of a selector: a Pokémon, and whether the tile shows it shiny. */
 export interface SelectorOption {
   mon: PickerMon;
   shiny: boolean;
@@ -52,19 +50,16 @@ export function PrettySpriteGrid<T extends SelectorOption>({
   caption,
   captionPx = 0,
 }: {
-  /** A shiny option without a shiny sprite shows faded, under the no-shiny mark. */
   options: readonly T[];
   maxCols: number;
   spritePx?: number;
   lineKey?: (option: T) => number;
   formKey?: (option: T) => number;
   selected?: (option: T) => boolean;
-  /** The selected tile shows another look than the pick it stands for, so a tap converts the pick instead of clearing it. */
   converting?: boolean;
   onPick: (option: T) => void;
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
-  /** A pointer selector lists a Pokémon once for each look its sources show it in. */
   pointer?: boolean;
   sourceMarks?: (option: T) => PointerMark[];
   coordinates?: (option: T) => SourceCoordinate[];

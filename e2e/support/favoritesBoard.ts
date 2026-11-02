@@ -39,7 +39,6 @@ export async function clearLastCell(page: Page, id: number): Promise<void> {
   await page.getByTestId(`favorites-pick-${id}`).click();
 }
 
-/** The picker's Icons switch starts off. A test of what it shows turns it on before the page loads. */
 export async function showPickerIcons(page: Page): Promise<void> {
   await page.addInitScript(() => localStorage.setItem('personal-151-favorites-show-icons-v2', '1'));
 }

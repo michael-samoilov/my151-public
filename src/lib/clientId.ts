@@ -15,9 +15,7 @@ function setOptedOut(optedOut: boolean): void {
   try {
     if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
     else localStorage.removeItem(OPT_OUT_KEY);
-  } catch {
-    // localStorage may be unavailable
-  }
+  } catch {}
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('p151-opt-out'));
 }
 

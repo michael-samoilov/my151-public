@@ -55,9 +55,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
   return (
     <div className="mt-4 flex flex-col items-center gap-1">
       <div className="w-[85%] border-t" />
-      {/* A `<footer>` outside `<main>` is the page's footer landmark, so a
-          screen reader can jump to the legal line and the report link. Inside
-          `<main>` it is plain text. The FAQ stays out: it is content. */}
+      {/* platform: Only a footer element outside main is a footer landmark that a screen reader can jump to. */}
       <footer className="py-3 flex flex-col items-center gap-1">
       <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/40">
         <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />

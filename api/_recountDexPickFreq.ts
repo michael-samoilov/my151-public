@@ -1,15 +1,11 @@
 import { CLIENTS_KEY, parseRecord, redis, type ClientRecord } from './_shared.js';
 
-// One-time correction: while a browser's Dex record was split by country, each
-// split record added its Pokémon to `dex:ever-freq` again. The country-split
-// fold kept the original records, so the extra counts are known exactly.
 const FREQ_KEY = 'dex:ever-freq';
 const SPLIT_BACKUP_KEY = 'clients:country-split-backup';
 export const FREQ_BACKUP_KEY = 'dex:ever-freq:before-split-fix';
 
 type SplitBackup = { base: unknown; splits: Record<string, { record: unknown }> };
 
-/** Extra counts per Pokémon: a Pokémon in k of one browser's records counted k - 1 times too often. */
 export function splitOvercount(backups: Record<string, unknown>): Map<string, number> {
   const over = new Map<string, number>();
   for (const raw of Object.values(backups)) {
@@ -24,7 +20,6 @@ export function splitOvercount(backups: Record<string, unknown>): Map<string, nu
   return over;
 }
 
-/** How many Dex records have ever picked each Pokémon. */
 export function recountFromRecords(clients: Record<string, unknown>): Map<string, number> {
   const counts = new Map<string, number>();
   for (const raw of Object.values(clients)) {
@@ -33,7 +28,6 @@ export function recountFromRecords(clients: Record<string, unknown>): Map<string
   return counts;
 }
 
-// Copies the counter to the backup key and subtracts the extra counts, once.
 const APPLY_RECOUNT = `
 if redis.call('EXISTS', KEYS[2]) == 1 then return -1 end
 local all = redis.call('HGETALL', KEYS[1])
@@ -42,8 +36,6 @@ for i = 1, #ARGV, 2 do redis.call('HINCRBY', KEYS[1], ARGV[i], ARGV[i + 1]) end
 return #ARGV / 2
 `;
 
-/** Dry run unless `apply` is true. Applies only when the counter minus the split
- *  over-count equals a recount from the records for every Pokémon. */
 export async function recountDexPickFreq(apply: boolean) {
   const [current, clients, backups] = await Promise.all([
     redis.hgetall<Record<string, unknown>>(FREQ_KEY),

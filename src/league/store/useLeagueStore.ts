@@ -41,7 +41,6 @@ export interface GymCard {
   signatureSeat: number | null;
   signatureId?: number | null;
   partnerId?: number | null;
-  /** The partner stands apart from its line, which can leave the card, so its flag is its own. */
   partnerShiny?: true;
   tmMoveId: number | null;
   badgeName: string;
@@ -135,7 +134,6 @@ function withPowerups(card: GymCard, fn: (p: Powerup, row: number) => Powerup | 
   return { ...card, powerups, powerup: null };
 }
 
-/** A legendary replaces its line on the boss row, so the powerup there is its own. */
 function legendCell(card: GymCard, row: number, seat: number): boolean {
   return row === BOSS_ROW && legendAt(card, seat) !== null;
 }
@@ -227,7 +225,6 @@ seedLeagueOnFirstVisit();
 function withoutSeat(c: GymCard, seat: number): GymCard {
   if (seat < 1 || seat > c.lines.length) return c;
   const lines = c.lines.filter((_, i) => i !== seat - 1);
-  // A form on a seat with no line left would dress the next line placed there.
   const { powerups } = withPowerups(c, (p) => {
     const next = shiftPowerupAfterRemoval(p, seat);
     return next && next.seat <= lines.length ? next : null;
@@ -421,7 +418,6 @@ export const useLeagueStore = create<LeagueState>()(
             const target = legend?.seat ?? seat;
             if (target === undefined) return c;
             const rest = legendsOf(c).filter((l) => l.seat !== target);
-            // The form on the boss row belonged to the Pokémon that leaves it.
             const { powerups } = withPowerups(c, (p, row) => (row === BOSS_ROW && p.seat === target ? null : p));
             const kept = legend?.shiny && !keepsShiny([legend.pokemonId], true) ? { pokemonId: legend.pokemonId, seat: legend.seat } : legend;
             return { ...c, legends: kept ? [...rest, kept] : rest, legend: null, powerups, powerup: null };
@@ -444,13 +440,8 @@ export const useLeagueStore = create<LeagueState>()(
       moveLegend: (card, fromSeat, toSeat) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
-            // A legendary replaces a line's boss-row Pokémon, so a column with
-            // no line has nothing for it to replace.
             if (fromSeat === toSeat || !legendAt(c, fromSeat) || toSeat > c.lines.length) return c;
             const traded = legendAt(c, toSeat) !== null;
-            // Onto a seat without a legendary it moves; onto one with a
-            // legendary the two trade places. Each takes its form along, and
-            // the line it now covers loses its own boss-row form.
             const legends = legendsOf(c).map((l) =>
               l.seat === fromSeat ? { ...l, seat: toSeat }
               : l.seat === toSeat ? { ...l, seat: fromSeat }

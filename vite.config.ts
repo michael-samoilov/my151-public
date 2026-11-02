@@ -120,8 +120,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // The package's ESM entry (`index.js`) imports `../node_modules/fmin`,
-      // which does not exist after npm hoists fmin. The UMD build inlines it.
+      // platform: venn.js's ESM entry imports ../node_modules/fmin, which npm hoisting moves; the UMD build inlines it.
       'venn.js': path.resolve(__dirname, 'node_modules/venn.js/build/venn.js'),
     },
   },

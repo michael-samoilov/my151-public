@@ -94,8 +94,6 @@ export class RunJournal {
   }
 }
 
-// Runs independent lanes at the same time. A failure surfaces only after every lane stops,
-// so no stage is still running when the run record closes.
 export async function settleLanes(lanes: (() => Promise<void>)[]): Promise<void> {
   const results = await Promise.allSettled(lanes.map(lane => lane()));
   const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');

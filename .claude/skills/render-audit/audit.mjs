@@ -1,25 +1,4 @@
 #!/usr/bin/env node
-/**
- * render-audit: find clipped, truncated, overflowing, or awkwardly wrapped
- * content in rendered HTML (mockups, image exports, static pages) before a
- * person has to point it out.
- *
- * Usage:
- *   node audit.mjs --out <dir> [--font <woff2> --family <name>] [--frame WxH]
- *                  [--manifest canvas.json] [--min-font 12] [--chromium <path>]
- *                  file.html [file2.html ...]
- *
- * Driven through Vercel's agent-browser CLI, with Playwright as the fallback
- * (see browser.mjs). Set RENDER_AUDIT_DRIVER to force one.
- *
- * Every finding carries the element's path, its text, the numbers that prove
- * it, and a red (error) or orange (warning) box on <out>/<name>.audit.png.
- * Exit code 1 when any error-severity finding exists.
- *
- * Opt-outs live in the markup, never in this script: an element that clips on
- * purpose (a crop, a scroll region) carries data-audit-clip="intended"; an image
- * meant to be scaled carries data-audit-scale="intended".
- */
 import { openAuditBrowser } from './browser.mjs';
 import { auditBody } from './audit-core.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';

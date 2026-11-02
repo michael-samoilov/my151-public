@@ -167,14 +167,7 @@ test.describe('home page responsive sweep', () => {
           }
         });
 
-        // 11. The band's own knobs resolve to what the band intends. This repo
-        // sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value ahead
-        // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
-        // silently beats its own `md:` override above 1024px. That is invisible
-        // to every geometric check here — the page still looks plausible — so
-        // the one place the page uses all three bands gets its own assertion.
-        // A media query's rem is the initial 16px, not the root font-size knob,
-        // so `sm` is 640px whatever that knob has done.
+        // platform: Tailwind sorts the px md breakpoint ahead of sm's 40rem, so a bare sm: utility beats its md: override above 1024px.
         const main = document.querySelector('main')!;
         const pad = (parseFloat(getComputedStyle(main).paddingLeft) / window.innerWidth) * 100;
         const wantPad = desktop ? 5.6 : window.innerWidth >= 640 ? 5.3 : 4;

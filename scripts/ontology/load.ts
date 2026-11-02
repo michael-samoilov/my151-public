@@ -1,7 +1,3 @@
-/**
- * Reads data/ontology/, checks every file's shape and every reference, and returns the authored
- * ontology with branded ids. Every problem names the file and the field to fix.
- */
 import { existsSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { TOOLS } from '../../src/ontology/model';
@@ -227,7 +223,6 @@ export function loadOntology(root: string): Loaded {
   linkOntology(ontology, problem);
   return { ontology: problems.length ? null : ontology, problems };
 
-  /** The one pokeapi-csv source names the snapshot file; its commit must be the one in the source id. */
   function readPokeapi(entries: DataSourceEntry[] | null): PokeapiExtract | null {
     const sourcesFile = data('sources.json');
     const pinned = entries?.filter((entry) => entry.kind === 'pokeapi-csv') ?? [];
@@ -247,7 +242,6 @@ export function loadOntology(root: string): Loaded {
   }
 }
 
-/** Rules one file can break on its own. */
 function checkSpeciesFile(file: SpeciesFile, problem: (code: string, path: string, message: string) => void): void {
   const [defaultForm] = file.forms;
   const ids = new Set<string>();
@@ -284,7 +278,6 @@ function checkSpeciesFile(file: SpeciesFile, problem: (code: string, path: strin
   }
 }
 
-/** Rules that need every file: references between files and vocabularies. */
 function linkOntology(ontology: AuthoredOntology, problem: (file: string, code: string, path: string, message: string) => void): void {
   const forms = new Map<string, { species: string; entry: SpeciesFile['forms'][number]; file: string }>();
   const speciesIds = new Map<string, string>();

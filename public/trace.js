@@ -7,6 +7,8 @@
   const HUB_IMAGES = 'img[data-card-scene], [data-artwork] img';
   const GIVE_UP_MS = 15000;
   const TAIL_MS = 2000;
+  const SPRITES_STILL_MS = 1000;
+  const NO_SPRITES_END_MS = 5000;
   const isSprite = (src) => /\/sprites\//.test(src) || src.startsWith('blob:');
   const html = document.documentElement;
   const worker = navigator.serviceWorker;
@@ -112,11 +114,9 @@
 
   const seen = { title: false, dex: false, league: false, favorites: false };
   let frames = 0;
-  // Computed visibility first: it needs style only, and a hidden element then
-  // skips the layout that getClientRects forces.
+  // platform: getClientRects forces layout, so check computed visibility first and let a hidden element skip it.
   const visible = (node) => Boolean(node) && getComputedStyle(node).visibility === 'visible' && node.getClientRects().length > 0;
 
-  // Sprites inside the viewport, and how many of them are drawn. Logged on change.
   const sprites = { shown: 0, drawn: 0, changedAt: 0 };
   function scanSprites() {
     let shown = 0;
@@ -139,8 +139,7 @@
     if (!frames++) log('first frame');
     else if (lastFrame && timestamp - lastFrame > 50) log('frame gap', { ms: Math.round(timestamp - lastFrame) });
     lastFrame = timestamp;
-    // Forcing layout while the HTML still streams can change when an engine
-    // first paints. The hub stays hidden until this end marker exists anyway.
+    // platform: Forcing layout while the HTML still streams can change when an engine first paints, so wait for the end marker.
     if (document.getElementById('p151-end')) {
       if (!seen.title && Array.from(document.querySelectorAll('.hub-grid [data-card-title]')).some(visible)) {
         seen.title = true;
@@ -177,12 +176,10 @@
     const counted = CARDS.every((card) => seen[card] || !html.classList.contains(`p151-saved-${card}`));
     return revealed && loaded && counted;
   }
-  // Every sprite on screen drawn, and no change for 1 s. A page that shows no
-  // sprites ends 5 s after it starts.
   function spritesSettled() {
     const now = performance.now();
-    const drawn = sprites.shown > 0 && sprites.drawn === sprites.shown && now - sprites.changedAt > 1000;
-    return loaded && (drawn || (sprites.shown === 0 && now > 5000));
+    const drawn = sprites.shown > 0 && sprites.drawn === sprites.shown && now - sprites.changedAt > SPRITES_STILL_MS;
+    return loaded && (drawn || (sprites.shown === 0 && now > NO_SPRITES_END_MS));
   }
 
   const round = (value) => (typeof value === 'number' ? Math.round(value) : value);
@@ -224,9 +221,7 @@
     } catch (error) {
       snapshot.storage = { error: String(error) };
     }
-    // Last, so the storage reads cannot compete with the load they describe.
-    // The sprite database is opened only when it exists: opening a missing
-    // one would create it without the store the service worker expects.
+    // platform: indexedDB.open creates a missing database without the service worker's store, so open the sprite database only when listed.
     try {
       const since = performance.now();
       const listed = indexedDB.databases ? (await indexedDB.databases()).some((db) => db.name === SPRITE_DB) : false;
@@ -264,7 +259,6 @@
     return matches.length ? matches[matches.length - 1].t : null;
   }
   const is = (value) => (detail) => detail === value;
-  // When the class was last removed; 0 when it never was on <html>, null when it still is.
   function goneAt(tr, cls) {
     let present = tokens(startOf(tr).detail.classes).includes(cls);
     let at = present ? null : 0;
@@ -295,13 +289,10 @@
     return art === null || wait === null ? null : Math.max(art, wait);
   }
 
-  // The first sprite request. After idle, its time includes opening the
-  // service worker's sprite cache.
   function firstSprite(tr) {
     return tr.snapshot.resources.filter((resource) => resource.sprite)
       .reduce((first, resource) => (first && first.startTime <= resource.startTime ? first : resource), null);
   }
-  // When every sprite on screen was last fully drawn.
   function screenDrawn(tr) {
     let at = null;
     tr.events.forEach((event) => {
@@ -353,7 +344,7 @@
     }
   }
   function writeRuns(runs) {
-    try { localStorage.setItem(RUNS_KEY, JSON.stringify(runs)); } catch { /* private mode or full storage */ }
+    try { localStorage.setItem(RUNS_KEY, JSON.stringify(runs)); } catch { }
   }
 
   async function finish(outcome) {
@@ -409,7 +400,7 @@
 
   function table(runs) {
     const wrap = el('div', 'display:block;overflow-x:auto;max-width:100%;margin:2px 0');
-    // Separate borders: WebKit drops collapsed borders on sticky cells.
+    // platform: WebKit drops collapsed borders on sticky cells, so the table uses separate borders.
     const grid = el('table', 'border-collapse:separate;border-spacing:0;font:inherit;color:inherit');
     const row = (label, cells, bold) => {
       const tr = el('tr');
@@ -468,7 +459,7 @@
         copyBox.select();
         copyBox.setSelectionRange(0, text.length);
         let copied = false;
-        try { copied = document.execCommand('copy'); } catch { /* unsupported */ }
+        try { copied = document.execCommand('copy'); } catch { }
         status.textContent = copied ? `Copied ${text.length} characters.` : 'Select the text below and copy it.';
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -479,7 +470,7 @@
     });
     button('Load again', () => location.assign(location.href));
     button('Clear runs', () => {
-      try { localStorage.removeItem(RUNS_KEY); } catch { /* storage blocked */ }
+      try { localStorage.removeItem(RUNS_KEY); } catch { }
       runs = [run];
       const next = table(runs);
       grid.replaceWith(next);

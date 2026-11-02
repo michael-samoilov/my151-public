@@ -22,7 +22,6 @@ export function useLeagueFunnelNudges() {
   useTipVisit('league-export', leagueExportOpen);
   useTipVisit('league-card-export', cardExportOpen);
 
-  // Opening the Export a tip points at is what the tip asked for.
   const visited = activeNudge === 'card' ? cardExportOpen : activeNudge !== null && leagueExportOpen;
   useEffect(() => {
     if (visited) dismissNudge();
@@ -33,8 +32,6 @@ export function useLeagueFunnelNudges() {
       dismissNudge();
       return;
     }
-    // The full-league tooltip comes with the confetti, which plays beside an
-    // open card on desktop.
     if (isRosterNudge(activeNudge) && openCard !== null && !(activeNudge === 'full' && isDesktop)) {
       dismissNudge();
       return;

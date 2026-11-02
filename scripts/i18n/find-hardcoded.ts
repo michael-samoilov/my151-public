@@ -1,35 +1,3 @@
-/**
- * Finds English text that the public app renders without the catalog.
- *
- * A string that skips `t()` or `tn()` stays English in every locale, and no
- * other gate notices: `i18n:verify` checks only the strings that are already
- * in a catalog. This scan reads the source of the public surfaces and lists
- * every literal that reaches the screen, the accessibility tree, or a canvas
- * export:
- *
- *  - JSX text children (`<span>Close</span>`).
- *  - String literals and template literals in a JSX child expression, through
- *    conditionals and `&&`, `||`, `??` and `+` (`{open ? 'Hide' : 'Show'}`).
- *  - Text attributes (`aria-label`, `title`, `placeholder`, `alt`, `label` and
- *    the others in TEXT_ATTRS), and any other attribute whose value reads as
- *    words.
- *  - Text properties of object literals (`label: 'Newest'`).
- *  - The text argument of a canvas `fillText` or `strokeText` call.
- *
- * Text that reaches the screen through a call argument other than those
- * (`setStatus('Copied')`) is outside the scan; the runtime scan in
- * docs/handoff/l10n-sweep-2026-10-11.md covers it.
- *
- * An element marked `data-i18n-exempt` is skipped with its children: the
- * attribute's value says why its text bypasses the catalog.
- *
- * Intentional English goes in `hardcoded-allowlist.json`, one entry per
- * string, each with its reason. An entry with a `file` applies only there,
- * and an entry with a `file` and no `text` skips that whole module.
- *
- * Run: npx tsx scripts/i18n/find-hardcoded.ts [--json]
- * Exits 1 when it finds a string that is not on the allowlist.
- */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
@@ -111,11 +79,6 @@ interface Finding {
   text: string;
 }
 
-/**
- * One allowlist entry. With `text`, that string is English on purpose (in
- * `file` only, when given). With `file` alone, the whole module is outside
- * the public app: a dev-only panel, an admin helper, or a diagnostic page.
- */
 interface AllowEntry { text?: string; file?: string; reason: string }
 
 function walkFiles(path: string, out: string[]): void {

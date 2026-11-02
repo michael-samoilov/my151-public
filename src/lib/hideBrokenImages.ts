@@ -1,9 +1,4 @@
-/**
- * A failed image shows nothing, as an image that is still loading does,
- * instead of the browser's broken-image icon. If the same element loads later,
- * it shows again. `error` and `load` do not bubble, but a capturing listener on
- * the document receives them, so one pair of listeners covers every image.
- */
+// platform: Image error and load events do not bubble, but a capturing listener on the document receives them.
 export function installHideBrokenImages(): void {
   const mark = (failed: boolean) => (event: Event) => {
     const img = event.target;

@@ -125,3 +125,11 @@ Maintain the suite this way:
 - `scripts/check-test-rules.mjs` fails on a committed proof test, and on a new unit test outside `api/`, `scripts/`, or saved-data code unless its first 5 lines hold `// keeps: <bug E2E misses>`.
 - Run tests by the fast/affected/full policy in `CLAUDE.md`, "Build Verification". Keep all cheap API and migration gates in every code mode.
 - Run `npm run ci:pre-push` (lint and the type check, about 2 seconds when warm) before every `git push`. In Claude Code, a hook runs it and blocks a failing push.
+
+## 5. Rules live in checks
+
+These rules apply to every agent and every worker. Read "Rules live in checks" in `CLAUDE.md` for the full standard.
+
+- When you fix a bug or receive a correction, add a check that fails on the old code. Prefer a type or a lint rule to a written rule.
+- Add each source-code rule to `scripts/eslint/writtenRules.mjs`, with a bad and a good sample in `scripts/eslint/writtenRules.test.ts`.
+- Do not write code comments. `npm run lint` fails on them. Only a one-line `// platform: <reason>` survives, for behavior a browser, vendor, or protocol forces on us.

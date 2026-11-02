@@ -57,9 +57,6 @@ export function matchesToolFilter(row: { dex?: unknown; league?: unknown; picker
   return filter === 'any' || !!row[filter];
 }
 
-/** Active rows are the browsers the counts include. Bounces have no day with a
- *  pick change, 10 seconds on screen, or 10 seconds of input. Bot leads look
- *  automated (api/_visitorQuality.ts). */
 export function matchesArchiveFilter(
   archived: boolean,
   filter: ArchiveFilter,

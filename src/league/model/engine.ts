@@ -11,7 +11,6 @@ import {
 } from './constants';
 import { arrivalLevel } from './impliedLevels';
 
-/** A shiny Pokémon stays shiny through evolution, Mega Evolution, and Gigantamax, so the flag is the line's. */
 export interface PlacedLine {
   branch: number[];
   boundaries: number[];
@@ -26,7 +25,6 @@ export interface CardCell {
   shiny: boolean;
 }
 
-/** A saved flag on Pokémon with no shiny art reads as none. */
 export function shinyMark(ids: readonly number[], shiny: boolean): ShinyMark {
   const art = ids.some((id) => {
     const sprite = getPokemonById(id)?.sprite;
@@ -36,7 +34,6 @@ export function shinyMark(ids: readonly number[], shiny: boolean): ShinyMark {
   return shiny ? 'on' : 'off';
 }
 
-/** Whether a shiny flag may be saved for these Pokémon: only when one of them has shiny art. */
 export const keepsShiny = (ids: readonly number[], shiny: boolean): boolean => shiny && shinyMark(ids, true) !== 'none';
 
 export function levelBoundaries(branch: number[]): number[] {

@@ -4,10 +4,6 @@ import { dirname } from 'node:path';
 const isLeaf = (value: unknown): boolean => value === null || typeof value !== 'object';
 const entriesOf = (value: object): [string, unknown][] => Object.entries(value).filter(([, item]) => item !== undefined);
 
-/**
- * JSON with two-space indentation where an object or array that holds only primitives stays on one
- * line, so a stat line or a type pair is one diff line. Keys with an undefined value are dropped.
- */
 export function formatJson(value: unknown, indent = ''): string {
   if (isLeaf(value)) return JSON.stringify(value);
   const inner = `${indent}  `;

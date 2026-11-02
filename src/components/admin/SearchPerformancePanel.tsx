@@ -24,7 +24,6 @@ const PROVIDERS: { key: SearchProviderKey; label: string }[] = [
   { key: 'bing', label: 'Bing' },
 ];
 
-/** `short` abbreviates from 1,000 (1.6K) instead of from 10,000. */
 function compact(value: number, short = false): string {
   return new Intl.NumberFormat(undefined, {
     notation: short || Math.abs(value) >= 10_000 ? 'compact' : 'standard',
@@ -90,13 +89,10 @@ interface SearchKpi {
   color: string;
   emphasis?: boolean;
   inverse?: boolean;
-  /** Smallest gap between axis ticks, so whole-number metrics get whole-number ticks. */
   minInterval?: number;
   pick: (metric: SearchMetric) => number | null;
-  /** `short` asks for an abbreviated count (1.6K); a figure that is already short ignores it. */
   format: (value: number, short?: boolean) => string;
   axis: (value: number) => string;
-  /** The change from the previous period, one part per line. */
   delta: (comparison: SearchRangeComparison | null, short?: boolean) => string[];
 }
 
@@ -155,18 +151,12 @@ function shown(kpi: SearchKpi, value: number | null, short = false): string {
   return value == null ? '—' : kpi.format(value, short);
 }
 
-/**
- * Whether a tile abbreviates its counts (1.6K). It does only when its change badge would
- * otherwise drop below the figure. `full` is what the tile shows unabbreviated, so new
- * numbers or a new tile width start from full counts again.
- */
 function useShortCounts(ref: RefObject<HTMLElement | null>, full: string): boolean {
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [shortFor, setShortFor] = useState<string | null>(null);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // The height changes when a badge drops, such as after a late font load.
     const measure = () => {
       const rect = el.getBoundingClientRect();
       const next = { width: Math.round(rect.width), height: Math.round(rect.height) };
@@ -188,7 +178,6 @@ function useShortCounts(ref: RefObject<HTMLElement | null>, full: string): boole
   return short;
 }
 
-/** Search Console labels its axes only while one or two metrics are on. */
 const MAX_LABELED_AXES = 2;
 
 function SearchTrend({
@@ -240,7 +229,7 @@ function SearchTrend({
         yAxis: drawn.length
           ? drawn.map(({ kpi }, i) => {
               const bounds = kpi.inverse ? { inverse: true, min: 1 } : { min: 0 };
-              // containLabel still reserves room for a hidden axis's labels, so hide them too.
+              // platform: ECharts containLabel reserves room for a hidden axis's labels, so the labels are hidden too.
               if (!labeled) {
                 return { type: 'value' as const, ...bounds, max: 'dataMax', show: false, axisLabel: { show: false } };
               }
@@ -253,7 +242,7 @@ function SearchTrend({
                 splitNumber: 3,
                 minInterval: kpi.minInterval,
                 name: kpi.label,
-                // An inverted axis starts at the top.
+                // platform: On an inverted ECharts axis, the start location is the top.
                 nameLocation: kpi.inverse ? ('start' as const) : ('end' as const),
                 nameGap: font,
                 nameTextStyle: { color: kpi.color, fontSize: font, fontWeight: 700, align: side },

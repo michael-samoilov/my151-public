@@ -6,21 +6,20 @@ import favoriteBrowserIds from '@/components/browser/favoriteBrowserIds.json';
 import { STANDALONE_FORM_IDS } from './formPolicy';
 
 type LeagueFields = Partial<Omit<Pokemon, 'id' | 'name' | 'sprite' | 'archetypes'>>;
-type LeagueForm = LeagueFields & { id: number; owner: number; name: string; sprite?: string };
+type LeagueForm = LeagueFields & { id: number; owner: number; name: string; spriteStem?: string };
 const generated = league as unknown as {
-  dex: Record<string, LeagueFields>;
+  dexOverrides: Record<string, LeagueFields>;
   forms: LeagueForm[];
   extraEvolutions: [number, number][];
 };
 
-/** The forms the League adds to the Dex rows. `npm run ontology:build` writes them from data/ontology/. */
 export const LEAGUE_ALTERNATE_FORMS: readonly LeagueForm[] = generated.forms;
-const pokemon: Pokemon[] = getDexPokemon().map(mon => ({ ...mon, ...generated.dex[mon.id] }));
+const pokemon: Pokemon[] = getDexPokemon().map(mon => ({ ...mon, ...generated.dexOverrides[mon.id] }));
 const byId = new Map(pokemon.map(mon => [mon.id, mon]));
 const owners = new Map<number, number>();
 
-for (const { owner, sprite, ...form } of LEAGUE_ALTERNATE_FORMS) {
-  const mon: Pokemon = { ...byId.get(owner)!, ...form, sprite: pokemonSpriteUrl(sprite ?? form.id) };
+for (const { owner, spriteStem, ...form } of LEAGUE_ALTERNATE_FORMS) {
+  const mon: Pokemon = { ...byId.get(owner)!, ...form, sprite: pokemonSpriteUrl(spriteStem ?? form.id) };
   pokemon.push(mon);
   byId.set(mon.id, mon);
   owners.set(mon.id, owner);

@@ -1,9 +1,4 @@
-/**
- * Bring a toolbar Export button on-screen without panning the mobile
- * two-pane track. `scrollIntoView({ inline: "nearest" })` treats that
- * 200%-wide track as a horizontal scroller, which slides the card pane
- * in and parks Export over the league name.
- */
+// platform: `scrollIntoView({ inline: "nearest" })` treats the 200%-wide mobile track as a horizontal scroller and slides the card pane in.
 export function revealToolbarButton(el: Element): void {
   const pane = el.closest('[data-lg-viewport]');
   if (pane instanceof HTMLElement) {

@@ -84,9 +84,6 @@ declare global {
   interface Window { p151HubCounts?: { dex: number | null; league: number; favorites: number | null } }
 }
 
-// Counted by the hub's boot script and already written into the prerendered
-// page (scripts/prerender-hub.ts). The first render starts from them, so
-// hydration matches; the app's own counts follow.
 const bootCounts = typeof window === 'undefined' ? undefined : window.p151HubCounts;
 const noSubscription = () => () => {};
 
@@ -396,10 +393,7 @@ function Artwork({ tool }: { tool: Tool }) {
             data-hit
             className="hub-hit block"
             style={{ ...geom(i), transform: restTransform(i), pointerEvents: 'auto' }}
-            // Float for a mouse or pen, never a touch tap (which would set the
-            // state and, with no matching leave, leave a shot stuck up). This
-            // replaces a CSS `(hover: hover) and (pointer: fine)` gate, which a
-            // touchscreen laptop fails even when a mouse is in use.
+            // platform: A touch tap fires pointerenter with no matching leave, and touchscreen laptops fail (hover: hover), so pointerType gates the float.
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setFloated(i); }}
             onPointerLeave={() => setFloated((prev) => (prev === i ? null : prev))}
           >
@@ -473,11 +467,7 @@ export function HomePage() {
               >
                 {t('home.h1')}
               </h1>
-              {/* On desktop the intro's x-height top meets the title's. This div is 1rem,
-                  so its 1ex is the x-height per rem, and the factors are the intro and
-                  title sizes in rem. At xl the intro's line height is half of the title's
-                  1.08 * 2.1rem line plus that same x-height offset, so a three-line intro
-                  ends on the baseline of a two-line title. */}
+              {/* platform: In a 1rem box, CSS 1ex is the font's x-height per rem, so the translate factors are the intro and title sizes. */}
               <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2 md:translate-y-[calc((1_-_1.75)*1ex)] xl:translate-y-[calc((1_-_2.1)*1ex)]">
                 <p className="m-0 text-[0.78rem] md:text-[1rem] leading-relaxed xl:leading-[calc((2.268rem_+_1.1ex)/2)] text-muted-foreground text-pretty">
                   {t('home.intro')}

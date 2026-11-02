@@ -12,12 +12,6 @@ import {
 import { pointerPool, prunePointers } from '../model/pointers';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
-/**
- * The picks count the app shows, with the exact saved picker data it was
- * counted from (`recordSavedPicks`). The hub's boot script shows it before the
- * app runs only while that data is unchanged: it cannot check picks itself, so
- * it never shows a count the app would then correct.
- */
 export const SAVED_PICKS_KEY = 'p151-hub-picks';
 
 export function migrateFavoriteFills(saved: Record<string, number>): Record<string, number> {
@@ -45,8 +39,6 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
   return prunePointers(fills);
 }
 
-/** Stereo Rotom became Electric/Normal and Terastal Ogerpon took its single Tera type on 2026-10-20.
- *  A saved pick that no longer fits its cell becomes the same mask's Grass form when that fits, or is cleared. */
 const TERASTAL_MASK: Record<number, number> = { 11114: 10273, 11115: 10274, 11116: 10275 };
 const RETYPED = new Set([11112, 11114, 11115, 11116]);
 
@@ -69,14 +61,12 @@ function migrateRetypedForms(fills: Record<string, number>) {
   }
 }
 
-/** Drops shiny entries whose cell no longer holds that id. They already read as normal. */
 function currentShiny(shiny: Record<string, number>, fills: Record<string, number>): Record<string, number> {
   return Object.fromEntries(Object.entries(shiny).filter(([key, id]) => fills[key] === id));
 }
 
 interface FavoritesState {
   fills: Record<string, number>;
-  /** Cells set to shiny, by cell key, holding the id they held then: a pick made shiny, or a pointer set to its shiny option. */
   shiny: Record<string, number>;
   place: (type: TypeAxisId, gen: GenAxisId, id: number, shiny?: boolean) => void;
   applyPack: (gen: number, path: PackMove[]) => void;

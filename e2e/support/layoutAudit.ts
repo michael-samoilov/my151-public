@@ -5,13 +5,7 @@ interface LayoutProblem {
   detail: string;
 }
 
-/**
- * Run the audit over the subtree at `selector`.
- *
- * Passed to `page.evaluate`, so it is deliberately one self-contained function
- * with no imports and no closure — Playwright serializes the source and any
- * outer reference would be `undefined` in the browser.
- */
+// platform: Playwright serializes the evaluated function's source, so it has no imports and no closure.
 export async function auditLayout(page: Page, selector: string): Promise<LayoutProblem[]> {
   return page.evaluate((sel) => {
     const root = document.querySelector<HTMLElement>(sel);
@@ -28,15 +22,10 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
     };
 
     const inFlow = (el: Element): boolean => {
-      // Inside an `<svg>` there is no CSS box model. Two `<path>`s in a lucide
-      // icon share a 4x4px corner because that is what the drawing is, and
-      // reading that as a layout fault is reading the wrong coordinate system.
+      // platform: SVG has no CSS box model, so an icon's overlapping paths are not a layout fault.
       if (el.closest('svg')) return false;
 
-      // A closed `<details>` still lays its content out — Chrome hides it with
-      // `content-visibility`, so it keeps a full-size rect while painting
-      // nothing. Measuring it reports the panel hanging hundreds of px out of a
-      // parent the user sees as one line high.
+      // platform: Chrome lays out a closed <details> with content-visibility, so its content keeps a full-size rect while painting nothing.
       const details = el.closest('details');
       if (details && !details.open && !el.closest('summary')) return false;
       if (!el.checkVisibility()) return false;
@@ -48,16 +37,7 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
       return r.width > 1 && r.height > 1;
     };
 
-    /**
-     * The part of an element that is actually on screen.
-     *
-     * `getBoundingClientRect` reports where a box would be, not where it can be
-     * seen. Inside a scroller that has been scrolled, a form's rect runs right
-     * off the top of its container while the container clips it — so the raw
-     * rects say the form covers the sheet header, and the eye says it plainly
-     * does not. Intersecting with every clipping ancestor is what turns a
-     * layout coordinate into a visible one.
-     */
+    // platform: getBoundingClientRect ignores clipping ancestors, so the visible part is the intersection with each one.
     const visibleRect = (el: Element): DOMRect | null => {
       let r: { top: number; left: number; right: number; bottom: number } = el.getBoundingClientRect();
       for (let p = el.parentElement; p; p = p.parentElement) {

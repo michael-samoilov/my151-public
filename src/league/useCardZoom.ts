@@ -1,9 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 
-/**
- * The gym card's own zoom, on top of its fit. At `fit` the card lays out as
- * it always has. `zoomed` makes its frame a scroller of `windowPx` height.
- */
 export type CardZoom =
   | { kind: 'fit' }
   | { kind: 'zoomed'; zoom: number; windowPx: number };
@@ -13,22 +9,16 @@ interface Point {
   y: number;
 }
 
-/** A two-finger gesture in progress. Drawn with a transform; nothing lays out until it ends. */
 interface Pinch {
   startZoom: number;
-  /** Finger distance at the start, in client px. */
   startDistance: number;
-  /** The content point under the start midpoint, in client px from the content's corner at `startZoom`. */
   focus: Point;
-  /** The content's corner once its frame clips, before any transform. */
   origin: Point;
-  /** Client px per px of the content's own, so the transform's translate can be written in its zoomed space. */
   unit: number;
   zoom: number;
   mid: Point;
 }
 
-/** What the layout effect needs to put the focus back under the fingers once the zoom lays out. */
 interface Settle {
   focus: Point;
   scale: number;
@@ -37,13 +27,10 @@ interface Settle {
 
 const FIT: CardZoom = { kind: 'fit' };
 const ZOOM_RANGE = { mobile: { min: 1, max: 4 }, desktop: { min: 1, max: 2.5 } };
-/** A pinch that ends below this returns the card to its fit. */
-const SNAP = 1.05;
+const MIN_KEPT_PINCH_ZOOM = 1.05;
 
 function frameStyle(state: CardZoom): CSSProperties {
-  // The browser never pinch-zooms the page over the card: this frame takes
-  // the pinch. A finger on a cell then always reaches the drag, which a
-  // zoomed page took for its own pan.
+  // platform: `touch-action: pan-x pan-y` stops the browser pinch-zooming the page over the card, so this frame takes the pinch.
   if (state.kind === 'fit') return { touchAction: 'pan-x pan-y' };
   return {
     touchAction: 'pan-x pan-y',
@@ -53,7 +40,6 @@ function frameStyle(state: CardZoom): CSSProperties {
   };
 }
 
-/** From the frame's top, or the pane's when the frame starts above it, to the pane's bottom. */
 function windowHeight(frame: HTMLElement): number {
   const pane = frame.closest('[data-lg-viewport]');
   const top = frame.getBoundingClientRect().top;
@@ -63,15 +49,6 @@ function windowHeight(frame: HTMLElement): number {
   return Math.max(0, paneTop + pane.clientHeight - Math.max(top, paneTop));
 }
 
-/**
- * A two-finger pinch over the gym card zooms the card inside its own frame,
- * never the page, so one finger keeps the gestures it has at the fit: on a
- * filled cell it drags, anywhere else it pans the zoomed card.
- *
- * `contentRef` is the fitted block. The card zoom multiplies its fit
- * (`fitStyle`), and the fit holds while the card is zoomed. The zoom returns
- * to `fit` when `cardIndex` changes.
- */
 export function useCardZoom(
   cardIndex: number,
   contentRef: RefObject<HTMLDivElement | null>,
@@ -131,9 +108,7 @@ export function useCardZoom(
       const { state: now } = live.current;
       const startZoom = now.kind === 'zoomed' ? now.zoom : 1;
       const box = content.getBoundingClientRect();
-      // Clipped rather than scrolled while the content is transformed: a
-      // scroller clamps its scroll to content that shrinks under a pinch, and
-      // the clip also keeps the growing card off the toolbar above it.
+      // platform: A scroller clamps its scroll to content that shrinks under a transform, so the frame clips while a pinch transforms the content.
       frame.style.overflow = 'clip';
       const clipped = content.getBoundingClientRect();
       content.style.transformOrigin = '0 0';
@@ -155,7 +130,7 @@ export function useCardZoom(
       content.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
     };
     const commit = (p: Pinch) => {
-      const zoomed = p.zoom >= SNAP;
+      const zoomed = p.zoom >= MIN_KEPT_PINCH_ZOOM;
       const next: CardZoom = zoomed
         ? { kind: 'zoomed', zoom: p.zoom, windowPx: windowHeight(frame) }
         : { kind: 'fit' };
@@ -182,8 +157,7 @@ export function useCardZoom(
       commit(pinch);
       pinch = null;
     };
-    // iOS reports a touch pinch as gesture events too, and zooms the page on
-    // them unless they are cancelled. A trackpad pinch is left to the page.
+    // platform: iOS reports a touch pinch as gesture events too and zooms the page unless they are cancelled.
     const onGesture = (event: Event) => {
       if (pinch) event.preventDefault();
     };

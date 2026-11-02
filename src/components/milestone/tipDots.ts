@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
-/** Every button a tip or its follow-up can mark. Each one carries `data-tip-target` with its id. */
 const TIP_TARGETS = [
   'dex-analytics',
   'dex-view',
@@ -15,7 +14,6 @@ const TIP_TARGETS = [
 
 export type TipTarget = (typeof TIP_TARGETS)[number];
 
-/** Each lit target, with the targets that light once the person visits it. */
 type Dots = Readonly<Partial<Record<TipTarget, readonly TipTarget[]>>>;
 
 const STORAGE_KEY = 'p151-tip-dots-v1';
@@ -41,7 +39,7 @@ function readDots(): Dots {
 function writeDots(dots: Dots) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dots));
-  } catch { /* Storage can be unavailable in private browsing. */ }
+  } catch { /* platform: Storage access can throw in private browsing. */ }
 }
 
 const useTipDots = create<{ dots: Dots }>(() => ({ dots: readDots() }));
@@ -51,11 +49,6 @@ function commit(dots: Dots) {
   useTipDots.setState({ dots });
 }
 
-/**
- * A tip marks its target with a dot when the tip appears. The dot outlives the tip,
- * reloads included, and goes only when the person visits the target. `then` names
- * the targets that get their own dot at that visit.
- */
 export function showTipDot(target: TipTarget, then: readonly TipTarget[] = []) {
   const { dots } = useTipDots.getState();
   const current = dots[target];
@@ -68,7 +61,6 @@ export function useTipDot(target: TipTarget): boolean {
   return useTipDots((s) => s.dots[target] !== undefined);
 }
 
-/** Clears the target's dot once the person is on the place it opens, and lights its follow-ups. */
 export function useTipVisit(target: TipTarget, visited: boolean) {
   useEffect(() => {
     if (!visited) return;

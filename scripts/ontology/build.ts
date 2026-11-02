@@ -1,12 +1,3 @@
-/**
- * The ontology build and check.
- *
- *   npm run ontology:check   load, resolve, check, and compare every generated file; writes nothing
- *   npm run ontology:build   the same, then write the generated files
- *
- * Generated files: src/data/pokemon.json (the Dex catalog), src/data/generated/league.json (what the League
- * catalog adds to it), and data/ontology/reports/tool-verdicts.json.
- */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

@@ -28,8 +28,7 @@ if (process.argv.includes('--check')) {
 }
 
 const { chromium } = await import('playwright');
-// Playwright pins one browser revision. The image's unversioned symlink
-// outlives an upgrade to a revision it lacks (see playwright.config.ts).
+// platform: Playwright pins one browser revision, and the image's unversioned symlink outlives an upgrade to a revision it lacks.
 const imageChromium = process.env.PLAYWRIGHT_BROWSERS_PATH && resolve(process.env.PLAYWRIGHT_BROWSERS_PATH, 'chromium');
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (imageChromium && existsSync(imageChromium) ? imageChromium : undefined),

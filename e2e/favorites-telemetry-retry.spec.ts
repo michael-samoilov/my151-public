@@ -1,10 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
-// The Picker sends no beacon until a Pokémon is placed.
-const seed=(page:Page)=>page.addInitScript(()=>localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7}},version:3})));
+const seedPlacedFavorite=(page:Page)=>page.addInitScript(()=>localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7}},version:3})));
 for(const failure of ['network','500','429','contended'] as const){
  test(`retries ${failure} with one stable request identity`,async({page},testInfo)=>{
   const requests:Record<string,unknown>[]=[];
-  await seed(page);
+  await seedPlacedFavorite(page);
   await page.route('**/api/favorites',async route=>{
    requests.push(route.request().postDataJSON());
    if(requests.length===1){
@@ -23,7 +22,7 @@ for(const failure of ['network','500','429','contended'] as const){
 }
 test('bounds repeated failure to three attempts and keeps the same exported operation ID',async({page},testInfo)=>{
  const requests:Record<string,unknown>[]=[];
- await seed(page);
+ await seedPlacedFavorite(page);
  await page.route('**/api/favorites',async route=>{const body=route.request().postDataJSON();requests.push(body);await route.fulfill({status:body.kind==='export'?500:200,json:body.kind==='export'?{error:'temporary'}:{ok:true}});});
  await page.goto('/favorite-pokemon-picker?lang=en');await page.getByTestId('favorites-export-open').click();
  await expect(page.getByTestId('favorites-export-save')).toBeEnabled({timeout:30_000});
@@ -35,7 +34,7 @@ test('bounds repeated failure to three attempts and keeps the same exported oper
 });
 test('an old acknowledgment does not suppress a newer board that undoes a change',async({page},testInfo)=>{
  const requests:Record<string,unknown>[]=[];let release:()=>Promise<void>=async()=>{};
- await seed(page);
+ await seedPlacedFavorite(page);
  await page.route('**/api/favorites',async route=>{
   requests.push(route.request().postDataJSON());
   if(requests.length===1){release=()=>route.fulfill({json:{ok:true}});return;}

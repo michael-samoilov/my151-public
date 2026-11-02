@@ -34,10 +34,6 @@ function tabLabelClass(selected: boolean) {
   return cn(LABEL_ANIM, selected && LABEL_ACTIVE, LABEL_WIDE);
 }
 
-// Each name is condensed to the room its column has while the widest tab label
-// shows, so it fits on every tab and keeps one width as tabs change. The
-// breakpoints match LABEL_ACTIVE and LABEL_WIDE: no labels below 380px, the
-// active one up to 640px, and all three from there.
 function useFitTitle() {
   const nav = useRef<HTMLDivElement>(null);
   const fullName = useRef<HTMLSpanElement>(null);
@@ -135,8 +131,6 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
         style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}
       >
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-          {/* The heading always holds the full name, for search and screen
-              readers. Phones see the Tools menu name in its place. */}
           <h1 className={cn(TOOL_NAME, 'max-[680px]:sr-only')}>
             <span ref={fullName} className="inline-block origin-left leading-none">{t('home.dex.title')}</span>
           </h1>

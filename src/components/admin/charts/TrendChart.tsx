@@ -44,10 +44,6 @@ function subSize(numSize: number): number {
   return Math.max(7, Math.round(numSize * 0.55));
 }
 
-/**
- * A count drawn at a line's end. It always equals the line's newest point. The unit names what
- * that point counts: a day name for a calendar day, or a duration for a window that ends now.
- */
 interface EndLabel {
   unit: string;
   count: number;
@@ -63,7 +59,6 @@ function measureWindowLabelPx({ unit, count, lowerBound }: EndLabel, numSize: nu
   return n + 2 + ctx.measureText(unit).width;
 }
 
-/** Space a month name keeps before the next one. */
 const MONTH_LABEL_GAP = 3;
 
 function axisTextPx(text: string, fontSize: number): number {
@@ -146,7 +141,6 @@ function TrendChart({
     const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
     const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
     const days = series.map((p) => p.day);
-    // On these ranges the daily line ends on the last 24 hours; only the 7d range ends on the calendar day.
     const daily = chartDailyValues(series);
     const weekly = chartWeeklyValues(series, historyOriginDay);
     const monthly = chartMonthlyValues(series);
@@ -340,7 +334,7 @@ function TrendChart({
               const overflow = Math.max(0, (bottom?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2 + (bottom?.growth ? growthFontSize(numSize) + 4 : 0));
               for (const label of gutterLabels) label.y -= overflow;
               const children = gutterLabels.map(label => countLabel(label.name, label.end, label.color, x, label.y, numSize, label.growth));
-              // Labels reorder as lines toggle; match windows by name to preserve their transforms.
+              // platform: ECharts merges custom-series children by index; byName keeps each label's transform when lines toggle.
               return { type: 'group', $mergeChildren: 'byName', children };
             },
           },

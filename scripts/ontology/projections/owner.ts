@@ -1,7 +1,3 @@
-/**
- * Which tool rows a form belongs under. No sprite URLs, so the ontology build can import it
- * without the app's path aliases.
- */
 import type { ResolvedForm, StateKind } from '../../../src/ontology/model';
 import type { Ontology } from '../resolve';
 
@@ -14,7 +10,6 @@ function regionOf(ontology: Ontology, form: ResolvedForm): string | null {
   return form.states.length ? regionOf(ontology, ontology.forms.get(form.enteredFrom[0])!) : form.coordinates.region;
 }
 
-/** The Picker's ownerId: a Dex row owns itself; a form of a regional Dex row belongs to it; everything else to the species. */
 export function pickerOwner(ontology: Ontology, form: ResolvedForm): ResolvedForm {
   const legacyOwner = ontology.authored.legacy.picker.owners[form.id];
   if (legacyOwner) return ontology.forms.get(legacyOwner)!;

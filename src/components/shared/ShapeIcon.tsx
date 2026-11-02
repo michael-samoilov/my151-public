@@ -13,7 +13,7 @@ export function ShapeIcon({ shape, className }: { shape: ShapeName; className?: 
       src={shapeIconPath(shape)}
       alt=""
       aria-hidden
-      className={cn('object-contain dark:invert', className)}
+      className={cn('object-contain', className)}
     />
   );
 }

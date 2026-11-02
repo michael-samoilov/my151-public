@@ -8,8 +8,6 @@ import { FEEDBACK_MESSAGE_MAX_CHARS, FEEDBACK_MIN_CHARS } from '../src/lib/feedb
 
 const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
-/** Serialized context cap. Rejected rather than truncated — a silently clipped
- *  context is worse than none, because it reads as complete. */
 export const MAX_CONTEXT_CODE_UNITS = 4096;
 const MIN_DWELL_MS = 2000;
 const GLOBAL_HOURLY_CAP = 200;

@@ -5,10 +5,8 @@ import { cardShades } from './theme';
 
 const MIN_SEPARATION = 5;
 
-/** The cell holds white glyphs and white text (WCAG AA large text). */
-const CELL_MIN_CONTRAST = 3;
-/** The spacer band holds small bold white text (WCAG AA normal text). */
-const BAND_MIN_CONTRAST = 4.5;
+const CELL_CONTRAST_WCAG_AA_LARGE_TEXT = 3;
+const BAND_CONTRAST_WCAG_AA_NORMAL_TEXT = 4.5;
 
 function closestPair(key: 'cell' | 'band'): { pair: string; distance: number } {
   let worst = { pair: '', distance: Infinity };
@@ -51,14 +49,14 @@ describe('card shades', () => {
   it('keeps white legible on every cell and band', () => {
     for (const type of TYPE_NAMES) {
       const shades = cardShades(type);
-      expect(contrastWithWhite(shades.cell), `${type} cell`).toBeGreaterThanOrEqual(CELL_MIN_CONTRAST);
-      expect(contrastWithWhite(shades.band), `${type} band`).toBeGreaterThanOrEqual(BAND_MIN_CONTRAST);
+      expect(contrastWithWhite(shades.cell), `${type} cell`).toBeGreaterThanOrEqual(CELL_CONTRAST_WCAG_AA_LARGE_TEXT);
+      expect(contrastWithWhite(shades.band), `${type} band`).toBeGreaterThanOrEqual(BAND_CONTRAST_WCAG_AA_NORMAL_TEXT);
     }
   });
 
   it('gives the no-type ramp the same shape', () => {
     expect(cardShades('none')).toEqual(cardShades(null));
-    expect(contrastWithWhite(cardShades('none').cell)).toBeGreaterThanOrEqual(CELL_MIN_CONTRAST);
+    expect(contrastWithWhite(cardShades('none').cell)).toBeGreaterThanOrEqual(CELL_CONTRAST_WCAG_AA_LARGE_TEXT);
   });
 
   it('paints hover-on-white as a pale tint, not the glyph cell', () => {

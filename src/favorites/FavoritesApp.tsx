@@ -37,7 +37,6 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
-// v2: Icons now starts off. v1 held `1` for nearly everyone, written on the first visit, not chosen.
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v2';
 const FavoritesAnalyticsDashboard = lazy(() => loadChunk(() => import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => loadChunk(() => import('./components/FavoritesExportOverlay')));
@@ -117,7 +116,6 @@ function FavoritesContent({ sel, setSel }: {
   const t = useT();
   useTipVisit('favorites-analytics', currentView === 'analytics');
   useTipVisit('favorites-export', exportOpen);
-  // Opening Analytics is what the unlock tip asked for.
   const dismissAnalyticsTip = analytics.dismiss;
   useEffect(() => {
     if (currentView === 'analytics') dismissAnalyticsTip();
@@ -129,7 +127,7 @@ function FavoritesContent({ sel, setSel }: {
 
   useEffect(() => {
     try { window.localStorage.setItem(ICONS_STORAGE_KEY, showIcons ? '1' : '0'); }
-    catch { /* Storage can be unavailable in private browsing. */ }
+    catch { /* platform: Storage access can throw in private browsing. */ }
   }, [showIcons]);
 
   useEffect(() => {
@@ -207,8 +205,7 @@ function FavoritesContent({ sel, setSel }: {
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <SkipLink />
         <GlobalHeader />
-        {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
-            loses its landmark role, so the panels are plain elements. */}
+        {/* platform: A `<main>` that is also a tab panel loses its landmark role, so the tab panels are plain elements. */}
         <main id={MAIN_ID} tabIndex={-1} className="flex shrink-0 flex-col focus:outline-none">
         <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
           currentView={currentView} exportOpen={exportOpen}

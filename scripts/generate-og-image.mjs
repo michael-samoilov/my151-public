@@ -57,7 +57,7 @@ try{
   if(titleGap<6)throw Error(`${name}: artwork approaches title by less than 6px`);
   reports.push({name,...audit,hardCount:hard.length,titleGap,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
   const path=resolve(out,tools[name].file);const master=resolve(evidence,`${name}.png`);await page.screenshot({path:master});
-  // JPEG at full colour resolution: Chrome's own encoder halves it, which blurs the title's edges.
+  // platform: Chrome's JPEG encoder halves colour resolution and blurs the title's edges, so Pillow encodes the JPEG instead.
   const encoded=spawnSync('python3',['-I','-c',JPEG,master,path],{stdio:'inherit'});
   if(encoded.status!==0)throw Error(`${name}: encoding the JPEG needs python3 with Pillow`);
   console.log(`Wrote ${path} (1200x630)`);

@@ -1,24 +1,4 @@
 #!/usr/bin/env node
-/**
- * Tells IndexNow-participating search engines that my151.app changed, so they
- * recrawl in hours instead of on their own schedule.
- *
- *   npm run indexnow            # submit every URL in public/sitemap.xml
- *   npm run indexnow -- --dry-run
- *   npm run indexnow -- https://my151.app/     # submit specific URLs instead
- *
- * Bing, Yandex, Seznam and Naver participate. Google does NOT — it ignores
- * IndexNow, so Google still recrawls on its own schedule or via Search Console's
- * "Request indexing". Bing is this app's largest search referrer, which is why
- * this exists.
- *
- * Run it AFTER a production deploy is live and verified. Submitting a URL whose
- * new content has not shipped yet just gets the old page recrawled.
- *
- * The key is deliberately public: the protocol authenticates by serving the key
- * back from the host itself (public/<key>.txt), which proves control of the
- * domain. It is not a secret and belongs in version control.
- */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -26,6 +6,7 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const HOST = 'my151.app';
+// platform: IndexNow proves domain control by fetching this key from the host, so the key is public and committed.
 const KEY = 'db3629385ecf9d266eb52f6f38797f3d';
 const KEY_LOCATION = `https://${HOST}/${KEY}.txt`;
 const ENDPOINT = 'https://api.indexnow.org/indexnow';
@@ -46,7 +27,7 @@ if (!urlList.length) {
   process.exit(1);
 }
 
-// Every URL must be on HOST or IndexNow rejects the whole batch with 422.
+// platform: IndexNow rejects the whole batch with 422 when any URL is not on HOST.
 const foreign = urlList.filter((u) => new URL(u).host !== HOST);
 if (foreign.length) {
   console.error(`These URLs are not on ${HOST}, which would fail with 422:`);
@@ -64,9 +45,7 @@ if (dryRun) {
   process.exit(0);
 }
 
-// Verify the key file actually serves before submitting: a missing or mismatched
-// key is the usual cause of a 403, and checking first turns that into a clear
-// message instead of an opaque rejection.
+// platform: A missing or mismatched key file is the usual cause of an IndexNow 403, so the script checks the file first.
 let served;
 try {
   const res = await fetch(KEY_LOCATION);
@@ -91,9 +70,7 @@ const res = await fetch(ENDPOINT, {
 
 const text = await res.text().catch(() => '');
 
-// An egress proxy sitting in front of this script also answers with 4xx, and its
-// 403 means something completely different from IndexNow's 403. Detect that first,
-// or the output blames the key file for a network-policy problem.
+// platform: An egress proxy also answers 4xx, and its 403 means a network policy, not an IndexNow key problem.
 if (/not in allowlist|network egress|proxy/i.test(text)) {
   console.error(`\n${res.status} — blocked before reaching IndexNow, by a network policy:`);
   console.error(text.trim());

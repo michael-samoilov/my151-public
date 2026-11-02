@@ -14,8 +14,6 @@ declare global { interface Window { p151HomeArtwork?: ArtworkController } }
 
 import { mobileArtwork, MOBILE_MEDIA, EMPTY_IMAGE, artworkUrl, poseMedia } from './artwork-data';
 
-// The controller owns resource attributes after parsing. Read its committed
-// snapshot once so hydration and later locale updates retain those resources.
 function Picture({ id, resources, ...props }: {
   id: string; resources: PictureResources;
 } & Omit<ComponentProps<'img'>, 'src' | 'srcSet'>) {

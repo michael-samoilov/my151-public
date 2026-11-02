@@ -1,23 +1,4 @@
 #!/usr/bin/env node
-// Measures what a page costs per frame while the window width is dragged.
-//
-//   node scripts/performance/resize.mjs --dist dist --port 4320 --out run.json
-//
-// Serves a build with `vite preview`, opens the page in headless Chromium at
-// `--from` CSS px wide, then steps the width to `--to` and back, `--step` px
-// per animation frame. It records a Chrome trace of the drag and prints the
-// main-thread cost per frame by stage (script, style, layout, paint, image
-// decode, raster) and the callbacks, images, and layouts that take it.
-//
-//   --profile            also prints a CPU profile of the drag (slows it)
-//   --selectors          also prints the slowest CSS selectors (slows it)
-//   --shots 1280,1600    full-page screenshots at those widths, into --shot-dir
-//   --compare a.png b.png  counts the pixels that differ between two screenshots
-//   --geometry out.json  records every element's box at each width instead
-//   --compare-geometry a.json b.json  lists the boxes that differ between two sweeps
-//
-// Headless Chromium rasters in software, so the raster and decode columns are
-// an upper bound for a GPU desktop. The script and layout columns transfer.
 
 import { chromium } from '@playwright/test';
 import { chromiumPath } from './lab-server.mjs';
@@ -66,13 +47,12 @@ async function measure() {
     window.__resizeProbe = { frames, longTasks };
   });
 
-  // Harness floor: the same loop with no width change.
-  const floor = [];
+  const harnessFloor = [];
   for (let i = 0; i < 40; i++) {
     const start = performance.now();
     await setWidth(from);
     await frame();
-    floor.push(performance.now() - start);
+    harnessFloor.push(performance.now() - start);
   }
   await page.evaluate(() => { window.__resizeProbe.frames.length = 0; window.__resizeProbe.longTasks.length = 0; });
 
@@ -124,7 +104,7 @@ async function measure() {
   if (args.shots && args['shot-dir']) {
     fs.mkdirSync(args['shot-dir'], { recursive: true });
     for (const width of String(args.shots).split(',').map(Number)) {
-      // A full-page capture re-applies the context viewport, so set it here.
+      // platform: A Playwright full-page capture re-applies the context viewport, so the viewport is set here.
       await page.setViewportSize({ width, height });
       await frame();
       await page.waitForTimeout(600);
@@ -139,7 +119,7 @@ async function measure() {
   for (const key of Object.keys(after)) delta[key] = after[key] - before[key];
   return {
     label, dist, widths: { from, to, step, count: widths.length }, height, dpr, dragMs,
-    stepMs: summary(stepTimes), floorMs: summary(floor),
+    stepMs: summary(stepTimes), floorMs: summary(harnessFloor),
     frameMs: summary(probe.frames), longTasks: probe.longTasks.length,
     longTaskMs: probe.longTasks.reduce((sum, ms) => sum + ms, 0),
     perFrame: {
@@ -452,8 +432,7 @@ function compareGeometry(fileA, fileB) {
   }
 }
 
-// Runs vite directly, in its own process group, so `stop` ends the server
-// itself and not only a wrapper that would leave it holding the port.
+// platform: Stopping a wrapper process can leave vite holding the port, so vite runs directly in its own process group.
 function serve(outDir, listenPort) {
   const vite = path.join(root, 'node_modules/vite/bin/vite.js');
   const child = spawn(process.execPath, [vite, 'preview', '--outDir', outDir, '--port', String(listenPort), '--strictPort'], {
@@ -463,7 +442,7 @@ function serve(outDir, listenPort) {
   child.stdout.on('data', (chunk) => { log += chunk; });
   child.stderr.on('data', (chunk) => { log += chunk; });
   const stop = () => {
-    try { process.kill(-child.pid, 'SIGTERM'); } catch { /* already gone */ }
+    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
     child.stdout.destroy();
     child.stderr.destroy();
   };
@@ -474,7 +453,7 @@ function serve(outDir, listenPort) {
       try {
         const response = await fetch(`http://localhost:${listenPort}/`);
         if (response.ok) { resolve({ stop }); return; }
-      } catch { /* not up yet */ }
+      } catch {}
       if (Date.now() > deadline) { stop(); reject(new Error(`vite preview did not start: ${log}`)); return; }
       setTimeout(poll, 200);
     };

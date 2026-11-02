@@ -9,14 +9,12 @@ export function pickerShinySprite(id: number): string | null {
   return mon ? shinySpriteUrl(mon.sprite) : null;
 }
 
-/** One option of a pointer cell: a Pokémon in one look, and the source cells that show it in that look. */
 export interface PointerOption {
   id: number;
   shiny: boolean;
   sources: string[];
 }
 
-/** The looks a pointer's source cells show `id` in, normal first, then shiny. */
 function pointerVariants(
   type: TypeAxisId,
   gen: GenAxisId,
@@ -31,7 +29,6 @@ function pointerVariants(
   });
 }
 
-/** A pointer cell's options. A Pokémon that its sources show both normal and shiny is two options. */
 export function pointerOptions(
   type: TypeAxisId,
   gen: GenAxisId,
@@ -41,13 +38,6 @@ export function pointerOptions(
   return pointerPool(type, gen, fills).flatMap((id) => pointerVariants(type, gen, fills, shiny, id));
 }
 
-/**
- * Whether a cell shows its Pokémon shiny. A pick cell is shiny when `shiny`
- * holds the cell's current id, so an entry that a later pick, clear, or
- * repack left behind reads as normal. A pointer cell shows its Pokémon in the
- * look its sources show it in. When they show it both ways, `shiny` holds the
- * user's choice, and the cell stays normal until the user chooses shiny.
- */
 export function isShinyCell(
   fills: Readonly<Record<string, number>>,
   shiny: Readonly<Record<string, number>>,

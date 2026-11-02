@@ -38,8 +38,6 @@ const uiCatalogs = new Map<Locale, Record<string, string>>(
   ]),
 );
 
-//#region 1. Official game text
-
 function gameTextParity(): void {
   const { source, types } = readJson<GameTextSource>(GAME_TEXT_PATH);
   const expectedTypes = Object.keys(types);
@@ -70,8 +68,7 @@ const gameTerms = readJson<GameTermsFixture>(GAME_TERMS_PATH);
 const moveNames = readJson<MoveNamesFixture>(MOVE_NAMES_PATH);
 const SOURCED_KEYS = new Set(gameTerms.terms.map((t) => t.key).filter((k) => !k.startsWith('form.')));
 
-/** HOME's box list adds this after a region name; see build-term-catalogs.ts. */
-const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+const HOME_REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };
 
@@ -97,7 +94,7 @@ function sourcedGameText(): void {
       const key = `region.${id}`;
       const got = catalog[key];
       const theirs = home.text[locale];
-      if (theirs && got !== theirs && theirs !== `${got}${REGION_SUFFIX[locale] ?? ''}`) {
+      if (theirs && got !== theirs && theirs !== `${got}${HOME_REGION_SUFFIX[locale] ?? ''}`) {
         fail('game-text', `catalog says ${JSON.stringify(got)}, ${home.qid} says ${JSON.stringify(theirs)}`, locale, key);
       }
     }
@@ -124,9 +121,6 @@ function sourcedGameText(): void {
     fail('game-text', `src/data/moves.json has ${appMoves.length} moves, ${MOVE_NAMES_PATH} ${Object.keys(moveNames.moves).length}`);
   }
 }
-
-//#endregion
-//#region 2. Placeholder integrity
 
 const placeholders = (text: string): string[] =>
   [...text.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).sort();
@@ -156,39 +150,10 @@ function placeholderIntegrity(): void {
   }
 }
 
-//#endregion
-//#region 3. Untranslated leftovers
-
 const asciiLetters = (s: string) => (s.match(/[A-Za-z]/g) ?? []).length;
 
-/**
- * Catches a locale file that is really just a copy of English.
- *
- * The obvious form of this check — fail whenever a value equals its English
- * counterpart — is the wrong tool for these particular catalogs, and running
- * it proved as much: it flagged French `Poison`, German `Monster` and
- * `Mineral`, and `Ditto` in three languages. Every one of those is correct.
- * `Poison` really is the French type name, `Monster` and `Mineral` really are
- * German words, and `Ditto` is a Pokémon's name, which does not change.
- *
- * That is not a gap in the allow-list, it is the gate asking the wrong
- * question. These are *official* strings: we do not choose them, we source
- * them, so "this matches English" carries no information about whether anyone
- * did the work. An allow-list here would grow one entry per coincidence until
- * it was longer than the catalog and meant nothing.
- *
- * So the question is asked at the level where the answer is informative: has
- * this locale's file been translated *at all*? A whole catalog that matches
- * English is a copy; a scattering of matching proper nouns is just vocabulary.
- * The threshold is generous — no real locale comes close, and Japanese sits at
- * zero — so it fires on the failure it names and nothing else.
- *
- * The per-value ASCII check underneath is the sharp one, and it needs no
- * allow-list: a ja/ko/zh value that is majority Latin letters is untranslated
- * whether or not it happens to match English, because those scripts have no
- * reason to be.
- */
-const COPY_THRESHOLD = 0.6;
+const ENGLISH_COPY_SHARE_LIMIT = 0.6;
+const CJK_LATIN_SHARE_LIMIT = 0.6;
 
 function untranslatedLeftovers(): void {
   const english = termCatalogs.get('en') ?? {};
@@ -199,7 +164,7 @@ function untranslatedLeftovers(): void {
     const entries = Object.entries(catalog);
     const substantive = entries.filter(([, v]) => asciiLetters(v) >= 2);
     const identical = substantive.filter(([k, v]) => v === english[k]);
-    if (substantive.length && identical.length / substantive.length > COPY_THRESHOLD) {
+    if (substantive.length && identical.length / substantive.length > ENGLISH_COPY_SHARE_LIMIT) {
       const pct = Math.round((identical.length / substantive.length) * 100);
       fail(
         'untranslated',
@@ -209,18 +174,13 @@ function untranslatedLeftovers(): void {
     }
 
     for (const [key, value] of entries) {
-      // Sourced game text is held to the games themselves: "X／Y" and
-      // "Pokémon LEGENDS アルセウス" are what the Chinese and Japanese games say.
       if (SOURCED_KEYS.has(key)) continue;
-      if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > 0.6) {
+      if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > CJK_LATIN_SHARE_LIMIT) {
         fail('untranslated', `${JSON.stringify(value)} is mostly ASCII in a CJK locale`, locale, key);
       }
     }
   }
 }
-
-//#endregion
-//#region 4. Unicode hygiene
 
 function unicodeHygiene(): void {
   for (const [locale, catalog] of termCatalogs) {
@@ -236,9 +196,6 @@ function unicodeHygiene(): void {
     }
   }
 }
-
-//#endregion
-//#region 5. CJK safety
 
 function cjkSafety(): void {
   const css = readFileSync('src/index.css', 'utf8');
@@ -284,21 +241,7 @@ function cjkSafety(): void {
   }
 }
 
-//#endregion
-//#region 6. Translated UI strings
-
-/**
- * Values that are legitimately identical to their English source.
- *
- * Listed one by one rather than waved through by a rule, because "it matches
- * English" is exactly what an untranslated string looks like. Each of these is
- * genuinely the same word in that language, and saying so explicitly is what
- * makes the check meaningful for every other key.
- */
 const SAME_AS_ENGLISH_OK = new Set([
-  // The Pokédex builder's sections. Dojo and Tundra are the same loanwords in
-  // these languages; Pika, Pseudo and Fossil are the same one-cell outline
-  // forms. Upgrade and Protector are the item names the games use.
   'de:section.dojo', 'de:archetype.dojo', 'de:sectionTiny.dojo',
   'es:section.dojo', 'es:archetype.dojo', 'es:sectionTiny.dojo',
   'fr:section.dojo', 'fr:archetype.dojo', 'fr:sectionTiny.dojo',
@@ -311,26 +254,24 @@ const SAME_AS_ENGLISH_OK = new Set([
   'de:sectionTiny.pseudo-legendary', 'es:sectionTiny.pseudo-legendary',
   'fr:sectionTiny.pseudo-legendary', 'it:sectionTiny.pseudo-legendary',
   'de:sectionTiny.fossil',
-  'es:sectionTiny.industrial', // Industrial is the Spanish word too, so Indust. is its short form.
-  'de:archetype.evolution-item.sub.9', // Upgrade
-  'it:archetype.evolution-item.sub.9', // Upgrade
-  'es:archetype.evolution-item.sub.19', // Protector
-  'es:chart.header.color', // "Color" is also the Spanish color header.
-  'es:feedback.category.idea', // "Idea" is the Spanish word too.
-  'it:feedback.category.idea', // And the Italian one.
+  'es:sectionTiny.industrial',
+  'de:archetype.evolution-item.sub.9',
+  'it:archetype.evolution-item.sub.9',
+  'es:archetype.evolution-item.sub.19',
+  'es:chart.header.color',
+  'es:feedback.category.idea',
+  'it:feedback.category.idea',
   'de:favorites.axis.starter',
   'de:favorites.generation',
-  // The Acknowledgements panel. "Sprite" is the loanword in French, Spanish
-  // and Italian, and "Generation" is the German noun.
   'de:ack.generation',
   'es:ack.sprites_one', 'es:ack.sprites_other',
   'fr:ack.sprites_one', 'fr:ack.sprites_other',
   'it:ack.sprites_one',
-  'fr:chart.header.type', // Type is the French noun too.
-  'fr:term.shape.squiggle', // Serpent is the French noun as well.
-  'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
-  'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
-  'fr:sort.type', // Type is the French noun too.
+  'fr:chart.header.type',
+  'fr:term.shape.squiggle',
+  'fr:favorites.stats.final',
+  'es:favorites.stats.final',
+  'fr:sort.type',
   'de:poster.separator',
   'es:poster.separator',
   'fr:poster.separator',
@@ -339,36 +280,35 @@ const SAME_AS_ENGLISH_OK = new Set([
   'ko:poster.separator',
   'zh-Hans:poster.separator',
   'zh-Hant:poster.separator',
-  'de:league.tm.mark', // The German games label TMs "TM".
-  'de:league.powerup.dynamax', // Dynamax is the German, French and Italian game term.
+  'de:league.tm.mark',
+  'de:league.powerup.dynamax',
   'fr:league.powerup.dynamax',
   'it:league.powerup.dynamax',
-  'fr:league.badge.mark', // The French games say "Badge".
-  'fr:league.type.word', // Type is the French noun too.
-  'de:league.badge.placeholder', // "Name" is the German noun too.
-  'de:league.view.story', // German games and players say "Story".
-  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie, Categoría and Categoria.
+  'fr:league.badge.mark',
+  'fr:league.type.word',
+  'de:league.badge.placeholder',
+  'de:league.view.story',
+  'fr:league.tm.col.category',
   'es:league.tm.col.category',
   'it:league.tm.col.category',
-  'es:league.tm.col.pp', // PP is the games' own abbreviation in every language but German.
+  'es:league.tm.col.pp',
   'fr:league.tm.col.pp',
   'it:league.tm.col.pp',
   'ja:league.tm.col.pp',
   'ko:league.tm.col.pp',
   'zh-Hans:league.tm.col.pp',
   'zh-Hant:league.tm.col.pp',
-  'fr:feedback.category.bug', // French tech writing uses "Bug".
-  'it:feedback.context.browser', // Italian says "browser".
-  'de:browser.sheet.generation', // "Generation" is the German noun.
+  'fr:feedback.category.bug',
+  'it:feedback.context.browser',
+  'de:browser.sheet.generation',
   'de:browser.subgroupGeneration',
   'de:drilldown.generationTitle',
-  'fr:browser.chip.type', // Type is the French noun.
+  'fr:browser.chip.type',
   'fr:browser.sheet.type',
-  'fr:analytics.dex.nationalShort', // National is the French adjective.
-  'fr:chart.header.score', // French uses "score" for a points total.
-  'es:browser.chip.color', // "Color" is the Spanish noun.
+  'fr:analytics.dex.nationalShort',
+  'fr:chart.header.score',
+  'es:browser.chip.color',
   'es:browser.sheet.color',
-  // "Pokémon" is the word in all four Latin-script languages.
   'de:stage.columnTotal_one',
   'de:stage.columnTotal_other',
   'de:stage.legendUnit',
@@ -381,8 +321,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'it:stage.columnTotal_one',
   'it:stage.columnTotal_other',
   'it:stage.legendUnit',
-  // The footer's Acknowledgements panel. German and French fans say "Sprites",
-  // as do Spanish ones; "Code" is the German and French noun.
   'de:ack.group.sprites',
   'fr:ack.group.sprites',
   'es:ack.group.sprites',
@@ -435,9 +373,6 @@ function translatedUi(): void {
   }
 }
 
-//#endregion
-//#region 7. Length budgets
-
 const LENGTH_BUDGETS: { prefix: string; maxLatin: number; maxCjk: number; why: string }[] = [
   { prefix: 'region.', maxLatin: 12, maxCjk: 6, why: 'region filter chips' },
   { prefix: 'term.color.', maxLatin: 14, maxCjk: 7, why: 'colour filter chips' },
@@ -458,16 +393,7 @@ function lengthBudgets(): void {
   }
 }
 
-//#endregion
-
-//#region Duplicate keys
-
-/**
- * A locale file that lists a key twice still parses: `JSON.parse` keeps the
- * last value and drops the first without a word. Two branches that each
- * translate the same key merge into exactly that, so the gate reads the raw
- * text. The files are flat objects with one key per line.
- */
+// platform: JSON.parse keeps the last value of a duplicate key without an error, so this gate reads the raw text.
 function duplicateKeys(): void {
   for (const dir of [UI_DIR, TERMS_DIR]) {
     for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
@@ -479,8 +405,6 @@ function duplicateKeys(): void {
     }
   }
 }
-
-//#endregion
 
 function main(): void {
   const gates: [string, () => void][] = [

@@ -5,7 +5,6 @@ export interface ToolDef {
   id: string;
   label: string;
   short: string;
-  /** UTC ms. `0` means "before any user" (the first tool). */
   launchedAt: number | null;
 }
 
@@ -35,10 +34,6 @@ export interface EraOverlap {
   since: number | null;
   until: number | null;
   browsers: number;
-  /**
-   * Exclusive region counts. Key is the sorted tool ids the browser used,
-   * joined by `+` (`dex`, `league`, `dex+league`).
-   */
   regions: Record<string, number>;
 }
 

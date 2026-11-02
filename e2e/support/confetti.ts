@@ -3,11 +3,7 @@ import type { Page } from '@playwright/test';
 
 export interface Burst {
   scale: number;
-  /**
-   * The types whose color covers at least `MIN_PIXELS` canvas pixels, 12
-   * frames into the burst. Null when the canvas cannot be read, as with
-   * canvas-confetti's own worker canvas. Undefined until the frame is read.
-   */
+  // platform: canvas-confetti's own worker canvas cannot be read, so types is null there.
   types?: string[] | null;
 }
 
