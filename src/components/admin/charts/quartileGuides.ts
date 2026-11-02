@@ -24,10 +24,12 @@ export function quartileGuideSeries(quartiles: ChartQuartile[], xMin: number, xM
       const text = `${Number(api.value(2))*100}p`;
       const value = format(Number(api.value(3)));
       const textWidth = (ctx?.measureText(`${text} ${value}`).width ?? 70)+8;
+      // A label with no room right of its corner moves left, where the curve runs above the line, so it goes under the line.
+      const under = pos[0]+4 > right-textWidth;
       return {type: 'group' as const, children: [
         {type: 'polyline' as const, shape: {points: [left,pos,bottom]}, style: {stroke: color,lineWidth: 1,lineDash: [3,3],opacity: 0.45,fill: null}},
-        {type: 'text' as const,x: Math.min(pos[0]+4,right-textWidth),y: pos[1]-4,
-          style: {text: `{p|${text}} {v|${value}}`,fill: color,backgroundColor: background,padding: [1,2],fontSize: 9,verticalAlign: 'bottom' as const,
+        {type: 'text' as const,x: Math.min(pos[0]+4,right-textWidth),y: under ? pos[1]+4 : pos[1]-4,
+          style: {text: `{p|${text}} {v|${value}}`,fill: color,backgroundColor: background,padding: [1,2],fontSize: 9,verticalAlign: under ? 'top' as const : 'bottom' as const,
             rich: {p: {fontSize: 9,fontWeight: 600},v: {fontSize: 9}}}},
       ]};
     },
