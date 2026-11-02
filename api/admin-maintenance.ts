@@ -4,6 +4,7 @@ import { DAY_MS, dayStart } from './_aggregate.js';
 import { FUNNEL_DAY_TTL_DAYS } from './_range.js';
 import { ARCHIVED_KEY } from './_archive.js';
 import { rebuildFunnelExclusions } from './_funnelExclusions.js';
+import { foldCountrySplits } from './_foldCountrySplits.js';
 
 // Moves each existing key's expiry later, never earlier, so a rerun is a no-op.
 const EXTEND_EXPIRY = `
@@ -51,6 +52,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const args = [...expireAt, String(Math.floor(now / 1000))];
       const extended = Number(await redis.eval(EXTEND_EXPIRY, keys, args));
       return res.status(200).json({ ok: true, task, checked: keys.length, extended });
+    }
+    if (task === 'fold-country-splits') {
+      const apply = (req.body as { apply?: unknown }).apply === true;
+      const groups = await foldCountrySplits(apply);
+      return res.status(200).json({ ok: true, task, apply, groups });
     }
     if (task === 'funnel-exclusions') {
       const archived = ((await redis.smembers(ARCHIVED_KEY)) ?? []).map(String);
