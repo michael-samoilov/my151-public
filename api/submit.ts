@@ -386,7 +386,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return rec;
     };
 
-    const rawExisting = parseRecord(await redis.hget(CLIENTS_KEY, cid));
+    const readClient = (key: string) =>
+      Promise.all([
+        redis.hget(CLIENTS_KEY, key) as Promise<unknown>,
+        redis.hget(VERSION_KEY, key) as Promise<string | number | null>,
+      ]);
+    const firstRead = await readClient(cid);
+    const rawExisting = parseRecord(firstRead[0]);
     let effectiveCid = cid;
     if (rawExisting && geo.country && rawExisting.country && geo.country !== rawExisting.country) {
       const existingSet = new Set(rawExisting.latestIds);
@@ -397,10 +403,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     for (let attempt = 0; attempt < 6; attempt++) {
-      const [rawStr, verStr] = await Promise.all([
-        redis.hget(CLIENTS_KEY, effectiveCid) as Promise<unknown>,
-        redis.hget(VERSION_KEY, effectiveCid) as Promise<string | number | null>,
-      ]);
+      const [rawStr, verStr] =
+        attempt === 0 && effectiveCid === cid ? firstRead : await readClient(effectiveCid);
       const existing = parseRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
 
@@ -415,14 +419,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true, capped: true });
       }
       if (ok === 1) {
-        const activityAck = await appendMinuteActivity(cid, 'dex', body.activity, receivedAt);
         const prevEver = new Set(existing?.everIds ?? []);
         const newlyEver = rec.everIds.filter((id) => !prevEver.has(id));
-        if (newlyEver.length > 0) await bumpDexPickFreq(newlyEver);
-        if (kind === 'export') {
-          const highlight = await recordToolExport('pokedex', ids);
-          return res.status(200).json({ ok: true, highlight, activityAck });
-        }
+        const [activityAck, , highlight] = await Promise.all([
+          appendMinuteActivity(cid, 'dex', body.activity, receivedAt),
+          bumpDexPickFreq(newlyEver),
+          kind === 'export' ? recordToolExport('pokedex', ids) : undefined,
+        ]);
+        if (kind === 'export') return res.status(200).json({ ok: true, highlight, activityAck });
         return res.status(200).json({ ok: true, activityAck });
       }
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));

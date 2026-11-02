@@ -44,8 +44,11 @@ export async function storeReport(
   };
 
   const dailyKey = `${COUNT_PREFIX}:${dayKey(now)}`;
-  await redis.lpush(FEEDBACK_KEY, JSON.stringify(record));
-  await redis.ltrim(FEEDBACK_KEY, 0, MAX_STORED - 1);
-  await redis.hincrby(dailyKey, report.category, 1);
-  await redis.expire(dailyKey, DAILY_TTL_S);
+  await redis
+    .pipeline()
+    .lpush(FEEDBACK_KEY, JSON.stringify(record))
+    .ltrim(FEEDBACK_KEY, 0, MAX_STORED - 1)
+    .hincrby(dailyKey, report.category, 1)
+    .expire(dailyKey, DAILY_TTL_S)
+    .exec();
 }
