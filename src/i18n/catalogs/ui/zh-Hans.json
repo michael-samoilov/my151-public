@@ -729,7 +729,6 @@
   "chart.header.underIndexed1": "偏低",
   "chart.header.underIndexed2": "← 选择比例",
   "chart.header.evolution": "进化",
-  "analytics.avgCompare": "你的平均：{yours}，全国图鉴平均：{national}。",
   "analytics.bst.heading": "种族值总和分布",
   "analytics.dex.national": "全国图鉴",
   "analytics.meanNational": "全国平均",

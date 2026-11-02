@@ -5,7 +5,7 @@ import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { t, formatNumber } from '@/i18n';
+import { t } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import type { TypeName } from '@/types/pokemon';
 
@@ -24,8 +24,6 @@ const NAT_HIST = '#94a3b8';
 const YOURS = '#ef4444';
 
 const TITLE_LH = 20;
-const SUB_SIZE = 10;
-const SUB_LH = 14;
 const LEGEND_SIZE = 10;
 const CHART_TEXT = 10;
 
@@ -35,22 +33,6 @@ function font(weight: number, size: number): string {
   return `${weight} ${size}px 'Inter Variable', system-ui, sans-serif`;
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let cur = '';
-  for (const w of words) {
-    const test = cur ? `${cur} ${w}` : w;
-    if (ctx.measureText(test).width > maxW && cur) {
-      lines.push(cur);
-      cur = w;
-    } else {
-      cur = test;
-    }
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
 
 export function drawExportHistogram(
   ctx: CanvasRenderingContext2D,
@@ -126,7 +108,7 @@ export function drawExportHistogram(
     ctx.beginPath(); ctx.moveTo(point.x, cy - 4); ctx.lineTo(point.x + 4, cy); ctx.lineTo(point.x, cy + 4); ctx.lineTo(point.x - 4, cy); ctx.closePath(); ctx.fill();
     if (point.exact) { ctx.strokeStyle = NAT_HIST; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1; }
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    let labelX = point.labelX - (point.anchor === 'end' ? point.width : point.anchor === 'middle' ? point.width / 2 : 0);
+    let labelX = point.labelX - (point.anchor === 'end' ? point.width : 0);
     for (const run of point.runs) {
       ctx.font = font(run.bold ? 700 : 400, CHART_TEXT);
       ctx.fillText(run.text, labelX, cy + point.labelRail * 17);
@@ -147,6 +129,10 @@ export function drawExportHistogram(
   return height;
 }
 
+function bstMeanRail() {
+  return { labels: { yours: t('favorites.stats.meanYours'), options: t('analytics.meanNational'), exact: t('favorites.stats.meanExact') } };
+}
+
 function genIcon(gen: number): IconDrawer {
   return (ctx, x, y, w, h) => {
     const height = Math.min(h, w / TYPE_BADGE_ASPECT);
@@ -163,7 +149,6 @@ function typeBadgeIcon(type: TypeName): IconDrawer {
 
 interface CardSpec {
   title: string;
-  subtitle: string;
   legend?: boolean;
   chartH: (draw: boolean) => number;
   drawChart: (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
@@ -196,33 +181,28 @@ function renderPanel(
   const cards: CardSpec[] = [
     {
       title: t('stats.type.title'),
-      subtitle: '',
       chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, t('chart.header.type'), dr, BUTTERFLY_OPTIONS),
       drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, t('chart.header.type'), true, BUTTERFLY_OPTIONS),
     },
     {
       title: t('stats.gen.title'),
-      subtitle: '',
       chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, t('chart.header.gen'), dr, BUTTERFLY_OPTIONS),
       drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, t('chart.header.gen'), true, BUTTERFLY_OPTIONS),
     },
     {
       title: t('stats.bst.title'),
-      subtitle: t('analytics.avgCompare', { yours: formatNumber(data.bst.yoursAvg, { maximumFractionDigits: 1 }), national: formatNumber(data.bst.nationalAvg, { maximumFractionDigits: 1 }) }),
       legend: true,
-      chartH: (dr) => drawExportHistogram(ctx, 0, 0, data.bst, heights.bst, dr),
-      drawChart: (c, x, y) => drawExportHistogram(c, x, y, data.bst, heights.bst, true),
+      chartH: (dr) => drawExportHistogram(ctx, 0, 0, data.bst, heights.bst, dr, bstMeanRail()),
+      drawChart: (c, x, y) => drawExportHistogram(c, x, y, data.bst, heights.bst, true, bstMeanRail()),
     },
   ];
 
   const boxes: StatsCardBox[] = [];
   let cursorY = 0;
   for (const card of cards) {
-    ctx.font = font(400, SUB_SIZE);
-    const subLines = wrapText(ctx, card.subtitle, CONTENT_W);
     const legendH = card.legend ? LEGEND_SIZE + 8 : 0;
     const chartH = card.chartH(false);
-    const contentH = TITLE_LH + 2 + subLines.length * SUB_LH + 8 + legendH + chartH;
+    const contentH = TITLE_LH + 2 + 8 + legendH + chartH;
     const cardH = CARD_PADY * 2 + contentH;
     boxes.push({ y: cursorY, h: cardH });
 
@@ -236,14 +216,7 @@ function renderPanel(
       let y = cursorY + CARD_PADY;
       const x = CARD_PADX;
       drawExportStatsTitle(ctx, card.title, x, y, CONTENT_W);
-      y += TITLE_LH + 2;
-      ctx.fillStyle = MUTED;
-      ctx.font = font(400, SUB_SIZE);
-      for (const ln of subLines) {
-        ctx.fillText(ln, x, y + SUB_SIZE);
-        y += SUB_LH;
-      }
-      y += 8;
+      y += TITLE_LH + 2 + 8;
       if (card.legend) {
         drawLegend(ctx, x, y);
         y += legendH;

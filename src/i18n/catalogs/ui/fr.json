@@ -745,7 +745,6 @@
   "chart.header.underIndexed1": "MOINS",
   "chart.header.underIndexed2": "← FRÉQUENT",
   "chart.header.evolution": "STADE",
-  "analytics.avgCompare": "Votre moyenne : {yours}, moyenne nationale : {national}.",
   "analytics.bst.heading": "Répartition du total des statistiques",
   "analytics.dex.national": "Pokédex National",
   "analytics.meanNational": "Moy. nationale",

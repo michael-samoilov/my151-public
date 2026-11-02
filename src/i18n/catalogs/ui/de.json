@@ -745,7 +745,6 @@
   "chart.header.underIndexed1": "UNTERM",
   "chart.header.underIndexed2": "← SCHNITT",
   "chart.header.evolution": "STUFE",
-  "analytics.avgCompare": "Dein Durchschnitt: {yours}, Nationaler Pokédex: {national}.",
   "analytics.bst.heading": "Verteilung der Statuswertsumme",
   "analytics.dex.national": "Nationaler Pokédex",
   "analytics.meanNational": "Nationaler Ø",
