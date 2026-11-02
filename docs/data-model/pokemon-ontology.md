@@ -105,7 +105,7 @@ Height, weight, abilities, gender ratio, egg cycles, base friendship, genus, evo
 - **Numbering.** A default form's number is its National Dex number. Every other new form takes the next number from 20001, so nobody can read an `AppId` as a PokeAPI ID again. PokeAPI IDs are separate properties with their own brands.
 - **Collisions.** Where a Dex number and a Picker number disagree today, the Dex number wins. The Dex, the League, and `/api/submit` change nothing.
 - **Migrations.** The Picker's four colliding numbers (`10179`, `10180`, `10191`, `10227`) move in one saved-data migration. The League's saved power-up array position becomes a form ID in another.
-- **Analytics.** Stored analytics records keep their numbers. The admin reports decode an old Picker number by the record's write time, so no stored record is rewritten.
+- **Analytics.** Each Picker snapshot carries its own version. A version 1 snapshot holds the old Picker numbers, and the server translates them through `src/data/generated/picker-v1-numbers.json` when it reads the snapshot. Write time cannot decide this: a tab opened before a deploy keeps its old code for up to 7 days and keeps sending old numbers. A stored record is rewritten in the new numbers only when its client sends again.
 
 App code crosses between numbers and IDs only at two functions, `fromAppId` and `appId`, at the storage, URL, and API boundaries.
 

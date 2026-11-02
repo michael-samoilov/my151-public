@@ -39,7 +39,7 @@ export function compactFormLabels(entries: IdMapEntry[], forms: Record<string, s
     suffix = suffix.replace(/-breed$|-plumage$|-flower$/g, '');
     return suffix || region ? [{ key: String(entry.appId), species: entry.speciesId, region, suffix }] : [];
   });
-  if (forms['picker:10227']) identities.push({ key:'picker:10227', species:892, suffix:'rapid-strike-gmax' });
+  if (forms[20001]) identities.push({ key:'20001', species:892, suffix:'rapid-strike-gmax' });
   const grouped = new Map<string, FormIdentity[]>();
   for (const identity of identities) {
     const key = `${identity.species}:${identity.region ?? ''}`;

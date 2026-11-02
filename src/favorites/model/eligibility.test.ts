@@ -112,7 +112,7 @@ describe('eligibleFor', () => {
       expect(positions.every((position) => position >= 0), String(family)).toBe(true);
       expect(Math.max(...positions) - Math.min(...positions)).toBe(family.length - 1);
     };
-    contiguous(ids('legendary', 8), [892, 10191]);
+    contiguous(ids('legendary', 8), [892, 10227]);
     contiguous(ids('legendary', 8), [893, 10192]);
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);

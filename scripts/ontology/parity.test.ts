@@ -11,7 +11,6 @@ import { revisedSprite } from '../../src/lib/spriteUrl';
 import { buildOntology } from './build';
 import { inLeague, leagueRows } from './projections/league';
 import { pickerMetadata, pickerRecords } from './projections/favorites';
-import { pickerId } from './projections/owner';
 
 const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const built = buildOntology(root);
@@ -51,7 +50,7 @@ describe('ontology parity with today’s catalogs', () => {
 
   it('rebuilds every Favorite Picker metadata record', () => {
     const today = allPickerMons().map((mon) => pickerPokemonMetadata(mon)!).map(({ archetypes: _archetypes, ...record }) => record);
-    const byPickerId = new Map([...ontology.forms.values()].map((form) => [pickerId(ontology, form), form]));
+    const byPickerId = new Map([...ontology.forms.values()].map((form) => [form.appId as number, form]));
     const rebuilt = today.map((record) => pickerMetadata(ontology, byPickerId.get(record.id)!)).map(({ archetypes: _archetypes, ...record }) => ({ ...record, sprite: revisedSprite(record.sprite!) }));
     expect(differences('picker metadata', today, rebuilt), FIX).toEqual([]);
     expect(today.length).toBeGreaterThan(1000);
@@ -70,7 +69,7 @@ describe('ontology parity with today’s catalogs', () => {
     const league = new Set(leagueCatalog().map((row) => row.id));
     const dex = new Set(dexCatalog.map((row) => row.id));
     for (const form of ontology.forms.values()) {
-      expect(form.tools.picker === 'in', `${form.id} picker`).toBe(picker.has(pickerId(ontology, form)));
+      expect(form.tools.picker === 'in', `${form.id} picker`).toBe(picker.has(form.appId));
       expect(form.tools.dex === 'in', `${form.id} dex`).toBe(dex.has(form.appId));
       expect(inLeague(form), `${form.id} league row`).toBe(league.has(form.appId));
     }

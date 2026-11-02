@@ -43,7 +43,7 @@ function rules(ontology: Ontology, inventory: ReadonlyMap<number, PkhexInventory
     const base = ontology.forms.get(formId as never)!.base;
     return base ? sourceOfStated(base, fact) : undefined;
   };
-  const pickerId = (form: string) => ontology.authored.legacy.picker.ids[form] ?? ontology.forms.get(form as never)!.appId;
+  const pickerId = (form: string) => ontology.authored.legacy.picker.v1Ids[form] ?? ontology.forms.get(form as never)!.appId;
   const LEGENDARY_PARADOX = new Set(['walking-wake', 'iron-leaves', 'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown']);
   const kept = (decision: string, note: string): Review => ({ status: 'kept', decision, note, auto: true });
   return (row) => {

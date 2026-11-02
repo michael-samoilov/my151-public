@@ -33,8 +33,8 @@ for (const locale of locales) {
 test('picker identity shifts retain the correct localized species', async ({ page }, testInfo) => {
   await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-ground-8').click();
-  const yamask = page.getByTestId('favorites-pick-10179');
-  const stunfisk = page.getByTestId('favorites-pick-10180');
+  const yamask = page.getByTestId('favorites-pick-10178');
+  const stunfisk = page.getByTestId('favorites-pick-10179');
   await expect(yamask).toHaveAttribute('aria-label', 'Galarian Yamask');
   await expect(stunfisk).toHaveAttribute('aria-label', 'Galarian Stunfisk');
   await testInfo.attach('shifted-species.json', {

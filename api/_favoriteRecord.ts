@@ -1,7 +1,10 @@
 import {mergeAttention,type AttentionPayload} from './_attention.js';
 import {checkpointRecording, mergeSeenDays, retiredCapture, sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
 import cellData from './_favoriteCells.json' with { type: 'json' };
+import v1Numbers from '../src/data/generated/picker-v1-numbers.json' with { type: 'json' };
 const cells = cellData as Record<string, {kind:string;ids?:number[];sources?:string[]}>;
+const LEDGER_NUMBER_BY_V1: Record<string, number> = v1Numbers;
+const ledgerNumber = (v1: number): number => LEDGER_NUMBER_BY_V1[v1] ?? v1;
 export const FAVORITE_CLIENTS_KEY = 'favorites:clients';
 export const FAVORITE_VERSION_KEY = 'favorites:clients:ver';
 export const FAVORITE_TOTAL_CELLS = 257;
@@ -9,7 +12,7 @@ export const FAVORITE_SESSION_GAP_MS = 30 * 60_000;
 export type FavoriteExportKind = 'full' | 'simplified';
 export type FavoriteBeaconKind = 'progress' | 'completion' | 'export' | 'export-shown' | 'nudge-shown';
 export interface FavoriteSnapshot {
-  v: 1;
+  v: 2;
   fills: Record<string, number>;
   filled: number;
   picksFilled: number;
@@ -79,9 +82,10 @@ export interface FavoriteBeaconInput {
 export function parseFavoriteSnapshot(value: unknown): FavoriteSnapshot | null {
   if (!value || typeof value !== 'object') return null;
   const o = value as Record<string, unknown>;
-  if (o.v !== 1 || !o.fills || typeof o.fills !== 'object' || Array.isArray(o.fills)) return null;
+  if ((o.v !== 1 && o.v !== 2) || !o.fills || typeof o.fills !== 'object' || Array.isArray(o.fills)) return null;
   if (Object.keys(o.fills).length > 264) return null;
-  const raw = o.fills as Record<string, unknown>;
+  const numbered = (value: unknown): unknown => o.v === 1 && typeof value === 'number' ? ledgerNumber(value) : value;
+  const raw = Object.fromEntries(Object.entries(o.fills).map(([key, id]) => [key, numbered(id)]));
   const fills: Record<string, number> = {};
   for (const [key, cell] of Object.entries(cells)) {
     const id = raw[key];
@@ -94,9 +98,10 @@ export function parseFavoriteSnapshot(value: unknown): FavoriteSnapshot | null {
     if (cell.kind === 'pointer' && typeof id === 'number' && cell.sources?.some(source => fills[source] === id)) fills[key] = id;
   }
   const filled = Object.keys(fills).length;
-  const rawShiny = o.shiny && typeof o.shiny === 'object' && !Array.isArray(o.shiny) ? o.shiny as Record<string, unknown> : {};
+  const rawShiny = o.shiny && typeof o.shiny === 'object' && !Array.isArray(o.shiny)
+    ? Object.fromEntries(Object.entries(o.shiny).map(([key, id]) => [key, numbered(id)])) : {};
   const shiny = Object.fromEntries(Object.entries(rawShiny).filter((entry): entry is [string, number] => fills[entry[0]] === entry[1]));
-  return {v:1,fills,filled,picksFilled,pointersFilled:filled-picksFilled,uniqueIds,...(Object.keys(shiny).length ? {shiny} : {})};
+  return {v:2,fills,filled,picksFilled,pointersFilled:filled-picksFilled,uniqueIds,...(Object.keys(shiny).length ? {shiny} : {})};
 }
 export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
   let value = raw;

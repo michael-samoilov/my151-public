@@ -160,7 +160,7 @@ const pokeapiSchema = object({
   })),
   forms: record(object({ id: number, identifier: string, pokemon: string, isDefault: boolean, isBattleOnly: boolean, isMega: boolean, versionGroup: string })),
 });
-const legacyPickerSchema = object({ ids: record(number), names: record(string), owners: record(string) });
+const legacyPickerSchema = object({ v1Ids: record(number), names: record(string), owners: record(string) });
 const legacyDexSchema = object({ formOrder: array(object({ form: string, after: string })), standInSprites: record(string) });
 const chainsSchema = record(number);
 
@@ -354,7 +354,7 @@ function linkOntology(ontology: AuthoredOntology, problem: (file: string, code: 
     if (!forms.has(form)) problem(ledger, 'dangling-link', `rows[${index}]`, `"${form}" is not a form`);
   });
   const legacyPicker = 'data/ontology/legacy/picker.json';
-  for (const section of ['ids', 'names', 'owners'] as const) {
+  for (const section of ['v1Ids', 'names', 'owners'] as const) {
     for (const [form, value] of Object.entries(ontology.legacy.picker[section])) {
       if (!forms.has(form)) problem(legacyPicker, 'dangling-link', `${section}.${form}`, `"${form}" is not a form`);
       if (section === 'owners' && !forms.has(String(value))) problem(legacyPicker, 'dangling-link', `${section}.${form}`, `"${value}" is not a form`);

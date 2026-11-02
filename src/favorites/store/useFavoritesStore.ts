@@ -10,6 +10,7 @@ import {
   type PackMove,
 } from '../model/packing';
 import { pointerPool, prunePointers } from '../model/pointers';
+import { FAVORITES_STORE_VERSION, ledgerPicks } from '../model/savedNumbers';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
 export const SAVED_PICKS_KEY = 'p151-hub-picks';
@@ -105,10 +106,13 @@ export const useFavoritesStore = create<FavoritesState>()(
     }),
     {
       name: FAVORITES_STORAGE_KEY,
-      version: 4,
-      migrate: (saved) => {
-        const previous = saved as { fills?: Record<string, number> };
-        return { ...previous, fills: migrateFavoriteFills(previous.fills ?? {}) } as FavoritesState;
+      version: FAVORITES_STORE_VERSION,
+      migrate: (saved, version) => {
+        const previous = saved as { fills?: Record<string, number>; shiny?: Record<string, number> };
+        const numbered = version < FAVORITES_STORE_VERSION;
+        const fills = numbered ? ledgerPicks(previous.fills ?? {}) : previous.fills ?? {};
+        const shiny = numbered ? ledgerPicks(previous.shiny ?? {}) : previous.shiny ?? {};
+        return { ...previous, fills: migrateFavoriteFills(fills), shiny } as FavoritesState;
       },
     },
   ),

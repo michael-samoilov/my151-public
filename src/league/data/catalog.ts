@@ -88,8 +88,7 @@ const compareBrowserOrder = (a: number, b: number): number =>
 
 function leagueFavoritePickerId(id: number): number | undefined {
   const remapped = ({
-    10179: 10178, 10180: 10179, 10191: 10227,
-    10318: 10147, 10323: 11006, 10324: 11007,
+    20001: 10227, 10318: 10147, 10323: 11006, 10324: 11007,
   } as Record<number, number>)[id] ?? id;
   if (byId.has(remapped)) return remapped;
   const owner = (favoriteBrowserIds as Record<number, number>)[id];

@@ -25,7 +25,7 @@ export interface PickerMon {
   ownerId: number;
 }
 
-type PickerFields = Partial<Omit<PickerMon, 'sprite'>> & { spriteStem?: string };
+type PickerFields = Partial<Omit<PickerMon, 'id' | 'sprite'>> & { spriteStem?: string };
 type PickerForm = PickerFields & { id: number; owner: number; name: string };
 const GENERATED = favorites as unknown as {
   dexOverrides: Record<string, PickerFields>;
@@ -59,7 +59,7 @@ function asGen(n: number): GenNumber {
 
 const ALL: PickerMon[] = [];
 const BY_ID = new Map<number, PickerMon>();
-const DEX_ID_BY_PICKER_ID = new Map<number, number>();
+const DEX_ROW_IDS = new Set<number>();
 const LINE_BY_ID = new Map<number, number>();
 const listedOrder = (ids: number[]) => new Map(ids.map((id, index) => [id, index]));
 const FORM_ORDER_BY_OWNER = new Map([
@@ -67,6 +67,7 @@ const FORM_ORDER_BY_OWNER = new Map([
   [646, listedOrder([646, 10022, 11107, 10023, 11108])],
   [800, listedOrder([800, 10155, 10156, 10157])],
   [1024, listedOrder([1024, 10276, 10277])],
+  [892, listedOrder([892, 10227, 10226, 20001])],
 ]);
 const COSPLAY_PIKACHU_FORM_ORDER = new Map(
   [10085, 10080, 10081, 10082, 10083, 10084].map((id, index) => [id, 10080 + index]),
@@ -80,17 +81,16 @@ function pushMon(mon: PickerMon): void {
 
 for (const p of SPECIES) {
   const { spriteStem, ...fields } = GENERATED.dexOverrides[p.id] ?? {};
-  const pickerId = fields.id ?? p.id;
-  DEX_ID_BY_PICKER_ID.set(pickerId, p.id);
-  LINE_BY_ID.set(pickerId, p.evolutionChainId);
+  DEX_ROW_IDS.add(p.id);
+  LINE_BY_ID.set(p.id, p.evolutionChainId);
   pushMon({
-    id: pickerId,
+    id: p.id,
     name: fields.name ?? p.name,
     types: fields.types ?? p.types,
     generation: asGen(fields.generation ?? p.generation),
     sprite: spriteStem ? pokemonSpriteUrl(spriteStem) : revisedSprite(p.sprite),
     source: fields.source ?? 'dex',
-    ownerId: fields.ownerId ?? pickerId,
+    ownerId: fields.ownerId ?? p.id,
   });
 }
 
@@ -117,11 +117,7 @@ export function getPickerMon(id: number): PickerMon | undefined {
 }
 
 export function pickerDexId(mon: PickerMon): number {
-  return DEX_ID_BY_PICKER_ID.get(mon.id) ?? DEX_ID_BY_PICKER_ID.get(mon.ownerId) ?? mon.ownerId;
-}
-
-export function pickerNameId(mon: PickerMon): number {
-  return DEX_ID_BY_PICKER_ID.get(mon.id) ?? mon.id;
+  return DEX_ROW_IDS.has(mon.id) ? mon.id : mon.ownerId;
 }
 
 export function isRegional(mon: PickerMon): boolean {
@@ -163,7 +159,7 @@ export function hasListedFormOrder(ownerId: number): boolean {
 }
 
 export function nationalDexNumber(mon: PickerMon): number {
-  const owner = pickerNameId(getPickerMon(mon.ownerId) ?? mon);
+  const owner = (getPickerMon(mon.ownerId) ?? mon).id;
   return (altFormSpecies as Record<string, number>)[owner] ?? owner;
 }
 

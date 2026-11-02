@@ -4,7 +4,7 @@ import {favoritePicks, favoritePreference, fitFavoritePreference, favoriteSpecie
 import {parseFavoriteSnapshot, type FavoriteRecord} from '../../../api/_favoriteRecord';
 
 const record = (fills: Record<string, number>): FavoriteRecord => ({
-  latest: {v: 1, fills},
+  latest: {v: 2, fills},
 } as FavoriteRecord);
 const cells = cellData as Record<string, {kind: string; ids?: number[]; sources?: string[]}>;
 
@@ -62,11 +62,11 @@ describe('favorite preference evidence', () => {
 
   it('preserves species boundaries across regional IDs, evolutions, and lookalikes', () => {
     expect(favoriteSpeciesId(10100)).toBe(26);
-    expect(favoriteSpeciesId(10179)).toBe(562);
-    expect(favoriteSpeciesId(10180)).toBe(618);
+    expect(favoriteSpeciesId(10178)).toBe(562);
+    expect(favoriteSpeciesId(10179)).toBe(618);
     expect(favoriteSpeciesId(11072)).toBe(555);
-    expect(favoriteSpeciesId(10191)).toBe(892);
     expect(favoriteSpeciesId(10227)).toBe(892);
+    expect(favoriteSpeciesId(20001)).toBe(892);
     expect(favoriteSpeciesId(133)).not.toBe(favoriteSpeciesId(196));
     expect(favoriteSpeciesId(50)).not.toBe(favoriteSpeciesId(960));
     for (const cell of Object.values(cells)) {
