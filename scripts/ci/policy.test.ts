@@ -125,8 +125,9 @@ test('a selection over the browser budget runs the cheapest spec for each change
   const filter = new RegExp(plan.suitePattern);
   expect(filter.test('desktop league-card-slots.spec.ts seats')).toBe(true);
   expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
-  expect(filter.test('desktop admin-flows.spec.ts funnels')).toBe(false);
-  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 1 .*ci:full/);
+  expect(filter.test('desktop hub-prerender.spec.ts holds the page')).toBe(true);
+  expect(plan.estimateMs).toBeLessThanOrEqual(BROWSER_BUDGET_MS);
+  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 4 within the 3-minute budget.*ci:full/);
 });
 
 test('a changed spec runs itself, with its file name escaped', () => {

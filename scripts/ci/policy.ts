@@ -127,8 +127,12 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
     if (covering.some(file => cover.has(file))) continue;
     cover.add(covering.reduce((cheapest, file) => (cost(file) < cost(cheapest) ? file : cheapest)));
   }
+  for (const file of [...specs].filter(file => !cover.has(file)).sort((a, b) => cost(a) - cost(b))) {
+    if (estimate([...cover, file]) > BROWSER_BUDGET_MS) break;
+    cover.add(file);
+  }
   const estimateMs = estimate(cover);
-  selection.reasons.push(`Broad change: ${specs.size} spec files run the changed files, about ${Math.ceil(all / 60_000)} min. Running ${cover.size} that run each changed file at least once, about ${Math.ceil(estimateMs / 60_000)} min. The post-release full run covers the rest; run npm run ci:full before release for a risky change.`);
+  selection.reasons.push(`Broad change: ${specs.size} spec files run the changed files, about ${Math.ceil(all / 60_000)} min. Running ${cover.size} within the ${BROWSER_BUDGET_MS / 60_000}-minute budget, including one for each changed file. The post-release full run covers the rest; run npm run ci:full before release for a risky change.`);
   return { ...selection, effectiveMode: 'affected', estimateMs, suitePattern: pattern(cover) };
 }
 
