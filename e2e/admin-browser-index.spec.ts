@@ -20,7 +20,7 @@ function dexRecord(i: number, now: number) {
   const ids = Array.from({ length: wide ? 151 : 1 + (i % 9) }, (_, k) => k + 1);
   return {
     cid, firstTs: end - ms, firstAt: new Date(end - ms).toISOString(), lastTs: end, lastAt: new Date(end).toISOString(),
-    submits: 2, sessions: wide ? 99 : 1, sessionMs: [ms], sessionLog: [{ ts: end, ids }], maxDepth: 3, localHour: 12,
+    submits: 2, sessions: wide ? 99 : 1, sessionMs: [ms], sessionLog: wide ? [{ ts: end - ms, ids: [1] }, { ts: end, ids }] : [{ ts: end, ids }], maxDepth: 3, localHour: 12,
     everIds: ids, latestIds: ids, completed: wide, exported: wide,
     country: i >= N - 5 ? 'NZ' : COUNTRIES[i % COUNTRIES.length], device: 'Mobile', os: 'iOS', browser: 'Safari',
     tz: wide ? 'Australia/Adelaide' : 'UTC', lang: 'en-US', locale: 'en',
@@ -47,6 +47,8 @@ async function stub(page: Page) {
   for (let i = 0; i < 30; i++) leagueClients[leagueOnly(i)] = JSON.stringify(leagueRecord(leagueOnly(i), now - i * 90 * MIN));
   const archived = new Set<string>();
   const source = (): DashboardSource => ({ clients, archived: [...archived], funnel: {}, funnelWindow: null, leagueClients, favoriteClients: {} });
+  const bounced = buildDashboard(source(), { range: 'all' }, now).browsers.dex.filter((row) => row.bounced).map((row) => row.cid);
+  expect(bounced, 'the Active filter hides a bounced fixture row').toEqual([]);
   const asked: string[] = [];
   await page.route('**/api/submissions?**', (route) => {
     const qs = new URL(route.request().url()).searchParams;
