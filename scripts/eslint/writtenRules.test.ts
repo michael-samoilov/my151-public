@@ -103,6 +103,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: "declare const redis: { get(k: string): Promise<unknown> };\nexport const r = (keys: string[]) => Promise.all(keys.map((k) => redis.get(k)));",
     good: "declare const redis: { mget(...k: string[]): Promise<unknown> };\nexport const r = (keys: string[]) => redis.mget(...keys);",
   },
+  'page-visitor-hashes': {
+    file: 'api/sample.ts',
+    bad: "import { redis, CLIENTS_KEY } from './_shared.js';\nexport const all = await redis.hgetall(CLIENTS_KEY);",
+    good: "import { CLIENTS_KEY } from './_shared.js';\nimport { readHashInPages } from './_hashScan.js';\nexport const all = await readHashInPages(CLIENTS_KEY);",
+  },
 };
 
 const eslint = new ESLint({ cwd: process.cwd() });

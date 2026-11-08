@@ -29,7 +29,11 @@ vi.mock('@upstash/redis', () => {
     async srem(key: string, field: string) {call('srem', [key, field]); return local.sets.get(key)?.delete(field) ? 1 : 0;},
     async lrange(...args: unknown[]) {call('lrange', args); return [];},
     async llen(...args: unknown[]) {call('llen', args); return 0;},
-    async hscan(...args: unknown[]) {call('hscan', args); return [0, []];},
+    async hscan(key: string, cursor: string|number, options?: {count?: number}) {
+      call('hscan', [key, cursor, options]);
+      const entries = Object.entries(hash(key)), start = Number(cursor), end = start + (options?.count ?? 10);
+      return [end >= entries.length ? '0' : String(end), entries.slice(start, end).flat()];
+    },
     async mget(...args: unknown[]) {call('mget', args); return [null, null];},
     async mset(...args: unknown[]) {call('mset', args); return 'OK';},
     async eval(script: string, keys: string[], args: (string|number)[]) {
