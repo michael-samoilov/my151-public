@@ -29,7 +29,7 @@ changed=$(git diff --name-only "$previous" "$current" 2>/dev/null) || { echo "Ca
 
 
 
-not_site='^(docs|e2e|\.claude|\.github|\.cursor)/|^[^/]+\.md$|^(src|scripts|api)/.*\.md$|\.test\.ts$|^scripts/performance/|^eslint-suppressions\.json$'
+not_site='^(docs|e2e|\.claude|\.github|\.cursor)/|^[^/]+\.md$|^(src|scripts|api)/.*\.md$|\.test\.ts$|^scripts/(performance|ci|release)/|^eslint-suppressions\.json$'
 site=$(printf '%s\n' "$changed" | grep -v -E "$not_site")
 if [ -z "$site" ]; then
   echo "Only docs, tests, or tooling changed since $previous: skip."

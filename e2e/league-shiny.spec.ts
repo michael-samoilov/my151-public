@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { blankLeague } from './support/leagueSeed';
 import { SHINY_STAR } from '../src/components/shiny/shinyMarks';
 

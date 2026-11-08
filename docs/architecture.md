@@ -85,7 +85,7 @@ Dex uses [`src/lib/exportImage.ts`](../src/lib/exportImage.ts), League uses [`sr
 Painters share selected statistics, labels, and geometry with the live UI.
 Page and export rendering still need separate verification.
 
-The [`CI runner`](../scripts/ci/run.ts) selects verification through [`policy.ts`](../scripts/ci/policy.ts).
+The [`CI runner`](../scripts/ci/run.ts) selects browser specs through [`policy.ts`](../scripts/ci/policy.ts) and the [test map](../scripts/ci/test-map.json), which records the source files each spec runs.
 Browser tests use API fixtures, so server logic and saved-data migrations also have direct checks.
 The [build policy](../CLAUDE.md#build-verification) defines final gates and the required evidence for changed behavior.
 Historical captures follow [evidence retention](evidence-retention.md), separate from application assets and regression fixtures.

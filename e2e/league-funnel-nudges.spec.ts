@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from './support/test';
 import { filledSlotsLeague, fiveLineCardLeague, sevenGymsLeague } from './support/leagueSeed';
 
 type EventBody = { event?: string; cid?: string; tool?: string; page?: string };

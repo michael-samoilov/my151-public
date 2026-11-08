@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import {expect,test} from '@playwright/test';
+import {expect,test} from './support/test';
 test.describe('Picker admin @viewport',()=>{
   test('shows captured progress and exclusive export views, then scrubs a read-only session snapshot',async({page},testInfo)=>{
     await openAdmin(page, '/?admin&demo');

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { blankLeague } from './support/leagueSeed';
 
 const STORE_KEY = 'personal-151-pokedex-v3';

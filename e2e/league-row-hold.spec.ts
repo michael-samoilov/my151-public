@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 // platform: Playwright's touch helpers cannot hold a contact still for a timed activation, so touch goes through CDP.
 

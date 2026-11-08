@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 // platform: Safari has no CSS scroll anchoring, so IntroCard corrects the scroll itself where CSS.supports('overflow-anchor') is false.
 test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, () => {

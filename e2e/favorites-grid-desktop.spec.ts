@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 test('desktop grid keeps native sprites, aligned rows, and a larger minimap', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'desktop table geometry');

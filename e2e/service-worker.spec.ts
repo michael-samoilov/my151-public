@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 for (const path of ['/', '/pokedex-builder', '/favorite-pokemon-picker', '/custom-gym-leader']) {
   test(`a first visit to ${path} registers the service worker`, async ({ page }, testInfo) => {

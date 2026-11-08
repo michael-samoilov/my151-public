@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { seededLeague } from './support/leagueSeed';
 
 const saved = JSON.stringify({ state: { fills: { 'fire|1': 10034, 'grass|1': 1, 'favorite|favorite': 11001 } }, version: 3 });

@@ -21,7 +21,7 @@ export function fingerprint(root: string): string {
   for (const name of readdirSync(root)) if (/^\.env(?:\.|$)/.test(name)) files.push(name);
   const hash = createHash('sha256').update(process.version);
   for (const name of [...new Set(files)].sort()) {
-    if (/^(?:\.audit\/|node_modules\/|dist\/|test-results\/|playwright-report\/)/.test(name)) continue;
+    if (/^(?:\.audit\/|node_modules\/|dist\/|test-results\/|playwright-report\/|scripts\/ci\/test-map\.json$)/.test(name)) continue;
     const path = join(root, name);
     hash.update(name).update('\0');
     if (!existsSync(path)) { hash.update('deleted'); continue; }

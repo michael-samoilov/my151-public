@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 const LATENCY_MS = 250;
 const INSTANT_MS = 100;

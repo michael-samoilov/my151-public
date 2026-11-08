@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 const SEEDS: [string, string][] = [
   ['personal-151-pokedex-v3', JSON.stringify({ state: { sections: { starter: [1] } }, version: 10 })],

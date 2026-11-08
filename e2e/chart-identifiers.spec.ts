@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './support/test';
 import { filledPicker, openStatsFlow, nativeImage, toggleStats } from './support/statsFrameEvidence';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 import { observeChartPaint, paintedAxes } from './support/chartPaintEvidence';

@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 import { buildDashboard } from '../api/_dashboard';
 import type { SearchProviderSnapshot, SearchSeriesPoint } from '../src/lib/searchPerformance';
 import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView';

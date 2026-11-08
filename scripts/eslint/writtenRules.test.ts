@@ -43,6 +43,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: "export const i = <img src='/a.png' />;",
     good: "export const i = <img src='/a.png' alt='' />;",
   },
+  'specs-record-their-files': {
+    file: 'e2e/sample.spec.ts',
+    bad: "import { test } from '@playwright/test';\ntest('x', () => {});",
+    good: "import { test } from './support/test';\ntest('x', () => {});",
+  },
   'no-viewport-type': {
     file: 'src/components/sample.tsx',
     bad: "export const c = 'text-[clamp(1rem,4' + 'vw,2rem)]';".replace("' + '", ''),

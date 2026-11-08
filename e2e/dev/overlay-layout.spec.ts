@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { auditLayout } from '../support/layoutAudit';
 
 const KEYBOARD_HEIGHTS = [null, 338, 300, 260, 220] as const;

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 import { openStatsFlow, nativeImage, toggleStats, framePixels, type StatsTool } from './support/statsFrameEvidence';
 test.setTimeout(90000);
 for (const tool of ['picker', 'dex'] as StatsTool[]) {

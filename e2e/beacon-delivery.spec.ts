@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const STORE_KEY = 'personal-151-pokedex-v3';
 const CID = 'e2e-beacon-cid-00000001';

@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { afterEach, expect, test } from 'vitest';
-import { changedPaths, parseOptions, select } from './policy';
+import { BROWSER_BUDGET_MS, changedPaths, parseOptions, select } from './policy';
+import type { TestMap } from './testMap';
 
 const temporary: string[] = [];
 afterEach(() => temporary.splice(0).forEach(path => rmSync(path, { recursive: true, force: true })));
@@ -21,34 +22,6 @@ function repository() {
   git('commit', '-qm', 'baseline');
   return { root, git };
 }
-
-test('unusable history escalates rather than skipping browser coverage', () => {
-  expect(select('affected', [], null, 'base unavailable').effectiveMode).toBe('full');
-});
-
-test('unknown, shared, API, saved-data, and dependency changes cannot take the fast route', () => {
-  for (const path of ['src/new-tool.ts', 'src/lib/utils.ts', 'api/auth.ts', 'src/favorites/store/useFavoritesStore.ts', 'package-lock.json', 'scripts/ci/run.ts']) {
-    const plan = select('affected', [path], 'abc');
-    expect(plan.effectiveMode, path).toBe('full');
-    expect(plan.reasons.join(' '), path).toContain(path);
-  }
-});
-
-test('owned tool changes select complete spec families alongside smoke', () => {
-  const plan = select('affected', ['src/favorites/FavoritesApp.tsx', 'src/league/main.tsx'], 'abc');
-  expect(plan.effectiveMode).toBe('affected');
-  const filter = new RegExp(plan.suitePattern);
-  expect(filter.test('e2e/favorites-export.spec.ts test')).toBe(true);
-  expect(filter.test('e2e/league-powerups.spec.ts test')).toBe(true);
-  expect(filter.test('e2e/wordmark-home.spec.ts test @ci-smoke')).toBe(true);
-  expect(filter.test('e2e/admin-picker-page.spec.ts ordinary test')).toBe(false);
-});
-
-test('only an explicit known documentation diff skips code checks; clean input still runs smoke', () => {
-  expect(select('affected', ['docs/handoff/example.md', 'README.md'], 'abc').effectiveMode).toBe('docs');
-  expect(select('affected', ['src/README.md'], 'abc').effectiveMode).toBe('full');
-  expect(select('affected', [], 'abc').effectiveMode).toBe('fast');
-});
 
 test('Git collection includes commits, renames, deletions, dirty changes and untracked filenames with whitespace', () => {
   const { root, git } = repository();
@@ -69,7 +42,8 @@ test('Git collection includes commits, renames, deletions, dirty changes and unt
 
 test('invalid CLI modes, missing option values and unknown flags fail at the boundary', () => {
   for (const args of [['quick'], ['fast', '--base'], ['fast', '--surprise']]) expect(() => parseOptions(args)).toThrow();
-  expect(parseOptions(['affected', '--base', '--strange-ref', '--plan'])).toEqual({ mode: 'affected', base: '--strange-ref', plan: true });
+  expect(parseOptions(['affected', '--base', '--strange-ref', '--plan'])).toEqual({ mode: 'affected', base: '--strange-ref', plan: true, recordMap: false });
+  expect(parseOptions(['full', '--record-map']).recordMap).toBe(true);
 });
 
 test('viewport filtering intersects smoke instead of overriding it', async () => {
@@ -82,12 +56,6 @@ test('viewport filtering intersects smoke instead of overriding it', async () =>
 });
 
 
-test('cross-tool models, exports, and reused components expand to full coverage', () => {
-  for (const path of ['src/favorites/components/FavoritesGrid.tsx', 'src/favorites/model/catalog.ts', 'src/favorites/export/snapshot.ts', 'src/league/theme.ts', 'src/league/components/ExportPreview3D.tsx', 'src/league/model/engine.ts', 'src/league/LeagueApp.tsx', 'src/components/view/ViewPage.tsx']) {
-    expect(select('affected', [path], 'abc').effectiveMode, path).toBe('full');
-  }
-});
-
 test('staged changes remain visible when the worktree reverses them', () => {
   const { root, git } = repository();
   const path = join(root, 'src/favorites/original.ts');
@@ -98,34 +66,91 @@ test('staged changes remain visible when the worktree reverses them', () => {
 });
 
 
-test('ordinary Dex, League, and Picker component changes retain affected coverage', () => {
-  for (const path of ['src/components/pokedex/PokedexGrid.tsx', 'src/league/components/CardHelp.tsx', 'src/favorites/components/FavoritesHeader.tsx']) {
-    expect(select('affected', [path], 'abc').effectiveMode, path).toBe('affected');
-  }
-});
-
 test('ignored local build environment files cannot silently bypass affected selection', () => {
   const { root } = repository();
   writeFileSync(join(root, '.git/info/exclude'), '.env*\n');
   writeFileSync(join(root, '.env.production.local'), 'VITE_EXAMPLE=value');
   const changes = changedPaths(root, 'HEAD');
   expect(changes.paths).toContain('.env.production.local');
-  expect(select('affected', changes.paths, changes.baseSha).effectiveMode).toBe('full');
+  expect(select('affected', changes.paths, changes.baseSha, undefined, { map }).reasons.join(' ')).toContain('.env.production.local');
 });
 
-test('agent tooling keeps cheap gates and smoke; settings, hooks, and app inputs in the same diff keep their coverage', () => {
-  for (const path of ['.claude/skills/verify-my151/harness/lib/visual.ts', '.claude/skills/how/SKILL.md', '.claude/agents/poteto-agent.md', '.claude/vendor/open-pstack/upstream/README.md']) {
-    expect(select('affected', [path], 'abc'), path).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
-  }
-  for (const path of ['.claude/settings.json', '.claude/hooks/session-start.sh', '.claude/new-hook-config.json']) {
-    expect(select('affected', [path], 'abc').effectiveMode, path).toBe('full');
-  }
-  expect(select('affected', ['.claude/skills/verify-my151/SKILL.md', 'src/favorites/FavoritesApp.tsx'], 'abc').effectiveMode).toBe('affected');
-  expect(select('affected', ['.claude/skills/verify-my151/SKILL.md', 'src/lib/utils.ts'], 'abc').effectiveMode).toBe('full');
+const map: TestMap = {
+  version: 1,
+  sourceCommit: 'abc',
+  recordedAt: '2026-11-08T00:00:00.000Z',
+  specs: {
+    'e2e/hub-prerender.spec.ts': { ms: 20_000, tests: 12, unmapped: true },
+    'e2e/sweeps/home-sweep.spec.ts': { ms: 40_000, tests: 22, unmapped: false },
+    'e2e/league-card-slots.spec.ts': { ms: 110_000, tests: 30, unmapped: false },
+    'e2e/admin-flows.spec.ts': { ms: 66_000, tests: 17, unmapped: false },
+    'e2e/favorites-picker.spec.ts': { ms: BROWSER_BUDGET_MS * 3, tests: 80, unmapped: false },
+  },
+  sources: {
+    'src/components/home/HomePage.tsx': ['e2e/sweeps/home-sweep.spec.ts'],
+    'src/league/LeagueApp.tsx': ['e2e/league-card-slots.spec.ts'],
+    'src/lib/utils.ts': ['e2e/admin-flows.spec.ts', 'e2e/favorites-picker.spec.ts', 'e2e/league-card-slots.spec.ts', 'e2e/sweeps/home-sweep.spec.ts'],
+  },
+};
+
+test('an app file selects the specs that ran it and the specs that run no browser code, never other areas', () => {
+  const plan = select('affected', ['src/components/home/HomePage.tsx'], 'abc', undefined, { map });
+  expect(plan.effectiveMode).toBe('affected');
+  const filter = new RegExp(plan.suitePattern);
+  expect(filter.test('desktop sweeps/home-sweep.spec.ts sweeps the hub')).toBe(true);
+  expect(filter.test('desktop hub-prerender.spec.ts holds the page')).toBe(true);
+  expect(filter.test('desktop wordmark-home.spec.ts reaches the hub @ci-smoke')).toBe(true);
+  expect(filter.test('desktop admin-flows.spec.ts funnels')).toBe(false);
+  expect(filter.test('desktop league-card-slots.spec.ts seats')).toBe(false);
+  expect(plan.estimateMs).toBe(30_000);
 });
 
-test('form-name sources that only the name generator reads skip browser families; regenerated catalogs and test fixtures do not', () => {
-  expect(select('affected', ['docs/i18n/sources/my151-form-names.json'], 'abc')).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
-  expect(select('affected', ['docs/i18n/sources/my151-form-names.json', 'src/i18n/names/de.json'], 'abc').effectiveMode).toBe('full');
-  expect(select('affected', ['docs/i18n/sources/pokemon-formnames.json'], 'abc').effectiveMode).toBe('full');
+test('a change that no browser test runs keeps the cheap gates and smoke, and never escalates to full', () => {
+  for (const path of ['scripts/eslint/writtenRules.mjs', 'scripts/ci/run.ts', 'api/auth.ts', '.claude/settings.json', 'src/favorites/model/catalog.test.ts', 'docs/i18n/sources/pokemon-formnames.json']) {
+    expect(select('affected', [path], 'abc', undefined, { map }), path).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
+  }
 });
+
+test('an app input with no recorded test, a build script, and a dependency change defer to the release checks instead of the full suite', () => {
+  for (const path of ['src/index.css', 'src/assets/home/mobile/manifest.json', 'package-lock.json', 'scripts/prerender-hub.ts']) {
+    const plan = select('affected', [path], 'abc', undefined, { map, buildScripts: new Set(['scripts/prerender-hub.ts']) });
+    expect(plan.effectiveMode, path).not.toBe('full');
+    expect(plan.reasons.join(' '), path).toContain(`${path}; the release smoke and the post-release full run`);
+  }
+});
+
+test('a selection over the browser budget runs the cheapest spec for each changed file and names the full run', () => {
+  const plan = select('affected', ['src/lib/utils.ts', 'src/league/LeagueApp.tsx'], 'abc', undefined, { map });
+  expect(plan.effectiveMode).toBe('affected');
+  const filter = new RegExp(plan.suitePattern);
+  expect(filter.test('desktop league-card-slots.spec.ts seats')).toBe(true);
+  expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
+  expect(filter.test('desktop hub-prerender.spec.ts holds the page')).toBe(true);
+  expect(plan.estimateMs).toBeLessThanOrEqual(BROWSER_BUDGET_MS);
+  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 4 within the 3-minute budget.*ci:full/);
+});
+
+test('a changed spec takes the budget before other broad specs', () => {
+  const plan = select('affected', ['src/lib/utils.ts', 'e2e/admin-flows.spec.ts'], 'abc', undefined, { map });
+  const filter = new RegExp(plan.suitePattern);
+  expect(filter.test('desktop admin-flows.spec.ts funnels')).toBe(true);
+  expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
+});
+
+test('a changed spec runs itself, with its file name escaped', () => {
+  const plan = select('affected', ['e2e/sweeps/home-sweep.spec.ts'], 'abc', undefined, { map });
+  expect(plan.suitePattern).toBe('@ci-smoke|sweeps/home-sweep\\.spec\\.ts');
+  expect(new RegExp(plan.suitePattern).test('desktop sweeps/home-sweepXspec.ts')).toBe(false);
+});
+
+test('without a test map or a usable base, app changes run smoke and say why', () => {
+  expect(select('affected', ['src/league/LeagueApp.tsx'], 'abc').reasons.join(' ')).toContain('No test map');
+  expect(select('affected', [], null, 'base unavailable')).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
+});
+
+test('only an explicit documentation diff skips code checks; clean input still runs smoke', () => {
+  expect(select('affected', ['docs/handoff/example.md', 'README.md'], 'abc', undefined, { map }).effectiveMode).toBe('docs');
+  expect(select('affected', [], 'abc', undefined, { map }).effectiveMode).toBe('fast');
+  expect(select('full', ['README.md'], 'abc', undefined, { map })).toMatchObject({ effectiveMode: 'full', suitePattern: '.*' });
+});
+

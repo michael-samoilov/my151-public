@@ -58,3 +58,5 @@ docs/**/local/
 # create under the repository root while they run. Ignored so the CI build receipt, which
 # fingerprints every tracked and untracked file, does not change while the unit lane runs.
 /.budget-fixture-*/
+
+.claude/worktrees/

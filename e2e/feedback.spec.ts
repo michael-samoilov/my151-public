@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page, type Route } from './support/test';
 import { seedDex } from './support/dexSeed';
 
 interface Captured {

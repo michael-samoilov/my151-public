@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 import { seedDex, TUNE_URL } from '../support/dexSeed';
 
 const TYPE_NAMES: Record<string, { fire: string; psychic: string }> = {

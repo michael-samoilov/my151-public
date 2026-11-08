@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { blankLeague, seededLeague } from './support/leagueSeed';
 
 // platform: dnd-kit's layout-shift compensation reads a held cell's lift as a page shift, and touch-action pan-y lets the pane pan under a drag.

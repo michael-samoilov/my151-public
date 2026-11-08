@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { blankLeague } from './support/leagueSeed';
 
 test.use({ viewport: { width: 393, height: 800 }, hasTouch: true, isMobile: true });

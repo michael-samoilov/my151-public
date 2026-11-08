@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { seededLeague } from './support/leagueSeed';
 
 const MOBILE = { width: 390, height: 844 } as const;

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 const HOME_HREF = '/';

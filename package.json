@@ -47,7 +47,9 @@
     "ci:fast": "node --import tsx scripts/ci/run.ts fast",
     "ci:affected": "node --import tsx scripts/ci/run.ts affected",
     "ci:full": "node --import tsx scripts/ci/run.ts full",
-    "ci:pre-push": "node --import tsx scripts/ci/pre-push.ts"
+    "ci:pre-push": "node --import tsx scripts/ci/pre-push.ts",
+    "release:smoke": "node --import tsx scripts/release/smoke.ts smoke",
+    "release:live": "node --import tsx scripts/release/smoke.ts live"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

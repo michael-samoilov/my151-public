@@ -1,4 +1,4 @@
-import { expect, test, type CDPSession, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type CDPSession, type Page, type TestInfo } from './support/test';
 import { seededLeague } from './support/leagueSeed';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });

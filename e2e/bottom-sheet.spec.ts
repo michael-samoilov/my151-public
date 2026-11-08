@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 test.describe('bottom sheet', { tag: '@viewport' }, () => {
