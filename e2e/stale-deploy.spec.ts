@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from './support/test';
 import { readFile } from 'node:fs/promises';
 
 test.use({ serviceWorkers: 'block' });

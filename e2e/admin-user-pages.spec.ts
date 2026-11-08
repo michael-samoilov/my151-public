@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 async function openDemo(page: import('@playwright/test').Page) {
   await openAdmin(page, '/?admin&demo');

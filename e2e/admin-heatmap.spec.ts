@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './support/test';
 
 function whenCard(page: Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: /^When/ }) });

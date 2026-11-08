@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect, type Locator } from './support/test';
 
 async function waitForSheetToFinishRising(dialog: Locator) {
   await dialog.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)));

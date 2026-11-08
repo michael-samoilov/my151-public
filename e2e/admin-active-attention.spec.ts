@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import {expect,test} from '@playwright/test';
+import {expect,test} from './support/test';
 import {buildDashboard} from '../api/_dashboard';
 test('active time keeps historical spans separate and shares metric/tool controls @viewport',async({page},info)=>{
  const now=Date.UTC(2026,9,10),start=now-3_600_000;

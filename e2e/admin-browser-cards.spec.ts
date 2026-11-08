@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './support/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { mergeFavoriteRecord, parseFavoriteSnapshot } from '../api/_favoriteRecord';
 

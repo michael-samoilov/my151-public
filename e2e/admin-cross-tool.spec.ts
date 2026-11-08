@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 
 test.describe('admin cross-tool tile', () => {
   test('demo dashboard shows only the diagram for all eras, no percent row', async ({ page }) => {

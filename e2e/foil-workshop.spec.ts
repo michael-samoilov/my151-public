@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './support/test';
 
 async function setRange(page: Page, testId: string, value: string): Promise<void> {
   await page.locator(`[data-foil-slider="${testId}"]`).evaluate((el, next) => {

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 async function lowestPainted(page: Page) {
   return page.evaluate(() =>

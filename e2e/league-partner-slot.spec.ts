@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { en } from '../src/i18n/catalogs/en';
 import { blankLeague, fiveLineCardLeague, pairLeague } from './support/leagueSeed';
 

@@ -1,4 +1,7 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, normalize } from 'node:path';
+import { TEST_MAP_PATH, type TestMap } from './testMap';
 
 export type Mode = 'fast' | 'affected' | 'full';
 export interface Selection {
@@ -8,47 +11,31 @@ export interface Selection {
   changedPaths: string[];
   suitePattern: string;
   reasons: string[];
+  estimateMs: number;
 }
-export interface Options { mode: Mode; base?: string; plan: boolean }
+export interface Options { mode: Mode; base?: string; plan: boolean; recordMap: boolean }
 
-const dexSuites = [
-  'dex-', 'drag-hold', 'empty-states', 'header-chrome', 'sheet-', 'browser-grid-window',
-  'bottom-sheet', 'pinch-zoom', 'intro-collapse-scroll', 'completion-confetti',
-  'analytics-drilldown', 'chart-identifiers', 'stats-export-framing', 'wordmark-home',
-  'beacon-delivery', 'active-attention', 'minute-activity', 'optout-follows', 'feedback',
-  'english-copy', 'language-negotiation', 'served-faq', 'service-worker', 'stale-deploy', 'dev/',
-].join('|');
-const areas = [
-  { name: 'picker', paths: /^(?:src\/favorites\/|e2e\/(?:favorites-|favorite-browser-filter|picker-close-|picks-page))/, suites: '(?:favorites-|favorite-browser-filter|picker-close-|picks-page)' },
-  { name: 'league', paths: /^(?:src\/league\/|e2e\/league-)/, suites: '(?:league-|header-chrome|empty-states|stats-export-framing)' },
-  { name: 'admin', paths: /^(?:src\/components\/admin\/|e2e\/admin-)/, suites: '(?:admin-|picks-page)' },
-  { name: 'dex', paths: /^(?:src\/components\/(?:pokedex|view)\/|src\/(?:App|main)\.tsx$|e2e\/dex-)/, suites: `(?:${dexSuites})` },
-];
 const docs = /^(?:docs\/.+\.md|README\.md|AGENTS\.md|CLAUDE\.md|LICENSE)$/;
 const tooling = [
   { paths: /^\.claude\/(?:skills|agents|vendor)\//, coverage: 'agent tooling, covered by check-pstack, the verify-my151 contract test, and the harness typecheck.' },
-  { paths: /^docs\/i18n\/sources\/(?:bulbapedia|my151)-form-names\.json$/, coverage: 'read only by npm run i18n:names, whose regenerated catalogs under src/i18n/ select full.' },
+  { paths: /^docs\/i18n\/sources\/(?:bulbapedia|my151)-form-names\.json$/, coverage: 'read only by npm run i18n:names, whose regenerated catalogs under src/i18n/ are app inputs.' },
 ];
-const crossTool = [
-  /^src\/favorites\/(?:model|export|data|icons|stats)\//,
-  /^src\/favorites\/(?:pickerFullName|pickerDisplayNames)\./,
-  /^src\/favorites\/components\/(?:DesktopPane|FavoritesGrid|PickerTitle|PrettySpriteGrid|spriteLabel|coordinatePresentation|marks|WordBadge|badgeStyle|WideBadge|NameTooltip|PickerSprite|ExtraSymbol|extraSymbolAssets|CoordinatePills|coordinatePillLayout|romanDiscAssets|ballShape)\./,
-  /^src\/league\/(?:model|export|data)\//,
-  /^src\/league\/(?:theme|slotLab|LeagueApp)\./,
-  /^src\/league\/components\/(?:ExportPreview3D|LeagueExportSurvey|LeagueExportSurveyIntro|glyphs)\./,
-  /^src\/league\/components\/foil\//,
-  /^src\/components\/view\/(?:DetailedStatsPanel|useDetailedStatsData|ViewPage)\./,
-];
-const shared = /^(?:api\/|scripts\/|\.github\/|\.claude\/|public\/|src\/(?:store|lib|i18n|data|assets)\/)|(?:^|\/)(?:[^/]*[Ss]tore[^/]*|[^/]*[Pp]ersist[^/]*|[^/]*[Mm]igrat[^/]*)\.[^/]+$|(?:^|\/)store\//;
+const spec = /^e2e\/.+\.spec\.ts$/;
+const broad = /^(?:e2e\/|playwright\.config\.ts$|package(?:-lock)?\.json$|vite\.config\.ts$|tsconfig[^/]*\.json$|\.env)/;
+const app = /^(?:src\/|public\/|[^/]+\.html$)/;
+const ownGate = /^(?:api\/|scripts\/|data\/|docs\/|\.github\/|\.claude\/|eslint[^/]*$|vitest\.config\.ts$)|\.test\.ts$/;
+export const BROWSER_BUDGET_MS = 3 * 60_000;
+export const BROWSER_WORKERS = 2;
 
 export function parseOptions(args: string[]): Options {
   const input = [...args];
   const mode = input.shift() ?? 'affected';
   if (!['fast', 'affected', 'full'].includes(mode)) throw new Error(`Unknown CI mode: ${mode}`);
-  const result: Options = { mode: mode as Mode, plan: false };
+  const result: Options = { mode: mode as Mode, plan: false, recordMap: false };
   while (input.length) {
     const flag = input.shift();
     if (flag === '--plan') result.plan = true;
+    else if (flag === '--record-map') result.recordMap = true;
     else if (flag === '--base' && input.length) result.base = input.shift();
     else throw new Error(`Unknown or incomplete option: ${flag}`);
   }
@@ -84,27 +71,69 @@ export function changedPaths(root: string, base?: string): { baseSha: string | n
   }
 }
 
-export function select(requestedMode: Mode, changedPaths: string[], baseSha: string | null, unavailable?: string): Selection {
-  const selection: Selection = { requestedMode, effectiveMode: requestedMode, baseSha, changedPaths, suitePattern: '@ci-smoke', reasons: [] };
+export interface SelectionInputs { map?: TestMap; buildScripts?: ReadonlySet<string> }
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function select(requestedMode: Mode, changedPaths: string[], baseSha: string | null, unavailable?: string, inputs: SelectionInputs = {}): Selection {
+  const selection: Selection = { requestedMode, effectiveMode: requestedMode, baseSha, changedPaths, suitePattern: '@ci-smoke', reasons: [], estimateMs: 0 };
   if (requestedMode === 'full') return { ...selection, suitePattern: '.*', reasons: ['Full regression explicitly requested.'] };
-  if (requestedMode === 'fast') return { ...selection, reasons: ['Critical journeys explicitly requested; use affected for merge verification.'] };
-  if (!baseSha) return { ...selection, effectiveMode: 'full', suitePattern: '.*', reasons: [unavailable ?? 'Comparison base unavailable.'] };
-  if (!changedPaths.length) return { ...selection, effectiveMode: 'fast', reasons: ['No changed files; run the critical journeys.'] };
+  if (requestedMode === 'fast') return { ...selection, reasons: ['Critical journeys explicitly requested.'] };
+  const smokeOnly = (reason: string) => ({ ...selection, effectiveMode: 'fast' as const, reasons: [...selection.reasons, reason] });
+  if (!baseSha) return smokeOnly(`${unavailable ?? 'Comparison base unavailable.'} The post-release full run covers browser behavior.`);
+  if (!changedPaths.length) return smokeOnly('No changed files; run the critical journeys.');
   if (changedPaths.every(path => docs.test(path))) return { ...selection, effectiveMode: 'docs', suitePattern: '', reasons: ['Only known Markdown documentation changed; no executable inputs changed.'] };
-  const selected = new Set<string>();
+  const { map, buildScripts = new Set<string>() } = inputs;
+  const specs = new Set<string>();
+  const deferred: string[] = [];
+  let appChanged = false;
   for (const path of changedPaths) {
     if (docs.test(path)) continue;
     const tool = tooling.find(tool => tool.paths.test(path));
     if (tool) {
       selection.reasons.push(`${path}: ${tool.coverage}`);
-      continue;
+    } else if (spec.test(path)) {
+      specs.add(path);
+    } else if (broad.test(path) || buildScripts.has(path)) {
+      deferred.push(path);
+      appChanged = true;
+    } else if (app.test(path) && !ownGate.test(path)) {
+      appChanged = true;
+      const covering = map?.sources[path];
+      if (covering) covering.forEach(file => specs.add(file));
+      else deferred.push(path);
+    } else if (!ownGate.test(path)) {
+      deferred.push(path);
     }
-    const area = shared.test(path) || crossTool.some(pattern => pattern.test(path)) ? undefined : areas.find(area => area.paths.test(path));
-    if (!area) return { ...selection, effectiveMode: 'full', suitePattern: '.*', reasons: [`Shared or unclassified input requires full regression: ${path}`] };
-    selected.add(area.suites);
-    selection.reasons.push(`${path}: all ${area.name} specs.`);
   }
-  return { ...selection, effectiveMode: selected.size ? 'affected' : 'fast', suitePattern: ['@ci-smoke', ...selected].join('|') };
+  if (!map && appChanged) return smokeOnly(`No test map at ${TEST_MAP_PATH}; run npm run ci:full -- --record-map. The post-release full run covers browser behavior.`);
+  if (map && appChanged) for (const [file, timing] of Object.entries(map.specs)) if (timing.unmapped) specs.add(file);
+  if (deferred.length) selection.reasons.push(`No recorded browser test runs ${deferred.join(', ')}; the release smoke and the post-release full run cover ${deferred.length === 1 ? 'it' : 'them'}.`);
+  const estimateMs = Math.round([...specs].reduce((sum, file) => sum + (map?.specs[file]?.ms ?? 60_000), 0) / BROWSER_WORKERS);
+  if (estimateMs > BROWSER_BUDGET_MS) {
+    return smokeOnly(`Broad change: ${specs.size} spec files, about ${Math.ceil(estimateMs / 60_000)} min. The post-release full run covers them; run npm run ci:full before release for a risky change.`);
+  }
+  if (!specs.size) return { ...selection, effectiveMode: 'fast', reasons: [...selection.reasons, 'No browser test runs the changed files; run the critical journeys.'] };
+  selection.reasons.push(`${specs.size} spec files run the changed files.`);
+  return { ...selection, effectiveMode: 'affected', estimateMs, suitePattern: ['@ci-smoke', ...[...specs].sort().map(file => escape(file.replace(/^e2e\//, '')))].join('|') };
+}
+
+export function buildScriptInputs(root: string): Set<string> {
+  const found = new Set<string>();
+  const pending = ['vite.config.ts'];
+  for (let file = pending.shift(); file; file = pending.shift()) {
+    let text = '';
+    try { text = readFileSync(join(root, file), 'utf8'); } catch { continue; }
+    for (const [, target] of text.matchAll(/from\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
+      const base = normalize(join(dirname(file), target));
+      const candidate = [base, `${base}.ts`, `${base}.mjs`, `${base}.js`, `${base}.json`].find(path => existsSync(join(root, path)) && !statSync(join(root, path)).isDirectory());
+      if (candidate && !candidate.startsWith('src/') && !found.has(candidate)) {
+        found.add(candidate);
+        pending.push(candidate);
+      }
+    }
+  }
+  return found;
 }
 
 export function projectFilter(suitePattern: string, viewportOnly: boolean): RegExp {

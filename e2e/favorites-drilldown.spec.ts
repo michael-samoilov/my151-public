@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 import { readFileSync } from 'node:fs';
 const full = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
 async function seed(page: import('@playwright/test').Page, fills: Record<string, number>) {

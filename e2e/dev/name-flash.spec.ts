@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 const RECORDER = () => {
   (window as { __labels?: string[] }).__labels = [];

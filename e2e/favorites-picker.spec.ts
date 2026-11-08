@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './support/test';
 import { showPickerIcons } from './support/favoritesBoard';
 
 async function sheetBox(page: Page) {

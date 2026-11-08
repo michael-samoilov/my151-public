@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './support/test';
 import { SHINY_STAR } from '../src/components/shiny/shinyMarks';
 
 const SHINY = /\/sprites\/pokemon\/shiny\/\d+\.png$/;

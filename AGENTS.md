@@ -69,7 +69,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 ## 1. Verify before you show
 
-- Run canonical affected CI on the final merge candidate, or use the recorded proportional-verification exception in `CLAUDE.md`. CI-only work can finish with runner proofs and fast checks. Reserve full regression for actual broad release risk.
+- Run `npm run ci` on the final merge candidate, then release through the staged-deploy steps in `CLAUDE.md` ("Release: verify, ship, then run"). The full suite runs after release and every night. Run it before release only for a launch or a risky broad change.
 - For visual/platform changes, read `.claude/skills/verify-my151/SKILL.md` and capture the relevant screens and actual affected engines. Reserve its exhaustive matrix for full/release QA.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.

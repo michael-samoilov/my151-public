@@ -84,14 +84,16 @@ Before you share a rendered mockup, an image export, or a static page, run the f
 
 GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
 
-Michael authorized the CI redesign on 2026-10-16. The commands below replace the
-previous 20/40-minute default tiers. Keep verification proportional to the change.
+Michael chose "verify, ship, then run" on 2026-11-08. A change is verified by the
+cheap gates and the browser tests that run its files. It ships through a smoke test
+of the staged deploy. The full browser suite runs after release, not before it.
 
 | Command | Scope | Target |
 | --- | --- | --- |
-| `npm run ci:fast` | All cheap gates, one production build, and critical browser journeys. Use during development. | 3–5 min |
-| `npm run ci` or `npm run ci:affected -- --base REF` | Fast checks plus complete owned spec families for changed areas. Use on the final merge candidate. | Usually 5–10 min |
-| `npm run ci:full` | All cheap gates, one build, and every existing browser project/spec. Use for launches, high-risk changes, and broad scheduled regression. | Measured separately |
+| `npm run ci` | All cheap gates, one build, the `@ci-smoke` journeys, and the browser specs that the test map says run the changed files. Use on every merge candidate. | 2–5 min |
+| `npm run ci:fast` | All cheap gates, one build, and the `@ci-smoke` journeys. | 2–3 min |
+| `npm run ci:full` | Every browser spec in every project. Runs after release and every night. Run it before release only for a launch or a risky change. | About 30 min |
+| `npm run ci:full -- --record-map` | `ci:full` that also rewrites `scripts/ci/test-map.json`. The nightly run uses it. | About 35 min |
 
 A change to one tuning value, plus its tests and docs, can use `ci:fast` as its
 final gate under the existing Tuning exception. It must change no logic, saved-data
@@ -101,18 +103,22 @@ Public visual changes still follow the approval rules in Deployment.
 `bash scripts/ci-local.sh` delegates to affected mode. It accepts `fast`, `affected`,
 or `full`, followed by the same options. `--plan` prints the chosen scope and reasons
 without running checks. The default base is `origin/claude/pokedex-region-builder-AviYF`;
-`--base REF` or `MY151_CI_BASE` overrides it. Missing or unusable history selects full.
+`--base REF` or `MY151_CI_BASE` overrides it. Missing or unusable history runs smoke.
 A clean diff still runs fast checks. An explicitly known Markdown-only diff skips code checks.
 
-`scripts/ci/policy.ts` owns selection. Unknown files, shared dependencies, APIs,
-saved-data stores, build/deploy configuration, dependencies, and CI changes select
-full coverage. Tool modules reused by other pages are shared inputs. Agent tooling
-under `.claude/skills/`, `.claude/agents/`, and `.claude/vendor/` selects fast mode,
-because no build or browser test reads it. `.claude/settings.json`, `.claude/hooks/`,
-and other `.claude/` paths still select full. The form-name sources that only
-`npm run i18n:names` reads also select fast. Their regenerated catalogs under
-`src/i18n/` select full. App inputs in the same diff keep their own selection. The
-selector includes committed, staged, dirty, deleted, renamed, and untracked paths.
+`scripts/ci/policy.ts` owns selection, and no changed path selects the full suite.
+`scripts/ci/test-map.json` records which `src/` files each browser spec runs, measured
+with Chromium code coverage during a full run (`e2e/support/testMap.ts`). Every spec
+imports `test` from `e2e/support/test.ts` so that the recording sees it; the
+`written/specs-record-their-files` lint rule enforces this. A changed `src/` file
+selects the specs that ran it, plus the specs that run no browser code (such as the
+hub prerender checks). A changed spec selects itself. Paths that only lint, unit
+tests, or repository checks read (`api/`, `scripts/`, `data/`, `docs/`, `.claude/`,
+`*.test.ts`) select no browser specs. An app input that no recorded test runs (CSS,
+a build script, a dependency) runs smoke and names the release checks that cover it.
+When the selected specs would take more than 3 minutes, the run falls back to smoke
+and says so; run `ci:full` before release when that change is risky. The selector
+includes committed, staged, dirty, deleted, renamed, and untracked paths.
 
 Every code mode runs lint, all unit/API/migration tests, translation verification,
 TypeScript, the verify-my151 harness typecheck, repository guards, the sprite credit
@@ -139,8 +145,9 @@ The critical journeys use `@ci-smoke` on existing tests. Keep mobile/narrow
 CI records failure screenshots and per-case errors. Full Playwright traces are
 opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
 automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
-Keep full regression coverage. Run it explicitly or on a future nightly schedule;
-automatic Actions triggers remain disabled until billing allows jobs to start.
+The full suite runs after every release and every night (see Deployment). A red
+nightly run is the next task: fix the cause, or roll back the release that caused it.
+Automatic Actions triggers remain disabled until billing allows jobs to start.
 
 Visual changes require the relevant before/after mobile and desktop screenshots.
 Use verify-my151 with selected `--screens` and relevant `--surfaces` when the
@@ -166,8 +173,8 @@ Reuse passed stages and a validated build when their inputs have not changed.
 When production advances, check the incoming changes and their existing evidence,
 then verify the actual integration risk. Do not automatically restart exhaustive
 regression. Build changed application inputs once and run critical journeys plus
-the relevant changed-area checks. The selector remains conservative; a recorded
-scope decision can override an unnecessarily broad selection.
+the relevant changed-area checks. A recorded scope decision can override the
+selection.
 
 Stop after the relevant risk is covered. Do not turn final verification into
 another release audit or expand a repair to adjacent passing behavior. Preserve
@@ -253,7 +260,19 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run canonical affected CI on the final merge candidate under Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the deploy signal. A build that Vercel marks Canceled by the Ignored Build Step is a skip, not a failure.
+Before every production push, run `npm run ci` on the final merge candidate. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. A build that Vercel marks Canceled by the Ignored Build Step is a skip, not a failure.
+
+### Release: verify, ship, then run
+
+Production builds are staged. Vercel builds each push to `claude/pokedex-region-builder-AviYF`, but my151.app keeps serving the previous deploy until someone promotes the new one. Promotion does not rebuild. Release each production push like this:
+
+1. Find the deploy. Call the Vercel MCP `list_deployments` with the pushed commit `sha`, and wait until its state is `READY`. Project `<vercel project id>`, team `<vercel team id>`.
+2. Smoke it. Run `npm run release:smoke -- <deployment url>`. It opens each public page of that exact deploy, read-only and opted out of analytics. A failure means do not promote: fix forward and push again.
+3. Promote it. Call `request_promote` with that deployment id.
+4. Confirm it. Run `npm run release:live -- <build stamp>`, with the stamp that step 2 printed. It waits until my151.app serves that build.
+5. Run the full suite. Start `npm run ci:full` in the background on the released commit, and report its result. When it finds a defect that the release caused, roll back with `request_promote` on the previous production deploy, then fix forward.
+
+A push that the Ignored Build Step skips has nothing to release. A later promote releases every earlier commit too, because production is cumulative. To undo a release, promote the previous deploy; on Pro, any earlier production deploy can be promoted again.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 

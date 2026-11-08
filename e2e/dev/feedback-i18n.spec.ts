@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 
 const CHIPS: Record<string, { bug: string; translation: string; idea: string; other: string }> = {
   en: { bug: 'Bug', translation: 'Translation', idea: 'Idea', other: 'Other' },

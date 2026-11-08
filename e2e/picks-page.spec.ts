@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { TYPE_NAMES } from '../src/types/pokemon';
 
 async function openPicks(page: Page) {

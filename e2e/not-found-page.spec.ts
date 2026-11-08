@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 const cursors = (page: Page) =>
   page.locator('.menu a').evaluateAll((links) =>

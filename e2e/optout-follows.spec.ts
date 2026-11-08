@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 const DEX_STORE_KEY = 'personal-151-pokedex-v3';
 const LEAGUE_STORE_KEY = 'league-builder';

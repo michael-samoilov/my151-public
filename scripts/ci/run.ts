@@ -8,13 +8,15 @@ import { atomicJson, fingerprint, makeReceipt, validateReceipt } from './artifac
 import { eslintCacheArgs } from './cache';
 import { RunJournal, settleLanes } from './execution';
 import { discoveryCounts, type Discovery } from './discovery';
-import { changedPaths, parseOptions, select } from './policy';
+import { buildScriptInputs, changedPaths, parseOptions, select } from './policy';
+import { buildTestMap, loadTestMap, readAttempts, readRecords, TEST_MAP_PATH } from './testMap';
 
 async function main() {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const options = parseOptions(process.argv.slice(2));
   const changes = changedPaths(root, options.base ?? process.env.MY151_CI_BASE ?? 'origin/claude/pokedex-region-builder-AviYF');
-  const selection = select(options.mode, changes.paths, changes.baseSha, changes.reason);
+  const selection = select(options.mode, changes.paths, changes.baseSha, changes.reason, { map: loadTestMap(root), buildScripts: buildScriptInputs(root) });
+  if (options.recordMap && selection.effectiveMode !== 'full') throw new Error('--record-map needs ci:full, so every browser test records its files.');
   if (options.plan) { console.log(JSON.stringify(selection, null, 2)); return; }
   const gitDirectory = execFileSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).trim();
   const runId = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}`;
@@ -30,7 +32,8 @@ async function main() {
   const journal = new RunJournal(directory, root, selection, source, controller.signal, head);
   atomicJson(join(directory, 'selection.json'), selection);
   console.log(`CI ${selection.effectiveMode}: ${selection.reasons.join(' ')}\nLive evidence: ${directory}`);
-  const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId };
+  const recording = join(directory, 'test-map');
+  const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId, ...(options.recordMap ? { MY151_TEST_MAP_DIR: recording, MY151_TEST_MAP_DIST: join(directory, 'dist') } : {}) };
   try {
     if (selection.effectiveMode !== 'docs') {
       await settleLanes([
@@ -47,7 +50,7 @@ async function main() {
           await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);
         },
         async () => {
-          await journal.stage('build', 'npm', ['run', 'build', '--', '--manifest', '--outDir', join(directory, 'dist'), '--emptyOutDir']);
+          await journal.stage('build', 'npm', ['run', 'build', '--', '--manifest', ...(options.recordMap ? ['--sourcemap', 'hidden'] : []), '--outDir', join(directory, 'dist'), '--emptyOutDir']);
           makeReceipt(root, directory, runId, source);
           await journal.stage('bundle-budget', process.execPath, ['scripts/check-bundle-budget.mjs', '--dist', join(directory, 'dist')]);
           validateReceipt(root, directory, runId);
@@ -61,7 +64,15 @@ async function main() {
       const counts = discoveryCounts(discovery);
       if (!counts.total) throw new Error('Browser selection is empty.');
       atomicJson(join(directory, 'discovery-count.json'), counts);
-      await journal.stage('browser', 'bash', ['scripts/ci/browser-lock.sh', join(tmpdir(), 'my151-browser.lock'), process.execPath, '--import', 'tsx', 'scripts/ci/browser.ts'], environment, { notices: true });
+      try {
+        await journal.stage('browser', 'bash', ['scripts/ci/browser-lock.sh', join(tmpdir(), 'my151-browser.lock'), process.execPath, '--import', 'tsx', 'scripts/ci/browser.ts'], environment, { notices: true });
+      } finally {
+        if (options.recordMap) {
+          const map = buildTestMap(readRecords(recording), readAttempts(join(directory, 'browser-attempts.ndjson')), head, new Date().toISOString());
+          writeFileSync(join(root, TEST_MAP_PATH), `${JSON.stringify(map, null, 1)}\n`);
+          console.log(`Test map: ${Object.keys(map.specs).length} spec files, ${Object.keys(map.sources).length} source files, written to ${TEST_MAP_PATH}.`);
+        }
+      }
       validateReceipt(root, directory, runId);
     }
     if (fingerprint(root) !== source) throw new Error('Source inputs changed during verification.');

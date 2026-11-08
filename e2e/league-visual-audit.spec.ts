@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { auditLayout } from './support/layoutAudit';
 import { INK, discMark, phaseSweep, pillEnds } from './support/pixels';
 

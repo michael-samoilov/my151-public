@@ -19,7 +19,7 @@ const sharedRules = {
 }
 
 export default defineConfig([
-  globalIgnores(['dist', 'playwright-report', 'test-results']),
+  globalIgnores(['dist', 'playwright-report', 'test-results', '.claude/worktrees']),
 
   {
     files: ['src/**/*.{ts,tsx}'],

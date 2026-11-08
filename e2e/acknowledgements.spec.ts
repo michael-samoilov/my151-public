@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator } from './support/test';
 
 const top = async (locator: Locator) => (await locator.boundingBox())!.y;
 

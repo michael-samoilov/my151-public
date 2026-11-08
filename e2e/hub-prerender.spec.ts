@@ -1,4 +1,4 @@
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test, type Browser } from './support/test';
 
 const SAVED = {
   'p151-visited': '1',

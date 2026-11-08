@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const BUG_JA = 'むし';
 const BUG_EN = 'BUG';

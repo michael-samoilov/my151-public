@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import {expect, test} from '@playwright/test';
+import {expect, test} from './support/test';
 import {buildDashboard} from '../api/_dashboard';
 
 test('recorded usage switches metrics and preserves separate tool samples @viewport', async ({page}, testInfo) => {

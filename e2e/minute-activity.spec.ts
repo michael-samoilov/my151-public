@@ -1,4 +1,4 @@
-import {expect,test,type Page} from '@playwright/test';
+import {expect,test,type Page} from './support/test';
 import {filledSlotsLeague} from './support/leagueSeed';
 import type {MinuteActivityPayload} from '../api/_minuteActivity';
 type Post={activity?:MinuteActivityPayload;attention?:{segments:{start:number;end:number}[]};seen?:number[]};

@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 
 const COUNTRIES = (

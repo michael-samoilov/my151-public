@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import {test,expect} from '@playwright/test';
+import {test,expect} from './support/test';
 import {buildDashboard,type RecordedUsageSlice} from '../api/_dashboard';
 
 function sample(values:number[],sessions:number[],hours:number):RecordedUsageSlice {

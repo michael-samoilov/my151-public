@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 test('records each export dialog, and Full, detailed stats and Simplified only after downloads succeed, with the exported board',async({page},testInfo)=>{
  const requests:Record<string,unknown>[]=[];
  await page.addInitScript(()=>localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7,'favorite|1':7}},version:3})));

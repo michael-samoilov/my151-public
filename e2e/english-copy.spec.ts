@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './support/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 test.describe('English copy is unchanged by extraction', { tag: '@viewport' }, () => {

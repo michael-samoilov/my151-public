@@ -124,6 +124,14 @@ export const WRITTEN_RULES = [
     fix: 'Use svh, which stays at the height with the toolbar shown.',
   },
   {
+    id: 'specs-record-their-files',
+    rule: 'A browser spec imports test from e2e/support/test, so the test-map recording sees which source files it runs. CI picks browser tests from that map.',
+    source: 'CLAUDE.md, Build Verification',
+    files: ['e2e/**/*.spec.ts'],
+    selectors: ["ImportDeclaration[source.value='@playwright/test'] > ImportSpecifier[imported.name='test']"],
+    fix: "Import test (and expect) from './support/test' instead of '@playwright/test'.",
+  },
+  {
     id: 'league-zoom-floor',
     rule: 'Do not lower the 0.55 zoom floor.',
     source: 'docs/handoff/league-builder-2026-09-30.md',

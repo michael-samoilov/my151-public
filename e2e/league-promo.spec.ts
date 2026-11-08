@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SEEDED = JSON.stringify({ state: { sections: { starter: [1, 4, 7] }, milestoneMax: 3, milestoneCelebrated: [] }, version: 10 });

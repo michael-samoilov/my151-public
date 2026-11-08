@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from './support/test';
 import { bursts, settledBursts, watchConfetti, type Burst } from './support/confetti';
 import { favoritesBoard, pickLastCell, seedFavorites } from './support/favoritesBoard';
 import { oneLineShortLeague } from './support/leagueSeed';

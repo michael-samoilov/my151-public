@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 
 const PAGE = '/favorite-pokemon-picker';
 const REGIONAL_FIRST = 'unownLast,formKind,debut,tier,dex';

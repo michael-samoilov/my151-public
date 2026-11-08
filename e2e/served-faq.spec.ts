@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 import { en } from '../src/i18n/catalogs/en';
 import { FAQ_KEYS, type FaqPage } from '../src/components/shared/faqKeys';
 

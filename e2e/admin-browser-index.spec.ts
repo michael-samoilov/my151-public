@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { scrollToRow } from './admin-virtual-list';
 

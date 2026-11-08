@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator } from './support/test';
 import { buildDashboard } from '../api/_dashboard';
 
 test.describe('admin flows', () => {

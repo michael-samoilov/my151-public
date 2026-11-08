@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 import { NAV_PAGES, seedDex } from '../support/dexSeed';
 import { LOCALES } from '../../src/i18n/config';
 

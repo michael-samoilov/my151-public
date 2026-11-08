@@ -1,5 +1,5 @@
 import { openAdmin } from './admin-ready';
-import {test,expect} from '@playwright/test';
+import {test,expect} from './support/test';
 
 test('admin tabs restore independent scroll positions @viewport',async({page},testInfo)=>{
   await page.addInitScript(()=>localStorage.setItem('p151-admin-tool','all'));

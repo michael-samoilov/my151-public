@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './support/test';
 import { blankLeague } from './support/leagueSeed';
 
 const search = async (page: Page, query: string) => {

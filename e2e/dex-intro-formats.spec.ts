@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './support/test';
 
 const isShot = (url: string) => /\/assets\/shot-(45|95-outlines|151-stats)-/.test(url);
 
