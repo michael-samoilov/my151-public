@@ -51,10 +51,36 @@ export function readAttempts(file: string): Attempt[] {
   return readFileSync(file, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line) as Attempt);
 }
 
+interface StoredTestMap extends Omit<TestMap, 'sources'> { sources: Record<string, number[]> }
+
+export function serializeTestMap(map: TestMap): string {
+  const files = Object.keys(map.specs);
+  const index = new Map(files.map((file, position) => [file, position]));
+  const lines = (entries: [string, unknown][]) => entries.map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)}`).join(',\n');
+  return `{
+ "version": ${map.version},
+ "sourceCommit": ${JSON.stringify(map.sourceCommit)},
+ "recordedAt": ${JSON.stringify(map.recordedAt)},
+ "specs": {
+${lines(Object.entries(map.specs))}
+ },
+ "sources": {
+${lines(Object.entries(map.sources).map(([source, specs]) => [source, specs.map(file => index.get(file))]))}
+ }
+}
+`;
+}
+
+export function parseTestMap(text: string): TestMap | undefined {
+  const stored = JSON.parse(text) as StoredTestMap;
+  if (stored.version !== 1) return undefined;
+  const files = Object.keys(stored.specs);
+  return { ...stored, sources: Object.fromEntries(Object.entries(stored.sources).map(([source, indexes]) => [source, indexes.map(position => files[position])])) };
+}
+
 export function loadTestMap(root: string): TestMap | undefined {
   try {
-    const map = JSON.parse(readFileSync(join(root, TEST_MAP_PATH), 'utf8')) as TestMap;
-    return map.version === 1 ? map : undefined;
+    return parseTestMap(readFileSync(join(root, TEST_MAP_PATH), 'utf8'));
   } catch {
     return undefined;
   }

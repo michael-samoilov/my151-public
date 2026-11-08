@@ -86,6 +86,7 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
   const { map, buildScripts = new Set<string>() } = inputs;
   const specs = new Set<string>();
   const deferred: string[] = [];
+  const mapped: string[] = [];
   let appChanged = false;
   for (const path of changedPaths) {
     if (docs.test(path)) continue;
@@ -100,8 +101,10 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
     } else if (app.test(path) && !ownGate.test(path)) {
       appChanged = true;
       const covering = map?.sources[path];
-      if (covering) covering.forEach(file => specs.add(file));
-      else deferred.push(path);
+      if (covering) {
+        covering.forEach(file => specs.add(file));
+        mapped.push(path);
+      } else deferred.push(path);
     } else if (!ownGate.test(path)) {
       deferred.push(path);
     }
@@ -109,13 +112,24 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
   if (!map && appChanged) return smokeOnly(`No test map at ${TEST_MAP_PATH}; run npm run ci:full -- --record-map. The post-release full run covers browser behavior.`);
   if (map && appChanged) for (const [file, timing] of Object.entries(map.specs)) if (timing.unmapped) specs.add(file);
   if (deferred.length) selection.reasons.push(`No recorded browser test runs ${deferred.join(', ')}; the release smoke and the post-release full run cover ${deferred.length === 1 ? 'it' : 'them'}.`);
-  const estimateMs = Math.round([...specs].reduce((sum, file) => sum + (map?.specs[file]?.ms ?? 60_000), 0) / BROWSER_WORKERS);
-  if (estimateMs > BROWSER_BUDGET_MS) {
-    return smokeOnly(`Broad change: ${specs.size} spec files, about ${Math.ceil(estimateMs / 60_000)} min. The post-release full run covers them; run npm run ci:full before release for a risky change.`);
-  }
+  const cost = (file: string) => map?.specs[file]?.ms ?? 60_000;
+  const estimate = (files: Iterable<string>) => Math.round([...files].reduce((sum, file) => sum + cost(file), 0) / BROWSER_WORKERS);
+  const pattern = (files: Set<string>) => ['@ci-smoke', ...[...files].sort().map(file => escape(file.replace(/^e2e\//, '')))].join('|');
   if (!specs.size) return { ...selection, effectiveMode: 'fast', reasons: [...selection.reasons, 'No browser test runs the changed files; run the critical journeys.'] };
-  selection.reasons.push(`${specs.size} spec files run the changed files.`);
-  return { ...selection, effectiveMode: 'affected', estimateMs, suitePattern: ['@ci-smoke', ...[...specs].sort().map(file => escape(file.replace(/^e2e\//, '')))].join('|') };
+  const all = estimate(specs);
+  if (all <= BROWSER_BUDGET_MS) {
+    selection.reasons.push(`${specs.size} spec files run the changed files.`);
+    return { ...selection, effectiveMode: 'affected', estimateMs: all, suitePattern: pattern(specs) };
+  }
+  const cover = new Set<string>();
+  for (const path of [...mapped].sort((a, b) => map!.sources[a].length - map!.sources[b].length)) {
+    const covering = map!.sources[path];
+    if (covering.some(file => cover.has(file))) continue;
+    cover.add(covering.reduce((cheapest, file) => (cost(file) < cost(cheapest) ? file : cheapest)));
+  }
+  const estimateMs = estimate(cover);
+  selection.reasons.push(`Broad change: ${specs.size} spec files run the changed files, about ${Math.ceil(all / 60_000)} min. Running ${cover.size} that run each changed file at least once, about ${Math.ceil(estimateMs / 60_000)} min. The post-release full run covers the rest; run npm run ci:full before release for a risky change.`);
+  return { ...selection, effectiveMode: 'affected', estimateMs, suitePattern: pattern(cover) };
 }
 
 export function buildScriptInputs(root: string): Set<string> {

@@ -119,10 +119,14 @@ test('an app input with no recorded test, a build script, and a dependency chang
   }
 });
 
-test('a selection over the browser budget runs smoke and names the full run', () => {
-  const plan = select('affected', ['src/lib/utils.ts'], 'abc', undefined, { map });
-  expect(plan).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
-  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*ci:full/);
+test('a selection over the browser budget runs the cheapest spec for each changed file and names the full run', () => {
+  const plan = select('affected', ['src/lib/utils.ts', 'src/league/LeagueApp.tsx'], 'abc', undefined, { map });
+  expect(plan.effectiveMode).toBe('affected');
+  const filter = new RegExp(plan.suitePattern);
+  expect(filter.test('desktop league-card-slots.spec.ts seats')).toBe(true);
+  expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
+  expect(filter.test('desktop admin-flows.spec.ts funnels')).toBe(false);
+  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 1 .*ci:full/);
 });
 
 test('a changed spec runs itself, with its file name escaped', () => {

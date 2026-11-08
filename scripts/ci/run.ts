@@ -9,7 +9,7 @@ import { eslintCacheArgs } from './cache';
 import { RunJournal, settleLanes } from './execution';
 import { discoveryCounts, type Discovery } from './discovery';
 import { buildScriptInputs, changedPaths, parseOptions, select } from './policy';
-import { buildTestMap, loadTestMap, readAttempts, readRecords, TEST_MAP_PATH } from './testMap';
+import { buildTestMap, loadTestMap, readAttempts, readRecords, serializeTestMap, TEST_MAP_PATH } from './testMap';
 
 async function main() {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -69,7 +69,7 @@ async function main() {
       } finally {
         if (options.recordMap) {
           const map = buildTestMap(readRecords(recording), readAttempts(join(directory, 'browser-attempts.ndjson')), head, new Date().toISOString());
-          writeFileSync(join(root, TEST_MAP_PATH), `${JSON.stringify(map, null, 1)}\n`);
+          writeFileSync(join(root, TEST_MAP_PATH), serializeTestMap(map));
           console.log(`Test map: ${Object.keys(map.specs).length} spec files, ${Object.keys(map.sources).length} source files, written to ${TEST_MAP_PATH}.`);
         }
       }
