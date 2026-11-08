@@ -87,6 +87,7 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
   const specs = new Set<string>();
   const deferred: string[] = [];
   const mapped: string[] = [];
+  const changedSpecs = new Set<string>();
   let appChanged = false;
   for (const path of changedPaths) {
     if (docs.test(path)) continue;
@@ -95,6 +96,7 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
       selection.reasons.push(`${path}: ${tool.coverage}`);
     } else if (spec.test(path)) {
       specs.add(path);
+      changedSpecs.add(path);
     } else if (broad.test(path) || buildScripts.has(path)) {
       deferred.push(path);
       appChanged = true;
@@ -127,8 +129,9 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
     if (covering.some(file => cover.has(file))) continue;
     cover.add(covering.reduce((cheapest, file) => (cost(file) < cost(cheapest) ? file : cheapest)));
   }
-  for (const file of [...specs].filter(file => !cover.has(file)).sort((a, b) => cost(a) - cost(b))) {
-    if (estimate([...cover, file]) > BROWSER_BUDGET_MS) break;
+  const priority = (file: string) => (changedSpecs.has(file) ? 0 : 1);
+  for (const file of [...specs].filter(file => !cover.has(file)).sort((a, b) => priority(a) - priority(b) || cost(a) - cost(b))) {
+    if (estimate([...cover, file]) > BROWSER_BUDGET_MS) continue;
     cover.add(file);
   }
   const estimateMs = estimate(cover);

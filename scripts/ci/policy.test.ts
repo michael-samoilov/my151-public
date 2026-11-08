@@ -130,6 +130,13 @@ test('a selection over the browser budget runs the cheapest spec for each change
   expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 4 within the 3-minute budget.*ci:full/);
 });
 
+test('a changed spec takes the budget before other broad specs', () => {
+  const plan = select('affected', ['src/lib/utils.ts', 'e2e/admin-flows.spec.ts'], 'abc', undefined, { map });
+  const filter = new RegExp(plan.suitePattern);
+  expect(filter.test('desktop admin-flows.spec.ts funnels')).toBe(true);
+  expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
+});
+
 test('a changed spec runs itself, with its file name escaped', () => {
   const plan = select('affected', ['e2e/sweeps/home-sweep.spec.ts'], 'abc', undefined, { map });
   expect(plan.suitePattern).toBe('@ci-smoke|sweeps/home-sweep\\.spec\\.ts');
