@@ -8,6 +8,7 @@ import { buildBrowser, buildDashboard } from './_dashboard.js';
 import { funnelDayKeys, isDashboardRange } from './_range.js';
 import { readMinuteActivityBudget } from './_activityHistoryStore.js';
 import { FUNNEL_EXCLUDED_KEY } from './_funnelExclusions.js';
+import { readHashInPages } from './_hashScan.js';
 
 const SUM_HASHES = `
 local sums = {}
@@ -103,12 +104,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = Date.now();
     const dayKeys = funnelDayKeys(range, now);
     const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients, funnelExcluded] = await Promise.all([
-      redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      readHashInPages(CLIENTS_KEY),
       redis.smembers(ARCHIVED_KEY),
       redis.hgetall('funnel') as Promise<Record<string, unknown> | null>,
       dayKeys ? redis.eval(SUM_HASHES, dayKeys, []) : null,
-      redis.hgetall(LEAGUE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
-      redis.hgetall(FAVORITE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      readHashInPages(LEAGUE_CLIENTS_KEY),
+      readHashInPages(FAVORITE_CLIENTS_KEY),
       redis.hgetall(FUNNEL_EXCLUDED_KEY) as Promise<Record<string, unknown> | null>,
     ]);
     const body = buildDashboard(

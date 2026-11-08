@@ -136,8 +136,9 @@ describe('submissions Redis bill', () => {
     const flat = (rows: Record<string, string>) => Object.entries(rows).flat();
     const commands = recordRedisCommands((cmd) => {
       const [name, key] = [cmd[0].toLowerCase(), cmd[1]];
-      if (name === 'hgetall' && key === 'clients') return flat(json(dexRows));
-      if (name === 'hgetall' && key === 'league:clients') return flat(json(leagueRows));
+      if (name === 'hscan' && key === 'clients') return ['0', flat(json(dexRows))];
+      if (name === 'hscan' && key === 'league:clients') return ['0', flat(json(leagueRows))];
+      if (name === 'hscan') return ['0', []];
       if (name === 'smembers') return [];
       return [];
     });
@@ -158,21 +159,21 @@ describe('submissions Redis bill', () => {
     const all = await call('all');
     expect(Object.keys(all.body.crossToolSince ?? {})).toEqual(['league', 'favorites']);
     expect(all.commands).toEqual([
-      'hgetall clients',
-      'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall funnel:excluded',
-      'hgetall league:clients',
+      'hscan clients',
+      'hscan favorites:clients',
+      'hscan league:clients',
       'smembers clients:archived',
     ]);
     const week = await call('7d');
     expect(week.commands).toEqual([
       'eval <script>',
-      'hgetall clients',
-      'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall funnel:excluded',
-      'hgetall league:clients',
+      'hscan clients',
+      'hscan favorites:clients',
+      'hscan league:clients',
       'smembers clients:archived',
     ]);
   });

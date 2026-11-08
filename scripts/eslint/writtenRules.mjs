@@ -216,6 +216,18 @@ export const WRITTEN_RULES = [
     ],
     fix: 'Read every key in one multi-key command or one EVAL script.',
   },
+  {
+    id: 'page-visitor-hashes',
+    rule: 'Never read a visitor hash with one HGETALL. Upstash refuses a reply over 10 MB, and the clients hash passed it on 2026-11-08.',
+    source: 'api/_hashScan.ts; Vercel error log for /api/submissions, 2026-11-08',
+    files: API,
+    ignores: ['api/_hashScan.ts'],
+    selectors: [
+      "CallExpression[callee.property.name=/^(hgetall|hvals)$/][arguments.0.name=/CLIENTS_KEY$/]",
+      "CallExpression[callee.property.name=/^(hgetall|hvals)$/][arguments.0.value=/clients$/]",
+    ],
+    fix: 'Read it with readHashInPages from api/_hashScan.ts.',
+  },
 ]
 
 const selectorRule = ({ rule, source, fix, selectors }) => ({

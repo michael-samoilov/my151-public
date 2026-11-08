@@ -10,6 +10,7 @@ import {
 import { FAVORITE_CLIENTS_KEY } from './_favoriteRecord.js';
 import { ARCHIVED_KEY, asArchivedSet, isArchived } from './_archive.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
+import { readHashInPages } from './_hashScan.js';
 import {
   HAS_DEX,
   HAS_LEAGUE,
@@ -67,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const [lists, archivedRaw, dexAll, leagueAll, favoriteAll] = await Promise.all([
       Promise.all(days.map((d) => redis.lrange<unknown>(`${JOURNAL_PREFIX}:${d}`, 0, -1))),
       redis.smembers(ARCHIVED_KEY),
-      redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      readHashInPages(CLIENTS_KEY),
       redis.hkeys(LEAGUE_CLIENTS_KEY),
       redis.hkeys(FAVORITE_CLIENTS_KEY),
     ]);

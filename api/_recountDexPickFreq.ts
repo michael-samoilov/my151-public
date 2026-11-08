@@ -1,4 +1,5 @@
 import { CLIENTS_KEY, parseRecord, redis, type ClientRecord } from './_shared.js';
+import { readHashInPages } from './_hashScan.js';
 
 const FREQ_KEY = 'dex:ever-freq';
 const SPLIT_BACKUP_KEY = 'clients:country-split-backup';
@@ -39,7 +40,7 @@ return #ARGV / 2
 export async function recountDexPickFreq(apply: boolean) {
   const [current, clients, backups] = await Promise.all([
     redis.hgetall<Record<string, unknown>>(FREQ_KEY),
-    redis.hgetall<Record<string, unknown>>(CLIENTS_KEY),
+    readHashInPages(CLIENTS_KEY),
     redis.hgetall<Record<string, unknown>>(SPLIT_BACKUP_KEY),
   ]);
   const over = splitOvercount(backups ?? {});

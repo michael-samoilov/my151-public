@@ -89,7 +89,8 @@ describe('submissions Redis bill with the pick counts', () => {
     const { default: handler } = await import('../../../api/submissions');
     const commands = recordRedisCommands((cmd) => {
       const [name, key] = [cmd[0].toLowerCase(), cmd[1]];
-      if (name === 'hgetall' && key === 'favorites:clients') return Object.entries(json(pickers)).flat();
+      if (name === 'hscan' && key === 'favorites:clients') return ['0', Object.entries(json(pickers)).flat()];
+      if (name === 'hscan') return ['0', []];
       return [];
     });
     let body: { favoritePicks?: { charts: number } } = {};
@@ -104,11 +105,11 @@ describe('submissions Redis bill with the pick counts', () => {
     await handler({ method: 'GET', query: { range: 'all' }, headers: {} } as never, res as never);
     expect(body.favoritePicks?.charts).toBe(5);
     expect(commands.map((c) => `${c[0].toLowerCase()} ${c[1]}`).sort()).toEqual([
-      'hgetall clients',
-      'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall funnel:excluded',
-      'hgetall league:clients',
+      'hscan clients',
+      'hscan favorites:clients',
+      'hscan league:clients',
       'smembers clients:archived',
     ]);
   });
