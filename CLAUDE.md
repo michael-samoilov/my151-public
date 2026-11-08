@@ -116,8 +116,10 @@ hub prerender checks). A changed spec selects itself. Paths that only lint, unit
 tests, or repository checks read (`api/`, `scripts/`, `data/`, `docs/`, `.claude/`,
 `*.test.ts`) select no browser specs. An app input that no recorded test runs (CSS,
 a build script, a dependency) runs smoke and names the release checks that cover it.
-When the selected specs would take more than 3 minutes, the run falls back to smoke
-and says so; run `ci:full` before release when that change is risky. The selector
+When the selected specs would take more than 3 minutes, the run keeps one spec for
+each changed file and the changed specs, fills the rest of the 3 minutes with the
+cheapest other selected specs, and says so; run `ci:full` before release when that
+change is risky. The selector
 includes committed, staged, dirty, deleted, renamed, and untracked paths.
 
 Every code mode runs lint, all unit/API/migration tests, translation verification,
