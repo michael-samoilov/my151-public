@@ -441,7 +441,7 @@ export function HomePage() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col bg-background text-foreground">
-        <div className="flex min-h-dvh flex-col">
+        <div className="flex min-h-svh flex-col">
           <SkipLink />
           <header className="border-b bg-card">
             <div className="flex items-center justify-between px-3 sm:px-6 py-2">

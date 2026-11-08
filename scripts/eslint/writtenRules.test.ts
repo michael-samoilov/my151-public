@@ -48,6 +48,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: "export const c = 'text-[clamp(1rem,4' + 'vw,2rem)]';".replace("' + '", ''),
     good: "export const c = 'text-base';",
   },
+  'hub-height-holds-still': {
+    file: 'src/components/home/sample.tsx',
+    bad: "export const c = 'flex min-h-dvh flex-col';",
+    good: "export const c = 'flex min-h-svh flex-col';",
+  },
   'intro-stack-loads-whole': {
     file: 'src/components/pokedex/IntroCard.tsx',
     bad: "export const i = <img src='/a.avif' alt='' loading='lazy' />;",

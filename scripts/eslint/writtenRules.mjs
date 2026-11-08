@@ -116,6 +116,14 @@ export const WRITTEN_RULES = [
     fix: 'Load every image of the stack eagerly, from one full-size file each.',
   },
   {
+    id: 'hub-height-holds-still',
+    rule: 'The hub scrolls the document, so its layout must not follow dvh. iOS changes dvh when the toolbar hides on scroll, and the hub spacers resize mid-scroll.',
+    source: 'Michael, 2026-11-08: no layout shift while scrolling the hub on mobile',
+    files: ['src/components/home/**/*.{ts,tsx}'],
+    selectors: anyString('/dvh\\b/'),
+    fix: 'Use svh, which stays at the height with the toolbar shown.',
+  },
+  {
     id: 'league-zoom-floor',
     rule: 'Do not lower the 0.55 zoom floor.',
     source: 'docs/handoff/league-builder-2026-09-30.md',
