@@ -59,7 +59,9 @@ whether that copy reaches a crawler at all.
    Pokémon's name. Screenshots on the hub describe what the screenshot shows.
    Decorative icons use `alt=""`.
 10. **JSON-LD:** `WebSite` with `name: "my151"` on the hub; one
-    `WebApplication` per tool page. Same description as the meta description.
+    `WebApplication` per tool page. Same description as the meta description,
+    `og:description` and `twitter:description`. The hub description starts with
+    "my151", so a brand search gets it as the snippet. The build enforces both.
 11. **`public/sitemap.xml` lists every indexable page.** `robots.txt` keeps its
     query-param disallows. Preview-only pages (`evolution-levels`, `slot-lab`, `foil-workshop`)
     carry `<meta name="robots" content="noindex">` and stay out of the sitemap.

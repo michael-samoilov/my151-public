@@ -19,6 +19,22 @@ const LOC = /<loc>\s*([^<\s]+)\s*<\/loc>/g;
 const NOINDEX = /<meta\b(?=[^>]*\bname="robots")(?=[^>]*\bnoindex)[^>]*>/i;
 const JSON_LD = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/;
 const FIX = 'See docs/seo/PAGE-SEO-CONTRACT.md items 10 and 11.';
+const DESCRIPTION_TAGS = ['name="description"', 'property="og:description"', 'name="twitter:description"'];
+const ENTITIES: Record<string, string> = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&lt;': '<', '&gt;': '>' };
+
+function metaContent(html: string, attribute: string): string | undefined {
+  const tag = new RegExp(`<meta\\s+${attribute}\\s+content="([^"]*)"`).exec(html)?.[1];
+  return tag?.replace(/&(?:amp|quot|#39|lt|gt);/g, (entity) => ENTITIES[entity]);
+}
+
+function checkDescriptionTags(file: string, html: string, description: string) {
+  for (const attribute of DESCRIPTION_TAGS) {
+    const content = metaContent(html, attribute);
+    if (content !== undefined && content !== description) {
+      throw new Error(`llms-txt: the <meta ${attribute}> in ${file} differs from its JSON-LD description. Give both the same text. ${FIX}`);
+    }
+  }
+}
 
 function readEntry(root: string, input: string): Entry | null {
   const absolute = path.resolve(root, input);
@@ -38,7 +54,9 @@ function readEntry(root: string, input: string): Entry | null {
     if (typeof value !== 'string' || !value) throw new Error(`llms-txt: the JSON-LD in ${file} lacks "${key}". Add it. ${FIX}`);
     return value;
   };
-  return { file, type: data['@type'], page: { url: field('url'), name: field('name'), description: field('description') } };
+  const page = { url: field('url'), name: field('name'), description: field('description') };
+  checkDescriptionTags(file, html, page.description);
+  return { file, type: data['@type'], page };
 }
 
 function sitePages(config: ResolvedConfig): SitePage[] {
@@ -67,6 +85,10 @@ function sitePages(config: ResolvedConfig): SitePage[] {
   });
   if (pages[0]?.type !== 'WebSite') {
     throw new Error(`llms-txt: the first <loc> in ${SITEMAP} must be the hub, whose JSON-LD @type is WebSite. Move the hub's <loc> to the top. ${FIX}`);
+  }
+  const hub = pages[0].page;
+  if (!hub.description.startsWith(hub.name)) {
+    throw new Error(`llms-txt: the hub description must start with "${hub.name}". Without the brand name, Google picks other page text as the snippet for a brand search. ${FIX}`);
   }
   return pages.map((entry) => entry.page);
 }
