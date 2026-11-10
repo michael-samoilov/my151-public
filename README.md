@@ -37,9 +37,44 @@ The same three tools on a phone screen, 390 pixels wide:
 - **Nine interface languages.** The app supports English, Japanese, Korean, Simplified Chinese, Traditional Chinese, French, German, Spanish, and Italian ([`src/i18n/config.ts`](src/i18n/config.ts)). Pokémon names, types, and other game terms come from the games' own text, and app copy without a reviewed translation falls back to English.
 - **PNG export.** Each tool draws its export on a canvas and saves a PNG file. On iPhone and iPad, the export opens the share sheet. On other devices, it downloads.
 - **Saved on your device.** Each tool keeps its state in the browser's local storage, so you need no account or sign-in. Saved-data migrations keep your selections when the data format changes. A service worker stores sprites in IndexedDB, so later visits load them from the device.
-- **Admin analytics dashboard.** An authenticated dashboard at `/?admin` reports usage from records that the app's own Vercel functions store in Upstash Redis. Automated browsers and browsers that opt out with `?notme` do not count as users. [Analytics accuracy](docs/analytics-accuracy.md) explains how its counts differ from Vercel Web Analytics.
+- **Admin analytics dashboard.** An authenticated dashboard at `/?admin` reports usage from records that the app's own Vercel functions store in Upstash Redis. See [Admin analytics dashboard](#admin-analytics-dashboard).
 - **Performance budgets.** [`scripts/check-bundle-budget.mjs`](scripts/check-bundle-budget.mjs) fails a change that grows the first-load download of the home page, the Dex Builder, or the League Builder by more than 5% over its baseline. [Performance](docs/performance.md) sets field targets for Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS).
 - **Cross-engine verification.** The [verify-my151 harness](.claude/skills/verify-my151/SKILL.md) drives the built app in Blink, WebKit, and Gecko, the engines behind desktop and Android Chrome, iOS Safari and Chrome, and desktop Firefox. For a change, it compares screenshots of the old and new builds at 390 and 1280 pixels wide.
+
+## Admin analytics dashboard
+
+The dashboard at `/?admin` needs a token.
+It counts browsers, not people: each browser keeps a random ID in local storage.
+It shows these measures:
+
+- Active browsers by day, with weekly and monthly lines and the change from week to week.
+- Active hours by weekday, in the viewer's local time or in Eastern Time.
+- The browsers that use more than one tool.
+- A funnel for each tool, from the first visit to a finished build and an export, and the path from each referrer to its landing page.
+- Device, operating system, browser, region, country, and language. Each tool also has its own tab with what people pick, and further tabs show search performance from Google Search Console and feedback reports.
+
+The server stores no usage records from these browsers:
+
+- **Automated browsers.** Playwright, Puppeteer, Selenium, and other WebDriver clients set `navigator.webdriver`. The app marks their requests, and the server stores nothing for them.
+- **The owner's browsers.** Open any page with `?notme` once, and the server stores no usage records from that browser. Open a page with `?countme` to count it again.
+
+Requests to a deploy URL other than my151.app store nothing either.
+[Analytics accuracy](docs/analytics-accuracy.md) explains how the dashboard's counts differ from Vercel Web Analytics.
+
+The screenshots show sample data.
+`/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no API call.
+
+![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active browsers from June to September and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
+
+*Sample data. The Suite tab on a desktop screen, 1280 pixels wide.*
+
+![The Flows panel of the admin dashboard, with a Sankey diagram of the Dex Builder funnel from the intro screen to completed and exported Pokédexes.](docs/readme/admin-dashboard-flows-desktop.webp)
+
+*Sample data. The Dex Builder funnel in the Flows panel.*
+
+<img src="docs/readme/admin-dashboard-phone.webp" width="390" alt="The admin dashboard on a phone screen, with the active-browsers chart, the active-hours heatmap, and the section bar at the bottom.">
+
+*Sample data. The Suite tab on a phone screen, 390 pixels wide.*
 
 ## How it's built
 
