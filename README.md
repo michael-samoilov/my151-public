@@ -59,7 +59,7 @@ The server stores no usage records from these browsers:
 - **The owner's browsers.** Open any page with `?notme` once, and the server stores no usage records from that browser. Open a page with `?countme` to count it again.
 
 Requests to a deploy URL other than my151.app store nothing either.
-[Analytics accuracy](docs/analytics-accuracy.md) explains how the dashboard's counts differ from Vercel Web Analytics.
+The dashboard's counts differ from Vercel Web Analytics, which counts daily unique visitors by a rotating hash instead of a stored browser ID.
 
 The screenshots show sample data.
 `/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no API call.
@@ -100,6 +100,12 @@ Open the Vite URL and select a tool.
 Vite does not run the Vercel functions in `api/`.
 Authenticated admin reports need the configured backend.
 The browser suite uses API fixtures.
+
+The public copy of this repository leaves out the Pokémon sprites in `public/sprites/pokemon/` for licensing reasons.
+Without them, `npm run build` passes with a warning, and the tools show empty sprite slots.
+Run `npm run cache-sprites` to download the PokeAPI sprites that `src/data/pokemon.json` names.
+After that, the Pokédex builder shows almost every sprite.
+Most forms in the League Builder and the Favorite Picker, such as Mega and Gigantamax forms, and most shiny sprites stay empty.
 
 ## Verify a change
 
