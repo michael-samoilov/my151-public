@@ -537,7 +537,7 @@
   "feedback.context.filtersNone": "Aktive Filter: keine",
   "feedback.context.language": "Sprache: {locale}",
   "feedback.context.languageAuto": "Sprache: {locale} (automatisch erkannt)",
-  "feedback.context.note": "Dein Pokédex und alles, was du ins Suchfeld eingegeben hast, werden nie gesendet. Der Server erfasst außerdem dein Land und einen Einweg-Hash deiner IP-Adresse. So lassen sich wiederholte Meldungen zusammenfassen, ohne deinen Standort zu speichern.",
+  "feedback.context.note": "Dein Pokédex und alles, was du ins Suchfeld eingegeben hast, werden nie gesendet. Der Server erfasst außerdem dein Land.",
   "feedback.context.page": "Seite: {route}",
   "feedback.context.pickerCell": "Aktive Zelle: {type} · {gen}",
   "feedback.context.pickerCellNone": "Aktive Zelle: keine",

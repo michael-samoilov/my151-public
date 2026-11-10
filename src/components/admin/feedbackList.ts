@@ -6,7 +6,6 @@ export interface FeedbackItem {
   category: string;
   message: string;
   cid?: string;
-  ipHash?: string;
   country?: string;
   context?: Record<string, unknown>;
 }

@@ -1,6 +1,6 @@
 import type { VercelRequest } from '@vercel/node';
-import { createHash, randomUUID } from 'node:crypto';
-import { redis, getClientIp } from './_shared.js';
+import { randomUUID } from 'node:crypto';
+import { redis } from './_shared.js';
 
 export const FEEDBACK_KEY = 'feedback';
 const COUNT_PREFIX = 'feedback:count';
@@ -22,11 +22,6 @@ export async function storeReport(
   req: VercelRequest,
   report: { category: string; message: string; cid?: string; context: Record<string, unknown> },
 ): Promise<void> {
-  const ipHash = createHash('sha256')
-    .update(`${getClientIp(req)}|${process.env.ADMIN_TOKEN ?? ''}`)
-    .digest('hex')
-    .slice(0, 16);
-
   const country = Array.isArray(req.headers['x-vercel-ip-country'])
     ? req.headers['x-vercel-ip-country'][0]
     : req.headers['x-vercel-ip-country'];
@@ -38,7 +33,6 @@ export async function storeReport(
     category: report.category,
     message: report.message,
     ...(report.cid ? { cid: report.cid } : {}),
-    ipHash,
     ...(country ? { country: String(country).slice(0, 4) } : {}),
     context: report.context,
   };

@@ -524,7 +524,7 @@
   "feedback.context.filtersNone": "使用中のフィルター：なし",
   "feedback.context.language": "言語：{locale}",
   "feedback.context.languageAuto": "言語：{locale}（自動検出）",
-  "feedback.context.note": "あなたの図鑑と、検索ボックスに入力した内容は一切送信されません。サーバーは国と、IPアドレスの一方向ハッシュも記録します。所在地を保存せずに、繰り返し届いた報告をまとめるためです。",
+  "feedback.context.note": "あなたの図鑑と、検索ボックスに入力した内容は一切送信されません。サーバーは国も記録します。",
   "feedback.context.page": "ページ：{route}",
   "feedback.context.pickerCell": "選択中のマス：{type} · {gen}",
   "feedback.context.pickerCellNone": "選択中のマス：なし",

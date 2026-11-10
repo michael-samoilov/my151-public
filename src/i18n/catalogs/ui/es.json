@@ -537,7 +537,7 @@
   "feedback.context.filtersNone": "filtros activos: ninguno",
   "feedback.context.language": "idioma: {locale}",
   "feedback.context.languageAuto": "idioma: {locale} (detectado automáticamente)",
-  "feedback.context.note": "Tu Pokédex y lo que hayas escrito en el cuadro de búsqueda nunca se envían. El servidor también registra tu país y un hash unidireccional de tu dirección IP, para agrupar los informes repetidos sin guardar dónde estás.",
+  "feedback.context.note": "Tu Pokédex y lo que hayas escrito en el cuadro de búsqueda nunca se envían. El servidor también registra tu país.",
   "feedback.context.page": "página: {route}",
   "feedback.context.pickerCell": "casilla activa: {type} · {gen}",
   "feedback.context.pickerCellNone": "casilla activa: ninguna",

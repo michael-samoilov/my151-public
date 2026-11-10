@@ -374,7 +374,7 @@ export const enUi = {
   'feedback.context.filtersNone': 'filters active: none',
   'feedback.context.language': 'language: {locale}',
   'feedback.context.languageAuto': 'language: {locale} (auto-detected)',
-  'feedback.context.note': 'Your Pokédex and whatever you typed in the search box are never sent. The server also records your country and a one-way hash of your IP address, so repeat reports can be grouped without storing where you are.',
+  'feedback.context.note': 'Your Pokédex and whatever you typed in the search box are never sent. The server also records your country.',
   'feedback.context.page': 'page: {route}',
   'feedback.context.pickerCell': 'picker cell: {type} · {gen}',
   'feedback.context.pickerCellNone': 'picker cell: none',
