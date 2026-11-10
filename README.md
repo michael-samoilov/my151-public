@@ -101,6 +101,12 @@ Vite does not run the Vercel functions in `api/`.
 Authenticated admin reports need the configured backend.
 The browser suite uses API fixtures.
 
+The public copy of this repository leaves out the Pokémon sprites in `public/sprites/pokemon/` for licensing reasons.
+Without them, `npm run build` passes with a warning, and the tools show empty sprite slots.
+Run `npm run cache-sprites` to download the PokeAPI sprites that `src/data/pokemon.json` names.
+After that, the Pokédex builder shows almost every sprite.
+Most forms in the League Builder and the Favorite Picker, such as Mega and Gigantamax forms, and most shiny sprites stay empty.
+
 ## Verify a change
 
 ```bash

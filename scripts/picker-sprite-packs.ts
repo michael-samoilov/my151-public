@@ -27,13 +27,14 @@ function pack(files: Buffer[]): Buffer {
   return Buffer.concat([header, ...files]);
 }
 
+const spriteFile = (root: string, sprite: string) => path.join(root, 'public', sprite.split('?')[0]);
+
 function buildPacks(root: string, base: string, plan: Plan): { manifest: PackManifest; files: Emitted[] } {
   const bytes = new Map<string, Buffer>();
   const read = (sprite: string): Buffer => {
     let file = bytes.get(sprite);
     if (file) return file;
-    const source = path.join(root, 'public', sprite.split('?')[0]);
-    if (!fs.existsSync(source)) throw new Error(`picker-sprite-packs: ${sprite} is in the Picker catalog, but ${path.relative(root, source)} does not exist.`);
+    const source = spriteFile(root, sprite);
     file = fs.readFileSync(source);
     if (!file.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`picker-sprite-packs: ${path.relative(root, source)} is not a PNG file.`);
     bytes.set(sprite, file);
@@ -85,10 +86,12 @@ function buildPacks(root: string, base: string, plan: Plan): { manifest: PackMan
 
 export function pickerSpritePacks(): Plugin {
   let files: Emitted[] = [];
+  let missingWarning = '';
+  const noPacks = { define: { __PICKER_SPRITE_PACKS__: 'null' } };
   return {
     name: 'picker-sprite-packs',
     async config(config, { command }) {
-      if (command !== 'build' || config.build?.ssr) return { define: { __PICKER_SPRITE_PACKS__: 'null' } };
+      if (command !== 'build' || config.build?.ssr) return noPacks;
       const root = path.resolve(config.root ?? process.cwd());
       const { module: plan } = await runnerImport<Plan>(path.join(root, PLAN), {
         configFile: false,
@@ -96,9 +99,18 @@ export function pickerSpritePacks(): Plugin {
         logLevel: 'error',
         resolve: { alias: config.resolve?.alias },
       });
+      const sprites = plan.bulkGroups().flat();
+      const missing = sprites.filter((sprite) => !fs.existsSync(spriteFile(root, sprite)));
+      if (missing.length) {
+        missingWarning = `picker-sprite-packs: ${missing.length} of ${sprites.length} Picker sprites are missing from public/sprites/pokemon (first: ${missing[0]}). The build skips the Picker sprite packs, and the Picker loads each sprite on its own. \`npm run cache-sprites\` downloads the PokeAPI sprites that src/data/pokemon.json names; it does not download most Picker forms or shiny sprites.`;
+        return noPacks;
+      }
       const built = buildPacks(root, config.base ?? '/', plan);
       files = built.files;
       return { define: { __PICKER_SPRITE_PACKS__: JSON.stringify(built.manifest) } };
+    },
+    configResolved(resolved) {
+      if (missingWarning) resolved.logger.warn(missingWarning);
     },
     generateBundle() {
       for (const file of files) this.emitFile({ type: 'asset', fileName: file.fileName, source: file.source });
