@@ -524,7 +524,7 @@
   "feedback.context.filtersNone": "已啟用的篩選：無",
   "feedback.context.language": "語言：{locale}",
   "feedback.context.languageAuto": "語言：{locale}（自動偵測）",
-  "feedback.context.note": "你的圖鑑和你在搜尋框中輸入的內容絕不會被傳送。伺服器還會記錄你所在的國家/地區和IP位址的單向雜湊值，以便在不儲存你所在位置的情況下將重複的回報歸為一組。",
+  "feedback.context.note": "你的圖鑑和你在搜尋框中輸入的內容絕不會被傳送。伺服器還會記錄你所在的國家/地區。",
   "feedback.context.page": "頁面：{route}",
   "feedback.context.pickerCell": "目前格：{type} · {gen}",
   "feedback.context.pickerCellNone": "目前格：無",

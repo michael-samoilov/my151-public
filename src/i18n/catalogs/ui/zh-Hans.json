@@ -524,7 +524,7 @@
   "feedback.context.filtersNone": "已启用的筛选：无",
   "feedback.context.language": "语言：{locale}",
   "feedback.context.languageAuto": "语言：{locale}（自动检测）",
-  "feedback.context.note": "你的图鉴和你在搜索框中输入的内容绝不会被发送。服务器还会记录你所在的国家/地区和IP地址的单向哈希值，以便在不保存你所在位置的情况下将重复的报告归为一组。",
+  "feedback.context.note": "你的图鉴和你在搜索框中输入的内容绝不会被发送。服务器还会记录你所在的国家/地区。",
   "feedback.context.page": "页面：{route}",
   "feedback.context.pickerCell": "当前格：{type} · {gen}",
   "feedback.context.pickerCellNone": "当前格：无",
