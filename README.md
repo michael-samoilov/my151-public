@@ -59,7 +59,7 @@ The server stores no usage records from these browsers:
 - **The owner's browsers.** Open any page with `?notme` once, and the server stores no usage records from that browser. Open a page with `?countme` to count it again.
 
 Requests to a deploy URL other than my151.app store nothing either.
-[Analytics accuracy](docs/analytics-accuracy.md) explains how the dashboard's counts differ from Vercel Web Analytics.
+The dashboard's counts differ from Vercel Web Analytics, which counts daily unique visitors by a rotating hash instead of a stored browser ID.
 
 The screenshots show sample data.
 `/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no API call.
