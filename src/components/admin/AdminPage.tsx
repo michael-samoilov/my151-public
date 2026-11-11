@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 import { cn, displayName } from '@/lib/utils';
-import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
+import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons, nearCapRows } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import type { LeagueCardShape as ApiLeagueCard, LeagueSummary as ApiLeagueSummary } from '../../../api/_leagueRecord';
 import type { ClientRecord as ApiClientRecord } from '../../../api/_shared';
@@ -365,11 +365,17 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
   const live = liveDropReasons(events);
   const total = live.reduce((sum, d) => sum + d.count, 0);
-  if (total === 0) return null;
+  const nearCap = nearCapRows(events);
+  if (total === 0 && nearCap.length === 0) return null;
 
   return (
     <>
-      <p className="text-[0.65rem] text-amber-600 mt-2">
+      {nearCap.length > 0 && (
+        <p className="text-[0.65rem] text-amber-600 mt-2">
+          ⚠ The browser store passed 40,000 of its 50,000 limit ({nearCap.map((r) => `${r.label} ${r.count} new browsers since`).join(' · ')})
+        </p>
+      )}
+      {total > 0 && <p className="text-[0.65rem] text-amber-600 mt-2">
         ⚠ {total} beacons dropped server-side (
         {live.map((d) => `${DROP_TOOL_LABEL[d.tool]} ${d.reason} ${d.count}`).join(' · ')}){' '}
         <button
@@ -380,7 +386,7 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
         >
           i
         </button>
-      </p>
+      </p>}
       {open && (
         <InfoDialog title="Beacons dropped server-side" onClose={() => setOpen(false)}>
           <p className="text-xs text-muted-foreground mb-3">

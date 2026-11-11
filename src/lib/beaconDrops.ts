@@ -31,6 +31,12 @@ export const DROP_REASON_INFO: Record<string, { title: string; what: string; rea
     reading:
       'That person keeps their place in Users, but their later activity that day is gone. Their last-seen time is stale, and their session count and depth are understated. If this appears repeatedly, the allowance needs re-checking against the send rate.',
   },
+  'new-client-limit': {
+    title: 'Per-network new-browser limit',
+    what: 'More than 20 browsers the store had never seen arrived from one network address in one day, so the later ones were not stored. One network is one IPv4 address or one IPv6 /64. Real visitors rarely reach 20 from one network. A script that invents browser IDs to fill the store is the likely cause.',
+    reading:
+      'Users undercounts by these browsers for that day. People who already had a record keep updating normally, and the same network can add new browsers again the next day.',
+  },
   cap: {
     title: 'Distinct-browser ceiling',
     what: 'The store reached its maximum number of distinct browsers. Past that point new browsers are ignored, while people already recorded keep updating normally.',
@@ -62,4 +68,13 @@ export function liveDropReasons(
     }
   }
   return rows.sort((a, b) => b.count - a.count);
+}
+
+const NEAR_CAP_PREFIX = 'clients-near-cap:';
+const NEAR_CAP_LABEL: Record<string, string> = { ...DROP_TOOL_LABEL, favorites: 'Favorite picker' };
+
+export function nearCapRows(events: Record<string, number> | undefined): { label: string; count: number }[] {
+  return Object.entries(events ?? {})
+    .filter(([key, count]) => key.startsWith(NEAR_CAP_PREFIX) && count > 0)
+    .map(([key, count]) => ({ label: NEAR_CAP_LABEL[key.slice(NEAR_CAP_PREFIX.length)] ?? key, count }));
 }

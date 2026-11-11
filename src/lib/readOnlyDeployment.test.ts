@@ -29,10 +29,10 @@ describe('isReadOnlyDeployment', () => {
     }
   });
 
-  it('reads x-forwarded-host before host, so an alias is judged by the domain the visitor used', () => {
+  it('judges by the host Vercel routes on, so a caller-sent x-forwarded-host cannot unlock writes', () => {
     vi.stubEnv('VERCEL_ENV', 'preview');
-    expect(isReadOnlyDeployment(req({ 'x-forwarded-host': 'my151.app', host: PREVIEW_HOST }))).toBe(false);
-    expect(isReadOnlyDeployment(req({ 'x-forwarded-host': PREVIEW_HOST, host: 'my151.app' }))).toBe(true);
+    expect(isReadOnlyDeployment(req({ 'x-forwarded-host': 'my151.app', host: PREVIEW_HOST }))).toBe(true);
+    expect(isReadOnlyDeployment(req({ 'x-forwarded-host': PREVIEW_HOST, host: 'my151.app' }))).toBe(false);
   });
 
   it('blocks a production deployment reached by its own vercel.app URL, and never the live hosts', () => {

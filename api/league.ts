@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
+import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
 import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import {
   LEAGUE_CLIENTS_KEY,
@@ -47,6 +47,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (bodyTooLarge(req)) {
+    return res.status(413).json({ error: 'Body too large' });
+  }
   try {
     const body = (req.body ?? {}) as {
       cid?: unknown;
@@ -67,10 +70,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auto?: unknown;
       events?: unknown;
     };
-    if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
-      return res.status(400).json({ error: 'invalid cid' });
-    }
-    const cid = body.cid;
+    const cid = parseClientId(body.cid);
+    if (!cid) return res.status(400).json({ error: 'invalid cid' });
     const receivedAt=Date.now();
     const attention=parseAttentionForIngest(body.attention,receivedAt);
     if(attention===null)return res.status(400).json({error:'invalid attention'});
@@ -95,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true, activityAck });
     }
 
-    const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention') => {
+    const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'new-client-limit' | 'cap' | 'contention') => {
       try {
         await redis.hincrby('funnel', `league-drop:${reason}`, 1);
       } catch {
@@ -139,6 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       events: parseFunnelEventList(body.events),
     };
 
+    let admitted = false;
     for (let attempt = 0; attempt < 6; attempt++) {
       const [rawStr, verStr] = await Promise.all([
         redis.hget(LEAGUE_CLIENTS_KEY, cid) as Promise<unknown>,
@@ -146,6 +148,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ]);
       const existing = parseLeagueRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
+      if (!existing && !admitted) {
+        if (!(await admitNewClient(req, 'league', receivedAt))) {
+          await countDrop('new-client-limit');
+          return res.status(200).json({ ok: true, limited: true });
+        }
+        admitted = true;
+      }
       const rec = mergeLeagueRecord(existing, input);
       const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec), MAX_CLIENTS]);
       if (ok === 2) {
@@ -156,6 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const [activityAck, highlight] = await Promise.all([
           appendMinuteActivity(cid, 'league', body.activity, receivedAt),
           exportKind ? recordToolExport(exportKind === 'card' ? 'card' : 'league', pokemonIds) : undefined,
+          existing ? undefined : noteNewClient(LEAGUE_CLIENTS_KEY, 'league'),
         ]);
         if (exportKind) return res.status(200).json({ ok: true, highlight, activityAck });
         return res.status(200).json({ ok: true, activityAck });

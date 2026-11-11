@@ -8,6 +8,7 @@ import { staticFaq } from './scripts/static-faq'
 import { llmsTxt } from './scripts/llms-txt'
 import { pickerSpritePacks } from './scripts/picker-sprite-packs'
 import { npmPackageIndex, stripCreditNotes } from './scripts/acknowledgements-build'
+import { scriptCsp } from './scripts/script-csp'
 
 function pickerRouteRedirect(): Plugin {
   const install = (server: ViteDevServer | PreviewServer) => {
@@ -80,7 +81,7 @@ const artworkPoses = artwork.poses.map((pose: { viewportWidth: number; cards: Re
 }));
 
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), llmsTxt(), prerenderHub(), pickerSpritePacks(), npmPackageIndex(), stripCreditNotes()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), llmsTxt(), prerenderHub(), pickerSpritePacks(), npmPackageIndex(), stripCreditNotes(), scriptCsp()],
   define: {
     __HOME_ARTWORK_CAPTURE__: process.env.MY151_HOME_ARTWORK_CAPTURE === '1',
     __HOME_MOBILE_ARTWORK__: JSON.stringify(artworkPoses),

@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
+import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
 import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
 import { parseAutoFlag } from './_automation.js';
@@ -35,9 +35,11 @@ return 1
 `;
 export default async function handler(req:VercelRequest,res:VercelResponse) {
   if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
+  if(bodyTooLarge(req))return res.status(413).json({error:'Body too large'});
   try {
     const b=(req.body??{}) as Record<string,unknown>;
-    if(typeof b.cid!=='string'||b.cid.length<8||b.cid.length>64)return res.status(400).json({error:'invalid cid'});
+    const cid=parseClientId(b.cid);
+    if(!cid)return res.status(400).json({error:'invalid cid'});
     if(typeof b.id!=='string'||! /^[\w-]{8,80}$/.test(b.id))return res.status(400).json({error:'invalid id'});
     if(!['progress','completion','export','export-shown','nudge-shown'].includes(String(b.kind)))return res.status(400).json({error:'invalid kind'});
     const snapshot=parseFavoriteSnapshot(b.snapshot);
@@ -52,15 +54,20 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const attention=parseAttentionForIngest(b.attention,received);
     if(attention===null)return res.status(400).json({error:'invalid attention'});
     const drop=async(reason:string)=>{await redis.hincrby('funnel',`favorites-drop:${reason}`,1);};
-    for(const [limiter,key,reason] of [[burstLimiter,getClientIp(req),'rate-limit-ip'],[clientLimiter,`favorites:${b.cid}`,'rate-limit-client']] as const){
+    for(const [limiter,key,reason] of [[burstLimiter,getClientIp(req),'rate-limit-ip'],[clientLimiter,`favorites:${cid}`,'rate-limit-client']] as const){
       const limit=await limiter.limit(key);
       if(!limit.success){await drop(reason);res.setHeader('Retry-After',Math.max(1,Math.ceil((limit.reset-Date.now())/1000)));return res.status(429).json({error:'Too many requests'});}
     }
     const geo=getGeo(req);const ua=getClient(req);const day=new Date(now).toISOString().slice(0,10);
+    let admitted=false;
     for(let attempt=0;attempt<6;attempt++){
-      const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,b.cid),redis.hget(FAVORITE_VERSION_KEY,b.cid)]);
+      const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,cid),redis.hget(FAVORITE_VERSION_KEY,cid)]);
       const existing=parseFavoriteRecord(raw);
       if(!existing&&snapshot.filled===0)return res.status(200).json({ok:true,activityAck:acknowledgeUnstored(b.activity,received)});
+      if(!existing&&!admitted){
+        if(!(await admitNewClient(req,'favorites',received))){await drop('new-client-limit');return res.status(200).json({ok:true,limited:true});}
+        admitted=true;
+      }
       const session=existing?favoriteSessionAt(existing.sessionLog,now):undefined;
       const events:string[]=session?[]:['favorites-open'];
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
@@ -70,13 +77,13 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);
       if(stats)events.push('favorites-export-stats');
-      const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,receivedAt:received,attention,seen:parseSeenDays(b.seen,received),kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
+      const rec=mergeFavoriteRecord(existing,{cid,id:b.id,now,receivedAt:received,attention,seen:parseSeenDays(b.seen,received),kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
         ...geo,...ua,lang:getLang(req),locale:parseLocale(b.locale),switched:parseLocale(b.switched),referrer:parseReferrerHost(b.ref)});
-      const entries=events.map(ev=>({t:now,cid:b.cid,tool:'favorites',ev,...(parsePage(b.page)?{page:parsePage(b.page)}:{})}));
-      const result=await redis.eval(CAS,[FAVORITE_CLIENTS_KEY,FAVORITE_VERSION_KEY,`favorites:request:${b.cid}:${b.id}`,'funnel',`funnel:${day}`,`journal:${day}`],
-        [b.cid,version==null?'0':String(version),JSON.stringify(rec),MAX_CLIENTS,JSON.stringify(entries),JOURNAL_TTL_S,JOURNAL_MAX_PER_DAY,exportKind?JOURNAL_TTL_S:604800]);
+      const entries=events.map(ev=>({t:now,cid,tool:'favorites',ev,...(parsePage(b.page)?{page:parsePage(b.page)}:{})}));
+      const result=await redis.eval(CAS,[FAVORITE_CLIENTS_KEY,FAVORITE_VERSION_KEY,`favorites:request:${cid}:${b.id}`,'funnel',`funnel:${day}`,`journal:${day}`],
+        [cid,version==null?'0':String(version),JSON.stringify(rec),MAX_CLIENTS,JSON.stringify(entries),JOURNAL_TTL_S,JOURNAL_MAX_PER_DAY,exportKind?JOURNAL_TTL_S:604800]);
       if(result===1||result===2){
-        const activityAck=await appendMinuteActivity(b.cid,'favorites',b.activity,received);
+        const [activityAck]=await Promise.all([appendMinuteActivity(cid,'favorites',b.activity,received),result===1&&!existing?noteNewClient(FAVORITE_CLIENTS_KEY,'favorites'):undefined]);
         return res.status(200).json({ok:true,activityAck});
       }
       if(result===3){await drop('cap');return res.status(200).json({ok:true,capped:true});}

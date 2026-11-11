@@ -42,11 +42,18 @@ const BILL = ['evalsha', 'evalsha', 'hget', 'hget', 'eval'];
 
 describe('favorites beacon Redis bill', () => {
   it('records the completion popup, the export dialog and a detailed-stats export in the same five commands as a progress beacon', async () => {
+    const stored = mergeFavoriteRecord(null, {
+      cid: 'browser-0001', id: 'request-stored', now: NOW - 60_000, kind: 'progress', snapshot: parseFavoriteSnapshot(snapshot)!, events: ['favorites-open'],
+    });
     for (const extra of [{}, { kind: 'nudge-shown' }, { kind: 'export-shown' }, { kind: 'export', exportKind: 'full', stats: true }]) {
-      const sent = await send(extra);
+      const sent = await send(extra, stored);
       expect(sent.status).toBe(200);
       expect(sent.bill).toEqual(BILL);
     }
+  });
+
+  it('adds only the per-network admission and the ceiling check for a new browser', async () => {
+    expect((await send({})).bill).toEqual(['evalsha', 'evalsha', 'hget', 'hget', 'incr', 'expire', 'eval', 'hlen']);
   });
 
   it('journals the export dialog once per visit, so reopening it adds no counter or journal entry', async () => {
