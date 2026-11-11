@@ -1,3 +1,4 @@
+import './lib/resizeObserverFallback'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'

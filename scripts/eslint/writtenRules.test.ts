@@ -43,6 +43,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: "export const i = <img src='/a.png' />;",
     good: "export const i = <img src='/a.png' alt='' />;",
   },
+  'resize-observer-fallback-first': {
+    file: 'src/sample/main.tsx',
+    bad: "import { StrictMode } from 'react';\nimport '../lib/resizeObserverFallback';",
+    good: "import '../lib/resizeObserverFallback';\nimport { StrictMode } from 'react';",
+  },
   'specs-record-their-files': {
     file: 'e2e/sample.spec.ts',
     bad: "import { test } from '@playwright/test';\ntest('x', () => {});",
