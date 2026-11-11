@@ -143,7 +143,7 @@ branch `codex/performance-program-plan`. This page replaces its targets.
 
 The final correction is merged in PR 218, production `f23bc760`.
 Michael confirms the candidate is clearly faster on his iPhone.
-The [final investigation](handoff/homepage-early-paint-2026-10-15.md) records the
+The final investigation (`docs/handoff/homepage-early-paint-2026-10-15.md`) records the
 commit history, full evidence and remaining limits. PR 214 was an earlier,
 insufficient correction; do not report its measurements as the final release.
 
@@ -179,7 +179,7 @@ DOM presence alone is not proof of composited complete paint.
 
 ## Further optimization batch, 15 October
 
-See [the four-group audit and final measurements](handoff/performance-avenues-2026-10-15.md).
+See the four-group audit and final measurements (`docs/handoff/performance-avenues-2026-10-15.md`).
 The retained application is `47ef7b1b` versus the shipped homepage baseline
 `f23bc760`. It keeps original-dimension Dex intro AVIF with WebP fallback,
 parallel independent UI/terms catalogs, file sharing before optional export
@@ -206,7 +206,7 @@ are in the handoff. No 0.2-second FCP or universal improvement is claimed.
 
 ## Mobile-only composed homepage artwork, 19 October
 
-[The implementation and full measurement handoff](handoff/home-mobile-artwork-2026-10-19.md)
+The implementation and full measurement handoff (`docs/handoff/home-mobile-artwork-2026-10-19.md`)
 records three composed DPR-3 images on small touch phones and the six originals
 with independent hover on desktop. Incoming artwork must decode before a resize
 replaces the outgoing artwork. Inter, captions, routes, and the shared initial

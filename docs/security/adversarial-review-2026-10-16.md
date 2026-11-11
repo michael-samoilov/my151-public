@@ -95,8 +95,8 @@ network round trip, but Lua subcommands still count toward provider usage.
 ## Evidence and repeat the checks
 
 - [Access baseline and scope](access-2026-10-16/README.md), after transcript.
-- [Limits baseline](../evidence/security-review-2026-10-16/limits-review.md), Redis before, Redis after.
-- [Browser method and results](../evidence/security-review-2026-10-16/browser/README.md).
+- Limits baseline (`docs/evidence/security-review-2026-10-16/limits-review.md`), Redis before, Redis after.
+- Browser method and results (`docs/evidence/security-review-2026-10-16/browser/README.md`).
 
 Before the next launch, rerun the saved security command. The combined run
 passes 63 handler checks, seven actual Redis checks, and eight browser checks.

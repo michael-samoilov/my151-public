@@ -85,7 +85,7 @@ Height, weight, abilities, gender ratio, egg cycles, base friendship, genus, evo
 
 ### Prior art
 
-[The form metadata contract prototype](../handoff/agent-metadata-prototype-2026-10-16.md) compared complete resolved records with sparse overrides for 1,388 forms. Both designs caught the same four historical errors. Resolved values cost 30,283 gzip bytes. Sparse values cost 3,086. Its recommendation was to keep sparse runtime data and validate at the offline refresh boundary. This spec keeps that recommendation.
+The form metadata contract prototype (`docs/handoff/agent-metadata-prototype-2026-10-16.md`) compared complete resolved records with sparse overrides for 1,388 forms. Both designs caught the same four historical errors. Resolved values cost 30,283 gzip bytes. Sparse values cost 3,086. Its recommendation was to keep sparse runtime data and validate at the offline refresh boundary. This spec keeps that recommendation.
 
 ## Target model
 

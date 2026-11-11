@@ -3,9 +3,10 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { defaultBase } from './ci/base.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PRODUCTION = 'origin/claude/pokedex-region-builder-AviYF';
+const PRODUCTION = defaultBase(root);
 const RULES = 'See AGENTS.md section 4, "Testing". Annotate a kept unit test with `// keeps: <bug E2E misses>` in its first 5 lines.';
 
 const UNIT_TEST = /^(?:src\/.+\.test\.tsx?|scripts\/.+\.test\.ts)$/;

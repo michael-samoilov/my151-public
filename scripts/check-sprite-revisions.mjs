@@ -3,8 +3,9 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { decode, samePixels } from './png-rgba.ts';
+import { defaultBase } from './ci/base.ts';
 
-const BASE = process.argv[2] ?? 'origin/claude/pokedex-region-builder-AviYF';
+const BASE = process.argv[2] ?? defaultBase();
 const REVISIONS = 'src/data/spriteRevisions.json';
 const SOURCES = 'src/data/spriteAttribution.json';
 const REENCODES = 'scripts/sprite-reencodes.json';

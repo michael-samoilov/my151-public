@@ -32,7 +32,7 @@ Pokopia forms are named by species and form, with the character name as a search
 
 ## Added on 2026-10-20 (review candidate)
 
-Michael approved each sprite in the sprite lab. The app files are byte copies of the lab selections. [Provenance](favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json).
+Michael approved each sprite in the sprite lab. The app files are byte copies of the lab selections. Provenance (`docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json`).
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ None has a shiny. Types are the species' own, as for the other picker-only forms
 
 ## Imported on 2026-10-19 (review candidate)
 
-Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, peakychu. Having no shiny is fine." Each original is smaller than 96×96. Its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror, centered on the base sprite's ink and on that sprite's bottom edge. [Originals and provenance](favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json) record the source pages, hashes, offsets, and the terms.
+Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, peakychu. Having no shiny is fine." Each original is smaller than 96×96. Its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror, centered on the base sprite's ink and on that sprite's bottom edge. Originals and provenance (`docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json`) record the source pages, hashes, offsets, and the terms.
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ Neither has a shiny. kiriaura gets a credit entry of their own with both sprites
 
 ## Purple Kecleon, added on 2026-10-19 (review candidate)
 
-Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. [Provenance](favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json).
+Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. Provenance (`docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json`).
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ No shiny. No credit, because the art is Game Freak's. No game gives the purple K
 
 ## Imported on 2026-10-17, released on 2026-10-18
 
-The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. [Originals and provenance](favorite-picker-work/sprites/2026-10-17-king-originals/originals.json) record the source pages, hashes, dimensions, transparency, and ink bounds.
+The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. Originals and provenance (`docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json`) record the source pages, hashes, dimensions, transparency, and ink bounds.
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve 
 | Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
 | Mega Raichu X | 10304 | Replaced existing shared Picker/League art with a cache revision from 2026-10-17 to 2026-10-29. Identity stays 10304. https://sta.sh/03id19f0dha. On 2026-10-29 it went back to PokéAPI's normal and shiny pair, credited to Kyle Dove. |
 
-King's direct-upload credit lists 12 sprites since Mega Raichu X went back to PokéAPI's pair on 2026-10-29. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
+King's direct-upload credit lists 12 sprites since Mega Raichu X went back to PokéAPI's pair on 2026-10-29. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in the picker handoff (`docs/favorite-picker-handoff.md`).
 
 ## Added on 2026-10-12
 
@@ -134,4 +134,4 @@ When adding one: verify the source and visual style, save the sprite under `publ
 
 ## Research
 
-Search terms, candidate comparisons, and source provenance are recorded in [sprite review research](favorite-picker-work/sprites/README.md). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.
+Search terms, candidate comparisons, and source provenance are recorded in sprite review research (`docs/favorite-picker-work/sprites/README.md`). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.
