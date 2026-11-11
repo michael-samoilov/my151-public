@@ -226,10 +226,15 @@ test.describe('admin flows', () => {
     ].map(([host, dex, league, favorites]) => ({ host: host as string, dex: dex as number, league: league as number, favorites: favorites as number, total: (dex as number) + (league as number) + (favorites as number) }));
     await page.addInitScript(() => {
       const original = CanvasRenderingContext2D.prototype.fillText;
-      const state = window as unknown as { referrerPaints: string[] };
+      const state = window as unknown as { referrerPaints: string[]; referrerSpans: { text: string; left: number; right: number }[] };
       state.referrerPaints = [];
+      state.referrerSpans = [];
       CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
-        if (/Referrer to landing/.test(this.canvas.closest('[role="img"]')?.getAttribute('aria-label') ?? '')) state.referrerPaints.push(text);
+        if (/Referrer to landing/.test(this.canvas.closest('[role="img"]')?.getAttribute('aria-label') ?? '')) {
+          state.referrerPaints.push(text);
+          const m = this.getTransform(), width = this.measureText(text).width, start = this.textAlign === 'right' || this.textAlign === 'end' ? x - width : this.textAlign === 'center' ? x - width / 2 : x;
+          state.referrerSpans.push({ text, left: (m.a * start + m.e) / devicePixelRatio, right: (m.a * (start + width) + m.e) / devicePixelRatio });
+        }
         return maxWidth === undefined ? original.call(this, text, x, y) : original.call(this, text, x, y, maxWidth);
       };
     });
@@ -259,9 +264,12 @@ test.describe('admin flows', () => {
         return { name: n.id, x: r.x, y: r.y, width: r.width, height: r.height };
       }) };
     });
+    const spans = await page.evaluate(() => (window as unknown as { referrerSpans: { text: string; left: number; right: number }[] }).referrerSpans);
     const line = Math.min(...labels.rects.map((r) => r.height));
     for (const r of labels.rects) {
-      expect(r.x >= 0 && r.y >= 0 && r.x + r.width <= labels.width && r.y + r.height <= labels.height, `${r.name} stays inside ${JSON.stringify(r)}`).toBe(true);
+      const painted = spans.filter((p) => p.text === r.name);
+      expect(painted.length, `${r.name} paints`).toBeGreaterThan(0);
+      expect(painted.every((p) => p.left >= 0 && p.right <= labels.width) && r.y >= 0 && r.y + r.height <= labels.height, `${r.name} stays inside ${JSON.stringify({ ...r, painted })}`).toBe(true);
       expect(r.height, `${r.name} stays on one line`).toBeLessThan(line * 1.5);
     }
     const sources = labels.rects.filter((r) => payload.referrerFlow!.some((row) => row.host === r.name)).sort((a, b) => a.y - b.y);
