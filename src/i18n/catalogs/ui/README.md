@@ -115,6 +115,13 @@ in English in every locale, because they are proper nouns and the sources'
 own words (`src/data/acknowledgements.ts`). German, French, and Spanish keep
 Sprites, and German and French keep Code; `SAME_AS_ENGLISH_OK` lists them.
 
+`privacy.*` is the footer's Privacy panel. Only its title is translated,
+with the footer link `footer.privacy`. The notice itself stays in English in
+every locale until a speaker reviews a translation: it states what the app
+stores and for how long, and an unreviewed translation could state that
+wrongly. Each missing key falls back to English, as the top of this file says.
+Italian keeps Privacy, the usual Italian word, and `SAME_AS_ENGLISH_OK` lists it.
+
 The FAQ also names fan concepts that the games do not. These are described,
 not sourced: Japanese 600族 and Chinese 准神 and 準神 for pseudo-legendary,
 ピカチュウ枠 for Pikaclone, and 創作ポケモン, 창작 포켓몬, 自创宝可梦, and

@@ -562,6 +562,8 @@
   "feedback.sending": "Envoi en cours…",
   "feedback.thanks": "Merci, ça nous aide !",
   "feedback.title": "Signaler un problème",
+  "footer.privacy": "Confidentialité",
+  "privacy.title": "Confidentialité",
   "footer.report": "Signaler un problème",
   "home.favorites.blurb": "Choisissez vos favoris par type et génération",
   "home.favorites.fullGridAlt": "Une grille complète de Pokémon préférés par type et génération, exportée du sélecteur de Pokémon préférés",

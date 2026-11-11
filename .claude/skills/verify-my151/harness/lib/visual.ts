@@ -192,6 +192,19 @@ const openProject = (id?: string) => async (page: Page) => {
   await dialog.getByTestId('ack-artists').scrollIntoViewIfNeeded();
 };
 
+/** Scrolls the page footer into view by its Acknowledgements link, which every build has. */
+const showFooter = async (page: Page) => {
+  await page.getByRole('button', { name: 'Acknowledgements' }).last().scrollIntoViewIfNeeded();
+};
+/** Opens the footer's Privacy panel. A build without the link shows its footer instead, so the base still renders. */
+const openPrivacy = async (page: Page) => {
+  const link = page.getByRole('button', { name: 'Privacy', exact: true }).last();
+  if (!await link.count()) return showFooter(page);
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+  await page.getByRole('dialog', { name: 'Privacy' }).getByRole('switch').waitFor({ timeout: 30_000 });
+};
+
 export const SCREENS: Screen[] = [
   { id: 'hub', path: '/' },
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
@@ -319,6 +332,8 @@ export const SCREENS: Screen[] = [
   { id: 'favorites-tooltip-shadow-lugia-zh', path: '/favorite-pokemon-picker?lang=zh-Hant', act: pickTooltip('psychic-3', [11123]) },
   { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
   { id: 'ack-list', path: '/?lang=en', act: openProject() },
+  { id: 'builder-footer', path: '/pokedex-builder?lang=en', seed: DEX, act: showFooter },
+  { id: 'privacy', path: '/?lang=en', act: openPrivacy },
   { id: 'ack-project-pokeapi', path: '/?lang=en', act: openProject('pokeapi-sprites') },
   { id: 'favorites-filled-crocalor', path: '/favorite-pokemon-picker', seed: FAVORITES_CROCALOR },
   { id: 'ack-artist-kingofthe-x-roads', path: '/?lang=en', act: openArtist('KingOfThe-X-Roads') },

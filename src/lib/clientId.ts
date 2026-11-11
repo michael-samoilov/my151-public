@@ -11,7 +11,7 @@ export function installOptOut(search: string = window.location.search): void {
   }
 }
 
-function setOptedOut(optedOut: boolean): void {
+export function setOptedOut(optedOut: boolean): void {
   try {
     if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
     else localStorage.removeItem(OPT_OUT_KEY);
@@ -19,7 +19,16 @@ function setOptedOut(optedOut: boolean): void {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('p151-opt-out'));
 }
 
+export function sendsGlobalPrivacyControl(): boolean {
+  try {
+    return typeof navigator !== 'undefined' && 'globalPrivacyControl' in navigator && navigator.globalPrivacyControl === true;
+  } catch {
+    return false;
+  }
+}
+
 export function isOptedOut(): boolean {
+  if (sendsGlobalPrivacyControl()) return true;
   try {
     return localStorage.getItem(OPT_OUT_KEY) === '1';
   } catch {

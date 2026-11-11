@@ -168,6 +168,7 @@ export interface ApiResponse {
   totalUsers: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
+  visits?: { all: number; optedOut: number; byTool: Record<string, { all: number; optedOut: number }> };
   dexFunnel?: DexUsageFunnel;
   leagueFunnel?: LeagueUsageFunnel;
   tools?: {
@@ -358,6 +359,16 @@ function InfoDialog({
         {children}
       </div>
     </div>
+  );
+}
+
+function OptOutShare({ visits }: { visits?: ApiResponse['visits'] }) {
+  if (!visits?.all) return null;
+  const share = Math.round((visits.optedOut / visits.all) * 1000) / 10;
+  return (
+    <p className="text-[0.65rem] text-muted-foreground mt-2" data-testid="admin-optout-share">
+      {visits.all.toLocaleString('en')} page loads in this range · {visits.optedOut.toLocaleString('en')} not counted ({share}%): the privacy switch, ?notme, or Global Privacy Control
+    </p>
   );
 }
 
@@ -1976,6 +1987,7 @@ export function AdminPage() {
             {slice.heatmaps && <HeatmapCard heatmaps={slice.heatmaps} />}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
+            <OptOutShare visits={data.visits} />
 
             {tool === 'league' && (
               <Panel title="League activity" sub={[`${slice.users} browsers`]}>

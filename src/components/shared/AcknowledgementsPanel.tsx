@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { formatNumber, useLocale, useT, useTn, type NoArgKey } from '@/i18n';
-import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import {
   ACKNOWLEDGEMENTS,
@@ -16,6 +13,7 @@ import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
 import { artistCredit, bundleCredit, bundlesCrediting, pokeapiDelivery } from '@/data/spriteCredits';
 import { ArtistSprites } from './AcknowledgementsSprites';
 import { BundleArtists } from './AcknowledgementsArtists';
+import { FooterPanel, PANEL_HEADING } from './FooterPanel';
 
 const GROUP_KEYS = {
   'sprite-projects': 'ack.group.spriteSources',
@@ -83,12 +81,10 @@ function reflow(text: string): string {
   return out.join('\n');
 }
 
-const HEADING = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
-
 function Section({ label, count, children }: { label: string; count?: number; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1.5">
-      <h4 className={cn(HEADING, 'flex justify-between gap-2 px-1')}>
+      <h4 className={cn(PANEL_HEADING, 'flex justify-between gap-2 px-1')}>
         <span>{label}</span>
         {count !== undefined && <span className="tabular-nums">{count}</span>}
       </h4>
@@ -505,7 +501,7 @@ function AcknowledgementsBody() {
         </p>
         {GROUPS.map((group) => (
           <section key={group.id} className="pt-5" data-testid={`ack-group-${group.id}`}>
-            <h3 className={cn(HEADING, 'flex justify-between px-5 pb-1.5')}>
+            <h3 className={cn(PANEL_HEADING, 'flex justify-between px-5 pb-1.5')}>
               <span>{t(GROUP_KEYS[group.id])}</span>{' '}
               <span className="tabular-nums">{group.entries.length}</span>
             </h3>
@@ -537,55 +533,9 @@ function AcknowledgementsBody() {
 
 export function AcknowledgementsPanel({ anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void }) {
   const t = useT();
-  const isDesktop = useViewportAtLeast(1024);
-
-  const close = useCallback(() => {
-    onClose();
-    anchor?.focus({ preventScroll: true });
-  }, [anchor, onClose]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.stopPropagation();
-      close();
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [close]);
-
-  if (!isDesktop) {
-    return (
-      <BottomSheet onClose={close} title={t('ack.title')} closeLabel={t('ack.title')} size="full">
-        <AcknowledgementsBody />
-      </BottomSheet>
-    );
-  }
-
-  return createPortal(
-    <div data-overlay>
-      <div className="fixed inset-0 z-[140] bg-black/20" onClick={close} aria-hidden />
-      <aside
-        role="dialog"
-        aria-label={t('ack.title')}
-        className="fixed inset-y-0 end-0 z-[150] flex w-[min(24rem,calc(100vw-1.5rem))] flex-col border-s bg-background shadow-xl"
-      >
-        <div className="flex h-11 shrink-0 items-center justify-between border-b px-3 py-2">
-          <span className="text-sm font-semibold text-foreground">{t('ack.title')}</span>
-          <button
-            type="button"
-            onClick={close}
-            className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label={t('browser.close')}
-          >
-            <X className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1">
-          <AcknowledgementsBody />
-        </div>
-      </aside>
-    </div>,
-    document.body,
+  return (
+    <FooterPanel title={t('ack.title')} anchor={anchor} onClose={onClose}>
+      <AcknowledgementsBody />
+    </FooterPanel>
   );
 }

@@ -1,9 +1,10 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useT } from '@/i18n';
 import { Faq, type FaqPage } from '@/components/shared/Faq';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 import { loadChunk } from '@/lib/staleDeploy';
+import { openPrivacyPanel, openPrivacyPanelFromLink } from './privacyPanelStore';
 
 const AcknowledgementsPanel = lazy(() => loadChunk(() => import('./AcknowledgementsPanel'))
   .then((module) => ({ default: module.AcknowledgementsPanel })));
@@ -21,6 +22,17 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
       className={className}
     >
       {t('footer.acknowledgements')}
+    </button>
+  );
+  useEffect(() => openPrivacyPanelFromLink(), []);
+  const privacyLink = (className: string) => (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={(e) => openPrivacyPanel(e.currentTarget)}
+      className={className}
+    >
+      {t('footer.privacy')}
     </button>
   );
   const ackPanel = ackFrom && (
@@ -46,6 +58,8 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
           </button>
           <span aria-hidden className="text-muted-foreground/40">·</span>
           {ackLink('cursor-pointer underline underline-offset-2 hover:text-foreground')}
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          {privacyLink('cursor-pointer underline underline-offset-2 hover:text-foreground')}
         </footer>
         {faq && <Faq page={faq} compact />}
         {ackPanel}
@@ -81,6 +95,8 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
         </button>
         <span aria-hidden className="text-muted-foreground/40">·</span>
         {ackLink('underline underline-offset-2 hover:text-foreground cursor-pointer')}
+        <span aria-hidden className="text-muted-foreground/40">·</span>
+        {privacyLink('underline underline-offset-2 hover:text-foreground cursor-pointer')}
       </div>
       </footer>
       {faq && <Faq page={faq} />}
