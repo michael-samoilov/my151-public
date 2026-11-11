@@ -1,3 +1,4 @@
+import '../lib/resizeObserverFallback'
 import { StrictMode, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot, hydrateRoot } from 'react-dom/client'

@@ -124,6 +124,14 @@ export const WRITTEN_RULES = [
     fix: 'Use svh, which stays at the height with the toolbar shown.',
   },
   {
+    id: 'resize-observer-fallback-first',
+    rule: 'Every page entry imports src/lib/resizeObserverFallback first. Some Safari builds ship no ResizeObserver, and components construct one without a check.',
+    source: 'Crash report 2026-11-11: League Builder, "Can\'t find variable: ResizeObserver"',
+    files: ['src/main.tsx', 'src/*/main.tsx'],
+    selectors: ['Program:not(:has(> ImportDeclaration:first-child[source.value=/\\/lib\\/resizeObserverFallback$/]))'],
+    fix: "Make `import '../lib/resizeObserverFallback'` the first line of the entry.",
+  },
+  {
     id: 'specs-record-their-files',
     rule: 'A browser spec imports test from e2e/support/test, so the test-map recording sees which source files it runs. CI picks browser tests from that map.',
     source: 'CLAUDE.md, Build Verification',

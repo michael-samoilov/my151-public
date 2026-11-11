@@ -1,3 +1,4 @@
+import '../lib/resizeObserverFallback'
 import './formNames'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
