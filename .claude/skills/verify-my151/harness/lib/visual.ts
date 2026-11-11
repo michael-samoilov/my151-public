@@ -33,7 +33,7 @@ const LEAGUE_OPEN_SEATS = (() => {
   for (const card of league.state.cards.slice(0, 2)) card.lines = card.lines.slice(0, 3);
   return { 'league-builder': JSON.stringify(league) };
 })();
-const FILLS = JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills;
+const FILLS = JSON.parse(read('e2e/support/picker-seed.json')).fills;
 const FAVORITES = { 'favorite-picker': JSON.stringify({ state: { fills: FILLS }, version: 3 }) };
 const FAVORITES_CROCALOR = { 'favorite-picker': JSON.stringify({ state: { fills: { ...FILLS, 'fire|1': 910 } }, version: 3 }) };
 /** Gen I's favorite is Tentacruel, which Water / Gen I holds shiny and Poison / Gen I holds normal. */

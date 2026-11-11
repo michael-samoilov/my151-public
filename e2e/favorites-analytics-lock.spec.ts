@@ -2,7 +2,7 @@ import { test, expect, type Page, type TestInfo } from './support/test';
 import { readFileSync } from 'node:fs';
 
 const UNLOCK_KEY = 'personal-151-favorites-analytics-v1';
-const seedFills = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
+const seedFills = JSON.parse(readFileSync('e2e/support/picker-seed.json', 'utf8')).fills as Record<string, number>;
 const TYPES = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying',
   'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
 const typePicks = Object.entries(seedFills)
