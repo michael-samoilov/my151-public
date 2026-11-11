@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
-import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
-import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { FEEDBACK_KEY, UNVERIFIED_FEEDBACK_KEY, hasStoredRecord, storeReport, underHourlyCap } from './_feedbackStore.js';
+import { redis, getClientIp, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
 import { FEEDBACK_MESSAGE_MAX_CHARS, FEEDBACK_MIN_CHARS } from '../src/lib/feedbackLimits.js';
 
@@ -11,6 +11,7 @@ const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 export const MAX_CONTEXT_CODE_UNITS = 4096;
 const MIN_DWELL_MS = 2000;
 const GLOBAL_HOURLY_CAP = 200;
+const UNVERIFIED_HOURLY_CAP = 20;
 
 const ipLimiter = new Ratelimit({
   redis,
@@ -120,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'context too large' });
     }
 
-    const cid = str(body.cid, 64);
+    const cid = parseClientId(body.cid);
 
     if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
@@ -137,11 +138,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    if (!(await underHourlyCap(FEEDBACK_KEY, GLOBAL_HOURLY_CAP))) {
+    const list = (await hasStoredRecord(cid)) ? FEEDBACK_KEY : UNVERIFIED_FEEDBACK_KEY;
+    const cap = list === FEEDBACK_KEY ? GLOBAL_HOURLY_CAP : UNVERIFIED_HOURLY_CAP;
+    if (!(await underHourlyCap(list, cap))) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    await storeReport(req, { category, message, cid, context });
+    await storeReport(req, list, { category, message, cid, context });
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Feedback error:', err);

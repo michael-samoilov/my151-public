@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { isIPv6 } from 'node:net';
 
 export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -14,6 +15,14 @@ export const VERSION_KEY = 'clients:ver';
 export const SESSION_GAP_MS = 30 * 60_000;
 export const MAX_SESSIONS_TRACKED = 50;
 export const MAX_CLIENTS = 50000;
+export const CLIENTS_ALERT_AT = 40000;
+export const NEW_CLIENTS_PER_NETWORK_PER_DAY = 20;
+export const MAX_BEACON_BODY_BYTES = 64 * 1024;
+export const CLIENT_ID_PATTERN = /^[\w-]{8,64}$/;
+
+export function parseClientId(v: unknown): string | undefined {
+  return typeof v === 'string' && CLIENT_ID_PATTERN.test(v) ? v : undefined;
+}
 
 export const BEACON_KINDS = ['progress', 'completion', 'export'] as const;
 export type BeaconKind = (typeof BEACON_KINDS)[number];
@@ -90,8 +99,8 @@ const LIVE_HOSTS = new Set(['my151.app', 'www.my151.app']);
 export function isReadOnlyDeployment(req: VercelRequest): boolean {
   const env = process.env.VERCEL_ENV;
   if (env !== 'preview' && env !== 'production') return false;
-  const host = headerValue(req, 'x-forwarded-host') ?? headerValue(req, 'host') ?? '';
-  return !LIVE_HOSTS.has(host.split(',')[0].trim().toLowerCase().replace(/:\d+$/, ''));
+  const host = headerValue(req, 'host') ?? '';
+  return !LIVE_HOSTS.has(host.toLowerCase().replace(/:\d+$/, ''));
 }
 
 export function getClientIp(req: VercelRequest): string {
@@ -101,6 +110,47 @@ export function getClientIp(req: VercelRequest): string {
   const raw = Array.isArray(fwd) ? fwd[0] : fwd;
   if (raw) return raw.split(',')[0].trim();
   return req.socket?.remoteAddress ?? 'unknown';
+}
+
+function ipv6Prefix64(ip: string): string {
+  const [head, tail = ''] = ip.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups = ip.includes('::') ? [...left, ...Array(8 - left.length - right.length).fill('0'), ...right] : left;
+  return groups.slice(0, 4).map((g) => g.toLowerCase().replace(/^0+(?=.)/, '')).join(':');
+}
+
+export function getNetworkKey(req: VercelRequest): string {
+  const ip = getClientIp(req).replace(/%.*$/, '').replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/i, '');
+  const network = isIPv6(ip) ? `${ipv6Prefix64(ip)}::/64` : ip;
+  return createHash('sha256').update(network).digest('hex').slice(0, 24);
+}
+
+export function bodyTooLarge(req: VercelRequest, max = MAX_BEACON_BODY_BYTES): boolean {
+  const declared = Number(headerValue(req, 'content-length'));
+  if (Number.isFinite(declared) && declared > max) return true;
+  const body: unknown = req.body;
+  if (body == null) return false;
+  if (typeof body === 'string') return Buffer.byteLength(body) > max;
+  if (Buffer.isBuffer(body)) return body.length > max;
+  return Buffer.byteLength(JSON.stringify(body)) > max;
+}
+
+export type ClientTool = 'dex' | 'league' | 'favorites';
+
+export async function admitNewClient(req: VercelRequest, tool: ClientTool, now = Date.now()): Promise<boolean> {
+  const key = `newcid:${tool}:${new Date(now).toISOString().slice(0, 10)}:${getNetworkKey(req)}`;
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 2 * 86_400);
+  return count <= NEW_CLIENTS_PER_NETWORK_PER_DAY;
+}
+
+export async function noteNewClient(recordsKey: string, tool: ClientTool): Promise<void> {
+  try {
+    if ((await redis.hlen(recordsKey)) >= CLIENTS_ALERT_AT) await redis.hincrby('funnel', `clients-near-cap:${tool}`, 1);
+  } catch (err) {
+    console.error('Client count alert error:', err);
+  }
 }
 
 // platform: Vercel sends the placeholder 'XX' as the country when it does not know it.

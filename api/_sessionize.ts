@@ -41,13 +41,13 @@ export function sortSessions<T extends { ts: number }>(
   return { log: order.map((i) => log[i]), ms: order.map((i) => aligned[i]) };
 }
 
-const PRODUCT_START_MS = Date.parse('2024-01-01T00:00:00.000Z');
+const MAX_CAPTURE_AGE_MS = 24 * 60 * 60_000;
 const FUTURE_SKEW_MS = 5 * 60_000;
 
 export function parseCapturedAt(v: unknown, receivedAt: number): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null;
   const ts = Math.round(v);
-  if (ts < PRODUCT_START_MS || ts > receivedAt + FUTURE_SKEW_MS) return null;
+  if (ts < receivedAt - MAX_CAPTURE_AGE_MS || ts > receivedAt + FUTURE_SKEW_MS) return null;
   return ts;
 }
 

@@ -12,7 +12,8 @@ const fixture = vi.hoisted(() => {
       counters.set(keys[0], count);
       return [count, Number(args[0])];
     },
-    eval: async (_lua: string, keys: string[], args: unknown[]) => {
+    eval: async (lua: string, keys: string[], args: unknown[]) => {
+      if (lua.includes('ipairs(KEYS)') && lua.includes("'HEXISTS'")) return keys.some((key) => String(args[0]) in (hashes.get(key) ?? {})) ? 1 : 0;
       writes.push({ method: 'eval', args: [keys, args] });
       if (keys[0] === 'clients' || keys[0] === 'league:clients') {
         const hash = hashes.get(keys[0]) ?? {};

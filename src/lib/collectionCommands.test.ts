@@ -76,7 +76,7 @@ describe('checkpoints use the existing atomic write',()=>{
     const extended=await send(dexHandler,{cid,kind:'progress',ids:[1],ts:start+60*minute},{[cid]:JSON.stringify(first.records[0])},{},false,start+60*minute);
     expect(extended.records[0].recording?.totalMs).toBe(510*minute);
     for(const ts of [existing.sessionLog[0].ts,existing.sessionLog[0].ts+minute,existing.sessionLog[0].ts+30*minute]) {
-      const replay=await send(dexHandler,{cid,kind:'progress',ids:[1],ts},{[cid]:JSON.stringify(extended.records[0])},{},false,start+70*minute);
+      const replay=await send(dexHandler,{cid,kind:'progress',ids:[1],ts},{[cid]:JSON.stringify(extended.records[0])},{},false,start+60*minute);
       expect(replay.records[0].sessions).toBe(51);
       expect(replay.records[0].recording?.totalMs).toBe(510*minute);
     }

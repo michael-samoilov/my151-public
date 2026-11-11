@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { redis, getClientIp, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { FUNNEL_DAY_TTL_S } from './_range.js';
 import { parseAutoFlag } from './_automation.js';
 import {
@@ -33,6 +33,13 @@ const clientLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:evclient',
 });
+const NETWORK_EVENTS_PER_DAY = 600;
+const networkLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(NETWORK_EVENTS_PER_DAY, '1 d'),
+  analytics: false,
+  prefix: 'rl:evnet',
+});
 
 function dayKey(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
@@ -52,9 +59,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reason?: unknown;
       auto?: unknown;
     };
-    if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
-      return res.status(400).json({ error: 'invalid cid' });
-    }
+    const cid = parseClientId(body.cid);
+    if (!cid) return res.status(400).json({ error: 'invalid cid' });
     if (!isFunnelEvent(body.event)) {
       return res.status(400).json({ error: 'invalid event' });
     }
@@ -76,10 +82,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    const perClient = await clientLimiter.limit(body.cid);
-    if (!perClient.success) {
-      res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
-      return res.status(429).json({ error: 'Too many requests' });
+    for (const limit of [() => clientLimiter.limit(cid), () => networkLimiter.limit(getNetworkKey(req))]) {
+      const result = await limit();
+      if (!result.success) {
+        res.setHeader('Retry-After', Math.ceil((result.reset - Date.now()) / 1000));
+        return res.status(429).json({ error: 'Too many requests' });
+      }
     }
 
     const now = Date.now();
@@ -88,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const journalKey = `${JOURNAL_PREFIX}:${day}`;
     const entry = JSON.stringify({
       t: now,
-      cid: body.cid,
+      cid,
       tool,
       ev: body.event,
       ...(page ? { page } : {}),
@@ -102,13 +110,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .hincrby(dailyKey, body.event, 1)
       .rpush(journalKey, entry);
     if (skipFields) {
-      const prev = parseExportSurveySkipList(await redis.hget(EXPORT_SURVEY_SKIPS_KEY, body.cid));
+      const prev = parseExportSurveySkipList(await redis.hget(EXPORT_SURVEY_SKIPS_KEY, cid));
       const next = appendExportSurveySkip(prev, {
         t: now,
         tool: skipFields.tool,
         reason: skipFields.reason,
       });
-      writes.hset(EXPORT_SURVEY_SKIPS_KEY, { [body.cid]: JSON.stringify(next) });
+      writes.hset(EXPORT_SURVEY_SKIPS_KEY, { [cid]: JSON.stringify(next) });
     }
     await writes
       .expire(dailyKey, FUNNEL_DAY_TTL_S)

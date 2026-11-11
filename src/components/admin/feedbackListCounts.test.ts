@@ -5,8 +5,9 @@ let list: string[] = [];
 let hashes: Record<string, Record<string, number>> = {};
 vi.mock('../../../api/_shared', () => ({
   redis: {
-    lrange: async (_k: string, a: number, b: number) => (sent.push('LRANGE'), list.slice(a, b + 1)),
-    llen: async () => (sent.push('LLEN'), list.length),
+    eval: async (_script: string, keys: string[], [a, b]: string[]) => (
+      sent.push('EVAL'), keys.flatMap((k) => (k === 'feedback' ? [list.length, list.slice(Number(a), Number(b) + 1)] : [0, []]))
+    ),
     hgetall: async (k: string) => (sent.push('HGETALL'), hashes[k] ?? null),
   },
   requireAdmin: async () => true,
@@ -44,7 +45,7 @@ describe('feedback-list counts', () => {
     const { body, sent } = await call(200);
     expect(body.last7).toEqual({ bug: 2, idea: 1 });
     expect(body.last30).toEqual({ bug: 3, idea: 2 });
-    expect(sent.sort()).toEqual(['LLEN', 'LRANGE']);
+    expect(sent).toEqual(['EVAL']);
     vi.useRealTimers();
   });
 

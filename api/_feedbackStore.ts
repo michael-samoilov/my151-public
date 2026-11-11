@@ -1,10 +1,20 @@
 import type { VercelRequest } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
-import { redis } from './_shared.js';
+import { redis, CLIENTS_KEY } from './_shared.js';
+import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
+import { FAVORITE_CLIENTS_KEY } from './_favoriteRecord.js';
 
 export const FEEDBACK_KEY = 'feedback';
+export const UNVERIFIED_FEEDBACK_KEY = 'feedback:unverified';
+export const CRASH_KEY = 'feedback:crash';
+export const FEEDBACK_LISTS = [FEEDBACK_KEY, UNVERIFIED_FEEDBACK_KEY, CRASH_KEY] as const;
+export type FeedbackList = (typeof FEEDBACK_LISTS)[number];
+const MAX_STORED: Record<FeedbackList, number> = {
+  [FEEDBACK_KEY]: 5000,
+  [UNVERIFIED_FEEDBACK_KEY]: 1000,
+  [CRASH_KEY]: 1000,
+};
 const COUNT_PREFIX = 'feedback:count';
-const MAX_STORED = 5000;
 const DAILY_TTL_S = 400 * 24 * 60 * 60;
 
 function dayKey(now: number): string {
@@ -18,8 +28,21 @@ export async function underHourlyCap(key: string, cap: number): Promise<boolean>
   return count <= cap;
 }
 
+const ANY_HASH_HAS_FIELD = `
+for _, key in ipairs(KEYS) do
+  if redis.call('HEXISTS', key, ARGV[1]) == 1 then return 1 end
+end
+return 0
+`;
+
+export async function hasStoredRecord(cid: string | undefined): Promise<boolean> {
+  if (!cid) return false;
+  return (await redis.eval(ANY_HASH_HAS_FIELD, [CLIENTS_KEY, LEAGUE_CLIENTS_KEY, FAVORITE_CLIENTS_KEY], [cid])) === 1;
+}
+
 export async function storeReport(
   req: VercelRequest,
+  list: FeedbackList,
   report: { category: string; message: string; cid?: string; context: Record<string, unknown> },
 ): Promise<void> {
   const country = Array.isArray(req.headers['x-vercel-ip-country'])
@@ -40,8 +63,8 @@ export async function storeReport(
   const dailyKey = `${COUNT_PREFIX}:${dayKey(now)}`;
   await redis
     .pipeline()
-    .lpush(FEEDBACK_KEY, JSON.stringify(record))
-    .ltrim(FEEDBACK_KEY, 0, MAX_STORED - 1)
+    .lpush(list, JSON.stringify(record))
+    .ltrim(list, 0, MAX_STORED[list] - 1)
     .hincrby(dailyKey, report.category, 1)
     .expire(dailyKey, DAILY_TTL_S)
     .exec();

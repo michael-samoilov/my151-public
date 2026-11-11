@@ -24,6 +24,8 @@ vi.mock('@upstash/redis', () => {
     async hgetall(key: string) {call('hgetall', [key]); return hash(key);},
     async hkeys(key: string) {call('hkeys', [key]); return Object.keys(hash(key));},
     async hlen(key: string) {call('hlen', [key]); return Object.keys(hash(key)).length;},
+    async incr(key: string) {call('incr', [key]); const n = (local.buckets.get(`incr:${key}`) ?? 0) + 1; local.buckets.set(`incr:${key}`, n); return n;},
+    async expire(...args: unknown[]) {call('expire', args); return 1;},
     async smembers(key: string) {call('smembers', [key]); return [...(local.sets.get(key) ?? [])];},
     async sadd(key: string, field: string) {call('sadd', [key, field]); const s = local.sets.get(key) ?? new Set<string>(); s.add(field); local.sets.set(key, s); return 1;},
     async srem(key: string, field: string) {call('srem', [key, field]); return local.sets.get(key)?.delete(field) ? 1 : 0;},
@@ -242,10 +244,10 @@ describe('Anonymous cid ownership: known-id integrity attacks', () => {
     expect(JSON.stringify(owner.body)).toContain('25');
     expect((await request('submissions', submissions, {query: {cid}})).status).toBe(401);
   });
-  it('a cid containing a country suffix is accepted directly as a Dex field', async () => {
+  it('a cid containing a country suffix is refused, so it cannot write a legacy country-keyed Dex field', async () => {
     const suffixed = `${cid}::US`;
-    expect((await request('submit', submit, {method: 'POST', body: {cid: suffixed, kind: 'progress', ids: [1]}})).status).toBe(200);
-    expect(local.hashes.get('clients')?.[suffixed]).toBeDefined();
+    expect((await request('submit', submit, {method: 'POST', body: {cid: suffixed, kind: 'progress', ids: [1]}})).status).toBe(400);
+    expect(local.hashes.get('clients')?.[suffixed]).toBeUndefined();
   });
 });
 

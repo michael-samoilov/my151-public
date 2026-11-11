@@ -17,6 +17,10 @@ import {
   isBeaconKind,
   isReadOnlyDeployment,
   parseRecord,
+  parseClientId,
+  bodyTooLarge,
+  admitNewClient,
+  noteNewClient,
   CLIENTS_KEY,
   MAX_CLIENTS,
   SESSION_GAP_MS,
@@ -27,6 +31,7 @@ import {
 } from './_shared.js';
 import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, parseSeenDays, mergeSeenDays } from './_sessionize.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
+import { BUILD_GROUP_IDS } from '../src/data/slot-template.js';
 
 function isDexId(id: unknown): id is number {
   return typeof id === 'number' && Number.isInteger(id) && Object.hasOwn(EVOLUTION_CHAIN_BY_ID, id);
@@ -94,21 +99,22 @@ function validIds(ids: unknown): number[] | null {
   return ids as number[];
 }
 
+const SECTION_IDS: ReadonlySet<string> = new Set(BUILD_GROUP_IDS);
+
 function validSections(sections: unknown): Record<string, number[]> | undefined {
   if (!sections || typeof sections !== 'object' || Array.isArray(sections)) return undefined;
   const out: Record<string, number[]> = {};
-  let groups = 0;
+  const placed = new Set<number>();
   for (const [key, val] of Object.entries(sections as Record<string, unknown>)) {
-    if (groups >= 40 || typeof key !== 'string' || key.length > 40) break;
-    if (!Array.isArray(val) || val.length === 0 || val.length > DEX_ID_COUNT) continue;
+    if (!SECTION_IDS.has(key) || !Array.isArray(val)) continue;
     const ids: number[] = [];
     for (const id of val) {
-      if (isDexId(id)) ids.push(id);
+      if (isDexId(id) && !placed.has(id)) {
+        placed.add(id);
+        ids.push(id);
+      }
     }
-    if (ids.length > 0) {
-      out[key] = ids;
-      groups++;
-    }
+    if (ids.length > 0) out[key] = ids;
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
@@ -137,6 +143,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (bodyTooLarge(req)) {
+    return res.status(413).json({ error: 'Body too large' });
+  }
+
   try {
     const body = (req.body ?? {}) as {
       cid?: unknown;
@@ -159,10 +169,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auto?: unknown;
     };
 
-    if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
-      return res.status(400).json({ error: 'invalid cid' });
-    }
-    const cid = body.cid;
+    const cid = parseClientId(body.cid);
+    if (!cid) return res.status(400).json({ error: 'invalid cid' });
     const receivedAt=Date.now();
     const attention=parseAttentionForIngest(body.attention,receivedAt);
     if(attention===null)return res.status(400).json({error:'invalid attention'});
@@ -195,7 +203,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : ids.length;
 
     const countDrop = async (
-      reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention',
+      reason: 'rate-limit-ip' | 'rate-limit-client' | 'new-client-limit' | 'cap' | 'contention',
     ) => {
       try {
         await redis.hincrby('funnel', `submit-drop:${reason}`, 1);
@@ -386,6 +394,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return rec;
     };
 
+    let admitted = false;
     for (let attempt = 0; attempt < 6; attempt++) {
       const [rawStr, verStr] = await Promise.all([
         redis.hget(CLIENTS_KEY, cid) as Promise<unknown>,
@@ -393,6 +402,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ]);
       const existing = parseRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
+      if (!existing && !admitted) {
+        if (!(await admitNewClient(req, 'dex', receivedAt))) {
+          await countDrop('new-client-limit');
+          return res.status(200).json({ ok: true, limited: true });
+        }
+        admitted = true;
+      }
 
       const rec = mergeRecord(existing);
       const ok = await redis.eval(
@@ -411,6 +427,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           appendMinuteActivity(cid, 'dex', body.activity, receivedAt),
           bumpDexPickFreq(newlyEver),
           kind === 'export' ? recordToolExport('pokedex', ids) : undefined,
+          existing ? undefined : noteNewClient(CLIENTS_KEY, 'dex'),
         ]);
         if (kind === 'export') return res.status(200).json({ ok: true, highlight, activityAck });
         return res.status(200).json({ ok: true, activityAck });
