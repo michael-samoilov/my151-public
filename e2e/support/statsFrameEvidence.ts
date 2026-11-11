@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { seedDex, TUNE_URL } from './dexSeed';
 export type StatsTool = 'picker' | 'dex';
-export const filledPicker = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
+export const filledPicker = JSON.parse(readFileSync('e2e/support/picker-seed.json', 'utf8')).fills as Record<string, number>;
 export async function openStatsFlow(page: Page, tool: StatsTool, lang = 'en') {
   await page.addInitScript(() => {
     const target = window as unknown as { frameTexts: { text: string; color: string; width: number; height: number; bounds: { left: number; right: number; top: number; bottom: number } }[] };

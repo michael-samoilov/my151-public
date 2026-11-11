@@ -8,13 +8,14 @@ import { atomicJson, fingerprint, makeReceipt, validateReceipt } from './artifac
 import { eslintCacheArgs } from './cache';
 import { RunJournal, settleLanes } from './execution';
 import { discoveryCounts, type Discovery } from './discovery';
+import { defaultBase } from './base';
 import { buildScriptInputs, changedPaths, parseOptions, select } from './policy';
 import { buildTestMap, loadTestMap, readAttempts, readRecords, serializeTestMap, TEST_MAP_PATH } from './testMap';
 
 async function main() {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const options = parseOptions(process.argv.slice(2));
-  const changes = changedPaths(root, options.base ?? process.env.MY151_CI_BASE ?? 'origin/claude/pokedex-region-builder-AviYF');
+  const changes = changedPaths(root, options.base ?? process.env.MY151_CI_BASE ?? defaultBase(root));
   const selection = select(options.mode, changes.paths, changes.baseSha, changes.reason, { map: loadTestMap(root), buildScripts: buildScriptInputs(root) });
   if (options.recordMap && selection.effectiveMode !== 'full') throw new Error('--record-map needs ci:full, so every browser test records its files.');
   if (options.plan) { console.log(JSON.stringify(selection, null, 2)); return; }

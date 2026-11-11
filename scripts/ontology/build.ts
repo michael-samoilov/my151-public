@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOOLS } from '../../src/ontology/model';
+import { defaultBase } from '../ci/base';
 import type { AppIdLedger, Problem } from './authored';
 import { checkOntology, type CheckEnvironment } from './check';
 import { formatJson, readJson } from './json';
@@ -13,11 +14,9 @@ import { favoritesJson, favoritesMetadataJson, pickerV1NumbersJson } from './pro
 import { leagueJson } from './projections/league';
 import { resolveOntology, type Ontology } from './resolve';
 
-const PRODUCTION = 'origin/claude/pokedex-region-builder-AviYF';
-
 function productionFile(root: string, path: string): string | null {
   try {
-    return execFileSync('git', ['show', `${PRODUCTION}:${path}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return execFileSync('git', ['show', `${defaultBase(root)}:${path}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   } catch {
     return null;
   }

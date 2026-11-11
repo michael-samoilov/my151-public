@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 test.setTimeout(60_000);
-const fullSeed = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
+const fullSeed = JSON.parse(readFileSync('e2e/support/picker-seed.json', 'utf8')).fills as Record<string, number>;
 const analytics = (page: Page) => page.getByRole('tab', { name: 'Analytics', exact: true });
 const picker = (page: Page) => page.getByRole('tab', { name: 'Grid', exact: true });
 const dashboard = (page: Page) => page.getByTestId('favorites-analytics');

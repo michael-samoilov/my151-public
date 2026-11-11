@@ -66,7 +66,7 @@ The research found each shiny's source this way:
 - Any other shiny is PokéAPI's file. It is Game Freak's when its pixels equal PokéAPI's Black and White shiny. A Smogon shiny is compared with the Front shiny attachment on the sheet row that credits its normal sprite. On an exact match, the artists that the row marks "(shiny)" drew it, or the row's artists when it marks none. A PokéAPI shiny is credited through the README only when the commit whose README line credits its normal sprite also added the shiny, and the line covers shinies.
 - A shiny with no such match has an artist that is not confirmed. Its ledger row says `"evidenceType": "follows-normal"`.
 
-On 2026-10-29 Michael held 20 shinies out of the app: forms that are one individual that is never shiny, and two forms with no shiny in any game. They have no ledger row. [The held shinies](../favorite-picker-work/sprites/held-shinies/README.md) keeps the files and the rules, and `held` in `scripts/data/shiny-sprite-sources.json` keeps the harvest from adding them back.
+On 2026-10-29 Michael held 20 shinies out of the app: forms that are one individual that is never shiny, and two forms with no shiny in any game. They have no ledger row. The held shinies (`docs/favorite-picker-work/sprites/held-shinies/README.md`) keeps the files and the rules, and `held` in `scripts/data/shiny-sprite-sources.json` keeps the harvest from adding them back.
 
 An artist's own entry lists a shiny only when the panel credits it on its own. The shiny follows the matching normal sprite, marked with the shiny star. On 2026-10-26 no own entry lists a shiny.
 

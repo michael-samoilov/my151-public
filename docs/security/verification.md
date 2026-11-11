@@ -41,7 +41,7 @@ change occurs.
 Evidence:
 
 - Full run status and log.
-- [Baseline method and results](../evidence/security-review-2026-10-16/browser/stale-deploy-baseline/README.md).
+- Baseline method and results (`docs/evidence/security-review-2026-10-16/browser/stale-deploy-baseline/README.md`).
 - Final build status and log.
 - Combined security log and mutation control.
 
