@@ -1826,10 +1826,17 @@ export function AdminPage() {
     >
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockHeight ? 'max-w-none' : 'max-w-5xl')}>
-          <h1 className="whitespace-nowrap text-sm font-bold">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="whitespace-nowrap text-sm font-bold">
 
-            <span className="text-primary">my151</span> · Analytics
-          </h1>
+              <span className="text-primary">my151</span> · Analytics
+            </h1>
+            {demo && (
+              <span className="whitespace-nowrap rounded-full border border-amber-600 px-2 py-0.5 text-[0.65rem] font-semibold leading-none text-amber-700">
+                Sample data
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-0.5">
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true, search: page === 'search' })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
