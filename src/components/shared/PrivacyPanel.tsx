@@ -19,7 +19,7 @@ const KEPT = [
   ['privacy.keep.reports.label', 'privacy.keep.reports'],
   ['privacy.keep.visits.label', 'privacy.keep.visits'],
 ] as const satisfies readonly (readonly [NoArgKey, NoArgKey])[];
-const NOT_KEPT = ['privacy.not.ip', 'privacy.not.contact', 'privacy.not.city'] as const satisfies readonly NoArgKey[];
+const NOT_KEPT = ['privacy.not.contact', 'privacy.not.city', 'privacy.not.ip'] as const satisfies readonly NoArgKey[];
 const RETENTION = [
   'privacy.retention.records',
   'privacy.retention.log',
@@ -111,6 +111,9 @@ function PrivacyBody({ anchor, onClose }: { anchor: HTMLElement | null; onClose:
       <p className="px-4 pt-3 text-sm leading-relaxed text-muted-foreground">{t('privacy.intro')}</p>
       <p className="px-4 pt-3 text-xs text-muted-foreground">{t('privacy.updated', { date: updated })}</p>
       <OptOutSwitch />
+      <Section label={t('privacy.not.title')}>
+        {NOT_KEPT.map((key) => <Row key={key}>{t(key)}</Row>)}
+      </Section>
       <Section label={t('privacy.keep.title')}>
         {KEPT.map(([label, text]) => (
           <Row key={text}>
@@ -118,9 +121,6 @@ function PrivacyBody({ anchor, onClose }: { anchor: HTMLElement | null; onClose:
             <span className="block text-muted-foreground">{t(text)}</span>
           </Row>
         ))}
-      </Section>
-      <Section label={t('privacy.not.title')}>
-        {NOT_KEPT.map((key) => <Row key={key}>{t(key)}</Row>)}
       </Section>
       <Section label={t('privacy.retention.title')}>
         {RETENTION.map((key) => <Row key={key}>{t(key)}</Row>)}

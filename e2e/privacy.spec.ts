@@ -27,9 +27,8 @@ test.describe('the privacy panel', { tag: '@viewport' }, () => {
   test('opens from the footer, and its switch turns counting off and on', async ({ page }, testInfo) => {
     await page.goto('/');
     let dialog = await openPrivacy(page);
-    for (const heading of ['What we keep', 'What my151 does not keep', 'How long we keep it', 'Who handles the data', 'Questions']) {
-      await expect(dialog.getByRole('heading', { name: heading })).toBeVisible();
-    }
+    await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['What my151 does not keep', 'What we keep', 'How long we keep it', 'Who handles the data', 'Questions']);
+    await expect(dialog.getByRole('heading', { name: 'What my151 does not keep' }).locator('xpath=..').getByRole('listitem')).toHaveText([/^Your name/, /^Your city/, /^Your IP address/]);
     const toggle = () => dialog.getByRole('switch', { name: "Don't count my visits" });
     const flag = () => page.evaluate((key) => localStorage.getItem(key), OPT_OUT_KEY);
 
