@@ -6977,19 +6977,23 @@
    "name": "dialga-primal"
   },
   "11125": {
-   "artists": [],
+   "artists": [
+    "Travis"
+   ],
    "role": "drew",
-   "via": "my151",
+   "via": "smogon-gen9",
    "changedBy": "my151",
-   "evidence": "Travis's Tinkaton (959.png, Smogon Gen9 Sprite Project sheet row '959 Tinkaton') with tools that my151 added. The body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png at 10x with official Tinkmaster art), then code-only hand edits in sprite-lab/src/hand_edits/ (claude/sprite-lab 5d29640b). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Not credited in the panel, like the sprite lab's own drawings: its tools are model-drawn (Michael, 2026-10-20). Travis stays credited for Tinkaton (959.png) through the Smogon Sprite Project. To credit this file to Travis instead, set via to smogon-gen9 and artists to [\"Travis\"].",
+   "evidence": "Travis's Tinkaton (959.png, Smogon Gen9 Sprite Project sheet row '959 Tinkaton') with tools that my151 added. The body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png at 10x with official Tinkmaster art), then code-only hand edits in sprite-lab/src/hand_edits/ (claude/sprite-lab 5d29640b). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Credited to Travis, the base artist, through the Smogon Sprite Project since 2026-11-12; my151's additions get no credit of their own.",
    "name": "tinkaton-tinkmaster"
   },
   "11127": {
-   "artists": [],
+   "artists": [
+    "G.E.Z."
+   ],
    "role": "drew",
-   "via": "my151",
+   "via": "smogon-gen8",
    "changedBy": "my151",
-   "evidence": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Records: sprite-lab/docs/chef-dente-v2/changes.json on claude/sprite-lab (b1689310). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Not credited in the panel, like the sprite lab's own drawings: its hat, ladle and pan come from the lab's drawing (Michael, 2026-10-20). G.E.Z. stays credited for Greedent (820.png) through the Smogon Sprite Project. To credit this file to G.E.Z. instead, set via to smogon-gen8 and artists to [\"G.E.Z.\"].",
+   "evidence": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Records: sprite-lab/docs/chef-dente-v2/changes.json on claude/sprite-lab (b1689310). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Credited to G.E.Z., the base artist, through the Smogon Sprite Project since 2026-11-12.",
    "name": "greedent-chef-dente"
   },
   "11122": {
