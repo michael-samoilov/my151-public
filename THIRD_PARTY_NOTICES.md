@@ -2,6 +2,18 @@
 
 These notices apply to the identified third-party assets. They do not change the license of other repository content.
 
+## Pokémon sprites
+
+Pokémon © 1995–2026 Nintendo / Creatures / GAME FREAK / The Pokémon Company. my151 is not affiliated with or endorsed by Nintendo. The official sprites under `public/sprites/` are Game Freak's artwork.
+
+The fan-made sprites come from these bundles. Each bundle credits its own artists on its own pages, and its permission covers the files it carried:
+
+- [PokéAPI sprites](https://github.com/PokeAPI/sprites), with [its credits](https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks).
+- The Smogon Sprite Project: the [Generation 6 thread](https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/), the [Generation 7 thread](https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/), and the [Generation 8 and later thread](https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/).
+- The [Generation 9 Resource Pack](https://eeveeexpo.com/resources/1101/), compiled by Caruban.
+
+A few sprites come from their artists' own uploads: KingOfThe-X-Roads, kiriaura, JoeTEStrikesBack, and DarkwarePX. The site's Acknowledgements panel credits each bundle and each of these artists, with their permissions and links. [How my151 credits sprites](docs/credits/README.md) sets the policy, and the [evidence ledger](docs/credits/sprite-evidence.md) records the source of every sprite file.
+
 ## Pokémon type icons by Partywhale
 
 <!-- type-icons:partywhale -->

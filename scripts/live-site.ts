@@ -2,7 +2,7 @@ import type { BrowserContext } from '@playwright/test';
 
 export const LIVE_HOSTS = ['my151.app', 'www.my151.app'] as const;
 
-const TELEMETRY = /^https:\/\/[^/]+\/api\/(submit|league|favorites|event|feedback|crash)(\?|$)/;
+const TELEMETRY = /^https:\/\/[^/]+\/api\/(submit|league|favorites|event|feedback|crash|visit)(\?|$)/;
 
 export async function protectLiveSite(context: BrowserContext): Promise<void> {
   await context.addInitScript(() => {

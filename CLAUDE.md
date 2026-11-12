@@ -49,7 +49,7 @@ Never send Michael's email address or other contact details to an outside servic
 
 When a site asks for contact details in a user agent, send a generic tool name with no contact details. If the site refuses that request, skip the site.
 
-`.claude/hooks/guard-owner-email.mjs` enforces this rule. It runs before every tool call and compares each email address in the call with stored SHA-256 hashes. On a match, Claude Code asks Michael for approval, also in auto mode. An agent that cannot show the prompt is denied. The repository stores only the hashes, never the address.
+`.claude/hooks/guard-owner-email.mjs` enforces this rule. It runs before every tool call and compares each email address in the call with stored SHA-256 hashes. On a match, Claude Code asks Michael for approval, also in auto mode. An agent that cannot show the prompt is denied. The repository stores only the hashes, never the address. The public copy holds a placeholder hash instead.
 
 ## Style guide
 
@@ -248,7 +248,7 @@ Builds are most of the Vercel bill. Michael set these rules on 2026-10-09.
 
 Michael set these rules on 2026-10-12. On 2026-11-11, he decided to publish a source-available copy.
 
-1. Never release our own code under an open-source license. The public copy at `github.com/michael-samoilov/my151-public` is source-available, with all rights reserved.
+1. Never release our own code under an open-source license. The public copy at `github.com/michael-samoilov/my151` is source-available, with all rights reserved.
 2. Keep code whose license makes us publish its source, such as MPL-2.0, in files of its own. Put none of our code in those files. Our code imports from them.
 3. Publish each such file unchanged as `public/licenses/source/<project>/<file>.txt`. The site serves it at `https://my151.app/licenses/source/<project>/<file>.txt`.
 4. Link each published file from the project's Acknowledgements entry and from its section in `THIRD_PARTY_NOTICES.md`.
