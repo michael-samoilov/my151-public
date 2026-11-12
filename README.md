@@ -34,20 +34,24 @@ The server stores no usage records from these browsers:
 Requests to a deploy URL other than my151.app store nothing either.
 The dashboard's counts differ from Vercel Web Analytics, which counts daily unique visitors by a rotating hash instead of a stored browser ID.
 
-The screenshots show sample data.
+The screenshots show live data for all time, captured on November 12, 2026.
 `/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no API call.
 
-![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active browsers from June to September and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
+![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active browsers from June to November and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
 
-*Sample data. The Suite tab on a desktop screen, 1280 pixels wide.*
+*Live data, November 12, 2026. The Suite tab on a desktop screen, 1280 pixels wide.*
 
-![The Flows panel of the admin dashboard, with a Sankey diagram of the Dex Builder funnel from the intro screen to completed and exported Pokédexes.](docs/readme/admin-dashboard-flows-desktop.webp)
+![The Flows panel of the admin dashboard, with a Sankey diagram of the Dex Builder funnel from the intro screen to bounced, completed, and exported Pokédexes.](docs/readme/admin-dashboard-flows-desktop.webp)
 
-*Sample data. The Dex Builder funnel in the Flows panel.*
+*Live data, November 12, 2026. The Dex Builder funnel in the Flows panel.*
+
+![The Search tab of the admin dashboard on a desktop screen, with totals for Google clicks, impressions, click-through rate, and average position above a line chart of daily clicks and impressions.](docs/readme/admin-search-desktop.webp)
+
+*Live data, November 12, 2026. The Search tab with Google Search Console data. The keyword and page tables are hidden.*
 
 <img src="docs/readme/admin-dashboard-phone.webp" width="390" alt="The admin dashboard on a phone screen, with the active-browsers chart, the active-hours heatmap, and the section bar at the bottom.">
 
-*Sample data. The Suite tab on a phone screen, 390 pixels wide.*
+*Live data, November 12, 2026. The Suite tab on a phone screen, 390 pixels wide.*
 
 ## Start here
 
