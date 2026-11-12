@@ -6,8 +6,8 @@ Outcome of grilling rounds 1–3, closed 2026-08-28. Round 2 and round 3 answers
 replace the round-1 items they touch. Treat each item as settled. Reopen an
 item only if the owner asks.
 
-Design canvas (Direction A, mobile-first):
-https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
+The Direction A design canvas (mobile-first) is a private design record. This
+repository does not publish it.
 
 ## Product frame
 

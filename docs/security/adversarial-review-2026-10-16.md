@@ -18,12 +18,16 @@ Redis. Private analytics readers and the archive action require the owner's
 Bearer token through `requireAdmin()`. That token check is the app's privileged
 access boundary; it is separate from any visitor account system.
 
-Vercel preview protection, if configured, is a hosting-platform setting. It does
-not imply that my151 has login. Public preview access is not classified as a
-defect in this review. No visitor authentication feature is added.
+Vercel preview protection is a hosting-platform setting. It does not give my151
+a login. On 2026-11-12, preview protection is off for this project, so a
+preview URL opens without a sign-in. Previews are read-only by code: on any
+host other than `my151.app` or `www.my151.app`, `isReadOnlyDeployment()` in
+`api/_shared.ts` makes each write endpoint store nothing. This review does not
+classify public preview access as a defect. It adds no visitor authentication
+feature.
 
-`api/_shared.ts` explicitly documents that Vercel previews share production
-Redis. All attack probes therefore run locally against synthetic fixtures.
+During the review, Vercel previews shared production Redis. All attack probes
+therefore run locally against synthetic fixtures.
 No test uses production Redis credentials, real visitor records, deployed write
 requests, payments, or cloud configuration changes.
 
@@ -89,7 +93,7 @@ network round trip, but Lua subcommands still count toward provider usage.
 | Stored XSS | Malicious feedback and League name/badge text produce zero injected nodes or alerts. An unsafe harness control triggers one alert. | Actual React components and browser. Feedback API uses fixtures. |
 | SSRF | Inspected server fetches target fixed services. No arbitrary URL-import feature is found. | Not applicable to the inspected feature set. No internal-address request is sent. |
 | Cache isolation | Actual service worker excludes `/api/`; fixture admin request returns 200, logged-out request returns 401. Separate browser context lacks A's saved state. | Browser cache scope verified. CDN isolation remains unproven. Feedback headers hardened. |
-| Preview access | Michael confirms preview protection is intentionally off so Google PageSpeed Insights can fetch preview builds. He plans to restore it in the coming days. | Intentional temporary hosting choice, not a finding. No platform settings change or live preview attack occurs. |
+| Preview access | On 2026-11-12, Vercel preview protection is off. Previews are read-only by code: `isReadOnlyDeployment()` makes each write endpoint store nothing on a host other than the live site. Admin readers still require the owner's token. | Not a finding. No platform settings change or live preview attack occurs. |
 | AI document injection | No app-facing AI, document ingestion, or tool-calling feature is found. | Not applicable; no runtime injection claimed. |
 
 ## Evidence and repeat the checks

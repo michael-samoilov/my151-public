@@ -4,12 +4,12 @@
 
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
-- For cloud work, use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` unless the user names another base.
-- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the launch is authorized through PR 111 from `claude/jolly-meitner-opefey`. Check current release status before changing it. Before picker work, check out that branch and read the Favorite Picker handoff there.
-- League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in the League Builder handoff of 2026-09-30 on production. Read it before league work.
-- Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in the Dex Builder handoff of 2026-09-30 on production. Read it before Dex work.
-- Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in the Admin Dashboard handoff of 2026-09-30 on production, and its verification tools are in the admin dashboard tools folder beside it. Read it before admin work.
-- Bugfixes, test-suite health, CI gates, and speed: the state, rules, and to-do list are in the bugfixes and reliability handoff of 2026-09-30 on production. Read it before that work.
+- For cloud work, use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` (private repository only) unless the user names another base.
+- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the launch is authorized through PR 111 from `claude/jolly-meitner-opefey` (private repository only). Check current release status before changing it. Before picker work, check out that branch and read the Favorite Picker handoff there (private repository only).
+- League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in the League Builder handoff of 2026-09-30 on production (private repository only). Read it before league work.
+- Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in the Dex Builder handoff of 2026-09-30 on production (private repository only). Read it before Dex work.
+- Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in the Admin Dashboard handoff of 2026-09-30 on production, and its verification tools are in the admin dashboard tools folder beside it (private repository only). Read it before admin work.
+- Bugfixes, test-suite health, CI gates, and speed: the state, rules, and to-do list are in the bugfixes and reliability handoff of 2026-09-30 on production (private repository only). Read it before that work.
 - The handoffs are private working records in the handoff folder under `docs/`. The public copy of this repository leaves them out.
 - Read `CLAUDE.md` before work. It is authoritative for build, deployment, response style, and repository conventions.
 - The user-facing task is the coordinator. It is the user's single entry point: accept new work there, delegate bounded implementation or research to workers, monitor them, resolve conflicts, and return one consolidated outcome. Do not make the user chase worker tasks for status or results.
@@ -55,7 +55,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 - Run the six user-facing coordinator tasks through ChatGPT Mobile Remote on the owner's computer.
 - Use the clean coordinator worktree for coordination. Never modify Michael's dirty primary checkout.
-- Before new work, fetch GitHub and start an isolated worktree from the latest `origin/claude/pokedex-region-builder-AviYF`.
+- Before new work, fetch GitHub and start an isolated worktree from the latest `origin/claude/pokedex-region-builder-AviYF` (private repository only).
 - Give each feature or fix its own branch and worktree. Never share a working tree between concurrent workers.
 - Push a branch before a cloud worker receives it. Every commit, base, and ref in a cloud prompt must exist on GitHub.
 - Never use `/cursor/stores`, `/opt/cursor/artifacts`, or another temporary local path as a durable handoff.
@@ -79,7 +79,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 ## 2. Merge low-risk work yourself
 
-- Merge low-risk, already-verified work into `claude/pokedex-region-builder-AviYF` without asking.
+- Merge low-risk, already-verified work into `claude/pokedex-region-builder-AviYF` (private repository only) without asking.
 - Bring work for review only when it is user-facing or user-affecting, risks data deletion, or is large or ambiguous.
 - Follow the detailed deployment tiers and branch-safety steps in `CLAUDE.md`.
 

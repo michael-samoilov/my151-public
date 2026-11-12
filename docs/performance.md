@@ -112,8 +112,8 @@ a new animation) goes to Michael first, with before and after.
 | Smaller copies of the hub screenshots (300 and 400 px) | Removed on 9 October. Screens drew them at about their own size, which looked soft. They saved about 450 KiB of images on phones but no measured LCP or score. Every device loads the 800 px originals. |
 | Preload the Pokédex intro image for everyone | First paint got slower for returning visitors, who never see the card. Shipped instead (October 8): `pokedex-builder.html` preloads it only when the card will show. Lab phone, first visit: the image appears 1.0 s sooner (3.8 to 2.8 s). |
 | `dir="ltr"` on the hub and league HTML | No measurable effect. |
-| Bake the three Pokédex intro screenshots into one image (October 23, unmerged branch `claude/dex-intro-composite`) | At the same look it is 63 KB instead of 96 KB: the tilt, overlap, and shadows compress worse than three upright screenshots (146 KB at the homepage artwork's quality 95). Lab phone over HTTP/2: the whole stack shows 0.33 s sooner (3.84 to 3.51 s), but the phone's LCP element is a text paragraph and stays at 2.08 s. Desktop LCP 0.85 to 0.74 s. It costs the float and a regeneration step for every screenshot or layout change. |
-| Preload all three Pokédex intro screenshots on a first visit (October 23, unmerged branch `claude/dex-intro-preload`) | The stack finishes about 0.2 s sooner on the lab phone (3.77 to 3.57 s), but the first paint gets later: FCP 604 to 732 ms and LCP 1,992 to 2,176 ms (`lab.mjs`, 7 runs, separated ranges). Low fetch priority on the two extra preloads does not help (FCP 612 to 724 ms): on a 1.6 Mbps link, any image bytes fetched early delay the stylesheet and scripts. Only the largest screenshot is preloaded. |
+| Bake the three Pokédex intro screenshots into one image (October 23, unmerged branch `claude/dex-intro-composite`, private repository only) | At the same look it is 63 KB instead of 96 KB: the tilt, overlap, and shadows compress worse than three upright screenshots (146 KB at the homepage artwork's quality 95). Lab phone over HTTP/2: the whole stack shows 0.33 s sooner (3.84 to 3.51 s), but the phone's LCP element is a text paragraph and stays at 2.08 s. Desktop LCP 0.85 to 0.74 s. It costs the float and a regeneration step for every screenshot or layout change. |
+| Preload all three Pokédex intro screenshots on a first visit (October 23, unmerged branch `claude/dex-intro-preload`, private repository only) | The stack finishes about 0.2 s sooner on the lab phone (3.77 to 3.57 s), but the first paint gets later: FCP 604 to 732 ms and LCP 1,992 to 2,176 ms (`lab.mjs`, 7 runs, separated ranges). Low fetch priority on the two extra preloads does not help (FCP 612 to 724 ms): on a 1.6 Mbps link, any image bytes fetched early delay the stylesheet and scripts. Only the largest screenshot is preloaded. |
 | Load the hub's page code with its entry script, not a dynamic import (October 8) | Lab phone first paint 600 → 804 ms (+34%), and the hub was not usable sooner (2110 → 2076 ms, within noise). |
 | `fetchpriority="high"` on the hub's largest screenshot (October 8) | No effect, LCP 3484 → 3500 ms: Chrome already raises every image in the viewport to high priority. |
 | Load the feedback form on idle or first open (October 8) | First-load text only 2.7 KiB smaller on the hub, about 1 KiB on dex and league: the form's dependencies are needed at startup anyway. |
@@ -137,7 +137,8 @@ Lighthouse findings left open on purpose:
 | "Background and foreground colors do not have a sufficient contrast ratio" on the type filter chips in the Pokémon browser | White text on the official type colors: 13 of the 18 are under 4.5:1. They are the games' own badge colors, and Michael keeps them (October 8). |
 
 The first plan, with earlier targets and a phase list, is on the unmerged
-branch `codex/performance-program-plan`. This page replaces its targets.
+branch `codex/performance-program-plan` (private repository only). This page
+replaces its targets.
 
 ## Homepage card-paint regression, 15 October
 
@@ -174,7 +175,7 @@ verification found zero regressions and zero changed screens in 44 visual
 comparisons. Two WebKit gym-export assertions also failed on the base, with
 byte-identical before/after PNGs; the absolute verdict remained FAIL. All raw
 failures, complete Google JSON, screenshots and prescriptions are preserved
-on the evidence branch linked from the investigation. An animation frame or
+on a private evidence branch linked from the investigation. An animation frame or
 DOM presence alone is not proof of composited complete paint.
 
 ## Further optimization batch, 15 October
