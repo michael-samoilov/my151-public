@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { redis, getNetworkKey, isReadOnlyDeployment } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
 import { TOOLS, type Tool } from './_events.js';
 import { VISIT_PAGES, VISITS_PREFIX, VISITS_TTL_S, visitFields, type VisitPage } from './_visits.js';
@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!isTool(body.tool)) return res.status(400).json({ error: 'invalid tool' });
     if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
 
-    const burst = await burstLimiter.limit(getClientIp(req));
+    const burst = await burstLimiter.limit(getNetworkKey(req));
     if (!burst.success) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });

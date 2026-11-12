@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
+import { redis, getNetworkKey, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
 import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
 import { parseAutoFlag } from './_automation.js';
@@ -54,7 +54,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const attention=parseAttentionForIngest(b.attention,received);
     if(attention===null)return res.status(400).json({error:'invalid attention'});
     const drop=async(reason:string)=>{await redis.hincrby('funnel',`favorites-drop:${reason}`,1);};
-    for(const [limiter,key,reason] of [[burstLimiter,getClientIp(req),'rate-limit-ip'],[clientLimiter,`favorites:${cid}`,'rate-limit-client']] as const){
+    for(const [limiter,key,reason] of [[burstLimiter,getNetworkKey(req),'rate-limit-ip'],[clientLimiter,`favorites:${cid}`,'rate-limit-client']] as const){
       const limit=await limiter.limit(key);
       if(!limit.success){await drop(reason);res.setHeader('Retry-After',Math.max(1,Math.ceil((limit.reset-Date.now())/1000)));return res.status(429).json({error:'Too many requests'});}
     }

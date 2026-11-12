@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis, getClientIp, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
+import { redis, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { FUNNEL_DAY_TTL_S } from './_range.js';
 import { parseAutoFlag } from './_automation.js';
 import {
@@ -76,8 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
     if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
-    const ip = getClientIp(req);
-    const burst = await burstLimiter.limit(ip);
+    const burst = await burstLimiter.limit(getNetworkKey(req));
     if (!burst.success) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('../api/_shared.js', () => ({ redis: {}, getClientIp: () => '127.0.0.1', isReadOnlyDeployment: () => true }));
+vi.mock('../api/_shared.js', () => ({ redis: {}, getNetworkKey: () => 'network', isReadOnlyDeployment: () => true }));
 import { sanitizeContext } from '../api/feedback';
 
 const picker = (favorites: unknown) => sanitizeContext({ route: '/favorite-pokemon-picker', favorites });

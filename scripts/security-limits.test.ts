@@ -57,7 +57,8 @@ import favorites from '../api/favorites';
 import feedback from '../api/feedback';
 import crash from '../api/crash';
 import event from '../api/event';
-import { getClientIp } from '../api/_shared';
+import { createHash } from 'node:crypto';
+import { getNetworkKey } from '../api/_shared';
 import { FEEDBACK_MESSAGE_MAX_CHARS } from '../src/lib/feedbackLimits';
 import { recordToolExport } from '../api/_exportStats';
 
@@ -86,6 +87,10 @@ async function call(handler: Handler, body: unknown, options: { name?: string; i
   const storageWrites = fixture.writes.length - before;
   if (options.name) evidence.push({ name: options.name, request: { method: req.method, body, headers: req.headers }, response, storageWrites });
   return { ...response, storageWrites };
+}
+
+function networkKeyOf(ip: string): string {
+  return getNetworkKey({ headers: { 'x-real-ip': ip } } as unknown as VercelRequest);
 }
 
 function seedLimit(prefix: string, identifier: string, period: number, used: number) {
@@ -150,7 +155,7 @@ describe('local adversarial API limits and validation', () => {
 
   it('refuses 19 of 20 simultaneous feedback requests with one IP allowance left', async () => {
     const ip = 'local-concurrent-ip';
-    seedLimit('rl:fbip', ip, 600_000, 4);
+    seedLimit('rl:fbip', networkKeyOf(ip), 600_000, 4);
     const results = await Promise.all(Array.from({ length: 20 }, () => call(feedback, validFeedback, { ip })));
     expect(results.filter(r => r.status === 200)).toHaveLength(1);
     expect(results.filter(r => r.status === 429)).toHaveLength(19);
@@ -205,7 +210,19 @@ describe('local adversarial API limits and validation', () => {
 
   it('prefers trusted x-real-ip over client-supplied forwarded chain', () => {
     const req = { headers: { 'x-real-ip': '192.0.2.10', 'x-forwarded-for': '198.51.100.2' } } as unknown as VercelRequest;
-    expect(getClientIp(req)).toBe('192.0.2.10');
-    evidence.push({ name: 'IP selection', request: req, response: { selectedIp: getClientIp(req) }, storageWrites: 0 });
+    expect(getNetworkKey(req)).toBe(networkKeyOf('192.0.2.10'));
+    expect(getNetworkKey(req)).not.toBe(networkKeyOf('198.51.100.2'));
+    evidence.push({ name: 'IP selection', request: req, response: { networkKey: getNetworkKey(req) }, storageWrites: 0 });
+  });
+
+  it('stores only a keyed hash of the network, never the address or its plain hash', () => {
+    vi.stubEnv('ADMIN_TOKEN', 'first-server-secret');
+    const key = networkKeyOf('192.0.2.10');
+    expect(key).not.toContain('192.0.2.10');
+    expect(key).not.toBe(createHash('sha256').update('192.0.2.10').digest('hex').slice(0, 24));
+    expect(networkKeyOf('192.0.2.10')).toBe(key);
+    expect(networkKeyOf('2001:db8:1:2::5')).toBe(networkKeyOf('2001:db8:1:2:ffff::9'));
+    vi.stubEnv('ADMIN_TOKEN', 'second-server-secret');
+    expect(networkKeyOf('192.0.2.10')).not.toBe(key);
   });
 });

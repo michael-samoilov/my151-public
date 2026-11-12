@@ -82,7 +82,7 @@ import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
 import event from '../api/event';
-import {requireAdmin} from '../api/_shared';
+import {getNetworkKey, requireAdmin} from '../api/_shared';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<unknown>;
 const token = randomUUID();
@@ -182,7 +182,8 @@ describe('Admin read authorization attacks', () => {
   });
   it('x-real-ip takes precedence over attacker-supplied forwarding values', async () => {
     await request('submissions', submissions, {headers: {'x-forwarded-for': '198.51.100.42'}});
-    expect(local.limits[0].key).toBe('192.0.2.10');
+    expect(local.limits[0].key).toBe(getNetworkKey({headers: {'x-real-ip': '192.0.2.10'}} as unknown as VercelRequest));
+    expect(local.limits[0].key).not.toContain('192.0.2.10');
   });
 });
 
