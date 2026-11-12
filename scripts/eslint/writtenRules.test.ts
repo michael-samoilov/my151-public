@@ -103,6 +103,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: 'export const t = (req: { query: Record<string, string> }) => req.query.token;',
     good: 'export const t = (req: { headers: Record<string, string> }) => req.headers.authorization;',
   },
+  'vercel-insights-follow-opt-out': {
+    file: 'src/sample/insights.ts',
+    bad: "void import('@vercel/analytics').then((m) => m.inject());",
+    good: "import { installVisitCounting } from '../lib/visitCounting';\ninstallVisitCounting();",
+  },
   'no-precise-location': {
     file: 'api/sample.ts',
     bad: "export const h = 'x-vercel-ip-city';",

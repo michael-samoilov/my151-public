@@ -14,8 +14,7 @@ const MAX_STORED: Record<FeedbackList, number> = {
   [UNVERIFIED_FEEDBACK_KEY]: 1000,
   [CRASH_KEY]: 1000,
 };
-const COUNT_PREFIX = 'feedback:count';
-const DAILY_TTL_S = 400 * 24 * 60 * 60;
+export const FEEDBACK_COUNT_PREFIX = 'feedback:count';
 
 function dayKey(now: number): string {
   return new Date(now).toISOString().slice(0, 10);
@@ -60,12 +59,11 @@ export async function storeReport(
     context: report.context,
   };
 
-  const dailyKey = `${COUNT_PREFIX}:${dayKey(now)}`;
+  const dailyKey = `${FEEDBACK_COUNT_PREFIX}:${dayKey(now)}`;
   await redis
     .pipeline()
     .lpush(list, JSON.stringify(record))
     .ltrim(list, 0, MAX_STORED[list] - 1)
     .hincrby(dailyKey, report.category, 1)
-    .expire(dailyKey, DAILY_TTL_S)
     .exec();
 }

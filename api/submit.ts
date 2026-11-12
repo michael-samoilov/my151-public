@@ -8,7 +8,7 @@ import { parseAutoFlag } from './_automation.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
 import {
   redis,
-  getClientIp,
+  getNetworkKey,
   getClient,
   getGeo,
   getLang,
@@ -212,8 +212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    const ip = getClientIp(req);
-    const burst = await burstLimiter.limit(ip);
+    const burst = await burstLimiter.limit(getNetworkKey(req));
     if (!burst.success) {
       await countDrop('rate-limit-ip');
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));

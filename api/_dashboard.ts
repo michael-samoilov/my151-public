@@ -46,6 +46,7 @@ import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
 import { excludedTotals } from './_funnelExclusions.js';
+import { withRetired, type RetiredHashes } from './_retiredTally.js';
 function countEvoLines(ids: number[]): number {
   const chains = new Set<number>();
   for (const id of ids) chains.add(EVOLUTION_CHAIN_BY_ID[id] ?? -id);
@@ -270,6 +271,7 @@ export interface DashboardSource {
   leagueClients: Record<string, unknown> | null;
   favoriteClients?: Record<string, unknown> | null;
   funnelExcluded?: Record<string, unknown> | null;
+  retired?: RetiredHashes;
 }
 
 function counts(hash: Record<string, unknown> | null): Record<string, number> {
@@ -756,11 +758,12 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const favoriteAgg = aggregate(favoriteRecords, now, favoriteIn, start);
   const merged = mergeByCid([records, leagueRecords, favoriteRecords]);
   const allAgg = aggregate(merged, now, within(merged, active), start);
+  const retired = start === null ? source.retired : undefined;
   const byTool: Record<'dex' | 'league' | 'favorites' | 'all', Aggregates> = {
-    dex: dexAgg,
-    league: leagueAgg,
-    favorites: favoriteAgg,
-    all: allAgg,
+    dex: withRetired(dexAgg, retired?.dex),
+    league: withRetired(leagueAgg, retired?.league),
+    favorites: withRetired(favoriteAgg, retired?.favorites),
+    all: withRetired(allAgg, retired?.all),
   };
 
   const timeCurves = dexAgg.timeCurves;

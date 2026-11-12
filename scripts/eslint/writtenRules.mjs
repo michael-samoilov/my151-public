@@ -219,6 +219,18 @@ export const WRITTEN_RULES = [
     fix: 'Use the country, region, and timezone headers only.',
   },
   {
+    id: 'vercel-insights-follow-opt-out',
+    rule: 'Load Vercel Web Analytics and Speed Insights only through installVisitCounting. It skips an opted-out browser and one that sends Global Privacy Control, and it drops events after the privacy switch turns on.',
+    source: 'Michael, 2026-11-11: a privacy page with a visible opt-out that honors Global Privacy Control',
+    files: SRC,
+    ignores: ['src/lib/visitCounting.ts'],
+    selectors: [
+      'ImportExpression[source.value=/^@vercel\\/(analytics|speed-insights)/]',
+      'ImportDeclaration[source.value=/^@vercel\\/(analytics|speed-insights)/]',
+    ],
+    fix: 'Call installVisitCounting() from src/lib/visitCounting.ts.',
+  },
+  {
     id: 'no-secret-logging',
     rule: 'Never print, log, or commit PAGESPEED_API_KEY or the database token.',
     source: 'CLAUDE.md, Build Verification; docs/handoff/admin-dashboard-2026-09-30.md',

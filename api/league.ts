@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
+import { redis, getNetworkKey, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS, parseClientId, bodyTooLarge, admitNewClient, noteNewClient } from './_shared.js';
 import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import {
   LEAGUE_CLIENTS_KEY,
@@ -104,8 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     };
 
-    const ip = getClientIp(req);
-    const burst = await burstLimiter.limit(ip);
+    const burst = await burstLimiter.limit(getNetworkKey(req));
     if (!burst.success) {
       await countDrop('rate-limit-ip');
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));

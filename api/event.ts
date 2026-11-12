@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis, getClientIp, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
-import { FUNNEL_DAY_TTL_S } from './_range.js';
+import { redis, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
 import {
   appendExportSurveySkip,
@@ -76,8 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
     if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
-    const ip = getClientIp(req);
-    const burst = await burstLimiter.limit(ip);
+    const burst = await burstLimiter.limit(getNetworkKey(req));
     if (!burst.success) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
@@ -119,7 +117,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       writes.hset(EXPORT_SURVEY_SKIPS_KEY, { [cid]: JSON.stringify(next) });
     }
     await writes
-      .expire(dailyKey, FUNNEL_DAY_TTL_S)
       .expire(journalKey, JOURNAL_TTL_S)
       .ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1)
       .exec();

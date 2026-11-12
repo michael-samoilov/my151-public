@@ -248,7 +248,8 @@ export function stampExportSurveySkips<T extends { cid: string }>(
 }
 
 export const JOURNAL_PREFIX = 'journal';
-export const JOURNAL_TTL_S = 400 * 24 * 60 * 60;
+export const JOURNAL_TTL_DAYS = 400;
+export const JOURNAL_TTL_S = JOURNAL_TTL_DAYS * 24 * 60 * 60;
 export const JOURNAL_MAX_PER_DAY = 50_000;
 
 export interface JournalEntry {

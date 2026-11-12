@@ -547,6 +547,8 @@
   "feedback.sending": "送信中…",
   "feedback.thanks": "ありがとうございます。とても助かります！",
   "feedback.title": "問題を報告",
+  "footer.privacy": "プライバシー",
+  "privacy.title": "プライバシー",
   "footer.report": "問題を報告",
   "home.favorites.blurb": "タイプ・世代別にお気に入りを選択",
   "home.favorites.fullGridAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別の完全なグリッド",

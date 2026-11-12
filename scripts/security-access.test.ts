@@ -82,7 +82,7 @@ import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
 import event from '../api/event';
-import {requireAdmin} from '../api/_shared';
+import {getNetworkKey, requireAdmin} from '../api/_shared';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<unknown>;
 const token = randomUUID();
@@ -182,7 +182,8 @@ describe('Admin read authorization attacks', () => {
   });
   it('x-real-ip takes precedence over attacker-supplied forwarding values', async () => {
     await request('submissions', submissions, {headers: {'x-forwarded-for': '198.51.100.42'}});
-    expect(local.limits[0].key).toBe('192.0.2.10');
+    expect(local.limits[0].key).toBe(getNetworkKey({headers: {'x-real-ip': '192.0.2.10'}} as unknown as VercelRequest));
+    expect(local.limits[0].key).not.toContain('192.0.2.10');
   });
 });
 
@@ -198,16 +199,14 @@ describe('Admin writes and removed destructive routes', () => {
     }
   });
   it('role flags cannot run data upkeep', async () => {
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-retention'}, headers: {'x-role': 'admin'}})).status).toBe(401);
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-exclusions'}, headers: {'x-role': 'admin'}})).status).toBe(401);
     expect(local.calls).toHaveLength(0);
   });
-  it('owner bearer runs only a named upkeep task, and it touches only day counters', async () => {
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'reset'}})).status).toBe(400);
+  it('owner bearer runs only a named upkeep task, and none puts an end date back on the daily totals', async () => {
+    for (const task of ['reset', 'funnel-retention']) {
+      expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task}})).status).toBe(400);
+    }
     expect(local.calls).toHaveLength(0);
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'funnel-retention'}})).status).toBe(200);
-    expect(local.calls.map(c => c.method)).toEqual(['eval']);
-    const [keys] = local.calls[0].args as [string[]];
-    expect(keys.every(k => /^funnel:\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
   });
   it('removed reset and delete endpoints have no callable source route', () => {
     expect(existsSync('api/reset.ts')).toBe(false);

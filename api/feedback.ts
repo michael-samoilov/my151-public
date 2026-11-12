@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
 import { FEEDBACK_KEY, UNVERIFIED_FEEDBACK_KEY, hasStoredRecord, storeReport, underHourlyCap } from './_feedbackStore.js';
-import { redis, getClientIp, isReadOnlyDeployment, parseClientId } from './_shared.js';
+import { redis, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
 import { FEEDBACK_MESSAGE_MAX_CHARS, FEEDBACK_MIN_CHARS } from '../src/lib/feedbackLimits.js';
 
@@ -124,8 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cid = parseClientId(body.cid);
 
     if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
-    const ip = getClientIp(req);
-    const perIp = await ipLimiter.limit(ip);
+    const perIp = await ipLimiter.limit(getNetworkKey(req));
     if (!perIp.success) {
       res.setHeader('Retry-After', Math.ceil((perIp.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });

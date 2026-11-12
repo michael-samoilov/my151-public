@@ -89,6 +89,41 @@ test.describe('the owner opt-out follows across pages', () => {
     expect(evidence.fills).toEqual({ 'fire|1': 4 });
   });
 
+  test('a browser that sends Global Privacy Control is never counted', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true, configurable: true });
+    });
+    const seen = await countBeacons(page);
+    const insights: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.startsWith('/_vercel/')) insights.push(new URL(request.url()).pathname);
+    });
+    const visits: Record<string, unknown>[] = [];
+    await page.route('**/api/visit', async (route) => {
+      visits.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+    });
+    await page.goto('/?countme');
+    await page.waitForTimeout(800);
+    await visitEveryTool(page);
+    const evidence = {
+      beacons: [...new Set(seen)].sort(),
+      insights: [...new Set(insights)].sort(),
+      visitPages: [...new Set(visits.map((v) => v.page))].sort(),
+      visitFields: [...new Set(visits.flatMap((v) => Object.keys(v)))].sort(),
+      everyVisitOptedOut: visits.every((v) => v.out === true),
+    };
+    await testInfo.attach('gpc.json', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
+
+    expect(evidence).toEqual({
+      beacons: [],
+      insights: [],
+      visitPages: [...TOOL_PAGES].sort(),
+      visitFields: ['auto', 'out', 'page', 'tool'],
+      everyVisitOptedOut: true,
+    });
+  });
+
   test('there is no /notme page', async ({ page }) => {
     const seen = await countBeacons(page);
     await page.goto('/notme');

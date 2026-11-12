@@ -42,8 +42,8 @@
         "src/components/analytics/AnalyticsDashboard.tsx"
       ],
       "text": {
-        "baseline": 232652,
-        "ceiling": 244285
+        "baseline": 235724,
+        "ceiling": 247511
       },
       "images": {
         "baseline": 136062,
@@ -57,8 +57,8 @@
         "src/league/data/names/en.json"
       ],
       "text": {
-        "baseline": 276241,
-        "ceiling": 290054
+        "baseline": 279313,
+        "ceiling": 293279
       },
       "images": {
         "baseline": 0,

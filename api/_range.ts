@@ -28,14 +28,10 @@ export function firstSeenSince(r: { firstTs: number }, start: number | null): bo
   return start === null || r.firstTs >= dayStart(start);
 }
 
-export const FUNNEL_DAY_TTL_DAYS = 400;
-export const FUNNEL_DAY_TTL_S = FUNNEL_DAY_TTL_DAYS * 24 * 60 * 60;
-
 export function funnelDayKeys(range: DashboardRange, now: number): string[] | null {
   const start = rangeStart(range, now);
   if (start === null) return null;
   const first = dayStart(start);
   const days = (dayStart(now) - first) / DAY_MS + 1;
-  if (days > FUNNEL_DAY_TTL_DAYS) return null;
   return Array.from({ length: days }, (_, i) => `funnel:${new Date(first + i * DAY_MS).toISOString().slice(0, 10)}`);
 }

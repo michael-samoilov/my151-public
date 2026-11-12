@@ -7,10 +7,10 @@ import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installTranslationGuard } from '../lib/translationGuard'
-import { installOptOut, isOptedOut } from '../lib/clientId'
+import { installOptOut } from '../lib/clientId'
+import { installVisitCounting } from '../lib/visitCounting'
 import { installStaleDeployReload } from '../lib/staleDeploy'
 import { installHideBrokenImages } from '../lib/hideBrokenImages'
-import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 
@@ -38,12 +38,7 @@ installOptOut();
 installHideBrokenImages()
 installStaleDeployReload();
 
-if (!isOptedOut()) {
-  whenIdle(() => {
-    void import('@vercel/analytics').then((m) => m.inject());
-    void import('@vercel/speed-insights').then((m) => m.injectSpeedInsights());
-  });
-}
+installVisitCounting();
 
 if ('serviceWorker' in navigator) {
   const register = () => {

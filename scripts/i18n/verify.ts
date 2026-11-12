@@ -326,6 +326,8 @@ const SAME_AS_ENGLISH_OK = new Set([
   'es:ack.group.sprites',
   'de:ack.group.code',
   'fr:ack.group.code',
+  'it:footer.privacy',
+  'it:privacy.title',
 ]);
 
 const UI_LENGTH_BUDGETS: { prefix: string; maxLatin: number; maxCjk: number }[] = [

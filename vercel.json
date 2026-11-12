@@ -2,6 +2,7 @@
   "buildCommand": "npm run build:vercel",
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "cleanUrls": true,
+  "crons": [{ "path": "/api/retention", "schedule": "17 4 * * *" }],
   "headers": [
     {
       "source": "/(.*)",
