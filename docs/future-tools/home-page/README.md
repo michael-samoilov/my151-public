@@ -4,7 +4,7 @@ The home page is live at `/`. `src/home/main.tsx` mounts `src/components/home/Ho
 
 ## Regenerate current artwork
 
-Use `scripts/capture-tool-art.mjs`, `scripts/resize-tool-art.py`, and `scripts/generate-og-image.mjs`. The runtime artwork record (`docs/evidence/tool-art-rebake/README.md`) describes their inputs and commands.
+Use `scripts/capture-tool-art.mjs`, `scripts/resize-tool-art.py`, and `scripts/generate-og-image.mjs`. The private runtime artwork record describes their inputs and commands.
 
 `league-fixture.json` remains an active input for the capture script and the verify-my151 visual driver. The capture script also uses the retained Picker portrait renderers and saved seed. Preserve these inputs when changing artwork generation.
 

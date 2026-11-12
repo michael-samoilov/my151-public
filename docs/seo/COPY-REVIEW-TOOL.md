@@ -3,8 +3,8 @@
 Historical captures and commands are in this folder's Git history.
 
 The copy review artifact lets the owner edit every SEO field beside a live
-preview and hand the edits back. The current version is linked from
-`docs/seo/SEO-PLAN.md` P16. These requirements come from using it across four rounds.
+preview and hand the edits back. The current version is linked from item
+P16 of the private SEO plan. These requirements come from using it across four rounds.
 Build the next version to meet all of them.
 
 ## Layout
