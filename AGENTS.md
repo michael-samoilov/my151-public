@@ -4,7 +4,7 @@
 
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
-- For cloud work (private repository only), use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` unless the user names another base.
+- For cloud work (private repository only), start from `claude/pokedex-region-builder-AviYF` in the checked-out repository unless the user names another base.
 - Favorite Pokémon Picker (`/favorite-pokemon-picker`): the launch is authorized through PR 111 from `claude/jolly-meitner-opefey` (private repository only). Check current release status before changing it. Before picker work, check out that branch and read the Favorite Picker handoff there (private repository only).
 - League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in the League Builder handoff of 2026-09-30 on production (private repository only). Read it before league work.
 - Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in the Dex Builder handoff of 2026-09-30 on production (private repository only). Read it before Dex work.
