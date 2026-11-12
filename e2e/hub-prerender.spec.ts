@@ -52,6 +52,7 @@ async function visit(
   { seed, now, lines = 0 }: { seed?: Record<string, string>; now?: string; lines?: number } = {},
 ) {
   const context = await browser.newContext({ baseURL, ...options, serviceWorkers: 'block' });
+  await context.route('**/api/visit', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }));
   if (now) await context.clock.setFixedTime(new Date(now));
   await context.route('**/assets/*.js', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 400));

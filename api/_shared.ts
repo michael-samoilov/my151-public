@@ -120,12 +120,13 @@ function ipv6Prefix64(ip: string): string {
   return groups.slice(0, 4).map((g) => g.toLowerCase().replace(/^0+(?=.)/, '')).join(':');
 }
 
-const INSTANCE_NETWORK_SECRET = randomBytes(32);
+let instanceNetworkSecret: Buffer | undefined;
 
 function networkSecret(): Buffer {
   const adminToken = process.env.ADMIN_TOKEN;
-  if (!adminToken) return INSTANCE_NETWORK_SECRET;
-  return Buffer.from(hkdfSync('sha256', adminToken, '', 'my151 network key v1', 32));
+  if (adminToken) return Buffer.from(hkdfSync('sha256', adminToken, '', 'my151 network key v1', 32));
+  instanceNetworkSecret ??= randomBytes(32);
+  return instanceNetworkSecret;
 }
 
 export function getNetworkKey(req: VercelRequest): string {
