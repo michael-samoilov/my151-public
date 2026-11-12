@@ -1,14 +1,16 @@
 # my151
 
+[![Public CI](https://github.com/michael-samoilov/my151-public/actions/workflows/public-ci.yml/badge.svg)](https://github.com/michael-samoilov/my151-public/actions/workflows/public-ci.yml)
+
 [my151.app](https://my151.app) is a set of free browser tools for Pokémon fans.
 You can fill your own regional Pokédex, design a Pokémon League of gym leaders, and pick a favorite Pokémon for each type and generation.
 The tools need no account, and each one exports a PNG image that you can share.
 
-**Status:** Live, maintained solo; not accepting contributions.
+![Three phone screens side by side: the Dex Builder's Build tab, the League Builder's trainer card, and the Favorite Picker grid.](docs/readme/phones.webp)
 
-This repository is the read-only public copy of a private working repository, updated weekly.
-Branch names in the agent docs, such as `CLAUDE.md` and `AGENTS.md`, refer to the private repository.
-The history is a series of small verified steps, merged one change at a time from parallel work sessions.
+*The three tools on a phone screen, 390 pixels wide, with sample data.*
+
+**Status:** Live, maintained solo; not accepting contributions.
 
 ## Tools
 
@@ -83,10 +85,6 @@ The Favorite Picker with a filled grid of types by generation:
 
 ![The Favorite Picker grid with type columns from Normal to Bug and generation rows from I to VI, each cell holding a chosen Pokémon.](docs/readme/favorite-picker-desktop.webp)
 
-The same three tools on a phone screen, 390 pixels wide:
-
-![Three phone screens side by side: the Dex Builder's Build tab, the League Builder's trainer card, and the Favorite Picker grid.](docs/readme/phones.webp)
-
 ## Capabilities
 
 - **Nine interface languages.** The app supports English, Japanese, Korean, Simplified Chinese, Traditional Chinese, French, German, Spanish, and Italian ([`src/i18n/config.ts`](src/i18n/config.ts)). Pokémon names, types, and other game terms come from the games' own text, and app copy without a reviewed translation falls back to English.
@@ -143,6 +141,14 @@ Use `npm run ci:full` for broad release risk.
 - **No local API.** Vite does not run the functions in `api/`. The admin reports need an Upstash Redis database and an admin token, or the synthetic data at `/?admin&demo`.
 - **One user per browser.** The dashboard counts a user for each browser ID, so one person on two devices counts as two users.
 - **Slow full suite.** The full browser suite takes about 30 minutes, so a change runs only the specs that the test map selects.
+- **Unverified counts.** The dashboard counts come from unauthenticated beacons, rate-limited per network. They are not verified identities.
+
+## About this repository
+
+This repository is the read-only public copy of a private working repository, updated weekly.
+Branch names in `CLAUDE.md` and `AGENTS.md` refer to the private repository.
+Commit IDs cited in the docs refer to the private working repository.
+The history is a series of small verified steps, merged one change at a time from parallel work sessions.
 
 ## License
 
