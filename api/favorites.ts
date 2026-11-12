@@ -8,7 +8,6 @@ import { redis, getNetworkKey, getClient, getGeo, getLang, isReadOnlyDeployment,
 import { parseCapturedAt, parseSeenDays } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
 import { parseAutoFlag } from './_automation.js';
-import { FUNNEL_DAY_TTL_S } from './_range.js';
 import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, favoriteSessionAt, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
 const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
 const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
@@ -27,7 +26,6 @@ for _, event in ipairs(events) do
  redis.call('RPUSH', KEYS[6], cjson.encode(event))
 end
 if #events > 0 then
- redis.call('EXPIRE', KEYS[5], ${FUNNEL_DAY_TTL_S})
  redis.call('EXPIRE', KEYS[6], ARGV[6])
  redis.call('LTRIM', KEYS[6], -tonumber(ARGV[7]), -1)
 end

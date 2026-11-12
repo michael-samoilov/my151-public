@@ -227,6 +227,14 @@ function tokenEqual(provided: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
+export function bearerMatches(req: VercelRequest, expected: string): boolean {
+  const authHeader = Array.isArray(req.headers.authorization)
+    ? req.headers.authorization[0]
+    : req.headers.authorization ?? '';
+  const provided = (authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '').trim();
+  return provided !== '' && tokenEqual(provided, expected.trim());
+}
+
 const adminLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(60, '1 m'),
@@ -248,11 +256,7 @@ export async function requireAdmin(req: VercelRequest, res: VercelResponse): Pro
     return false;
   }
 
-  const authHeader = Array.isArray(req.headers.authorization)
-    ? req.headers.authorization[0]
-    : req.headers.authorization ?? '';
-  const provided = (authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '').trim();
-  if (!provided || !tokenEqual(provided, adminToken.trim())) {
+  if (!bearerMatches(req, adminToken)) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }

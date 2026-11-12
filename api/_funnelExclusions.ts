@@ -1,7 +1,6 @@
 import { redis } from './_shared.js';
-import { JOURNAL_PREFIX } from './_events.js';
+import { JOURNAL_PREFIX, JOURNAL_TTL_DAYS } from './_events.js';
 import { DAY_MS, dayStart } from './_aggregate.js';
-import { FUNNEL_DAY_TTL_DAYS } from './_range.js';
 
 export const FUNNEL_EXCLUDED_KEY = 'funnel:excluded';
 
@@ -49,7 +48,7 @@ export async function countJournalEvents(cids: string[], now = Date.now()): Prom
   const out: Record<string, number> = {};
   if (!cids.length) return out;
   const today = dayStart(now);
-  const keys = Array.from({ length: FUNNEL_DAY_TTL_DAYS + 1 }, (_, i) =>
+  const keys = Array.from({ length: JOURNAL_TTL_DAYS + 1 }, (_, i) =>
     `${JOURNAL_PREFIX}:${new Date(today - i * DAY_MS).toISOString().slice(0, 10)}`);
   for (let i = 0; i < keys.length; i += DAYS_PER_CALL) {
     const flat = (await redis.eval(COUNT_EVENTS, keys.slice(i, i + DAYS_PER_CALL), cids)) as unknown[];

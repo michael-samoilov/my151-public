@@ -9,7 +9,8 @@ import { funnelDayKeys, isDashboardRange } from './_range.js';
 import { readMinuteActivityBudget } from './_activityHistoryStore.js';
 import { FUNNEL_EXCLUDED_KEY } from './_funnelExclusions.js';
 import { readHashInPages } from './_hashScan.js';
-import { VISITS_PREFIX, VISITS_TTL_DAYS, visitTotals } from './_visits.js';
+import { readRetention } from './_retiredTally.js';
+import { VISITS_FIRST_DAY, VISITS_PREFIX, visitTotals } from './_visits.js';
 import type { DashboardRange } from './_range.js';
 
 const SUM_HASHES = `
@@ -37,7 +38,7 @@ function pairsToHash(flat: unknown): Record<string, unknown> {
 
 export function visitDayKeys(range: DashboardRange, now: number): string[] {
   const days = funnelDayKeys(range, now)?.map((key) => key.slice('funnel:'.length))
-    ?? Array.from({ length: VISITS_TTL_DAYS }, (_, i) => new Date(now - i * 86_400_000).toISOString().slice(0, 10));
+    ?? Array.from({ length: Math.floor((now - VISITS_FIRST_DAY) / 86_400_000) + 1 }, (_, i) => new Date(VISITS_FIRST_DAY + i * 86_400_000).toISOString().slice(0, 10));
   return days.map((day) => `${VISITS_PREFIX}:${day}`);
 }
 
@@ -111,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const now = Date.now();
     const dayKeys = funnelDayKeys(range, now);
-    const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients, funnelExcluded, visitDays] = await Promise.all([
+    const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients, funnelExcluded, visitDays, retention] = await Promise.all([
       readHashInPages(CLIENTS_KEY),
       redis.smembers(ARCHIVED_KEY),
       redis.hgetall('funnel') as Promise<Record<string, unknown> | null>,
@@ -120,6 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       readHashInPages(FAVORITE_CLIENTS_KEY),
       redis.hgetall(FUNNEL_EXCLUDED_KEY) as Promise<Record<string, unknown> | null>,
       redis.eval(SUM_HASHES, visitDayKeys(range, now), []),
+      readRetention(),
     ]);
     const body = buildDashboard(
       {
@@ -130,12 +132,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         leagueClients,
         favoriteClients,
         funnelExcluded,
+        retired: retention.retired,
       },
       { range },
       now,
     );
 
-    return res.status(200).json({ ...body, visits: visitTotals(pairsToHash(visitDays)) });
+    return res.status(200).json({ ...body, visits: visitTotals(pairsToHash(visitDays)), cleanup: retention.cleanup });
   } catch (err) {
     console.error('Submissions error:', err);
     return res.status(500).json({ error: 'Internal server error' });

@@ -160,6 +160,7 @@ describe('submissions Redis bill', () => {
     expect(Object.keys(all.body.crossToolSince ?? {})).toEqual(['league', 'favorites']);
     expect(all.commands).toEqual([
       'eval <script>',
+      'eval <script>',
       'hgetall funnel',
       'hgetall funnel:excluded',
       'hscan clients',
@@ -169,6 +170,7 @@ describe('submissions Redis bill', () => {
     ]);
     const week = await call('7d');
     expect(week.commands).toEqual([
+      'eval <script>',
       'eval <script>',
       'eval <script>',
       'hgetall funnel',

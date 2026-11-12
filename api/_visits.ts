@@ -1,8 +1,7 @@
 import type { Tool } from './_events.js';
 
 export const VISITS_PREFIX = 'visits';
-export const VISITS_TTL_DAYS = 400;
-export const VISITS_TTL_S = VISITS_TTL_DAYS * 24 * 60 * 60;
+export const VISITS_FIRST_DAY = Date.UTC(2026, 10, 11);
 export const VISIT_PAGES = ['/', '/pokedex-builder', '/custom-gym-leader', '/league-card', '/favorite-pokemon-picker'] as const;
 export type VisitPage = (typeof VISIT_PAGES)[number] | 'other';
 

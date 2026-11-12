@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
-import { FUNNEL_DAY_TTL_S } from './_range.js';
 import { parseAutoFlag } from './_automation.js';
 import {
   appendExportSurveySkip,
@@ -118,7 +117,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       writes.hset(EXPORT_SURVEY_SKIPS_KEY, { [cid]: JSON.stringify(next) });
     }
     await writes
-      .expire(dailyKey, FUNNEL_DAY_TTL_S)
       .expire(journalKey, JOURNAL_TTL_S)
       .ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1)
       .exec();

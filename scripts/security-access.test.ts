@@ -199,16 +199,14 @@ describe('Admin writes and removed destructive routes', () => {
     }
   });
   it('role flags cannot run data upkeep', async () => {
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-retention'}, headers: {'x-role': 'admin'}})).status).toBe(401);
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-exclusions'}, headers: {'x-role': 'admin'}})).status).toBe(401);
     expect(local.calls).toHaveLength(0);
   });
-  it('owner bearer runs only a named upkeep task, and it touches only day counters', async () => {
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'reset'}})).status).toBe(400);
+  it('owner bearer runs only a named upkeep task, and none puts an end date back on the daily totals', async () => {
+    for (const task of ['reset', 'funnel-retention']) {
+      expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task}})).status).toBe(400);
+    }
     expect(local.calls).toHaveLength(0);
-    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'funnel-retention'}})).status).toBe(200);
-    expect(local.calls.map(c => c.method)).toEqual(['eval']);
-    const [keys] = local.calls[0].args as [string[]];
-    expect(keys.every(k => /^funnel:\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
   });
   it('removed reset and delete endpoints have no callable source route', () => {
     expect(existsSync('api/reset.ts')).toBe(false);

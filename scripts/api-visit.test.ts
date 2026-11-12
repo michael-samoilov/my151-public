@@ -11,12 +11,11 @@ vi.mock('@upstash/redis', () => ({
       return {
         eval: async (script: string, keys: string[], args: (string | number)[]) => {
           if (!script.includes("'HINCRBY'")) throw new Error('unexpected script');
-          const [ttl, ...fields] = args;
           const hash = store.get(keys[0]) ?? new Map<string, number>();
           store.set(keys[0], hash);
-          for (const field of fields) hash.set(String(field), (hash.get(String(field)) ?? 0) + 1);
-          expiries.set(keys[0], Number(ttl));
-          return fields.length;
+          for (const field of args) hash.set(String(field), (hash.get(String(field)) ?? 0) + 1);
+          if (/EXPIRE/i.test(script)) expiries.set(keys[0], 1);
+          return args.length;
         },
       };
     }
@@ -81,7 +80,7 @@ describe('anonymous visit totals', () => {
         'page:/pokedex-builder:optout': 1,
       },
     });
-    expect(expiries.get(today())).toBe(400 * 86_400);
+    expect(expiries.has(today())).toBe(false);
     expect(JSON.stringify(stored())).not.toMatch(/0042|DE|203\.0\.113/);
   });
 

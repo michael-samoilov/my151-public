@@ -106,6 +106,7 @@ describe('submissions Redis bill with the pick counts', () => {
     expect(body.favoritePicks?.charts).toBe(5);
     expect(commands.map((c) => `${c[0].toLowerCase()} ${c[0].toLowerCase() === 'eval' ? '<script>' : c[1]}`).sort()).toEqual([
       'eval <script>',
+      'eval <script>',
       'hgetall funnel',
       'hgetall funnel:excluded',
       'hscan clients',

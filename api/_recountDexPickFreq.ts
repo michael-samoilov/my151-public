@@ -2,18 +2,22 @@ import { CLIENTS_KEY, parseRecord, redis, type ClientRecord } from './_shared.js
 import { readHashInPages } from './_hashScan.js';
 
 const FREQ_KEY = 'dex:ever-freq';
-const SPLIT_BACKUP_KEY = 'clients:country-split-backup';
+export const SPLIT_BACKUP_KEY = 'clients:country-split-backup';
 export const FREQ_BACKUP_KEY = 'dex:ever-freq:before-split-fix';
 
 type SplitBackup = { base: unknown; splits: Record<string, { record: unknown }> };
 
+export function backupRecords(raw: unknown): ClientRecord[] {
+  const backup = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SplitBackup;
+  return [backup.base, ...Object.values(backup.splits).map((s) => s.record)]
+    .map(parseRecord)
+    .filter((r): r is ClientRecord => r !== null);
+}
+
 export function splitOvercount(backups: Record<string, unknown>): Map<string, number> {
   const over = new Map<string, number>();
   for (const raw of Object.values(backups)) {
-    const backup = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SplitBackup;
-    const records = [backup.base, ...Object.values(backup.splits).map((s) => s.record)]
-      .map(parseRecord)
-      .filter((r): r is ClientRecord => r !== null);
+    const records = backupRecords(raw);
     const inRecords = new Map<string, number>();
     for (const r of records) for (const id of new Set(r.everIds ?? [])) inRecords.set(String(id), (inRecords.get(String(id)) ?? 0) + 1);
     for (const [id, n] of inRecords) if (n > 1) over.set(id, (over.get(id) ?? 0) + n - 1);

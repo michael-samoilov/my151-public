@@ -7,7 +7,7 @@ import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { FooterPanel, PANEL_HEADING } from './FooterPanel';
 import { closePrivacyPanel, privacyPanelState, subscribePrivacyPanel } from './privacyPanelStore';
 
-const UPDATED = Date.UTC(2026, 10, 11);
+const UPDATED = Date.UTC(2026, 10, 12);
 
 const KEPT = [
   ['privacy.keep.id.label', 'privacy.keep.id'],

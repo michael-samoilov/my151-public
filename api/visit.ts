@@ -3,7 +3,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getNetworkKey, isReadOnlyDeployment } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';
 import { TOOLS, type Tool } from './_events.js';
-import { VISIT_PAGES, VISITS_PREFIX, VISITS_TTL_S, visitFields, type VisitPage } from './_visits.js';
+import { VISIT_PAGES, VISITS_PREFIX, visitFields, type VisitPage } from './_visits.js';
 
 const burstLimiter = new Ratelimit({
   redis,
@@ -13,11 +13,10 @@ const burstLimiter = new Ratelimit({
 });
 
 const COUNT_VISIT = `
-for i = 2, #ARGV do
+for i = 1, #ARGV do
   redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
 end
-redis.call('EXPIRE', KEYS[1], ARGV[1])
-return #ARGV - 1
+return #ARGV
 `;
 
 const isTool = (v: unknown): v is Tool => typeof v === 'string' && (TOOLS as readonly string[]).includes(v);
@@ -40,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const fields = visitFields(body.tool, isPage(body.page) ? body.page : 'other', body.out === true);
     const key = `${VISITS_PREFIX}:${new Date().toISOString().slice(0, 10)}`;
-    await redis.eval(COUNT_VISIT, [key], [VISITS_TTL_S, ...fields]);
+    await redis.eval(COUNT_VISIT, [key], fields);
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Visit error:', err);

@@ -169,6 +169,7 @@ export interface ApiResponse {
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
   visits?: { all: number; optedOut: number; byTool: Record<string, { all: number; optedOut: number }> };
+  cleanup?: { lastRunAt: string | null; browsers: Record<ToolSlice, number> };
   dexFunnel?: DexUsageFunnel;
   leagueFunnel?: LeagueUsageFunnel;
   tools?: {
@@ -368,6 +369,19 @@ function OptOutShare({ visits }: { visits?: ApiResponse['visits'] }) {
   return (
     <p className="text-[0.65rem] text-muted-foreground mt-2" data-testid="admin-optout-share">
       {visits.all.toLocaleString('en')} page loads in this range · {visits.optedOut.toLocaleString('en')} not counted ({share}%): the privacy switch, ?notme, or Global Privacy Control
+    </p>
+  );
+}
+
+function CleanupLine({ cleanup, tool, range, nowMs }: { cleanup?: ApiResponse['cleanup']; tool: ToolSlice; range: DashboardRange; nowMs: number }) {
+  if (!cleanup) return null;
+  const at = cleanup.lastRunAt ? Date.parse(cleanup.lastRunAt) : NaN;
+  const fresh = Number.isFinite(at) && nowMs - at <= 2 * 86_400_000;
+  const retired = range === 'all' ? cleanup.browsers[tool] ?? 0 : 0;
+  const date = fresh ? new Date(at).toLocaleDateString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }) : '';
+  return (
+    <p className="text-[0.65rem] text-muted-foreground mt-2" data-testid="admin-cleanup">
+      {!fresh ? 'Cleanup has not run' : retired > 0 ? `Includes ${retired.toLocaleString('en')} browsers past 13 months · last cleanup ${date}` : `Last cleanup ${date}`}
     </p>
   );
 }
@@ -1988,6 +2002,7 @@ export function AdminPage() {
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
             <OptOutShare visits={data.visits} />
+            <CleanupLine cleanup={data.cleanup} tool={tool} range={range} nowMs={loadedAt} />
 
             {tool === 'league' && (
               <Panel title="League activity" sub={[`${slice.users} browsers`]}>
