@@ -85,7 +85,7 @@ Height, weight, abilities, gender ratio, egg cycles, base friendship, genus, evo
 
 ### Prior art
 
-The form metadata contract prototype (`docs/handoff/agent-metadata-prototype-2026-10-16.md`) compared complete resolved records with sparse overrides for 1,388 forms. Both designs caught the same four historical errors. Resolved values cost 30,283 gzip bytes. Sparse values cost 3,086. Its recommendation was to keep sparse runtime data and validate at the offline refresh boundary. This spec keeps that recommendation.
+The form metadata contract prototype, a private handoff of 2026-10-16, compared complete resolved records with sparse overrides for 1,388 forms. Both designs caught the same four historical errors. Resolved values cost 30,283 gzip bytes. Sparse values cost 3,086. Its recommendation was to keep sparse runtime data and validate at the offline refresh boundary. This spec keeps that recommendation.
 
 ## Target model
 
@@ -492,7 +492,7 @@ interface Encounter {
 
 A list such as "Pokémon that appear shiny in static encounters" becomes a query: `Encounter.shiny === 'guaranteed'`. The red Gyarados at the Lake of Rage is one encounter row, not an exception in app code. Today the same five IDs live in two places: the `shinyIds` of the static and reward archetypes in `src/data/archetypes.ts`, and `PROTECTED` in `scripts/fetch-shiny-sprites.ts`.
 
-Most of the raw material exists already. `docs/biome-research/pokeapi/encounters.csv` holds 83,092 PokeAPI encounter rows across 41 versions, with location areas and methods. `scripts/biome/` scores habitats from them. No code in `src/` reads any of it yet. The live habitat model is the 16 place archetypes in `archetypes.ts`. Scarlet and Violet, Legends: Arceus, and Legends: Z-A have no encounter data.
+Most of the raw material exists already. A PokeAPI encounter extract in the private biome research holds 83,092 encounter rows across 41 versions, with location areas and methods. `scripts/biome/` scores habitats from them. No code in `src/` reads any of it yet. The live habitat model is the 16 place archetypes in `archetypes.ts`. Scarlet and Violet, Legends: Arceus, and Legends: Z-A have no encounter data.
 
 A **distribution** is an event or mystery gift. It links a form, a game, a date range, a shiny status, and a special moveset. Event-only moves are learnset entries whose method names the distribution.
 

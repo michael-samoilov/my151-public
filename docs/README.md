@@ -39,11 +39,11 @@ The production branch and linked release records establish shipped state.
 ## Find evidence
 
 [Evidence retention](evidence-retention.md) owns retention and archive requirements.
-The archive index (`docs/evidence/archive/README.md`) records historical artifacts removed from the working tree and how to retrieve them.
+The archive index in the evidence folder records historical artifacts removed from the working tree and how to retrieve them.
 Existing folders under `evidence/`, `favorite-picker-work/`, and `design/` retain their local explanations.
 They are historical records unless a current guide or test explicitly uses them.
 The handoffs, `notes/`, `evidence/`, and `favorite-picker-work/` are private working records, and the public copy of this repository leaves them out.
-`docs/notes` holds working notes: the to-do list, the feature backlog, an interface polish exploration, and the milestone bar layout.
+The working notes folder holds the to-do list, the feature backlog, an interface polish exploration, and the milestone bar layout.
 [`readme/`](readme/) holds the screenshots that the [project overview](../README.md) shows.
 
 Verification results apply to their recorded source, inputs, engines, and dates.

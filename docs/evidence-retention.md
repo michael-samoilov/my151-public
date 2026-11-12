@@ -25,6 +25,6 @@ Use `.audit/` or `docs/**/local/` for captures and detailed reports. Both paths 
 4. Restore and compare every selected file before removal. Replace navigational links with commit-pinned links.
 5. Verify retained inputs, development workflows, and unchanged app output. Let checkout size follow from these decisions.
 
-The archive index (`docs/evidence/archive/README.md`) records recovery commands. Byte recovery does not assemble a runnable historical application. Replay commands in historical reports from a worktree at their recorded revision.
+The archive index in the private evidence folder records recovery commands. Byte recovery does not assemble a runnable historical application. Replay commands in historical reports from a worktree at their recorded revision.
 
 The archive uses reachable Git history and existing access controls. It needs no separate service or public upload. Checkout size decreases. Full-clone historical storage does not.

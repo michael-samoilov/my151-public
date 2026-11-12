@@ -19,7 +19,7 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
   lines, corner-button overlays on tiles, zustand + localStorage norms.
 - Launch English first. No share links in v1. Recorded at launch
   (2026-09-08): the tool bar, pickers, hints and export labels are English
-  in every locale; `docs/notes/feature-backlog.md` carries the translation item.
+  in every locale; the private feature backlog carries the translation item.
 
 ## Card model
 

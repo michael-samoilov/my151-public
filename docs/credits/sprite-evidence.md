@@ -16,7 +16,7 @@ Built on 2026-10-13 from production commit 8739dac6. Pages and files were read o
 3. Sources, strongest first: a file the artist posted; the Smogon attachment on a credit-sheet row that names the artist; the Generation 9 pack file on its sheet row; a PokéAPI commit and README line that name the artist; a Game Freak sprite from PokéAPI's Black and White import.
 4. A near match is reported with its mask IoU (shared opaque pixels over all opaque pixels, at the best offset) and the share of shared pixels with the same colour.
 
-The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. The two kiriaura originals imported on 2026-10-19 are retained in `docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
+The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in the private sprite work folder, under the 2026-10-17 King originals. The two kiriaura originals imported on 2026-10-19 are retained there too, under the 2026-10-19 kiriaura originals. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
 
 ## Summary
 
@@ -1255,7 +1255,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
-Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources. On 2026-10-29 Mega Raichu X went back to PokéAPI's file; see [Shiny sprites added on 2026-10-29](#shiny-sprites-added-on-2026-10-29).
+Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains with the private 2026-10-17 King originals. The JSON ledger contains the current hashes and sources. On 2026-10-29 Mega Raichu X went back to PokéAPI's file; see [Shiny sprites added on 2026-10-29](#shiny-sprites-added-on-2026-10-29).
 
 ## kiriaura originals imported on 2026-10-19
 
@@ -1263,11 +1263,11 @@ Two picker-only additions use kiriaura's own DeviantArt uploads: Mosslax (11120)
 
 ## Purple Kecleon added on 2026-10-19
 
-Purple Kecleon (11122) is a picker-only appearance. The file is my151's palette recolor of the app's Game Freak Kecleon (352): the same indexed 96×96 canvas, every pixel on its palette index, and 10 palette slots changed to the Mystery Dungeon purple Kecleon colors. It has no credit and no Acknowledgements entry, because the art is Game Freak's (Michael, 2026-10-13). The ledger row is `repository-history`. Provenance: `docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json`.
+Purple Kecleon (11122) is a picker-only appearance. The file is my151's palette recolor of the app's Game Freak Kecleon (352): the same indexed 96×96 canvas, every pixel on its palette index, and 10 palette slots changed to the Mystery Dungeon purple Kecleon colors. It has no credit and no Acknowledgements entry, because the art is Game Freak's (Michael, 2026-10-13). The ledger row is `repository-history`. Its provenance record is in the private sprite work folder.
 
 ## Picker forms added on 2026-10-20
 
-Five picker-only appearances, each a byte copy of the sprite-lab selection Michael approved. Provenance: `docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json`.
+Five picker-only appearances, each a byte copy of the sprite-lab selection Michael approved. Their provenance record is in the private sprite work folder.
 
 - Shadow Lugia (11123) and Primal Dialga (11124) are JoeTEStrikesBack's own DeviantArt sheet, kept in the same folder (sha256 `de3c8d5c…`), with my151's recorded changes: 229 pixels on Shadow Lugia (21 background pixels made transparent, the pupil made red, 207 top-edge outline pixels lightened) and 8 background pixels on Primal Dialga. The rows carry `"changedBy": "my151"`. JoeTEStrikesBack's credit entry lists both sprites and does not mention the changes (Michael, 2026-10-20). Shadowgate31 is not credited: their outline colours are only in a variant the app does not use.
 - Tinkmaster (11125) is Travis's Tinkaton (959) pixel for pixel in the body, with tools that my151 added. The tools come from the sprite lab's family edit, an image-model edit of 959.png, and code-only hand edits. Because of the model-drawn tools, the panel gives it no credit and no count, like the lab's own drawings (Michael, 2026-10-20). The row says `"creditedVia": "my151"` and carries `"changedBy": "my151"`.
@@ -1356,4 +1356,4 @@ The harvest checks every pair against its source except Furfrou (Heart Trim)'s. 
 
 ## Shinies held on 2026-10-29
 
-Michael keeps 20 shinies on hand but out of the app, so the JSON ledger has no row for them. Each form shows no shiny. Stereo Rotom (11112) and Spiky-eared Pichu (11064) have no shiny in any game. The other 18 forms are one individual that is never shiny (Michael, 2026-10-29): the six Cosplay Pikachu (10080-10085), the eight Pikachu in a cap (10094-10099, 10148, 10160), Ash-Greninja (10117), Zarude (Dada) (10192), Eternal Floette (10061), and Mega Floette (10296). The held shinies (`docs/favorite-picker-work/sprites/held-shinies/README.md`) keeps each file with its source, its artist, its SHA-256, the ledger row it had while it shipped, and the rules. The harvest skips each held id. The Acknowledgements counts do not change, because the normal sprite's credit covered each of these shinies.
+Michael keeps 20 shinies on hand but out of the app, so the JSON ledger has no row for them. Each form shows no shiny. Stereo Rotom (11112) and Spiky-eared Pichu (11064) have no shiny in any game. The other 18 forms are one individual that is never shiny (Michael, 2026-10-29): the six Cosplay Pikachu (10080-10085), the eight Pikachu in a cap (10094-10099, 10148, 10160), Ash-Greninja (10117), Zarude (Dada) (10192), Eternal Floette (10061), and Mega Floette (10296). The held-shinies record in the private sprite work folder keeps each file with its source, its artist, its SHA-256, the ledger row it had while it shipped, and the rules. The harvest skips each held id. The Acknowledgements counts do not change, because the normal sprite's credit covered each of these shinies.

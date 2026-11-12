@@ -149,7 +149,7 @@ test('without a test map or a usable base, app changes run smoke and say why', (
 });
 
 test('only an explicit documentation diff skips code checks; clean input still runs smoke', () => {
-  expect(select('affected', ['docs/handoff/example.md', 'README.md'], 'abc', undefined, { map }).effectiveMode).toBe('docs');
+  expect(select('affected', ['docs/example.md', 'README.md'], 'abc', undefined, { map }).effectiveMode).toBe('docs');
   expect(select('affected', [], 'abc', undefined, { map }).effectiveMode).toBe('fast');
   expect(select('full', ['README.md'], 'abc', undefined, { map })).toMatchObject({ effectiveMode: 'full', suitePattern: '.*' });
 });

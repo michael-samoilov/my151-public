@@ -2,8 +2,8 @@
 
 Written 2026-09-09 for a separate implementation session. The launch
 (`2eb8033`) shipped the data the dashboard needs; this plan turns it into
-views. Read `docs/analytics-accuracy.md` section 1b first: it explains the
-three stores this plan reads.
+views. Read section 1b of the private analytics accuracy notes first: it
+explains the three stores this plan reads.
 
 ## What already ships
 

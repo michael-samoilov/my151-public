@@ -63,7 +63,7 @@ this report describes the integrated result.
 
 | Finding | Before, same synthetic input | After | Evidence |
 | --- | --- | --- | --- |
-| Dex budget selected by client `tool` | Exhaust Dex CID allowance; `tool=dex` returns 429, but `hub`, `league`, and `favorites` each return 200 and write Dex analytics. | All four use the endpoint's Dex budget and return 429. | `scripts/security-limits.test.ts`; baseline failure and sanitized transcript in `docs/evidence/security-review-2026-10-16/`. |
+| Dex budget selected by client `tool` | Exhaust Dex CID allowance; `tool=dex` returns 429, but `hub`, `league`, and `favorites` each return 200 and write Dex analytics. | All four use the endpoint's Dex budget and return 429. | `scripts/security-limits.test.ts`; baseline failure and sanitized transcript in the private evidence folder for this review. |
 | Dex and League record-cap race | At 49,999 records, 20 concurrent new identities reach 50,019 in each store. | The actual CAS Lua admits one and refuses 19, ending at 50,000. | `scripts/security-redis-caps.mjs`; real Redis before/after JSON. |
 | Feedback cache restriction absent | Authenticated response returns 200 without `Cache-Control`. | The handler sets `Cache-Control: no-store` before authentication, including errors and refusals. | `scripts/security-access.test.ts`; baseline fails, all 55 access tests pass after the fix. Shared-cache disclosure was not demonstrated. |
 
@@ -95,8 +95,8 @@ network round trip, but Lua subcommands still count toward provider usage.
 ## Evidence and repeat the checks
 
 - [Access baseline and scope](access-2026-10-16/README.md), after transcript.
-- Limits baseline (`docs/evidence/security-review-2026-10-16/limits-review.md`), Redis before, Redis after.
-- Browser method and results (`docs/evidence/security-review-2026-10-16/browser/README.md`).
+- Limits baseline (private evidence), Redis before, Redis after.
+- Browser method and results (private evidence).
 
 Before the next launch, rerun the saved security command. The combined run
 passes 63 handler checks, seven actual Redis checks, and eight browser checks.
