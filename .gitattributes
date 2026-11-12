@@ -1,0 +1,4 @@
+.claude/vendor/** linguist-vendored
+.agents/** linguist-vendored
+public/sprites/** linguist-vendored
+docs/i18n/sources/** linguist-vendored

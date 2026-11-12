@@ -3,7 +3,7 @@
   "entries": [
     { "text": "my151", "reason": "Brand wordmark, the same in every locale." },
     { "text": ".app", "reason": "Brand wordmark, the same in every locale." },
-    { "file": "src/components/shared/PageFooter.tsx", "text": "v", "reason": "Legal footer line: the build version prefix stays English on purpose (docs/handoff/l10n-2026-10-10.md)." },
+    { "file": "src/components/shared/PageFooter.tsx", "text": "v", "reason": "Legal footer line: the build version prefix stays English on purpose (localization handoff, 2026-10-10)." },
     { "file": "src/components/shared/PageFooter.tsx", "text": "· Pokémon © 1995–", "reason": "Legal footer line: the copyright formula stays English on purpose." },
     { "file": "src/components/shared/PageFooter.tsx", "text": "Nintendo / Game Freak / Creatures / TPC", "reason": "Legal footer line: rights holders' names." },
     { "file": "src/league/components/LeagueExportSurvey.tsx", "text": "Search engine", "reason": "The survey sends this English answer in the report; the screen shows exportSurvey.heard.search." },

@@ -2,6 +2,7 @@
 
 This repository vendors the complete [pstack-claude](https://github.com/michael-denyer/pstack-claude)
 distribution. The historical `open-pstack` directory name stays stable for links.
+The upstream author is a third party, unrelated to this repository's owner.
 
 | Field | Value |
 | --- | --- |

@@ -1,5 +1,5 @@
 import { ESLint } from 'eslint';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { WRITTEN_RULES } from './writtenRules.mjs';
 
 const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
@@ -131,6 +131,7 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
 };
 
 const eslint = new ESLint({ cwd: process.cwd() });
+const CONFIG_LOAD_BUDGET_MS = 30_000;
 
 async function writtenFindings(file: string, code: string): Promise<string[]> {
   const [result] = await eslint.lintText(code, { filePath: file });
@@ -138,6 +139,10 @@ async function writtenFindings(file: string, code: string): Promise<string[]> {
 }
 
 describe('written rules', () => {
+  beforeAll(async () => {
+    await eslint.calculateConfigForFile('src/lib/sample.ts');
+  }, CONFIG_LOAD_BUDGET_MS);
+
   it('has a sample for every rule', () => {
     expect(Object.keys(SAMPLES).sort()).toEqual(WRITTEN_RULES.map((rule) => rule.id).sort());
   });

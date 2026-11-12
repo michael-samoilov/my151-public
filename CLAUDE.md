@@ -82,7 +82,7 @@ Before you share a rendered mockup, an image export, or a static page, run the f
 
 ## Build Verification
 
-GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
+In this repository, GitHub Actions runs on demand only (`workflow_dispatch`). Do not rely on Actions: do not retry it, and do not wait for PR checks. `.github/workflows/public-ci.yml` runs on push only in the public copy.
 
 Michael chose "verify, ship, then run" on 2026-11-08. A change is verified by the
 cheap gates and the browser tests that run its files. It ships through a smoke test
@@ -151,7 +151,7 @@ opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
 automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
 The full suite runs after every release and every night (see Deployment). A red
 nightly run is the next task: fix the cause, or roll back the release that caused it.
-Automatic Actions triggers remain disabled until billing allows jobs to start.
+Actions has no automatic trigger in this repository.
 
 Visual changes require the relevant before/after mobile and desktop screenshots.
 Use verify-my151 with selected `--screens` and relevant `--surfaces` when the
@@ -336,8 +336,8 @@ Development happens through Cloud Agents, often from the mobile Cursor app. Two 
 
 ## pstack
 
-This repo vendors [pstack-claude](https://github.com/michael-denyer/pstack-claude)
-version 0.9.84. The complete upstream distribution lives in
+This repo vendors pstack-claude, a third-party MIT project, version 0.9.84.
+The complete upstream distribution lives in
 `.claude/vendor/open-pstack/upstream/`. Skills and agents link to that snapshot.
 Codex discovers the same skills through `.agents/skills`.
 Provenance, local deviations, and resync steps are in

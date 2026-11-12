@@ -12,7 +12,7 @@ export const WRITTEN_RULES = [
   {
     id: 'keep-saved-picks',
     rule: "Saved data: never wipe a user's picks.",
-    source: 'docs/favorite-picker-handoff.md, docs/handoff/bugfixes-reliability-2026-09-30.md',
+    source: 'Favorite Picker handoff, 2026-10-18; Bugfixes and reliability handoff, 2026-09-30',
     files: SRC,
     ignores: SRC_TESTS,
     selectors: [
@@ -25,7 +25,7 @@ export const WRITTEN_RULES = [
   {
     id: 'versioned-store',
     rule: 'When a saved shape changes, bump the store version and migrate.',
-    source: 'docs/favorite-picker-handoff.md',
+    source: 'Favorite Picker handoff, 2026-10-18',
     files: SRC,
     ignores: SRC_TESTS,
     selectors: [
@@ -37,7 +37,7 @@ export const WRITTEN_RULES = [
   {
     id: 'server-secrets-stay-server-side',
     rule: 'Never ask for, store, or use the production database credentials. Redis credentials must remain server-side.',
-    source: 'docs/handoff/bugfixes-reliability-2026-09-30.md, docs/security/adversarial-review-2026-10-16.md',
+    source: 'Bugfixes and reliability handoff, 2026-09-30; docs/security/adversarial-review-2026-10-16.md',
     files: [...TOOLING, ...SRC],
     ignores: SRC_TESTS,
     selectors: [
@@ -106,7 +106,7 @@ export const WRITTEN_RULES = [
   {
     id: 'intro-stack-loads-whole',
     rule: 'The hub and Pokédex intro screenshots have no smaller copies. Do not lazy-load part of a visible stack.',
-    source: 'docs/handoff/bugfixes-reliability-2026-09-30.md, docs/handoff/performance-avenues-2026-10-15.md',
+    source: 'Bugfixes and reliability handoff, 2026-09-30; Performance audit note, 2026-10-15',
     files: VISIBLE_INTRO,
     selectors: [
       "JSXAttribute[name.name='loading'][value.value='lazy']",
@@ -142,7 +142,7 @@ export const WRITTEN_RULES = [
   {
     id: 'league-zoom-floor',
     rule: 'Do not lower the 0.55 zoom floor.',
-    source: 'docs/handoff/league-builder-2026-09-30.md',
+    source: 'League Builder handoff, 2026-09-30',
     files: ['src/league/**/*.{ts,tsx}'],
     selectors: [
       "CallExpression[callee.name='useFitScale'] > Literal[value<0.55]",
@@ -185,7 +185,7 @@ export const WRITTEN_RULES = [
   {
     id: 'no-beacon-heartbeat',
     rule: 'Do not add an autonomous retry heartbeat. There is no idle heartbeat or history retry timer.',
-    source: 'docs/handoff/admin-dashboard-2026-09-30.md, docs/handoff/admin-dashboard-tools/minute-activity-design.md',
+    source: 'Admin Dashboard handoff, 2026-09-30; Minute activity design note, 2026-10-11',
     files: BEACONS,
     selectors: ["CallExpression[callee.name='setInterval']", "CallExpression[callee.property.name='setInterval']"],
     fix: 'Send on a real event, such as a state change or pagehide.',
@@ -193,7 +193,7 @@ export const WRITTEN_RULES = [
   {
     id: 'tune-hook-in-one-place',
     rule: '?tune exposes window.__pokedexStore on local builds and previews only. Production ignores it.',
-    source: 'docs/handoff/bugfixes-reliability-2026-09-30.md',
+    source: 'Bugfixes and reliability handoff, 2026-09-30',
     files: SRC,
     ignores: [...SRC_TESTS, 'src/components/pokedex/MilestoneBar.tsx'],
     selectors: ["AssignmentExpression[left.type='MemberExpression'][left.property.name=/^__/]"],
@@ -233,7 +233,7 @@ export const WRITTEN_RULES = [
   {
     id: 'no-secret-logging',
     rule: 'Never print, log, or commit PAGESPEED_API_KEY or the database token.',
-    source: 'CLAUDE.md, Build Verification; docs/handoff/admin-dashboard-2026-09-30.md',
+    source: 'CLAUDE.md, Build Verification; Admin Dashboard handoff, 2026-09-30',
     files: [...TOOLING, ...API],
     selectors: [
       "CallExpression[callee.object.name='console'] > MemberExpression[property.name=/^(PAGESPEED_API_KEY|UPSTASH_REDIS_REST_TOKEN)$/]",
@@ -244,7 +244,7 @@ export const WRITTEN_RULES = [
   {
     id: 'one-redis-command-per-request',
     rule: 'Never one command per item in a loop. Use multi-key commands or one Lua script.',
-    source: 'docs/handoff/admin-dashboard-2026-09-30.md',
+    source: 'Admin Dashboard handoff, 2026-09-30',
     files: API,
     selectors: [
       "CallExpression[callee.property.name=/^(map|forEach|flatMap)$/] > :function CallExpression[callee.object.name='redis']",
