@@ -6,6 +6,10 @@ The tools need no account, and each one exports a PNG image that you can share.
 
 **Status:** Live, maintained solo; not accepting contributions.
 
+This repository is the read-only public copy of a private working repository, updated weekly.
+Branch names in the agent docs, such as `CLAUDE.md` and `AGENTS.md`, refer to the private repository.
+The history is a series of small verified steps, merged one change at a time from parallel work sessions.
+
 ## Tools
 
 | Tool | Purpose |
@@ -17,10 +21,10 @@ The tools need no account, and each one exports a PNG image that you can share.
 ## Admin analytics dashboard
 
 The dashboard at `/?admin` needs a token.
-It counts browsers, not people: each browser keeps a random ID in local storage.
+It counts each browser as one user: each browser keeps a random ID in local storage.
 It shows these measures:
 
-- Active browsers by day, with weekly and monthly lines and the change from week to week.
+- Active users by day, with weekly and monthly lines and the change from week to week.
 - Active hours by weekday, in the viewer's local time or in Eastern Time.
 - The browsers that use more than one tool.
 - A funnel for each tool, from the first visit to a finished build and an export, and the path from each referrer to its landing page.
@@ -35,9 +39,9 @@ Requests to a deploy URL other than my151.app store nothing either.
 The dashboard's counts differ from Vercel Web Analytics, which counts daily unique visitors by a rotating hash instead of a stored browser ID.
 
 The screenshots show live data for all time, captured on November 12, 2026.
-`/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no API call.
+`/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no admin API call.
 
-![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active browsers from June to November and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
+![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active users from June to November and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
 
 *Live data, November 12, 2026. The Suite tab on a desktop screen, 1280 pixels wide.*
 
@@ -49,7 +53,7 @@ The screenshots show live data for all time, captured on November 12, 2026.
 
 *Live data, November 12, 2026. The Search tab with Google Search Console data. The keyword and page tables are hidden.*
 
-<img src="docs/readme/admin-dashboard-phone.webp" width="390" alt="The admin dashboard on a phone screen, with the active-browsers chart, the active-hours heatmap, and the section bar at the bottom.">
+<img src="docs/readme/admin-dashboard-phone.webp" width="390" alt="The admin dashboard on a phone screen, with the active-users chart, the active-hours heatmap, and the section bar at the bottom.">
 
 *Live data, November 12, 2026. The Suite tab on a phone screen, 390 pixels wide.*
 
@@ -137,12 +141,15 @@ Use `npm run ci:full` for broad release risk.
 - **Large files.** [`src/components/admin/AdminPage.tsx`](src/components/admin/AdminPage.tsx) has about 2,200 lines, and [`src/league/components/CardGrid.tsx`](src/league/components/CardGrid.tsx) has about 2,000. Each holds more than one concern.
 - **One browser per save.** Each tool saves to one browser's local storage. There is no sync or backup, so a cleared browser or a new device starts empty.
 - **No local API.** Vite does not run the functions in `api/`. The admin reports need an Upstash Redis database and an admin token, or the synthetic data at `/?admin&demo`.
-- **Browsers, not people.** The dashboard counts browser IDs, so one person on two devices counts twice.
+- **One user per browser.** The dashboard counts a user for each browser ID, so one person on two devices counts as two users.
 - **Slow full suite.** The full browser suite takes about 30 minutes, so a change runs only the specs that the test map selects.
 
 ## License
 
 Copyright (c) 2026 Michael Samoilov. All rights reserved. See [LICENSE](LICENSE).
 The code is published for reading, not for reuse.
+Pokémon © 1995–2026 Nintendo / Creatures / GAME FREAK / The Pokémon Company.
+Pokémon and Pokémon character names are trademarks of Nintendo.
+my151 is not affiliated with or endorsed by Nintendo.
 Third-party assets and dependencies are credited in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 To report a vulnerability, see [SECURITY.md](SECURITY.md).

@@ -11,8 +11,8 @@ public product UI.
 - `[data-testid="admin-this-browser"]` at the top of each section shows
   whether this browser is excluded by `?notme` (`p151-opt-out`), with its short
   ID, and a button that flips the flag.
-- `/?admin&demo` loads bundled fixtures, signs in without a token, and makes no
-  API call.
+- `/?admin&demo` loads bundled fixtures, signs in without a token, makes no
+  admin API call, and shows a "Sample data" label beside the header title.
 - Section nav (`nav[aria-label="Admin section"]`, buttons with
   `aria-pressed`): Suite, Dex, League, Picker, Search, and Feedback. The last
   tool read saves under `p151-admin-tool` (`all`, `dex`, `league`, or

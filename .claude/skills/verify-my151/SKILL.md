@@ -159,7 +159,7 @@ after the surfaces, diff mode renders a fixed list of screens (`SCREENS` in
 `harness/lib/visual.ts`: the hub, the builder's intro, tabs, export, Tools
 menu and feedback form, the league's home, card and menu, the picker:
 empty, seeded, a seeded cell under the mouse, a selector open on each, and its
-export, and one tip card per tool: `builder-tip-analytics`,
+export, the admin demo (`admin-demo`), and one tip card per tool: `builder-tip-analytics`,
 `favorites-tip-analytics`, and `league-tip-gyms`) at
 390 px (2x, touch) and 1280 px, on the base and on the change, with motion
 reduced and animations stopped. It renders each build twice, so a region that

@@ -94,7 +94,7 @@ network round trip, but Lua subcommands still count toward provider usage.
 
 ## Evidence and repeat the checks
 
-- [Access baseline and scope](access-2026-10-16/README.md), after transcript.
+- Access baseline and scope (private evidence), after transcript.
 - Limits baseline (private evidence), Redis before, Redis after.
 - Browser method and results (private evidence).
 

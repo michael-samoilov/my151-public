@@ -1270,9 +1270,9 @@ Purple Kecleon (11122) is a picker-only appearance. The file is my151's palette 
 Five picker-only appearances, each a byte copy of the sprite-lab selection Michael approved. Their provenance record is in the private sprite work folder.
 
 - Shadow Lugia (11123) and Primal Dialga (11124) are JoeTEStrikesBack's own DeviantArt sheet, kept in the same folder (sha256 `de3c8d5c…`), with my151's recorded changes: 229 pixels on Shadow Lugia (21 background pixels made transparent, the pupil made red, 207 top-edge outline pixels lightened) and 8 background pixels on Primal Dialga. The rows carry `"changedBy": "my151"`. JoeTEStrikesBack's credit entry lists both sprites and does not mention the changes (Michael, 2026-10-20). Shadowgate31 is not credited: their outline colours are only in a variant the app does not use.
-- Tinkmaster (11125) is Travis's Tinkaton (959) pixel for pixel in the body, with tools that my151 added. The tools come from the sprite lab's family edit, an image-model edit of 959.png, and code-only hand edits. Because of the model-drawn tools, the panel gives it no credit and no count, like the lab's own drawings (Michael, 2026-10-20). The row says `"creditedVia": "my151"` and carries `"changedBy": "my151"`.
+- Tinkmaster (11125) is Travis's Tinkaton (959) pixel for pixel in the body, with tools that my151 added. The tools come from the sprite lab's family edit, an image-model edit of 959.png, and code-only hand edits. Since 2026-11-12 the panel credits it to Travis, its base artist, through the Smogon Sprite Project, and counts it in his tally. The row says `"creditedVia": "smogon-gen9"` and carries `"changedBy": "my151"`.
 - Professor Tangrowth (11126) is the sprite lab's own drawing from the app's Game Freak Tangrowth (465) and official Pokopia art. It has no credit and no Acknowledgements entry (Michael, 2026-10-13).
-- Chef Dente (11127) is G.E.Z.'s Greedent (820) as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added from the sprite lab's drawings of official Pokopia art. Because of the lab-drawn items, the panel gives it no credit and no count, like the lab's own drawings (Michael, 2026-10-20). The row says `"creditedVia": "my151"` and carries `"changedBy": "my151"`.
+- Chef Dente (11127) is G.E.Z.'s Greedent (820) as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added from the sprite lab's drawings of official Pokopia art. Since 2026-11-12 the panel credits it to G.E.Z., its base artist, through the Smogon Sprite Project, and counts it in G.E.Z.'s tally. The row says `"creditedVia": "smogon-gen8"` and carries `"changedBy": "my151"`.
 
 ## Cherrim Sunshine Form added on 2026-10-20
 
@@ -1357,3 +1357,9 @@ The harvest checks every pair against its source except Furfrou (Heart Trim)'s. 
 ## Shinies held on 2026-10-29
 
 Michael keeps 20 shinies on hand but out of the app, so the JSON ledger has no row for them. Each form shows no shiny. Stereo Rotom (11112) and Spiky-eared Pichu (11064) have no shiny in any game. The other 18 forms are one individual that is never shiny (Michael, 2026-10-29): the six Cosplay Pikachu (10080-10085), the eight Pikachu in a cap (10094-10099, 10148, 10160), Ash-Greninja (10117), Zarude (Dada) (10192), Eternal Floette (10061), and Mega Floette (10296). The held-shinies record in the private sprite work folder keeps each file with its source, its artist, its SHA-256, the ledger row it had while it shipped, and the rules. The harvest skips each held id. The Acknowledgements counts do not change, because the normal sprite's credit covered each of these shinies.
+
+## Base artists credited on 2026-11-12
+
+Tinkmaster (11125) now counts under Travis, and Chef Dente (11127) under G.E.Z., through the Smogon Sprite Project. Each file is built on that artist's sprite, so the base artist gets the credit. Both rows keep `"changedBy": "my151"`, so PokéAPI's "Used for" text does not count them.
+
+The Acknowledgements panel changes. The Smogon Sprite Project counts 694 files instead of 692, with 680 instead of 678 confirmed. G.E.Z. goes from 36 to 37, and Travis from 21 to 22.

@@ -294,6 +294,7 @@ export const SCREENS: Screen[] = [
     },
   },
   { id: 'not-found', path: '/404.html' },
+  { id: 'admin-demo', path: '/?admin&demo' },
   { id: 'favorites-selector', path: '/favorite-pokemon-picker', act: openPickerCell('water-1') },
   {
     id: 'favorites-selector-empty', path: '/favorite-pokemon-picker',
