@@ -44,6 +44,18 @@ hover-tilt states two licenses. The repository's `LICENSE` file is MIT. The pack
 
 `scripts/published-source.json` maps each published copy to its file, and `node scripts/check-published-source.mjs` fails when a copy differs from its file, when a file lacks the MPL-2.0 notice, or when the folder holds a file that is not published. Run it with `--write` to update the copies, and commit them. Put new code from hover-tilt in `src/components/export/hover-tilt/` only, list each new file in the manifest, and keep my151's own code out of that folder.
 
+## Game text from poke-corpus
+
+The game-text excerpts in `docs/i18n/sources/` come from the text dumps that [abcboy101/poke-corpus](https://github.com/abcboy101/poke-corpus) publishes, commit `d74a89ba69cbabc491b65c3e88af8722bb34a927`. These files hold them: `scarlet-violet-typenames.json`, `game-terms.json`, `move-names.json`, `pokemon-formnames.json`, `league-interface-terms.json`, `build-section-terms.json`, and `picker-interface-terms.json`. The i18n scripts copy them into the app's catalogs under `src/i18n/`.
+
+The game text is © Nintendo / Creatures / GAME FREAK / The Pokémon Company. poke-corpus's own code uses the GPL-3.0 license. my151 copies only game text and uses none of that code.
+
+## Form names from Bulbapedia
+
+`docs/i18n/sources/bulbapedia-form-names.json` records localized form names copied from the Names and In other languages tables of [Bulbapedia](https://bulbapedia.bulbagarden.net) pages. Each row names its page and revision ID, and the file gives the read date. `npm run i18n:names` copies these names into the app's name catalogs.
+
+Bulbapedia's original content uses the [Creative Commons Attribution-NonCommercial-ShareAlike 2.5](https://creativecommons.org/licenses/by-nc-sa/2.5/) license (CC BY-NC-SA 2.5). See [Bulbapedia's copyright page](https://bulbapedia.bulbagarden.net/wiki/Bulbapedia:Copyrights). Pokémon and Pokémon character names are trademarks of Nintendo.
+
 ## npm packages
 
 `build.license` in `vite.config.ts` makes each production build write the name, version, license, and license text of every npm package in the browser bundle to `dist/licenses/npm-packages.txt`, served at <https://my151.app/licenses/npm-packages.txt>. Vite's list misses three notices, which [npm-packages-extra.txt](public/licenses/npm-packages-extra.txt) holds: Tailwind CSS with modern-normalize, country-flag-icons, and the Apache ECharts NOTICE. Its versions are written by hand, and the build fails when one differs from the installed package. The build also writes `dist/licenses/npm-packages.json`, the name, version, and license of every package in both files (`scripts/acknowledgements-build.ts`). The Acknowledgements panel lists the packages from it and links both files.
