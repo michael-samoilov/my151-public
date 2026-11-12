@@ -212,9 +212,17 @@ describe('retention route', () => {
     vi.stubEnv('CRON_SECRET', SECRET);
     expect((await call({ authorization: 'Bearer wrong-secret' })).status).toBe(401);
     expect((await call({})).status).toBe(401);
-    expect((await call({ authorization: `Bearer ${SECRET}` }, 'my151-git-preview.vercel.app')).body).toEqual({ ok: true, skipped: 'read-only deployment' });
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    expect((await call({ authorization: `Bearer ${SECRET}` }, 'my151-git-preview.vercel.app')).body).toEqual({ ok: true, skipped: 'not a production deployment' });
+    vi.stubEnv('VERCEL_ENV', 'production');
     expect(hash('clients').has('old-browser-0001')).toBe(true);
     expect(db.strings.size).toBe(0);
+  });
+
+  it('runs when the production cron calls the vercel.app address', async () => {
+    hash('clients').set('old-browser-0001', dexRecord('old-browser-0001', THIRTEEN_MONTHS_AND_A_DAY));
+    expect((await call({ authorization: `Bearer ${SECRET}` }, 'my151-prod.vercel.app')).status).toBe(200);
+    expect(hash('clients').has('old-browser-0001')).toBe(false);
   });
 });
 
