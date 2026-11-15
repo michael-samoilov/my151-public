@@ -17,7 +17,7 @@ export interface Options { mode: Mode; base?: string; plan: boolean; recordMap: 
 
 const docs = /^(?:docs\/.+\.md|README\.md|AGENTS\.md|CLAUDE\.md|LICENSE)$/;
 const tooling = [
-  { paths: /^\.claude\/(?:skills|agents|vendor)\//, coverage: 'agent tooling, covered by check-pstack, the verify-my151 contract test, and the harness typecheck.' },
+  { paths: /^\.claude\/(?:skills|agents|vendor)\//, coverage: 'agent tooling, covered by check-pstack, check-skill-triggers, the verify-my151 contract test, and the harness typecheck.' },
   { paths: /^docs\/i18n\/sources\/(?:bulbapedia|my151)-form-names\.json$/, coverage: 'read only by npm run i18n:names, whose regenerated catalogs under src/i18n/ are app inputs.' },
 ];
 const spec = /^e2e\/.+\.spec\.ts$/;
