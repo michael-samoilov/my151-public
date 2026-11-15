@@ -33,6 +33,16 @@ async function waitPreviewReady(page: Page) {
   });
 }
 
+async function pauseClock(page: Page) {
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000));
+}
+
+async function pauseOnOpenedPreview(page: Page) {
+  await expect(page.locator('[data-export-preview]')).toHaveAttribute('data-foil-maps', /^(1|failed)$/, { timeout: 10_000 });
+  await pauseClock(page);
+  await page.clock.runFor(2000);
+}
+
 async function noFoilControlsInPane(page: Page): Promise<{ ok: boolean; reason: string }> {
   return page.evaluate(() => {
     const chrome = document.querySelector('[data-export-chrome]');
@@ -212,11 +222,13 @@ test.describe('mobile dex export sheet', () => {
 
   test('a tap toggles auto-tilt, a long press does not, and drag release stays flat', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'CDP touch injection');
+    await page.clock.install();
     await openDexExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
     const hit = page.locator('[data-export-tilt-hit]');
     await expect(foil).toHaveAttribute('data-paused', '0');
+    await pauseClock(page);
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
     const cx = box!.x + box!.width / 2;
@@ -240,31 +252,37 @@ test.describe('mobile dex export sheet', () => {
           type: 'touchMove',
           touchPoints: [{ x: cx + (dx * i) / 8, y: cy + (dy * i) / 8 }],
         });
+        await page.clock.runFor(16);
       }
       await touchEnd();
     };
+    const settle = () => page.clock.runFor(2000);
 
     await tap();
-    await expect.poll(flat, { timeout: 2000 }).toBe(true);
+    await settle();
+    expect(await flat()).toBe(true);
     await tap();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
     await touchStart();
-    await page.waitForTimeout(380);
+    await page.clock.runFor(380);
     await touchEnd();
+    await settle();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
     await drag(52, -36);
-    await expect.poll(flat, { timeout: 2000 }).toBe(true);
-    await page.waitForTimeout(700);
+    await settle();
+    expect(await flat()).toBe(true);
+    await page.clock.runFor(700);
     expect(await flat()).toBe(true);
 
     await tap();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
     await drag(-46, 30);
-    await expect.poll(flat, { timeout: 2000 }).toBe(true);
-    await page.waitForTimeout(700);
+    await settle();
+    expect(await flat()).toBe(true);
+    await page.clock.runFor(700);
     expect(await flat()).toBe(true);
   });
 
@@ -858,8 +876,10 @@ test.describe('desktop dex export preview', () => {
 
   test('keeps the tilted card AABB off the overlay corner', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await page.clock.install();
     await openDexExport(page);
     await waitPreviewReady(page);
+    await pauseOnOpenedPreview(page);
     const foil = page.locator('[data-export-preview]');
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
@@ -879,8 +899,8 @@ test.describe('desktop dex export preview', () => {
       )
       .toBeGreaterThan(0.78);
     await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
-    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
+    await expect(foil).toHaveAttribute('data-export-orbit', 'pointer');
     const gaps = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
@@ -897,8 +917,10 @@ test.describe('desktop dex export preview', () => {
 
   test('caps desktop hypot below a diamond shear', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await page.clock.install();
     await openDexExport(page);
     await waitPreviewReady(page);
+    await pauseOnOpenedPreview(page);
     const foil = page.locator('[data-export-preview]');
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
@@ -918,8 +940,8 @@ test.describe('desktop dex export preview', () => {
       )
       .toBeGreaterThan(0.78);
     await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
-    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
+    await expect(foil).toHaveAttribute('data-export-orbit', 'pointer');
     const hypot = Math.hypot(
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
