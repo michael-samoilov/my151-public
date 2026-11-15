@@ -1634,7 +1634,7 @@ export function AdminPage() {
         setSearchPerformance(search.sampleSearchPerformanceView);
         setLoadedAt(Date.now());
         setAuthed(true);
-      });
+      }, () => setError('Could not load the demo data.'));
       return;
     }
     if (initialToken) void load(initialToken, loadRange());
