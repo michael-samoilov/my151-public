@@ -31,10 +31,11 @@ instead of restating it.
   touched. Write "the browser keeps the filter when you go back", not
   "edited PokemonBrowser.tsx". The diff already lists the files. When a
   change alters no behavior, say what it makes possible instead.
-- **Merge**: "Merged" for a tier 1 change you already shipped, "Ready for
-  production" for a tier 2 change awaiting approval, or "Blocked: <the
-  blocker>". CLAUDE.md's Deployment section names the production branch and
-  defines the two tiers.
+- **Merge**: "Merged" for a change you shipped under "Merge to production
+  without asking" or "Decided by Michael", "Ready for production" for an
+  "Ask first" change that awaits approval, or "Blocked: <the blocker>".
+  Those headings are in the Deployment section of CLAUDE.md, which also
+  names the production branch.
 - **Verified**: How you measured that the change works, per the standard
   below — or the honest words "inferred only", plus what stopped you from
   measuring.

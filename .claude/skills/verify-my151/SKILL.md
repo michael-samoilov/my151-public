@@ -11,7 +11,8 @@ description: >-
 # Verify my151
 
 my151.app is a multi-page Vite + React app: the hub at `/`, the pokedex builder
-at `/pokedex-builder`, and the League Builder at `/custom-gym-leader`. This skill
+at `/pokedex-builder`, the League Builder at `/custom-gym-leader`, and the
+favorite Pokémon picker at `/favorite-pokemon-picker`. This skill
 drives the real app across the three engines behind its five target surfaces
 and returns a pass/fail verdict with evidence. It exists so agent work verifies
 itself, so read it cold and follow it.
@@ -31,7 +32,7 @@ string.
 
 | Surface | Engine | How it runs here |
 | --- | --- | --- |
-| desktop Chrome, Android Chrome | Blink | agent-browser CLI, Playwright as the fallback (Chromium from `PLAYWRIGHT_BROWSERS_PATH`) |
+| desktop Chrome, Android Chrome | Blink | Playwright with system Chrome (`resolveChromium` falls back to `PLAYWRIGHT_BROWSERS_PATH`); the agent-browser CLI is opt-in |
 | iOS Safari, iOS Chrome | WebKit | WebKitGTK MiniBrowser over W3C WebDriver, with Safari's feature defaults (`SAFARI_FEATURES`) |
 | desktop Firefox | Gecko | Mozilla-tarball Firefox over Marionette |
 
@@ -48,18 +49,19 @@ engine. Every proof asserts its persona/engine first (`READ_PERSONA` +
 
 ## Blink drivers
 
-Blink runs through Vercel's [agent-browser](https://github.com/vercel-labs/agent-browser)
-CLI by default. Playwright is the fallback, and `setup-engines.sh` installs the
-CLI out-of-tree, so a blocked install costs nothing. Set `VERIFY_BLINK_DRIVER`
-to `agent-browser` or `playwright` to force one. `doctor.ts` prints the driver
-it will use, so evidence always names it.
+Blink runs through Playwright by default. Vercel's
+[agent-browser](https://github.com/vercel-labs/agent-browser) CLI is opt-in,
+because its synthetic pointer drag does not drive dnd-kit reliably. Set
+`VERIFY_BLINK_DRIVER` to `agent-browser` or `playwright` to force one.
+`doctor.ts` prints the driver it will use, so evidence always names it.
 
 agent-browser reaches Blink and nothing else. It drives `chrome` and
 `lightpanda` only, and its iOS mode needs Xcode and Appium, so **WebKit and
 Gecko keep their own drivers** and stay the only proof of real iOS and Firefox
 rendering.
 
-Three CLI behaviors are load-bearing in `lib/agentBrowser.ts`, each one measured:
+When agent-browser is forced, three CLI behaviors are load-bearing in
+`lib/agentBrowser.ts`, each one measured:
 
 1. Configure through `AGENT_BROWSER_*` variables, never flags. The CLI keeps a
    daemon and reads flags only when that daemon starts, so a later
@@ -80,14 +82,17 @@ Two differences from Playwright are handled in code, not left to chance:
 
 ## Launch
 
-One command installs what needs installing (WebKit, Firefox, agent-browser):
+One command installs what needs installing (system Chrome, WebKit, Firefox,
+agent-browser, ffmpeg):
 
 ```
 bash .claude/skills/verify-my151/harness/setup-engines.sh
 ```
 
-It is idempotent. It `apt`-installs `webkit2gtk-driver` + `xvfb`, downloads
-Firefox and agent-browser to `/opt/verify-my151/`, and needs no geckodriver (its only host is
+It is idempotent. It `apt`-installs Chrome, a WebKitGTK driver
+(`webkit2gtk-driver` or `webkitgtk-6.0-driver`), `xvfb`, and ffmpeg, and
+downloads Firefox and agent-browser to `/opt/verify-my151/`, and needs no
+geckodriver (its only host is
 github, which this session gates; Marionette drives Firefox directly). On an
 egress block it prints the blocked host and keeps going, so the harness runs on
 whatever came up.
@@ -106,9 +111,9 @@ Before driving anything, and again after anything looks off:
 node_modules/.bin/tsx .claude/skills/verify-my151/harness/doctor.ts
 ```
 
-It opens a real session on each engine, navigates a data URL, and reads back the
-UA. It exits non-zero only if the Blink floor is down. A `DOWN` engine is reported
-honestly and its surfaces are skipped, never faked.
+It opens a real session on each engine, loads a one-line page from a local HTTP
+server, and reads back the UA. It exits non-zero only if the Blink floor is down.
+A `DOWN` engine is reported honestly and its surfaces are skipped, never faked.
 
 ## Drive
 
@@ -125,14 +130,17 @@ node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base 
 ... verify.ts absolute --surfaces blink,webkit
 ```
 
-Select relevant screens with `--screens id,id` and engines with `--surfaces a,b`.
+`--screens id,id` picks the visual-diff screens (diff mode only; the IDs are
+`SCREENS` in `harness/lib/visual.ts`). `--surfaces a,b` picks surfaces: `blink`,
+`blink-ios-safari`, `blink-ios-chrome`, `blink-android`, `webkit`, `gecko`.
 Visual changes require before/after mobile and desktop evidence. Platform changes
 require the actual affected engine. Reserve the exhaustive all-screen/all-engine
 diff for full/release QA. Its documented estimate is about 25 minutes on four cores.
 The canonical CI runner does not add this matrix to each ordinary change.
 
-Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
-`dist/`). The standard suite per surface is boot (React mounts), no horizontal
+Flags: `--base <ref>` (diff), `--surfaces a,b`, `--screens a,b` (visual diff),
+`--no-build` (reuse an existing `dist/`), `--video`, `--visual-only`,
+`--no-visual`. The standard suite per surface is boot (React mounts), no horizontal
 overflow, the localStorage seed oracle round-trips, the seeded grid renders
 sprites, each nav tab activates (read from the nav button's computed background),
 the builder container scrolls, the render audit finds no clipped, cut, or
@@ -142,27 +150,25 @@ JS-error tripwire (`runtime:no-js-errors`). The render checks carry every
 finding as a key, so diff mode reports a finding the base did not have as a
 regression even when the check's status did not flip. A blanket overlap audit
 is deliberately not a standard check, because the dense sprite grid has
-intentional micro-overlaps; the render audit's overlap rule stays a warning
-for the same reason. The tripwire is authoritative on Blink, where host-side
+intentional micro-overlaps. The render audit reports an `overlap` only where
+neither element is positioned, and that finding fails the render check: mark an
+intended overlap with `data-audit-overlap="intended"`. The tripwire is authoritative on Blink, where host-side
 `pageerror` and the ErrorBoundary's `[P151] crash` console log are captured, and
 best-effort on WebKit and Gecko via a post-load page trap. A real-placement check
 (`placement:real-add-grows-store`) drives a live add on desktop Blink: it opens
 the browser from `[data-section-id="meadow"] [data-add-slot]`, clicks a
 `[data-testid="verify-evo-card"]`, and asserts the store grew. After the
-standard suite, `verify.ts` runs six League Builder suites, listed in
-`features/league-builder.md`.
+standard suite, `verify.ts` runs the dex export, foil workshop, League Builder,
+favorite picker, and not-found suites. The `suites` list in `harness/verify.ts`
+holds the order; `features/league-builder.md` describes the league suites.
 
 ### Visual diff (diff mode)
 
 The checks above only catch what they assert. The visual diff catches the rest:
-after the surfaces, diff mode renders a fixed list of screens (`SCREENS` in
-`harness/lib/visual.ts`: the hub, the builder's intro, tabs, export, Tools
-menu and feedback form, the league's home, card and menu, the picker:
-empty, seeded, a seeded cell under the mouse, a selector open on each, and its
-export, the admin demo (`admin-demo`), and one tip card per tool: `builder-tip-analytics`,
-`favorites-tip-analytics`, and `league-tip-gyms`) at
-390 px (2x, touch) and 1280 px, on the base and on the change, with motion
-reduced and animations stopped. It renders each build twice, so a region that
+after the surfaces, diff mode renders every screen in `SCREENS`
+(`harness/lib/visual.ts`), or the ones `--screens` names, at 390 px (2x, touch)
+and 1280 px, on the base and on the change, with motion reduced and animations
+stopped. It renders each build twice, so a region that
 differs between two renders of the same build is marked unstable, not changed.
 The footer shows a build stamp, so the harness builds every tree with one
 `SOURCE_DATE_EPOCH`, which `vite.config.ts` stamps in place of the build time.
@@ -289,13 +295,6 @@ Session. Give WebKitGTK a second between a press and the read: at 400ms a
 read showed the state before the press, and looked like a failure. The one
 place a real finger differs is momentum and rubber-band, named above.
 
-The case that wrote this section: the nav pill's press target was extended
-past its paint, and the report asked the user to tap the bar's edge on
-their phone and confirm the tab switched. That is a touch at a coordinate
-followed by a read of the active tab, which Blink drives in one script and
-WebKit in another. It was verified in both within minutes of being asked,
-and should have been verified before the report was written.
-
 ## Cleanup
 
 `verify.ts` stops both preview servers and removes the base worktree in a
@@ -311,7 +310,7 @@ survives every cleanup.
 
 ## Helpers
 
-- `harness/setup-engines.sh` installs WebKit + Firefox (shown above).
+- `harness/setup-engines.sh` installs the engines and tools (shown above).
 - `harness/doctor.ts` reports the engine matrix (shown above).
 - `harness/verify.ts` is the driver CLI (shown above).
 - `harness/discriminate.ts` is the mutation test for the verifier (shown above).

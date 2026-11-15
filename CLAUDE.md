@@ -353,6 +353,10 @@ skill and agent names. Resolve `pstack:poteto-mode` as `poteto-mode` and
 `pstack:effort-high` as `effort-high`. Apply this mapping to every plugin skill
 and agent reference. The routing hook applies it to its own output.
 
+Two pstack names differ in this repository. Where pstack names `main` or trunk
+as a diff or PR base, use `claude/pokedex-region-builder-AviYF`. Where it names
+the project `verify` skill at `.claude/skills/verify/`, use `verify-my151`.
+
 `/setup-pstack` configures models for the current runtime. The latest upstream
 uses native model defaults, optional external providers, and per-role effort.
 Do not reuse the previous distribution's provider-qualified model sheet without

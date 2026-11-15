@@ -45,10 +45,9 @@ Manual drive (a Playwright script, local build):
   `LeagueApp.tsx`, and `FavoritesApp.tsx`). The admin page (`/?admin`) is
   English-only, so it keeps the `lang="en"` of `index.html`.
 - Game terms (types, egg groups, colors, regions) and Pokémon names are
-  sourced from the games. Each locale overlay in `src/i18n/catalogs/ui/` adds
-  about 132 translated keys, 15 of them `home.*`. They cover the feedback
-  chips, trainer card headings, the picker, and most hub copy. Other keys fall
-  back to English. Assert a switch on translated strings or on the store.
+  sourced from the games. Each locale overlay in `src/i18n/catalogs/ui/`
+  holds the translated UI keys. A key missing from an overlay falls back to
+  English. Assert a switch on translated strings or on the store.
 - While the menu is open, both chip grids are in the DOM: the desktop dropdown
   and the portaled phone sheet. Filter `[role="menuitemradio"]` to the visible
   rows.

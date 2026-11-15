@@ -24,7 +24,7 @@ display options, exportable as a PNG.
   card flat, and each later hover tilts it again. A click locks it flat and
   ignores hover until the next click, which resumes hover tilt. On touch, a
   tap toggles auto-tilt, and a drag follows the finger, then settles flat.
-- The holo pair is the gleam and the prism bands (October 12), in
+- The holo pair is the gleam and the prism bands, in
   `src/league/components/foil/my151Holo.css`. The gleam is two sets of soft
   diagonal bands that slide against each other as the card tilts, under a
   top-to-bottom pastel rainbow and grain, blended with `color-dodge` and
@@ -36,8 +36,8 @@ display options, exportable as a PNG.
 - The camera sits `PREVIEW_PERSPECTIVE_RATIO` (1.75) times the card's long
   edge away (`src/components/export/exportPreviewFit.ts`), so a big desktop
   card leans as little as a phone card. The card's size still comes from a
-  fit for the fixed 600 px camera the preview had before October 10
-  (`previewSizeCamera`), so a desktop card stays that size.
+  fit for a fixed 600 px camera (`previewSizeCamera`), so a desktop card
+  stays that size.
 - The drop shadow is the PNG's own shape, blurred: two
   `[data-export-shadow-layer]` elements in the lift, moved by transform. It
   follows the concave kinks between joined panes, which a box-shadow left
@@ -50,17 +50,16 @@ display options, exportable as a PNG.
   default. Compare buttons switch between the live site's look and the
   proposal under review. Dials kept in the link only set the camera distance
   (or a fixed 600 px), the iridescence blend (`soft-light` or `hue`), the
-  glare's dark edge, and the card size (a multiple of the pre-October-10
-  size, or as big as the tilt allows). Samples: Dex, Dex of all 151, Dex of
+  glare's dark edge, and the card size (a multiple of the
+  `previewSizeCamera` size, or as big as the tilt allows). Samples: Dex, Dex
+  of all 151, Dex of
   151 with stats, league, league filled, league with story and rematch
   teams, trainer card, favorites chart, a test card of color swatches, and
   three flat gray cards (wide, league-shaped and tall) that show the bands
   with nothing in the way.
-- Defaults (Michael's workshop pick, September 27; the holo pair from
-  October 12): gleam 0.70, prism 0.21,
-  point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
-  10/7, glare 0.6 at size 0.5 (1 until October 11), shadow blur 25, exit
-  delay 420 ms, pop 1.15.
+- Defaults (Michael's workshop pick): gleam 0.70, prism 0.21, point light 1,
+  iridescence 0.1, max and auto tilt 10 degrees, tilt factor 10/7, glare 0.6
+  at size 0.5, shadow blur 25, exit delay 420 ms, pop 1.15.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
   more.
 
@@ -137,7 +136,8 @@ catch the download, and abort `/api/submit`. Click `[data-dex-export]`, then
   (`keepalive`), and the survey that can follow posts to `/api/feedback`.
   Previews share the production database. On a Vercel preview host, both
   routes answer 200 and store nothing (`isReadOnlyDeployment` in
-  `api/_shared.ts`), and `?notme` holds back the report on any host. Local
+  `api/_shared.ts`), and `?notme` does not hold back the report: it still
+  posts, marked `notme`. Local
   `vite preview` has no API at all.
 - The share sheet runs only on iPhone and iPad, and only when
   `navigator.canShare({files})` is true. Every other platform, desktop

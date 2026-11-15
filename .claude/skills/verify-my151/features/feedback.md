@@ -52,7 +52,7 @@ Manual drive (a Playwright script, local build only):
   (`MIN_DWELL_MS` in `api/feedback.ts`). It answers a filled honeypot with a
   200 and stores nothing.
 - `[data-sheet-keyboard]` is on the phone sheet while a field has focus or the
-  on-screen keyboard is open. Since PR #121 a press elsewhere in the sheet
-  keeps it until the press is released. Do not wait on it.
+  on-screen keyboard is open. A press elsewhere in the sheet keeps it until
+  the press is released. Do not wait on it.
 - The export survey posts through the same `/api/feedback` endpoint (see
   `league-export.md`).

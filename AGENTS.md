@@ -5,7 +5,7 @@
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
 - For cloud work (private repository only), start from `claude/pokedex-region-builder-AviYF` in the checked-out repository unless the user names another base.
-- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the launch is authorized through PR 111 from `claude/jolly-meitner-opefey` (private repository only). Check current release status before changing it. Before picker work, check out that branch and read the Favorite Picker handoff there (private repository only).
+- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the state, rules, and to-do list are in `docs/favorite-picker-handoff.md` on production (private repository only). Check current release status before changing it. Read the handoff before picker work.
 - League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in the League Builder handoff of 2026-09-30 on production (private repository only). Read it before league work.
 - Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in the Dex Builder handoff of 2026-09-30 on production (private repository only). Read it before Dex work.
 - Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in the Admin Dashboard handoff of 2026-09-30 on production, and its verification tools are in the admin dashboard tools folder beside it (private repository only). Read it before admin work.
@@ -81,7 +81,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 - Merge low-risk, already-verified work into `claude/pokedex-region-builder-AviYF` (private repository only) without asking.
 - Bring work for review only when it is user-facing or user-affecting, risks data deletion, or is large or ambiguous.
-- Follow the detailed deployment tiers and branch-safety steps in `CLAUDE.md`.
+- Follow the deployment rules and branch-safety steps in `CLAUDE.md`.
 
 ## 3. Before and after on mobile and desktop
 

@@ -51,9 +51,9 @@ phone the section nav is a bar at the bottom. On desktop it sticks to the top.
 
 ## Driving it with the harness
 
-The harness has no admin suite. Most of the repo's `e2e/admin-*.spec.ts`
-specs run against `/?admin&demo`. Five of the 12 seed a token and
-route-stub the APIs with `buildDashboard` from `api/_dashboard.ts` (see
+The harness has no admin suite. Some of the repo's `e2e/admin-*.spec.ts`
+specs run against `/?admin&demo`. Others seed a token and route-stub the APIs
+with `buildDashboard` from `api/_dashboard.ts` (see
 `e2e/admin-feedback-links.spec.ts`).
 
 Manual drive (a Playwright script):
