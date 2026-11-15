@@ -105,7 +105,7 @@ For details, see [Architecture](docs/architecture.md), [Performance](docs/perfor
 
 ## Start development
 
-Use Node.js 22.18 or later, as the `engines` field in `package.json` sets.
+Use Node.js 22 (22.18 or later) or 24, as the `engines` field in `package.json` sets.
 Use npm with the committed lockfile.
 The browser tools run without production credentials.
 
@@ -136,11 +136,12 @@ The full browser suite runs in a separate full-suite runner after each release a
 
 ## Known limits
 
-- **Large files.** [`src/components/admin/AdminPage.tsx`](src/components/admin/AdminPage.tsx) has about 2,200 lines, and [`src/league/components/CardGrid.tsx`](src/league/components/CardGrid.tsx) has about 2,000. Each holds more than one concern.
+- **Large files.** Six files in `src/` have more than 1,000 lines. The two largest, [`src/components/admin/AdminPage.tsx`](src/components/admin/AdminPage.tsx) (about 2,300 lines) and [`src/league/components/CardGrid.tsx`](src/league/components/CardGrid.tsx) (about 2,000), each hold more than one concern.
 - **One browser per save.** Each tool saves to one browser's local storage. There is no sync or backup, so a cleared browser or a new device starts empty.
 - **No local API.** Vite does not run the functions in `api/`. The admin reports need an Upstash Redis database and an admin token, or the synthetic data at `/?admin&demo`.
 - **One user per browser.** The dashboard counts a user for each browser ID, so one person on two devices counts as two users.
-- **Slow full suite.** The full browser suite takes about 30 minutes, so a change runs only the specs that the test map selects.
+- **Full suite after release.** The full browser suite (about 1,000 tests) runs after each release, not before each merge. Before a merge, a change runs the specs that the test map selects.
+- **Development-tool advisories.** `npm audit` lists findings in build and test tools only. `npm audit --omit=dev` reports none.
 - **Unverified counts.** The dashboard counts come from unauthenticated beacons, rate-limited per network. They are not verified identities.
 
 ## About this repository
@@ -149,7 +150,11 @@ This repository is the read-only public copy of a private working repository, up
 Branch names in `CLAUDE.md` and `AGENTS.md` refer to the private repository.
 Commit IDs cited in the docs refer to the private working repository.
 AI coding agents (Claude Code, Codex, and Cursor) wrote the code under my direction.
+They work in small steps on separate branches, so about a quarter of the commits are merges.
+The repository's rules require its checks to pass before each merge to production: see [`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md), and [`scripts/ci/policy.ts`](scripts/ci/policy.ts).
 Commits name the agent where the record shows which one wrote them.
+About 400 commits name no agent: about 90 are merges made on GitHub, and for the rest no record shows which agent wrote them.
+The [`.claude/`](.claude/README.md) folder holds the agents' instructions and tools.
 
 ## License
 

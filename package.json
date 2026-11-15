@@ -19,7 +19,7 @@
     "build:vercel": "tsc -b --clean && npm run build && tsx scripts/keep-previous-assets.ts dist",
     "lint": "eslint . --suppressions-location eslint-suppressions.json",
     "preview": "vite preview",
-    "doctor": "npx react-doctor@latest",
+    "doctor": "npx react-doctor@0.9.23",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

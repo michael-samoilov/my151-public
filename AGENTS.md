@@ -1,5 +1,7 @@
 # my151 Codex instructions
 
+Lines marked "private repository only" describe records that the public copy of this repository leaves out.
+
 ## Repository and coordination
 
 - Treat the repository root that contains this file as the main my151 repository.
