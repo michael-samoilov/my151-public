@@ -135,7 +135,7 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
     cover.add(file);
   }
   const estimateMs = estimate(cover);
-  selection.reasons.push(`Broad change: ${specs.size} spec files run the changed files, about ${Math.ceil(all / 60_000)} min. Running ${cover.size} within the ${BROWSER_BUDGET_MS / 60_000}-minute budget, including one for each changed file. The post-release full run covers the rest; run npm run ci:full before release for a risky change.`);
+  selection.reasons.push(`Broad change: ${specs.size} spec files run the changed files, about ${Math.ceil(all / 60_000)} min. Running ${cover.size} within the ${BROWSER_BUDGET_MS / 60_000}-minute budget, including one for each changed file. The full-suite runner covers the rest after release; request a runner run before release for a risky change.`);
   return { ...selection, effectiveMode: 'affected', estimateMs, suitePattern: pattern(cover) };
 }
 

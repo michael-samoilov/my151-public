@@ -12,6 +12,10 @@ import { defaultBase } from './base';
 import { buildScriptInputs, changedPaths, parseOptions, select } from './policy';
 import { buildTestMap, loadTestMap, readAttempts, readRecords, serializeTestMap, TEST_MAP_PATH } from './testMap';
 
+const FULL_SUITE_ELSEWHERE = 'The full suite does not run in a working session: it holds the browser lock for about 30 minutes. '
+  + 'Start the full-suite runner instead: call fire_trigger with trigger_id trig_01SNDBHW7eryfJpXus9oQc9W and the text "ref: <commit sha>", then end your turn. '
+  + 'The runner notifies Michael when a test fails. Only the runner and the Actions workflow set MY151_FULL_SUITE_RUNNER=1.';
+
 async function main() {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const options = parseOptions(process.argv.slice(2));
@@ -19,6 +23,7 @@ async function main() {
   const selection = select(options.mode, changes.paths, changes.baseSha, changes.reason, { map: loadTestMap(root), buildScripts: buildScriptInputs(root) });
   if (options.recordMap && selection.effectiveMode !== 'full') throw new Error('--record-map needs ci:full, so every browser test records its files.');
   if (options.plan) { console.log(JSON.stringify(selection, null, 2)); return; }
+  if (selection.effectiveMode === 'full' && process.env.MY151_FULL_SUITE_RUNNER !== '1') throw new Error(FULL_SUITE_ELSEWHERE);
   const gitDirectory = execFileSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).trim();
   const runId = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}`;
   const directory = join(gitDirectory, 'ci-runs', runId);

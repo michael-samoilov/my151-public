@@ -88,8 +88,8 @@ of the staged deploy. The full browser suite runs after release, not before it.
 | --- | --- | --- |
 | `npm run ci` | All cheap gates, one build, the `@ci-smoke` journeys, and the browser specs that the test map says run the changed files. Use on every merge candidate. | 2–5 min |
 | `npm run ci:fast` | All cheap gates, one build, and the `@ci-smoke` journeys. | 2–3 min |
-| `npm run ci:full` | Every browser spec in every project. Runs after release and every night. Run it before release only for a launch or a risky change. | About 30 min |
-| `npm run ci:full -- --record-map` | `ci:full` that also rewrites `scripts/ci/test-map.json`. The nightly run uses it. | About 35 min |
+| `npm run ci:full` | Every browser spec in every project. Only the full-suite runner runs it, after each release and every night; in a working session it refuses. For a launch or a risky change, push the work branch, then request a runner run with the text `ref: <sha>; first run git fetch origin <work branch>`. | About 30 min |
+| `npm run ci:full -- --record-map` | `ci:full` that also rewrites `scripts/ci/test-map.json`. Run it in the full-suite runner when the test map is stale. | About 35 min |
 
 A change to one tuning value, plus its tests and docs, can use `ci:fast` as its
 final gate under the existing Tuning exception. It must change no logic, saved-data
@@ -106,8 +106,8 @@ The critical journeys use `@ci-smoke` on existing tests. Keep mobile/narrow
 CI records failure screenshots and per-case errors. Full Playwright traces are
 opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
 automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
-The full suite runs after every release and every night (see Deployment). A red
-nightly run is the next task: fix the cause, or roll back the release that caused it.
+The full-suite runner runs the full suite after every release and every night (see
+Deployment). A red run is the next task: fix the cause, or roll back the release that caused it.
 Actions has no automatic trigger in this repository.
 
 Visual changes require the relevant before/after mobile and desktop screenshots.
@@ -189,7 +189,7 @@ Production builds are staged. Vercel builds each push to `claude/pokedex-region-
 2. Smoke it. Run `npm run release:smoke -- <deployment url>`. It opens each public page of that exact deploy, read-only and opted out of analytics. A failure means do not promote: fix forward and push again.
 3. Promote it. Call `request_promote` with that deployment id.
 4. Confirm it. Run `npm run release:live -- <build stamp>`, with the stamp that step 2 printed. It waits until my151.app serves that build.
-5. Run the full suite. Start `npm run ci:full` in the background on the released commit, and report its result. When it finds a defect that the release caused, roll back with `request_promote` on the previous production deploy, then fix forward.
+5. Request the full suite. Call `fire_trigger` with trigger_id `trig_01SNDBHW7eryfJpXus9oQc9W` ("my151 full suite") and the text `ref: <released commit sha>`, then end your turn. Do not wait for it, and do not run `npm run ci:full` yourself: it refuses in a working session. The runner runs every browser spec in its own session, checks whether each failure also fails on the previous commit, and notifies Michael. When it finds a defect that the release caused, roll back with `request_promote` on the previous production deploy, then fix forward.
 
 A push that the Ignored Build Step skips has nothing to release. A later promote releases every earlier commit too, because production is cumulative. To undo a release, promote the previous deploy; on Pro, any earlier production deploy can be promoted again.
 
