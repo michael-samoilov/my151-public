@@ -1,5 +1,6 @@
 import { chromium } from '@playwright/test';
 import { protectLiveSite } from '../live-site';
+import { resolveChromium } from '../chromium-path';
 
 export const RELEASE_PAGES = ['/', '/pokedex-builder', '/custom-gym-leader', '/favorite-pokemon-picker'] as const;
 export const LIVE_ORIGIN = 'https://my151.app';
@@ -15,7 +16,8 @@ export async function buildStamp(origin: string): Promise<string> {
 
 export async function smoke(origin: string): Promise<string[]> {
   const failures: string[] = [];
-  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+  const executablePath = process.env.CHROMIUM_PATH ?? resolveChromium();
+  const browser = await chromium.launch(executablePath ? { executablePath } : { channel: 'chromium' });
   try {
     for (const path of RELEASE_PAGES) {
       const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
