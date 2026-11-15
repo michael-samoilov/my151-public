@@ -56,6 +56,7 @@ function CardPanel({
   onHandleTouchMove,
   onHandleTouchEnd,
   onHandleClick,
+  expanded,
   onNavPrev,
   onNavNext,
   swipeLocked,
@@ -77,6 +78,7 @@ function CardPanel({
   onHandleTouchMove?: (e: React.TouchEvent) => void;
   onHandleTouchEnd?: () => void;
   onHandleClick?: () => void;
+  expanded?: boolean;
   onNavPrev?: () => void;
   onNavNext?: () => void;
   swipeLocked?: boolean;
@@ -99,9 +101,20 @@ function CardPanel({
         onTouchEnd={onHandleTouchEnd}
         onClick={onHandleClick}
       >
-        <div className="flex items-center justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
+        {expanded === undefined ? (
+          <div className="flex items-center justify-center pt-2 pb-1">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            aria-label={data.title}
+            aria-expanded={expanded}
+            className="flex w-full items-center justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing focus-visible:-outline-offset-2"
+          >
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </button>
+        )}
 
         <div className="flex flex-col items-center pt-0.5 pb-1.5">
           <div className="flex items-center w-full px-3">
@@ -499,6 +512,7 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
                 onHandleTouchMove={handleHeaderTouchMove}
                 onHandleTouchEnd={handleTouchEnd}
                 onHandleClick={handleTabTap}
+                expanded={!peek}
                 onNavPrev={handleNavPrev}
                 onNavNext={handleNavNext}
                 swipeLocked={swipeLocked}
