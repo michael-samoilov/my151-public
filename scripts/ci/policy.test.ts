@@ -44,6 +44,9 @@ test('invalid CLI modes, missing option values and unknown flags fail at the bou
   for (const args of [['quick'], ['fast', '--base'], ['fast', '--surprise']]) expect(() => parseOptions(args)).toThrow();
   expect(parseOptions(['affected', '--base', '--strange-ref', '--plan'])).toEqual({ mode: 'affected', base: '--strange-ref', plan: true, recordMap: false });
   expect(parseOptions(['full', '--record-map']).recordMap).toBe(true);
+  expect(parseOptions(['full', '--shard', '2/4']).shard).toBe('2/4');
+  expect(() => parseOptions(['full', '--shard', '5/4'])).toThrow(/--shard needs/);
+  expect(() => parseOptions(['full', '--shard', '1/1'])).toThrow(/--shard needs/);
 });
 
 test('viewport filtering intersects smoke instead of overriding it', async () => {

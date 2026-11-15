@@ -22,6 +22,8 @@ async function main() {
   const changes = changedPaths(root, options.base ?? process.env.MY151_CI_BASE ?? defaultBase(root));
   const selection = select(options.mode, changes.paths, changes.baseSha, changes.reason, { map: loadTestMap(root), buildScripts: buildScriptInputs(root) });
   if (options.recordMap && selection.effectiveMode !== 'full') throw new Error('--record-map needs ci:full, so every browser test records its files.');
+  if (options.shard && selection.effectiveMode !== 'full') throw new Error('--shard splits the full suite only: use it with ci:full.');
+  if (options.shard && options.recordMap) throw new Error('--record-map needs every browser test in one run, so it cannot run on a shard.');
   if (options.plan) { console.log(JSON.stringify(selection, null, 2)); return; }
   if (selection.effectiveMode === 'full' && process.env.MY151_FULL_SUITE_RUNNER !== '1') throw new Error(FULL_SUITE_ELSEWHERE);
   const gitDirectory = execFileSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).trim();
@@ -39,7 +41,7 @@ async function main() {
   atomicJson(join(directory, 'selection.json'), selection);
   console.log(`CI ${selection.effectiveMode}: ${selection.reasons.join(' ')}\nLive evidence: ${directory}`);
   const recording = join(directory, 'test-map');
-  const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId, ...(options.recordMap ? { MY151_TEST_MAP_DIR: recording, MY151_TEST_MAP_DIST: join(directory, 'dist') } : {}) };
+  const environment = { ...process.env, MY151_CI_RUN_DIR: directory, MY151_CI_RUN_ID: runId, ...(options.shard ? { MY151_CI_SHARD: options.shard } : {}), ...(options.recordMap ? { MY151_TEST_MAP_DIR: recording, MY151_TEST_MAP_DIST: join(directory, 'dist') } : {}) };
   try {
     if (selection.effectiveMode !== 'docs') {
       await settleLanes([
@@ -65,7 +67,7 @@ async function main() {
       if (process.env.PLAYWRIGHT_BASE_URL) {
         atomicJson(join(directory, 'external-preview.json'), { url: process.env.PLAYWRIGHT_BASE_URL, sourceIdentity: 'unproven', note: 'Browser evidence is external; the local build receipt cannot identify the remote source.' });
       }
-      await journal.stage('discovery', process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '-c', 'scripts/ci/playwright.config.ts', '--list', '--reporter=json'], { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: join(directory, 'discovery.json') });
+      await journal.stage('discovery', process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '-c', 'scripts/ci/playwright.config.ts', '--list', '--reporter=json', ...(options.shard ? [`--shard=${options.shard}`] : [])], { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: join(directory, 'discovery.json') });
       const discovery = JSON.parse(readFileSync(join(directory, 'discovery.json'), 'utf8')) as Discovery;
       const counts = discoveryCounts(discovery);
       if (!counts.total) throw new Error('Browser selection is empty.');

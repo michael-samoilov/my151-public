@@ -13,7 +13,7 @@ export interface Selection {
   reasons: string[];
   estimateMs: number;
 }
-export interface Options { mode: Mode; base?: string; plan: boolean; recordMap: boolean }
+export interface Options { mode: Mode; base?: string; plan: boolean; recordMap: boolean; shard?: string }
 
 const docs = /^(?:docs\/.+\.md|README\.md|AGENTS\.md|CLAUDE\.md|LICENSE)$/;
 const tooling = [
@@ -27,6 +27,14 @@ const ownGate = /^(?:api\/|scripts\/|data\/|docs\/|\.github\/|\.claude\/|eslint[
 export const BROWSER_BUDGET_MS = 3 * 60_000;
 export const BROWSER_WORKERS = 2;
 
+function parseShard(value: string): string {
+  const match = /^(\d+)\/(\d+)$/.exec(value);
+  const index = Number(match?.[1]);
+  const total = Number(match?.[2]);
+  if (!match || index < 1 || total < 2 || index > total) throw new Error(`--shard needs <index>/<total>, such as 2/4: got ${value}`);
+  return `${index}/${total}`;
+}
+
 export function parseOptions(args: string[]): Options {
   const input = [...args];
   const mode = input.shift() ?? 'affected';
@@ -37,6 +45,7 @@ export function parseOptions(args: string[]): Options {
     if (flag === '--plan') result.plan = true;
     else if (flag === '--record-map') result.recordMap = true;
     else if (flag === '--base' && input.length) result.base = input.shift();
+    else if (flag === '--shard' && input.length) result.shard = parseShard(input.shift()!);
     else throw new Error(`Unknown or incomplete option: ${flag}`);
   }
   return result;
