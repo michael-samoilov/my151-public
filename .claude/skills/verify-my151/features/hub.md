@@ -18,9 +18,9 @@ The landing page at `/`. It links to each tool and asks what to build next.
   prerendered page hides the count until the app reads it, so it never shows 0
   first. The hub reads the dex, league, and picker stores and never writes
   them.
-- From October 6 to 13, 2026, a returning visitor sees a callout on the Tools
-  menu (`[data-testid="favorites-launch-notice"]`, `role="status"`). It does not
-  show when `p151-favorites-launch-seen` is set.
+- The Tools menu had a launch callout
+  (`[data-testid="favorites-launch-notice"]`) for October 6 to 13, 2026
+  (`isFavoritesNoticeWindow` in `src/lib/launchFlags.ts`). It no longer renders.
 - On mount, the hub marks the league promo as seen
   (`p151-league-promo-seen`).
 - The header holds the language picker, the feedback button, and the Tools menu
@@ -58,10 +58,7 @@ Manual drive (a Playwright script, local build):
 - The phone's wide bar and the desktop card are different markup, picked in JS
   by `useIsDesktop`, not by CSS. The bar shows only for an odd card count, so
   with four cards it never renders.
-- Opening the Tools menu also dismisses the launch callout.
 - The standard suite sets `p151-league-promo-seen`, `p151-moved-notice-seen`,
   and `p151-favorites-launch-seen` to keep the launch prompts out of its shots.
   Remove them to see the prompts.
-- Most hub copy is translated in every locale. The `home.h1` heading and the
-  `home.next.title` card title fall back to English, and the dex and league
-  artwork alt texts are hard-coded English (see `language.md`).
+- Hub copy, the artwork alt texts included, is translated in every locale.

@@ -103,7 +103,7 @@ Hand a reviewer that full frame with its boxes; see "Showing a defect" in
 | `font-fallback` | error | The declared family did not load; every measurement below is suspect. |
 | `stretched-box` | warning | A text box holds height no line of its text uses, nearly all on one side. A torn block looks like this from the outside: nothing is cut, nothing is covered, and the words are half a slot from each other. |
 | `awkward-wrap` | warning | A label of 30 characters or fewer took three or more lines, or the last line holds one short word. |
-| `text-overlap` | warning | Two text runs from different branches share pixels. |
+| `overlap` | warning (hard in the app) | Two in-flow, unpositioned boxes (text, a painted box, or an SVG) from different branches share more than half a pixel. A static run reports it as a warning. The in-page snippet and the verify-my151 render checks fail on it. |
 | `tiny-text` | warning | Text under the size floor. |
 
 Four things never count, because on screen they are design, not defects: a
@@ -121,7 +121,9 @@ Opt-outs are attributes in the markup, so the intent is visible in the source:
 `data-audit-clip="intended"` on a container that crops on purpose (a preview
 crop, a scroll region); `data-audit-scale="intended"` on an image that is meant
 to be scaled, or on an ancestor when a whole subtree is scaled on purpose (a
-phone-frame preview drawn with CSS `zoom`).
+phone-frame preview drawn with CSS `zoom`); `data-audit-overlap="intended"` on
+a container that overlaps on purpose; the overlap check skips that container
+and everything inside it.
 
 ## What it cannot see
 

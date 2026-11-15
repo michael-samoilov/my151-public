@@ -70,8 +70,8 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 
 ## Driving it with the harness
 
-After `standard`, `verify.ts` runs `dex-export` and `foil-workshop`, then eight
-league suites, then `favorites`. The league suites:
+After `standard`, `verify.ts` runs `dex-export` and `foil-workshop`, then nine
+league suites, then `favorites` and `not-found`. The league suites:
 
 - `league`: checks the served shell's title, h1, and canonical link
   structurally, then boot, layout, the 44px `[data-testid="league-tool-bar"]`,
@@ -84,6 +84,8 @@ league suites, then `favorites`. The league suites:
   replace, a synthetic-touch flick and its `[data-stage-tint]` wash, TM search,
   and the Elite Four stars on one row.
 - `league-hover`: a column wash on desktop hover, and none left behind on touch.
+- `league-discs`: on a card with three discs per cell, the shiny, reset, and
+  remove discs sit evenly in each cell (`league-discs:even`).
 - `league-home`: slot moves on the home (fill, displace, playlist order).
 - `gym-card-export`: the card export preview, and ace, TM, and badge fit.
 - `league-export-team`: the league export starts at the team that the summary
@@ -95,15 +97,14 @@ league suites, then `favorites`. The league suites:
   arrives with the confetti, once the summary is on screen and the picker is
   shut. The card tip floats just below the card's Export button, and `full`
   beside an open card on desktop floats under the league Export button.
-  The roster tips never cover a summary row: `data-nudge-placement` is
-  `beside` where the pane has room right of the summary (a desktop) and
-  `below` elsewhere, where the tip joins the page flow and the fit shrinks
-  the summary to make room. The Export button a tip points at carries a red
+  The roster tip floats under the league Export button, so the summary keeps
+  its place and size while the tip shows (`league-funnel:roster-nudge-floats`).
+  The Export button a tip points at carries a red
   dot (`[data-tip-dot]`) and no pulse. The dot stays after the tip closes
   and goes when that Export opens. It also loads a full v3 save that saw
   the eight-gym popup and checks the store: version 4 or later, `complete`
-  celebrated, and no popup. The store persists at version 6
-  (`LEAGUE_PERSIST_VERSION` in `src/league/store/seedLeague.ts`).
+  celebrated, and no popup. The store's current version is
+  `LEAGUE_PERSIST_VERSION` in `src/league/store/seedLeague.ts`.
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
 and `.powerups[row]`.
@@ -149,10 +150,11 @@ and `.powerups[row]`.
   every harness desktop surface at a device pixel ratio of 1, keeps the fluid
   fit.
 - On a phone or a desktop under a device pixel ratio of 2, the summary zooms
-  as before down to the 0.55 floor. A shorter window then gives up the same
+  down to the 0.55 floor. A shorter window then gives up the same
   spacing, hint lines first, to keep all 14 rows on screen. The harness
   surfaces (390x844, 412x915, 1280x800) never reach the floor, so they show
-  today's layout. `e2e/league-sprite-scale.spec.ts` sweeps a 320px phone and a
+  the full-spacing layout. `e2e/league-sprite-scale.spec.ts` sweeps a 320px
+  phone and a
   1280px window down to the floor and past it.
 - The league render audits wait for every visible image to load first. At
   hydration most sprites are still loading, and an early audit counted 6, 51

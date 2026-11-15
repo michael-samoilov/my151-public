@@ -64,9 +64,9 @@ gimmick, legendary, and favorite picks.
   Shared coordinates are omitted in the current selector context. These
   indicators are informational; repeated picks stay bright and preserve every
   independent source. Selecting the current cell's Pokémon still clears it.
-- Repeat picks are always allowed. There is no No Repeats setting or settings
-  gear. The old persisted setting is ignored without deleting saved picks.
-  Pointer pools and unsupported-pointer pruning retain their rules.
+- Repeat picks are always allowed. A repeat flag in an older save is ignored,
+  and its picks stay. Pointer pools and unsupported-pointer pruning keep their
+  rules.
 - The Shiny switch (`[data-testid="favorites-shiny-toggle"]`) starts off every
   time a sheet opens, even over a shiny pick. A pick sheet loads its shiny
   sprites within 300 ms of opening, so the switch repaints at once. With it on, candidates show shiny sprites, or a faded sprite under
@@ -136,8 +136,10 @@ Manual drive (a Playwright script, local build):
 ## Gotchas
 
 - Saved picks live under `favorite-picker` as
-  `{state:{fills:{"<type>|<gen>":id}},version:3}`. An older seed, such as
-  version 1, loads through `migrate`. Never clear it on a real user's browser.
+  `{state:{fills:{"<type>|<gen>":id},shiny:{…}},version:N}`, where N is
+  `FAVORITES_STORE_VERSION` in `src/favorites/model/savedNumbers.ts`. An older
+  seed, such as the version 3 seed in the manual drive, loads through
+  `migrate`. Never clear it on a real user's browser.
   A grid-shape change must migrate it.
 - `?packing=1` turns the packing sheet on outside production, for specs only.
   It is off on the live site.

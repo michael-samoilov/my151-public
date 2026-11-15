@@ -32,7 +32,8 @@ locked until 25 Pokémon are placed and stays unlocked after that.
 `Session`. Before boot it sets `p151-league-promo-seen`,
 `p151-moved-notice-seen`, and `p151-favorites-launch-seen`. The moved-notice
 key gates no prompt. It only marks the session as a returning visitor. The
-launch key keeps the October 6-13, 2026 picker callout off the header. It
+launch key is still set, but the picker callout's window
+(`src/lib/launchFlags.ts`) has ended. It
 seeds a 37-Pokémon dex (real assignments from `src/data/demoDex.ts`) through
 localStorage. The seed pins `locale: 'en'`, so an engine's own
 `navigator.languages` cannot change a label. It asserts tab activation
