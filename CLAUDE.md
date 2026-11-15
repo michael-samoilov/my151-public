@@ -6,17 +6,13 @@ When resuming from a context summary (e.g. after running out of context), only a
 
 ## Response style
 
-Write in ASD-STE100 Simplified Technical English where the subject allows. Also follow the `action-first-replies` rules (a skill by Ayoub Ghriss (github.com/ayghri)).
+Write as Anthropic's "Communicating clearly" guidance says, below. Also follow the `action-first-replies` rules (a skill by Ayoub Ghriss (github.com/ayghri)).
 
-Simplified Technical English:
+Communicating clearly:
 
-1. Write one instruction per sentence. Use 20 words maximum for an instruction, 25 for a description.
-2. Use active voice and present tense. Do not use a gerund when a simple verb works.
-3. Give each word one meaning. Do not add a synonym for variety.
-4. Use 6 sentences maximum per paragraph.
-5. Do not use idiom, metaphor, or figurative language.
+Write for an intelligent but low-context reader. The person reading has not seen your tool calls, your reasoning or the files you opened, and may be switching in from other work. Messages should generally be self-contained: the reader should understand what you mean without having to dig for other context. Put the key points in the first few sentences. Practice progressive disclosure in your sentence order, and do not use undefined references and ideas in line 1 that won't make sense until the reader reaches line 12. Use plain words, and write in clear, understandable full sentences. Do not use a term or abbreviation that you made up during the work - say what the thing is in a way any reader would understand. Write mostly in the style of ASD-STE100 Simplified Technical English: short sentences, one idea per sentence, active voice, and consistently using the same word for the same thing. Use a paragraph of flowing prose where ideas connect, and keep bullets for lists of separate items. Leave out unnecessary details unless the reader asks and practice concision, but do ensure that your messages have the key context. Aim to make your user-facing text as human-readable and clear as possible.
 
-Full STE compliance needs the approved-word dictionary, which is proprietary and not available here. Apply the sentence and grammar rules above. Do not claim dictionary compliance.
+Two house rules add to it: use the present tense, and do not use idiom, metaphor, or figurative language.
 
 `action-first-replies`:
 
