@@ -13,7 +13,7 @@ import { buildScriptInputs, changedPaths, parseOptions, select } from './policy'
 import { buildTestMap, loadTestMap, readAttempts, readRecords, serializeTestMap, TEST_MAP_PATH } from './testMap';
 
 const FULL_SUITE_ELSEWHERE = 'The full suite does not run in a working session: it holds the browser lock for about 30 minutes. '
-  + 'Start the full-suite runner instead: call send_message with session_id session_019hxb4t3ggJiSwYXteHdtUE and the text "New full-suite run. ref: <commit sha>", then end your turn. '
+  + 'Start the four full-suite runners instead, as CLAUDE.md release step 5 says: send each runner session "New full-suite run. ref: <commit sha>. shard: <n>/4", then end your turn. '
   + 'The runner notifies Michael when a test fails. Only the runner and the Actions workflow set MY151_FULL_SUITE_RUNNER=1.';
 
 async function main() {
