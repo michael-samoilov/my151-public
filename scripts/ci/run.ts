@@ -41,7 +41,7 @@ async function main() {
         () => journal.stage('lint', 'npm', ['run', 'lint', '--', ...eslintCacheArgs(root)]),
         () => journal.stage('unit', 'npm', ['test']),
         async () => {
-          for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack']) {
+          for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-shiny-masks', 'check-speed-test-detection', 'check-live-site-visits', 'check-published-source', 'check-pstack', 'check-skill-triggers']) {
             await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
           }
           await journal.stage('sprite-credits', 'npm', ['run', 'credits:check-sprites']);
