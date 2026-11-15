@@ -49,7 +49,7 @@ export const WRITTEN_RULES = [
   {
     id: 'one-deploy-constant',
     rule: 'Keep values that change on every deploy out of the JavaScript: one such value renames most chunks.',
-    source: 'CLAUDE.md, Build Verification',
+    source: '.claude/rules/build-pipeline.md',
     files: SRC,
     ignores: ['src/lib/buildVersion.ts'],
     selectors: ["Identifier[name='__BUILD_TIMESTAMP__']"],
@@ -58,7 +58,7 @@ export const WRITTEN_RULES = [
   {
     id: 'revised-sprite-urls',
     rule: 'A replaced sprite file needs a new URL; src/lib/spriteUrl.ts adds the revision as ?v=.',
-    source: 'CLAUDE.md, check-sprite-revisions.mjs',
+    source: '.claude/rules/ci-runner.md, check-sprite-revisions.mjs',
     files: SRC,
     ignores: [...SRC_TESTS, 'src/lib/spriteUrl.ts', 'src/data/type-icons.ts'],
     selectors: [
@@ -98,7 +98,7 @@ export const WRITTEN_RULES = [
   {
     id: 'no-viewport-type',
     rule: 'Root font-size is JS-computed, not CSS vw. Avoid per-site text-[clamp(…vw…)].',
-    source: 'CLAUDE.md, Responsive sizing',
+    source: '.claude/rules/responsive-sizing.md',
     files: SRC,
     selectors: [...anyString('/clamp\\([^)]*\\d[sdl]?v(w|min|max)/'), ...anyString('/\\btext-\\[[^\\]]*\\dv(w|min|max)/')],
     fix: 'Use rem utilities, which follow src/lib/layoutFontSize.ts, or a container-relative --tile-sprite or chartScale size.',
@@ -134,7 +134,7 @@ export const WRITTEN_RULES = [
   {
     id: 'specs-record-their-files',
     rule: 'A browser spec imports test from e2e/support/test, so the test-map recording sees which source files it runs. CI picks browser tests from that map.',
-    source: 'CLAUDE.md, Build Verification',
+    source: '.claude/rules/ci-runner.md',
     files: ['e2e/**/*.spec.ts'],
     selectors: ["ImportDeclaration[source.value='@playwright/test'] > ImportSpecifier[imported.name='test']"],
     fix: "Import test (and expect) from './support/test' instead of '@playwright/test'.",
@@ -233,7 +233,7 @@ export const WRITTEN_RULES = [
   {
     id: 'no-secret-logging',
     rule: 'Never print, log, or commit PAGESPEED_API_KEY or the database token.',
-    source: 'CLAUDE.md, Build Verification; Admin Dashboard handoff, 2026-09-30',
+    source: '.claude/rules/speed-work.md; Admin Dashboard handoff, 2026-09-30',
     files: [...TOOLING, ...API],
     selectors: [
       "CallExpression[callee.object.name='console'] > MemberExpression[property.name=/^(PAGESPEED_API_KEY|UPSTASH_REDIS_REST_TOKEN)$/]",
