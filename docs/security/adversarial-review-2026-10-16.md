@@ -18,16 +18,10 @@ Redis. Private analytics readers and the archive action require the owner's
 Bearer token through `requireAdmin()`. That token check is the app's privileged
 access boundary; it is separate from any visitor account system.
 
-Vercel preview protection is a hosting-platform setting. It does not give my151
-a login. On 2026-11-12, preview protection is off for this project, so a
-preview URL opens without a sign-in. Previews are read-only by code: on any
-host other than `my151.app` or `www.my151.app`, `isReadOnlyDeployment()` in
-`api/_shared.ts` makes each write endpoint store nothing. This review does not
-classify public preview access as a defect. It adds no visitor authentication
-feature.
-
-During the review, Vercel previews shared production Redis. All attack probes
-therefore run locally against synthetic fixtures.
+Preview deployments are read-only by code: on any host other than `my151.app`
+or `www.my151.app`, `isReadOnlyDeployment()` in `api/_shared.ts` makes each
+write endpoint store nothing. All attack probes run locally against synthetic
+fixtures.
 No test uses production Redis credentials, real visitor records, deployed write
 requests, payments, or cloud configuration changes.
 
