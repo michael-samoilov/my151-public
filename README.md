@@ -148,7 +148,8 @@ Use `npm run ci:full` for broad release risk.
 This repository is the read-only public copy of a private working repository, updated weekly.
 Branch names in `CLAUDE.md` and `AGENTS.md` refer to the private repository.
 Commit IDs cited in the docs refer to the private working repository.
-The history is a series of small verified steps, merged one change at a time from parallel work sessions.
+AI coding agents (Claude Code, Codex, and Cursor) wrote the code under my direction.
+Commits name the agent where the record shows which one wrote them.
 
 ## License
 
