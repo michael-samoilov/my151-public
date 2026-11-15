@@ -74,7 +74,7 @@ function useTileSize(colFactor: number, rowFactor: number, reserveH: number = 0)
   const containerRef = useRef<HTMLDivElement>(null);
   const [tileSize, setTileSize] = useState(0);
   const factorRef = useRef({ colFactor, rowFactor, reserveH });
-  factorRef.current = { colFactor, rowFactor, reserveH };
+  useLayoutEffect(() => { factorRef.current = { colFactor, rowFactor, reserveH }; });
 
   const measure = useCallback(() => {
     const el = containerRef.current;
@@ -472,7 +472,7 @@ export function ViewPage() {
   const isDesktop = useViewportAtLeast(1024);
   const STATS_EXIT_FALLBACK_MS = 400;
   const isDesktopRef = useRef(isDesktop);
-  isDesktopRef.current = isDesktop;
+  useLayoutEffect(() => { isDesktopRef.current = isDesktop; });
   const [statsMounted, setStatsMounted] = useState(showStatsPanel);
   useEffect(() => {
     if (showStatsPanel) {
@@ -543,7 +543,7 @@ export function ViewPage() {
   }, [statsBesideGrid, showStatsPanel]);
 
   const tileSizeRef = useRef(tileSize);
-  tileSizeRef.current = tileSize;
+  useLayoutEffect(() => { tileSizeRef.current = tileSize; });
   const statsShownRef = useRef(false);
   useEffect(() => {
     const wasShown = statsShownRef.current;

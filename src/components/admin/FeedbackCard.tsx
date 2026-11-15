@@ -84,7 +84,7 @@ function Row({
   onOpen: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
   const ctx = item.context ?? {};
 
   return (
@@ -132,14 +132,14 @@ function Row({
         <button
           type="button"
           onClick={() => {
-            void navigator.clipboard.writeText(asIssue(item)).then(() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1200);
-            });
+            void navigator.clipboard.writeText(asIssue(item))
+              .then(() => setCopy('copied'))
+              .catch(() => setCopy('failed'))
+              .finally(() => setTimeout(() => setCopy('idle'), 1200));
           }}
           className="text-muted-foreground underline cursor-pointer"
         >
-          {copied ? 'copied' : 'copy as issue'}
+          {copy === 'copied' ? 'copied' : copy === 'failed' ? 'copy failed' : 'copy as issue'}
         </button>
         {openTool && (
           <button
