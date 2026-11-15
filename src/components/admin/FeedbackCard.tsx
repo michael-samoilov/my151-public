@@ -132,10 +132,10 @@ function Row({
         <button
           type="button"
           onClick={() => {
-            void navigator.clipboard.writeText(asIssue(item)).then(
-              () => setCopy('copied'),
-              () => setCopy('failed'),
-            ).then(() => setTimeout(() => setCopy('idle'), 1200));
+            void navigator.clipboard.writeText(asIssue(item))
+              .then(() => setCopy('copied'))
+              .catch(() => setCopy('failed'))
+              .finally(() => setTimeout(() => setCopy('idle'), 1200));
           }}
           className="text-muted-foreground underline cursor-pointer"
         >
