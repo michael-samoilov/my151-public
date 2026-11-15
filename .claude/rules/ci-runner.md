@@ -34,7 +34,7 @@ tests, or repository checks read (`api/`, `scripts/`, `data/`, `docs/`, `.claude
 a build script, a dependency) runs smoke and names the release checks that cover it.
 When the selected specs would take more than 3 minutes, the run keeps one spec for
 each changed file and the changed specs, fills the rest of the 3 minutes with the
-cheapest other selected specs, and says so; run `ci:full` before release when that
+cheapest other selected specs, and says so; request a full-suite runner run before release when that
 change is risky. The selector
 includes committed, staged, dirty, deleted, renamed, and untracked paths.
 

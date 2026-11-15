@@ -44,7 +44,7 @@ try {
     if (!inputEndListeners.has(listener)) process.stdin.removeListener('end', listener as () => void);
   }
   if (interrupted) throw new Error('Browser startup interrupted.');
-  child = spawn(process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '-c', 'scripts/ci/playwright.config.ts'], { stdio: 'inherit' });
+  child = spawn(process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '-c', 'scripts/ci/playwright.config.ts', ...(process.env.MY151_CI_SHARD ? [`--shard=${process.env.MY151_CI_SHARD}`] : [])], { stdio: 'inherit' });
   const code = await new Promise<number | null>((resolve, reject) => {
     child!.once('error', reject);
     child!.once('close', resolve);

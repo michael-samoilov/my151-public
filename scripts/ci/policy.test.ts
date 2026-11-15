@@ -44,6 +44,9 @@ test('invalid CLI modes, missing option values and unknown flags fail at the bou
   for (const args of [['quick'], ['fast', '--base'], ['fast', '--surprise']]) expect(() => parseOptions(args)).toThrow();
   expect(parseOptions(['affected', '--base', '--strange-ref', '--plan'])).toEqual({ mode: 'affected', base: '--strange-ref', plan: true, recordMap: false });
   expect(parseOptions(['full', '--record-map']).recordMap).toBe(true);
+  expect(parseOptions(['full', '--shard', '2/4']).shard).toBe('2/4');
+  expect(() => parseOptions(['full', '--shard', '5/4'])).toThrow(/--shard needs/);
+  expect(() => parseOptions(['full', '--shard', '1/1'])).toThrow(/--shard needs/);
 });
 
 test('viewport filtering intersects smoke instead of overriding it', async () => {
@@ -127,7 +130,7 @@ test('a selection over the browser budget runs the cheapest spec for each change
   expect(filter.test('desktop favorites-picker.spec.ts picks')).toBe(false);
   expect(filter.test('desktop hub-prerender.spec.ts holds the page')).toBe(true);
   expect(plan.estimateMs).toBeLessThanOrEqual(BROWSER_BUDGET_MS);
-  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 4 within the 3-minute budget.*ci:full/);
+  expect(plan.reasons.join(' ')).toMatch(/Broad change: 5 spec files.*Running 4 within the 3-minute budget.*full-suite runner/);
 });
 
 test('a changed spec takes the budget before other broad specs', () => {

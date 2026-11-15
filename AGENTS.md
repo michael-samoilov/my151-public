@@ -5,7 +5,7 @@
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
 - For cloud work (private repository only), start from `claude/pokedex-region-builder-AviYF` in the checked-out repository unless the user names another base.
-- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the state, rules, and to-do list are in `docs/favorite-picker-handoff.md` on production (private repository only). Check current release status before changing it. Read the handoff before picker work.
+- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the state, rules, and to-do list are in the Favorite Picker handoff on production (private repository only). Check current release status before changing it. Read the handoff before picker work.
 - League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in the League Builder handoff of 2026-09-30 on production (private repository only). Read it before league work.
 - Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in the Dex Builder handoff of 2026-09-30 on production (private repository only). Read it before Dex work.
 - Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in the Admin Dashboard handoff of 2026-09-30 on production, and its verification tools are in the admin dashboard tools folder beside it (private repository only). Read it before admin work.
@@ -70,7 +70,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 ## 1. Verify before you show
 
-- Run `npm run ci` on the final merge candidate, then release through the staged-deploy steps in `CLAUDE.md` ("Release: verify, ship, then run"). The full suite runs after release and every night. Run it before release only for a launch or a risky broad change.
+- Run `npm run ci` on the final merge candidate, then release through the staged-deploy steps in `CLAUDE.md` ("Release: verify, ship, then run"). The full-suite runner runs every browser spec after each release and every night. Request it as `CLAUDE.md` says; do not run `npm run ci:full` in a working session.
 - For visual/platform changes, read `.claude/skills/verify-my151/SKILL.md` and capture the relevant screens and actual affected engines. Reserve its exhaustive matrix for full/release QA.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.

@@ -129,7 +129,7 @@ npm run ci:fast
 
 For the final candidate, run `npm run ci:affected -- --base REF` with the intended production base.
 Without a `--base`, the runner compares with the production branch, or with `origin/main` in a clone that does not have it.
-Use `npm run ci:full` for broad release risk.
+The full browser suite runs in a separate full-suite runner after each release and every night, not in the working session.
 [Build Verification in CLAUDE.md](CLAUDE.md#build-verification) owns check selection, exceptions, receipts, and deployment requirements.
 [AGENTS.md](AGENTS.md) has the repository's test rules.
 `npm run ci:fast` runs Playwright browser journeys, so install a browser first with `npx playwright install chromium`.
