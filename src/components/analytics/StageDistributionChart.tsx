@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { t, tn, useLocale } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
@@ -9,6 +9,13 @@ const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
 const STAGE_NAME_KEYS = ['stage.lineLength.1', 'stage.lineLength.2', 'stage.lineLength.3'] as const;
 const stageNames = () => STAGE_NAME_KEYS.map((k) => t(k));
+const LINE_LENGTH_WORD_KEYS = ['drilldown.lineLength.1', 'drilldown.lineLength.2', 'drilldown.lineLength.3'] as const;
+const activateOnKey = (action: () => void) => (event: KeyboardEvent) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    action();
+  }
+};
 
 type DrillToggle = (
   segment: DrillDownSegment,
@@ -268,15 +275,25 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                             }}>
                               <div className="flex flex-col-reverse" style={{ borderRadius: 3, overflow: 'hidden' }}>
                                 {col.segments.map((seg, segIdx) => {
+                                  const clickable = seg.count > 0;
+                                  const drill = () => onDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko);
+                                  const isSegActive = drillDownSegment?.kind === 'stage' &&
+                                    drillDownSegment.lineLength === col.lineLength &&
+                                    drillDownSegment.stage === seg.stage;
                                   return (
                                     <div
                                       key={seg.stage}
-                                      className={seg.count > 0 ? 'cursor-pointer hover:brightness-110 transition-[filter]' : ''}
+                                      className={clickable ? 'cursor-pointer hover:brightness-110 transition-[filter] focus-visible:-outline-offset-2' : ''}
                                       style={{
                                         height: segHeights[segIdx],
                                         backgroundColor: STAGE_COLORS[seg.stage - 1],
                                       }}
-                                      onClick={seg.count > 0 ? () => onDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko) : undefined}
+                                      role={clickable ? 'button' : undefined}
+                                      tabIndex={clickable ? 0 : undefined}
+                                      aria-label={clickable ? t('drilldown.stageTitle', { length: t(LINE_LENGTH_WORD_KEYS[col.lineLength - 1]), stage: seg.stage }) : undefined}
+                                      aria-pressed={clickable ? isSegActive : undefined}
+                                      onKeyDown={clickable ? activateOnKey(drill) : undefined}
+                                      onClick={clickable ? drill : undefined}
                                     />
                                   );
                                 })}
@@ -363,12 +380,18 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                 <div className="flex mt-1" style={{ gap }}>
                   {allColumns.map((col, idx) => {
                     const isXActive = drillDownSegment?.kind === 'lineLength' && drillDownSegment.lineLength === col.lineLength;
+                    const clickable = col.chainCount > 0;
+                    const drill = () => onDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko);
                     return (
                       <div
                         key={col.lineLength}
                         className="flex-1 text-center text-xs text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
                         style={{ height: 38 * mekkoScale, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
-                        onClick={() => col.chainCount > 0 && onDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
+                        role={clickable ? 'button' : undefined}
+                        tabIndex={clickable ? 0 : undefined}
+                        aria-pressed={clickable ? isXActive : undefined}
+                        onKeyDown={clickable ? activateOnKey(drill) : undefined}
+                        onClick={clickable ? drill : undefined}
                       >
                         <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{names[col.lineLength - 1]}</span>
                         <br />
@@ -402,6 +425,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                 {activeSegs.map((seg, i) => {
                   const bottomPos = labelCentersFromBottom[i] - legendLabelHeights[i] / 2;
                   const isLegendActive = drillDownSegment?.kind === 'stageAll' && drillDownSegment.stage === seg.stage;
+                  const drill = () => onDrillToggle({ kind: 'stageAll', stage: seg.stage }, undefined, excludeSpecialMekko);
                   return (
                     <div
                       key={seg.stage}
@@ -411,7 +435,11 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                         height: legendLabelHeights[i],
                         left: anyDisplaced ? 18 * mekkoScale : 0,
                       }}
-                      onClick={() => onDrillToggle({ kind: 'stageAll', stage: seg.stage }, undefined, excludeSpecialMekko)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isLegendActive}
+                      onKeyDown={activateOnKey(drill)}
+                      onClick={drill}
                     >
                       <span className="text-muted-foreground font-bold" style={isLegendActive ? { textDecoration: 'underline', textDecorationColor: STAGE_COLORS[seg.stage - 1] } : undefined}>
                         <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>{t('stage.label', { stage: seg.stage })}</span>
