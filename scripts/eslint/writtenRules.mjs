@@ -264,6 +264,15 @@ export const WRITTEN_RULES = [
     ],
     fix: 'Read it with readHashInPages from api/_hashScan.ts.',
   },
+  {
+    id: 'encode-through-helper',
+    rule: 'Encode a canvas only through encodeCanvasPng. It marks the encode, and the export preview stops drawing until the encode ends, because a busy frame loop slows a PNG encode from about 0.3 s to about 7 s.',
+    source: "Michael's decision, 2026-11-15: pause the preview animation while the image encodes",
+    files: SRC,
+    ignores: [...SRC_TESTS, 'src/lib/encodeCanvas.ts'],
+    selectors: ["CallExpression[callee.property.name='toBlob']"],
+    fix: 'Call encodeCanvasPng from src/lib/encodeCanvas.ts.',
+  },
 ]
 
 const selectorRule = ({ rule, source, fix, selectors }) => ({

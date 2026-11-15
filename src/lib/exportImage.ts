@@ -36,6 +36,7 @@ import { BAR_H, BAR_TEXT_X, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export
 import { fillTracked, font } from '@/league/export/paint';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 import { composeStatsExport } from './exportStatsFrame';
+import { encodeCanvasPng } from './encodeCanvas';
 
 export const DEX_EXPORT_FRAME_RED = '#DC2626';
 
@@ -447,14 +448,7 @@ export async function generateExportImage(
   drawLine(insightSegs, line1Y, INSIGHTS_FONT);
   drawLine(creditSegs, line2Y, CREDIT_FONT);
 
-  return new Promise<Blob>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
-    canvas.toBlob((blob) => {
-      window.clearTimeout(timer);
-      if (blob) resolve(blob);
-      else reject(new Error('Canvas toBlob failed'));
-    }, 'image/png');
-  });
+  return encodeCanvasPng(canvas, { failure: 'Canvas toBlob failed', timeoutMs: 15000 });
 }
 
 async function loadSpandrelMasks(urls: string[]): Promise<Map<string, HTMLImageElement>> {

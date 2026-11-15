@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { BASE_TINT } from '../theme';
+import { canvasEncodeInProgress } from '@/lib/encodeCanvas';
 
 export function GymConnector({ openCard, color }: { openCard: number; color: string }) {
   const ref = useRef<SVGSVGElement>(null);
@@ -47,7 +48,7 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
     let alive = true;
     const loop = () => {
       if (!alive) return;
-      compute();
+      if (!canvasEncodeInProgress()) compute();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
