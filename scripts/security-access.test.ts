@@ -82,7 +82,7 @@ import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
 import event from '../api/event';
-import {getNetworkKey, requireAdmin} from '../api/_shared';
+import {getLang, getNetworkKey, requireAdmin} from '../api/_shared';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<unknown>;
 const token = randomUUID();
@@ -267,4 +267,15 @@ describe('Automated browsers', () => {
       expect(local.calls).toEqual([]);
     });
   }
+});
+
+describe('getLang', () => {
+  const withLanguage = (value: string) => ({headers: {'accept-language': value}}) as unknown as VercelRequest;
+  it('keeps the first well-formed language tag', () => {
+    expect(getLang(withLanguage('pt-BR,pt;q=0.9,en;q=0.8'))).toBe('pt-BR');
+  });
+  it('stores nothing for a value that is not a language tag', () => {
+    expect(getLang(withLanguage('<img src=x onerror=alert(1)>'))).toBeUndefined();
+    expect(getLang(withLanguage('a'.repeat(200)))).toBeUndefined();
+  });
 });

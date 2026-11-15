@@ -172,11 +172,13 @@ export function getGeo(req: VercelRequest) {
   };
 }
 
+const LANGUAGE_TAG = /^[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8}){0,4}$/;
+
 export function getLang(req: VercelRequest): string | undefined {
   const al = headerValue(req, 'accept-language');
   if (!al) return undefined;
   const first = al.split(',')[0]?.split(';')[0]?.trim();
-  return first || undefined;
+  return first && LANGUAGE_TAG.test(first) ? first : undefined;
 }
 
 export function getClient(req: VercelRequest) {

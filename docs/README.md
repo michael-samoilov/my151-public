@@ -19,16 +19,8 @@ It does not replace the rules or decisions in those records.
 | --- | --- |
 | Repository coordination and test rules | [AGENTS.md](../AGENTS.md) |
 | Build, verification, deployment, and private-source policy | [CLAUDE.md](../CLAUDE.md) |
-| Dex standing decisions and work history | Dex handoff, 2026-09-30 (not published) |
-| League standing decisions and work history | League handoff, 2026-09-30 (not published) |
-| Admin standing decisions and work history | Admin handoff, 2026-09-30 (not published) |
-| Favorite Picker standing decisions and work history | Favorite Picker handoff (not published) |
-| Reliability work history | Reliability handoff, 2026-09-30 (not published) |
-| Pokémon ontology state and next phase | Ontology handoff, 2026-11-02 (not published) |
 | Ideas without active implementation | [Backlog](backlog.md) |
-| Unscheduled feature requests | Feature backlog in the working notes (not published) |
-| Running task list | To-do list in the working notes (not published) |
-| Search standing decisions and status | SEO handoff, SEO plan, and SEO reference (not published) |
+| Standing decisions, work history, and task lists for each area | Private handoff notes, which `AGENTS.md` routes to. The public copy leaves them out. |
 
 Handoffs contain dated snapshots and standing product decisions.
 Later dated updates supersede older release statements.
