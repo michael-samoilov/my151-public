@@ -128,6 +128,11 @@ const SAMPLES: Record<string, { file: string; bad: string; good: string }> = {
     bad: "import { redis, CLIENTS_KEY } from './_shared.js';\nexport const all = await redis.hgetall(CLIENTS_KEY);",
     good: "import { CLIENTS_KEY } from './_shared.js';\nimport { readHashInPages } from './_hashScan.js';\nexport const all = await readHashInPages(CLIENTS_KEY);",
   },
+  'encode-through-helper': {
+    file: 'src/lib/sample.ts',
+    bad: "export const png = (canvas: HTMLCanvasElement) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));",
+    good: "import { encodeCanvasPng } from './encodeCanvas';\nexport const png = (canvas: HTMLCanvasElement) => encodeCanvasPng(canvas, { failure: 'PNG encoding failed' });",
+  },
 };
 
 const eslint = new ESLint({ cwd: process.cwd() });

@@ -2,6 +2,7 @@ import { BAR_H, BAR_TEXT_X, CREDIT_PX, FOOT, FRAME, TITLE_PX, TITLE_TRACK } from
 import { fillTracked, font, trackedWidth } from '@/league/export/paint';
 import { exportCornerRadius } from './exportPngShape';
 import { drawExportCredit } from './exportCredit';
+import { encodeCanvasPng } from './encodeCanvas';
 
 const PAD = 24;
 const MAX_CANVAS_AREA = 16_000_000;
@@ -67,14 +68,7 @@ export async function composeStatsExport(
     ctx.restore();
     drawExportCredit(ctx, panelWidth / 2, height - (credit.bottomOffset ?? FRAME + FOOT / 2), credit.size ?? CREDIT_PX, credit.prefix);
     ctx.restore();
-    return await new Promise<Blob>((resolve, reject) => {
-      const timeout = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
-      canvas.toBlob(blob => {
-        window.clearTimeout(timeout);
-        if (blob) resolve(blob);
-        else reject(new Error('PNG encoding failed'));
-      }, 'image/png');
-    });
+    return await encodeCanvasPng(canvas, { failure: 'PNG encoding failed', timeoutMs: 15000 });
   } finally {
     URL.revokeObjectURL(url);
   }

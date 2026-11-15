@@ -52,6 +52,7 @@ import {
 } from './paint';
 import { leagueSpriteUrl } from '../leagueSprite';
 import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
+import { encodeCanvasPng } from '@/lib/encodeCanvas';
 
 const FG = '#0a0a0a';
 const RED = '#DC2626';
@@ -1340,15 +1341,7 @@ async function render(
   ctx.textBaseline = 'alphabetic';
   paint(ctx);
 
-  return new Promise<Blob>((resolve, reject) => {
-    // platform: iOS occasionally never calls the `toBlob` callback, so a timeout keeps the export spinner from hanging.
-    const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
-    canvas.toBlob((blob) => {
-      window.clearTimeout(timer);
-      if (blob) resolve(blob);
-      else reject(new Error('Canvas toBlob failed'));
-    }, 'image/png');
-  });
+  return encodeCanvasPng(canvas, { failure: 'Canvas toBlob failed', timeoutMs: 15000 });
 }
 
 export async function exportGymCard(card: GymCard, teamOrder: CardTeamOrder = 'fixed'): Promise<Blob> {

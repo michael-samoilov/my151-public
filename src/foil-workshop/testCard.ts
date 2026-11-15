@@ -2,6 +2,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { cardShades } from '@/league/theme';
 import { DEX_EXPORT_FRAME_RED } from '@/lib/exportImage';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
+import { encodeCanvasPng } from '@/lib/encodeCanvas';
 import type { TypeName } from '@/types/pokemon';
 
 const W = 1500;
@@ -116,9 +117,7 @@ export async function renderFoilTestCard(): Promise<Blob> {
   ctx.fillStyle = DEX_EXPORT_FRAME_RED;
   ctx.fillText('my151.app', left + 700, y + rowH / 2 + 12);
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
-  });
+  return encodeCanvasPng(canvas, { failure: 'toBlob failed' });
 }
 
 export async function renderFoilFlatCard(shape: 'wide' | 'league' | 'tall' = 'wide'): Promise<Blob> {
@@ -137,7 +136,5 @@ export async function renderFoilFlatCard(shape: 'wide' | 'league' | 'tall' = 'wi
   ctx.fillStyle = '#777777';
   ctx.fill();
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
-  });
+  return encodeCanvasPng(canvas, { failure: 'toBlob failed' });
 }

@@ -64,6 +64,7 @@ import {
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
 import { exportCornerRadius } from '@/lib/exportPngShape';
+import { canvasEncodeInProgress } from '@/lib/encodeCanvas';
 import './ExportPreview3D.css';
 import './foil/my151Holo.css';
 
@@ -447,6 +448,14 @@ export function ExportPreview3D({
       const lastTick = lastTickRef.current ?? now;
       const dt = now - lastTick;
       lastTickRef.current = now;
+      if (canvasEncodeInProgress()) {
+        if (originRef.current !== null) originRef.current += dt;
+        if (restAtRef.current !== null) restAtRef.current += dt;
+        const release = releaseRef.current;
+        if (release) releaseRef.current = { ...release, t0: release.t0 + dt };
+        raf = requestAnimationFrame(tick);
+        return;
+      }
       if (openMsRef.current === null) {
         const maps = cardRef.current?.dataset.foilMaps;
         if (imgRef.current?.complete && (maps === '1' || maps === 'failed')) {

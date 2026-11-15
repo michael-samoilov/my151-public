@@ -3,6 +3,7 @@ import { clipExportCanvas, exportInnerCornerRadius, EXPORT_FRAME_PX } from '@/li
 import { fillTracked, font } from '@/league/export/paint';
 import { BAR_H, BAR_TEXT_X, CREDIT_PX, FOOT, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export/layout';
 import { drawExportCredit } from '@/lib/exportCredit';
+import { encodeCanvasPng } from '@/lib/encodeCanvas';
 import { t } from '@/i18n';
 
 export function image(url: string): Promise<HTMLImageElement> {
@@ -64,6 +65,5 @@ export function drawFavoritesCredit(ctx: CanvasRenderingContext2D, width: number
 }
 
 export function encodeFavoritesCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob)
-    : reject(new Error('PNG encoding failed')), 'image/png'));
+  return encodeCanvasPng(canvas, { failure: 'PNG encoding failed' });
 }
