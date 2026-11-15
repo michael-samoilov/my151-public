@@ -101,6 +101,16 @@ const waitTip = (title: string) => async (page: Page) => {
 };
 
 const click = (selector: string) => async (page: Page) => { await page.locator(selector).first().click(); };
+const openPickerDrilldown = (chart: string, category: string, title: string) => async (page: Page) => {
+  await page.locator('#favorites-tab-analytics').click();
+  await page.locator(`[data-favorite-chart="${chart}"]`).getByRole('button', { name: category, exact: true }).click();
+  const pane = page.getByTestId('favorites-drilldown');
+  await pane.waitFor({ timeout: 30_000 });
+  if ((page.viewportSize()?.width ?? 0) < 1024) await pane.getByText(title, { exact: true }).click();
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-testid="favorites-drilldown"] img')]
+    .every((img) => (img as HTMLImageElement).complete), undefined, { timeout: 30_000 });
+  await page.waitForTimeout(500);
+};
 const openTools = async (page: Page) => { await page.locator('button[aria-expanded]').filter({ hasText: /tools/i }).first().click(); };
 const openPickerCell = (cell: string) => async (page: Page) => {
   await page.getByTestId(`favorites-cell-${cell}`).click();
@@ -276,6 +286,7 @@ export const SCREENS: Screen[] = [
   { id: 'league-ace-aegislash', path: '/custom-gym-leader', seed: BLANK_LEAGUE, act: searchLeagueAce('aegislash') },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  { id: 'favorites-analytics-dragon', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES, act: openPickerDrilldown('type', 'Dragon', 'Dragon Type') },
   {
     id: 'favorites-tip-analytics', path: '/favorite-pokemon-picker?lang=en', seed: FAVORITES_24,
     act: async (page) => {

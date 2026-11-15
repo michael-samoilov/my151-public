@@ -20,7 +20,7 @@ function selectedPools(snapshot:FavoritesSnapshot,dimension?:string){
 }
 export function pickerConditionalContributors(snapshot:FavoritesSnapshot,dimension:string,key:string){
  const byId=new Map(entries.map(entry=>[entry.id,entry.attributes as Record<string,readonly string[]|undefined>]));
- return selectedPools(snapshot,dimension).filter(pick=>pick.pool.length>1&&pick.pool.includes(pick.id)&&pick.pool.every(id=>byId.get(id)?.[dimension]?.length)&&byId.get(pick.id)?.[dimension]?.includes(key)).map(pick=>pick.cell);
+ return snapshot.cells.filter(cell=>cell.kind==='pick'&&cell.mon&&(dimension!=='bst'||pickerBstSelectorEligible(cell))&&byId.get(cell.mon.id)?.[dimension]?.includes(key));
 }
 export function pickerConditionalStats(snapshot:FavoritesSnapshot){
  const picks=selectedPools(snapshot);

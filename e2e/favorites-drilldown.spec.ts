@@ -60,18 +60,25 @@ test('complete chart opens row-grouped contributors and BST excludes special cel
   await info.attach('bst-contributors', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
-test('repeated alternate forms retain separate origins and singleton pools add no contributors', async ({ page }, info) => {
-  await seed(page, { 'fire|1': 6, 'ghost|2': 200, 'fire|gimmick': 10034, 'dragon|gimmick': 10034, 'gimmick|1': 10034 });
+test('repeated alternate forms retain separate origins and single-option picks are listed but not counted', async ({ page }, info) => {
+  await seed(page, { 'fire|1': 6, 'ghost|2': 200, 'dragon|2': 230, 'fire|gimmick': 10034, 'dragon|gimmick': 10034, 'gimmick|1': 10034 });
   await page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Fire', exact: true }).click();
   const pane = page.getByTestId('favorites-drilldown');
-  const cells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
+  const listed = () => pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
+  const cells = await listed();
   expect(cells).toEqual(['fire|1', 'gimmick|1', 'fire|gimmick', 'dragon|gimmick']);
   await expect(pane.getByTestId('favorites-pick-10034')).toHaveCount(3);
   await page.keyboard.press('Escape');
   await page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Ghost', exact: true }).click();
-  await expect(pane.locator('[data-contributor-cell]')).toHaveCount(0);
-  await expect(pane).toContainText('No choices in this category.');
+  await expect(pane.locator('[data-contributor-cell]')).toHaveCount(1);
+  await expect(pane.locator('[data-contributor-cell="ghost|2"]').getByTestId('favorites-pick-200')).toHaveCount(1);
   await expect(page.locator('[data-favorite-chart="type"] [data-favorite-chart-row="ghost"] td').first()).toHaveText('0');
-  await info.attach('form-and-singleton-contributors', { body: JSON.stringify({ cells, formEntries: 3, singletonContributors: 0 }), contentType: 'application/json' });
-  await info.attach('singleton-category', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.keyboard.press('Escape');
+  await page.locator('[data-favorite-chart="evolution"]').getByRole('button', { name: 'Final', exact: true }).click();
+  await expect(pane.locator('[data-contributor-cell="dragon|2"]').getByTestId('favorites-pick-230')).toHaveCount(1);
+  const finals = await listed();
+  const counted = Number(await page.locator('[data-favorite-chart="evolution"] [data-favorite-chart-row="final"] td').first().textContent());
+  expect(counted).toBe(finals.length - 1);
+  await info.attach('single-option-contributors', { body: JSON.stringify({ cells, finals, counted }), contentType: 'application/json' });
+  await info.attach('single-option-category', { body: await page.screenshot(), contentType: 'image/png' });
 });
