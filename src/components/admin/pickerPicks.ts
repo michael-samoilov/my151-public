@@ -1,7 +1,7 @@
 import { labelOf } from '@/favorites/components/spriteLabel';
 import { getPickerMon, type PickerMon } from '@/favorites/model/catalog';
-import { parseCellKey, type GenAxisId, type TypeAxisId } from '@/favorites/model/cells';
-import { eligibleFor, kindFor } from '@/favorites/model/eligibility';
+import { isStarterLegendaryOrFavoriteCell, parseCellKey, type GenAxisId, type TypeAxisId } from '@/favorites/model/cells';
+import { eligibleFor, isStarterOrLegendary, kindFor } from '@/favorites/model/eligibility';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 
 export type PickCell = { type: TypeAxisId; gen: GenAxisId };
@@ -14,9 +14,26 @@ export function pickerFace(id: number): { sprite: string; alt: string; name: str
   return { sprite: mon.sprite, alt: name, name };
 }
 
-export function rankCell({ type, gen }: PickCell, rows: [number, number][]): Ranked[] {
+export type PickFilter = 'all' | 'no-starters-legendaries';
+
+function allowsMon({ type, gen }: PickCell, filter: PickFilter): (mon: PickerMon) => boolean {
+  if (filter === 'all' || isStarterLegendaryOrFavoriteCell(type, gen)) return () => true;
+  return (mon) => !isStarterOrLegendary(mon);
+}
+
+function filterRows(cell: PickCell, rows: [number, number][], filter: PickFilter): [number, number][] {
+  const allows = allowsMon(cell, filter);
+  return rows.filter(([id]) => {
+    const mon = getPickerMon(id);
+    return mon == null || allows(mon);
+  });
+}
+
+export function rankCell(cell: PickCell, allRows: [number, number][], filter: PickFilter = 'all'): Ranked[] {
+  const { type, gen } = cell;
+  const rows = filterRows(cell, allRows, filter);
   const counts = new Map(rows);
-  const pool = kindFor(type, gen) === 'pick' ? eligibleFor(type, gen) : [];
+  const pool = kindFor(type, gen) === 'pick' ? eligibleFor(type, gen).filter(allowsMon(cell, filter)) : [];
   const inPool = new Set(pool.map((mon) => mon.id));
   const others = rows
     .map(([id]) => id)
@@ -29,15 +46,16 @@ export function rankCell({ type, gen }: PickCell, rows: [number, number][]): Ran
     .map(({ mon, picks }) => ({ mon, picks }));
 }
 
-export function topFills(cells: FavoritePicks['cells']): Record<string, number> {
+export function topFills(cells: FavoritePicks['cells'], filter: PickFilter = 'all'): Record<string, number> {
   const fills: Record<string, number> = {};
-  for (const [key, rows] of Object.entries(cells)) {
+  for (const [key, allRows] of Object.entries(cells)) {
+    const cell = parseCellKey(key);
+    const rows = cell ? filterRows(cell, allRows, filter) : allRows;
     if (rows.length === 0) continue;
     if (rows.length === 1 || rows[0][1] > rows[1][1]) {
       fills[key] = rows[0][0];
       continue;
     }
-    const cell = parseCellKey(key);
     const top = cell ? rankCell(cell, rows)[0] : undefined;
     if (top && top.picks > 0) fills[key] = top.mon.id;
   }

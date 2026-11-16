@@ -56,6 +56,10 @@ export function cellKind(type: TypeAxisId, gen: GenAxisId, empty: boolean): Cell
   return 'pick';
 }
 
+export function isStarterLegendaryOrFavoriteCell(type: TypeAxisId, gen: GenAxisId): boolean {
+  return type === 'starter' || type === 'legendary' || type === 'favorite' || gen === 'legendary' || gen === 'favorite';
+}
+
 export function isTypeCell(type: TypeAxisId, gen: GenAxisId): boolean {
   return isTypeName(type) && isGenNumber(gen);
 }

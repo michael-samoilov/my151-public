@@ -13,7 +13,7 @@ function picker(cid: string, fills: Record<string, number>, at: number) {
   return mergeFavoriteRecord(open, { cid, id: `${cid}-pick`, now: at, kind: 'progress', snapshot, events: [], ...PLATFORM });
 }
 
-async function stubPickerStore(page: Page) {
+async function stubPickerStore(page: Page, extra: [string, Record<string, number>][] = []) {
   const archived = new Set<string>();
   const posts: { cid: string; archived: boolean }[] = [];
   await page.route('**/api/submissions?**', (route) => {
@@ -23,6 +23,7 @@ async function stubPickerStore(page: Page) {
       picker('e2e-pick-b', { 'fire|1': 6, 'water|1': 7, 'starter|1': 4 }, now - 2 * MIN),
       picker('e2e-pick-c', { 'fire|1': 6, 'water|1': 9 }, now - 3 * MIN),
       picker('e2e-pick-d', { 'fire|1': 4 }, now - 4 * MIN),
+      ...extra.map(([cid, fills], at) => picker(cid, fills, now - (5 + at) * MIN)),
     ];
     const dex = {
       cid: 'e2e-pick-a', firstTs: now - 20 * MIN, firstAt: new Date(now - 20 * MIN).toISOString(), lastTs: now - MIN, lastAt: new Date(now - MIN).toISOString(),
@@ -151,6 +152,45 @@ test.describe('Picker Most picked @viewport', () => {
     await expect(page.getByTestId('favorites-grid-scroll')).toHaveAttribute('data-zoom', '2.5');
     const under = await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest('[data-testid^="favorites-cell-"]')?.getAttribute('data-testid'), [x, y]);
     expect(under).toBe('favorites-cell-psychic-5');
+  });
+});
+
+test.describe('Picker grid starter and legendary filter @viewport', () => {
+  test('the chip shows only on the grid and hides starters and legendaries outside their own rows', async ({ page }, testInfo) => {
+    await stubPickerStore(page, [
+      ['e2e-pick-e', { 'fire|1': 59, 'psychic|1': 122, 'legendary|1': 150 }],
+      ['e2e-pick-f', { 'psychic|1': 150 }],
+      ['e2e-pick-g', { 'psychic|1': 150 }],
+    ]);
+    const preview = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What people pick' }) });
+    await preview.getByRole('button', { name: 'Preference strength ›' }).click();
+    const views = page.getByRole('group', { name: 'Picker picks view' }).getByRole('button');
+    await expect(views).toHaveText(['Preference strength', 'Grid']);
+    const chip = page.getByRole('button', { name: 'Exclude starters & legendaries' });
+    await expect(chip).toHaveCount(0);
+    await page.getByRole('button', { name: 'Grid', exact: true }).click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'false');
+    const label = (key: string) => page.getByTestId(`favorites-cell-${key}`).getAttribute('aria-label');
+    const cells = ['fire-1', 'water-1', 'psychic-1', 'starter-1', 'legendary-1', 'favorite-1'];
+    const read = async () => Object.fromEntries(await Promise.all(cells.map(async (key) => [key, (await label(key))?.split(' · ')[2] ?? null])));
+    const before = await read();
+    expect(before).toEqual({ 'fire-1': 'Charizard', 'water-1': 'Blastoise', 'psychic-1': 'Mewtwo', 'starter-1': 'Charmander', 'legendary-1': 'Mewtwo', 'favorite-1': 'Charizard' });
+    await chip.click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('favorites-cell-fire-1')).toHaveAttribute('aria-label', /Arcanine$/);
+    const after = await read();
+    expect(after).toEqual({ 'fire-1': 'Arcanine', 'water-1': null, 'psychic-1': 'Mr. Mime', 'starter-1': 'Charmander', 'legendary-1': 'Mewtwo', 'favorite-1': 'Charizard' });
+    const shot = await page.screenshot();
+    await page.getByTestId('favorites-cell-fire-1').click();
+    await expect(page.getByTestId('admin-pick-summary')).toHaveText('1 of 7 charts');
+    const tiles = await page.getByTestId('favorites-picker').locator('[data-testid^="favorites-pick-"]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-testid')!.slice('favorites-pick-'.length))));
+    expect(tiles[0]).toBe(59);
+    expect(tiles.filter((id) => [4, 5, 6].includes(id))).toEqual([]);
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Preference strength', exact: true }).click();
+    await expect(chip).toHaveCount(0);
+    await testInfo.attach('picker-grid-filter.json', { body: JSON.stringify({ before, after, tiles }), contentType: 'application/json' });
+    await testInfo.attach('picker-grid-filter.png', { body: shot, contentType: 'image/png' });
   });
 });
 
