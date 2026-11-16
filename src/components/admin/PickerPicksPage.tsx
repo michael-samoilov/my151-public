@@ -17,7 +17,8 @@ import { prettyRows } from '@/favorites/model/prettyWrap';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 import { PicksPage } from './PicksDetailPage';
 import { Seg } from './ui';
-import { formatPreferenceStrength, rankCell, topFills, type PickCell } from './pickerPicks';
+import { cn } from '@/lib/utils';
+import { formatPreferenceStrength, rankCell, topFills, type PickCell, type PickFilter } from './pickerPicks';
 
 const MAX_COLS = 6;
 const CAPTION_PX = 16;
@@ -40,18 +41,20 @@ function PickCount({ picks, max, color }: { picks: number; max: number; color: s
 function PickSelector({
   cell,
   rows,
+  filter,
   charts,
   desktop,
   onClose,
 }: {
   cell: PickCell;
   rows: [number, number][];
+  filter: PickFilter;
   charts: number;
   desktop: boolean;
   onClose: () => void;
 }) {
   const { type, gen } = cell;
-  const ranked = useMemo(() => rankCell(cell, rows), [cell, rows]);
+  const ranked = useMemo(() => rankCell(cell, rows, filter), [cell, rows, filter]);
   const counts = useMemo(() => new Map(ranked.map((r) => [r.mon.id, r.picks])), [ranked]);
   const options = useMemo(() => ranked.map((r) => ({ mon: r.mon, shiny: false })), [ranked]);
   const max = ranked[0]?.picks ?? 0;
@@ -227,9 +230,11 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
 
 export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBack: () => void }) {
   const desktop = useIsDesktop();
-  const fills = useMemo(() => topFills(picks.cells), [picks.cells]);
+  const [filter, setFilter] = useState<PickFilter>('all');
+  const fills = useMemo(() => topFills(picks.cells, filter), [picks.cells, filter]);
   const [selected, setSelected] = useState<PickCell | null>(null);
   const [view, setView] = useState<'grid' | 'preference'>('preference');
+  const excluding = filter === 'no-starters-legendaries';
   const select = (type: TypeAxisId, gen: GenAxisId) => {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
@@ -240,6 +245,7 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
       key={cellKey(selected.type, selected.gen)}
       cell={selected}
       rows={picks.cells[cellKey(selected.type, selected.gen)] ?? []}
+      filter={filter}
       charts={picks.charts}
       desktop={desktop}
       onClose={() => setSelected(null)}
@@ -254,13 +260,28 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
         onBack={onBack}
         fill
         controls={
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <Seg
               ariaLabel="Picker picks view"
-              options={[{ key: 'grid', label: 'Grid' }, { key: 'preference', label: 'Preference strength' }]}
+              options={[{ key: 'preference', label: 'Preference strength' }, { key: 'grid', label: 'Grid' }]}
               value={view}
               onChange={(next) => { setSelected(null); setView(next); }}
             />
+            {view === 'grid' && (
+              <button
+                type="button"
+                aria-pressed={excluding}
+                onClick={() => setFilter(excluding ? 'all' : 'no-starters-legendaries')}
+                className={cn(
+                  'h-7 shrink-0 rounded-full border px-2.5 text-xs font-medium',
+                  excluding
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Exclude starters & legendaries
+              </button>
+            )}
           </div>
         }
       >

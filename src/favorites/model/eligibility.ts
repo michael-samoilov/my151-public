@@ -28,6 +28,10 @@ function isStarterSpeciesForm(mon: PickerMon): boolean {
   return isStarter(mon) || (owner != null && isStarter(owner));
 }
 
+export function isStarterOrLegendary(mon: PickerMon): boolean {
+  return isStarterSpeciesForm(mon) || isLegendaryEligible(mon);
+}
+
 export function eligibleFor(type: TypeAxisId, gen: GenAxisId, order: SortOrder = DEFAULT_SORT_ORDER): PickerMon[] {
   const list = allPickerMons();
   let out: PickerMon[] = [];
