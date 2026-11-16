@@ -166,10 +166,13 @@ test.describe('Picker grid starter and legendary filter @viewport', () => {
     await preview.getByRole('button', { name: 'Preference strength ›' }).click();
     const views = page.getByRole('group', { name: 'Picker picks view' }).getByRole('button');
     await expect(views).toHaveText(['Preference strength', 'Grid']);
-    const chip = page.getByRole('button', { name: 'Exclude starters & legendaries' });
+    const chip = page.getByRole('button', { name: 'No starters & legendaries' });
     await expect(chip).toHaveCount(0);
     await page.getByRole('button', { name: 'Grid', exact: true }).click();
     await expect(chip).toHaveAttribute('aria-pressed', 'false');
+    const gridTop = (await page.getByRole('button', { name: 'Grid', exact: true }).boundingBox())!.y;
+    const chipTop = (await chip.boundingBox())!.y;
+    if (page.viewportSize()!.width >= 360) expect(Math.abs(chipTop - gridTop)).toBeLessThan(2);
     const label = (key: string) => page.getByTestId(`favorites-cell-${key}`).getAttribute('aria-label');
     const cells = ['fire-1', 'water-1', 'psychic-1', 'starter-1', 'legendary-1', 'favorite-1'];
     const read = async () => Object.fromEntries(await Promise.all(cells.map(async (key) => [key, (await label(key))?.split(' · ')[2] ?? null])));
@@ -189,7 +192,7 @@ test.describe('Picker grid starter and legendary filter @viewport', () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Preference strength', exact: true }).click();
     await expect(chip).toHaveCount(0);
-    await testInfo.attach('picker-grid-filter.json', { body: JSON.stringify({ before, after, tiles }), contentType: 'application/json' });
+    await testInfo.attach('picker-grid-filter.json', { body: JSON.stringify({ before, after, tiles, gridTop, chipTop }), contentType: 'application/json' });
     await testInfo.attach('picker-grid-filter.png', { body: shot, contentType: 'image/png' });
   });
 });
