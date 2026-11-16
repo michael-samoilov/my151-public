@@ -40,24 +40,16 @@ The server stores no usage records from these browsers:
 Requests to a deploy URL other than my151.app store nothing either.
 The dashboard's counts differ from Vercel Web Analytics, which counts daily unique visitors by a rotating hash instead of a stored browser ID.
 
-The screenshots show live data for all time, captured on November 12, 2026.
+The screenshots show live data for all time, captured on a phone screen on November 16, 2026.
 `/?admin&demo` renders the dashboard from the synthetic fixtures in [`src/components/admin/__fixtures__/`](src/components/admin/__fixtures__), with no token and no admin API call.
 
-![The Suite tab of the admin dashboard on a desktop screen, with a line chart of active users from June to November and a heatmap of active hours by weekday.](docs/readme/admin-dashboard-desktop.webp)
+<p>
+  <img src="docs/readme/admin-dashboard-phone.webp" width="260" alt="The Suite tab of the admin dashboard on a phone: a line chart of daily and weekly active users from June to November, and a heatmap of active hours by weekday.">
+  <img src="docs/readme/admin-flows-phone.webp" width="260" alt="The Flows panel on a phone: Sankey diagrams of the Dex Builder and Gym Leader Maker funnels, from the first visit to bounced, completed, and exported builds.">
+  <img src="docs/readme/admin-search-phone.webp" width="260" alt="The Search tab on a phone: totals for Google clicks, impressions, click-through rate, and average position above a line chart of daily clicks and impressions.">
+</p>
 
-*Live data, November 12, 2026. The Suite tab on a desktop screen, 1280 pixels wide.*
-
-![The Flows panel of the admin dashboard, with a Sankey diagram of the Dex Builder funnel from the intro screen to bounced, completed, and exported Pokédexes.](docs/readme/admin-dashboard-flows-desktop.webp)
-
-*Live data, November 12, 2026. The Dex Builder funnel in the Flows panel.*
-
-![The Search tab of the admin dashboard on a desktop screen, with totals for Google clicks, impressions, click-through rate, and average position above a line chart of daily clicks and impressions.](docs/readme/admin-search-desktop.webp)
-
-*Live data, November 12, 2026. The Search tab with Google Search Console data. The keyword and page tables are hidden.*
-
-<img src="docs/readme/admin-dashboard-phone.webp" width="390" alt="The admin dashboard on a phone screen, with the active-users chart, the active-hours heatmap, and the section bar at the bottom.">
-
-*Live data, November 12, 2026. The Suite tab on a phone screen, 390 pixels wide.*
+*Live data, November 16, 2026, on a phone screen 390 pixels wide: the Suite tab, the usage funnels in the Flows panel, and the Search tab. The Search tab's keyword and page tables are hidden.*
 
 ## Start here
 
