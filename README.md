@@ -129,7 +129,7 @@ npm run ci:fast
 
 For the final candidate, run `npm run ci:affected -- --base REF` with the intended production base.
 Without a `--base`, the runner compares with the production branch, or with `origin/main` in a clone that does not have it.
-The full browser suite runs in a separate full-suite runner after each release and every night, not in the working session.
+The full browser suite (about 1,000 tests) runs after each release and every night, split across four parallel runners that finish in about 10 minutes. Before a merge, a change runs the specs that the test map selects.
 [Build Verification in CLAUDE.md](CLAUDE.md#build-verification) owns check selection, exceptions, receipts, and deployment requirements.
 [AGENTS.md](AGENTS.md) has the repository's test rules.
 `npm run ci:fast` runs Playwright browser journeys, so install a browser first with `npx playwright install chromium`.
@@ -140,7 +140,6 @@ The full browser suite runs in a separate full-suite runner after each release a
 - **One browser per save.** Each tool saves to one browser's local storage. There is no sync or backup, so a cleared browser or a new device starts empty.
 - **No local API.** Vite does not run the functions in `api/`. The admin reports need an Upstash Redis database and an admin token, or the synthetic data at `/?admin&demo`.
 - **One user per browser.** The dashboard counts a user for each browser ID, so one person on two devices counts as two users.
-- **Full suite after release.** The full browser suite (about 1,000 tests) runs after each release, not before each merge. Before a merge, a change runs the specs that the test map selects.
 - **Development-tool advisories.** `npm audit` lists findings in build and test tools only. `npm audit --omit=dev` reports none.
 - **Unverified counts.** The dashboard counts come from unauthenticated beacons, rate-limited per network. They are not verified identities.
 
