@@ -273,13 +273,13 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
                 aria-pressed={excluding}
                 onClick={() => setFilter(excluding ? 'all' : 'no-starters-legendaries')}
                 className={cn(
-                  'h-7 shrink-0 rounded-full border px-2.5 text-xs font-medium',
+                  'shrink-0 rounded-full border px-2.5 py-1 text-[0.7rem] font-semibold transition-colors',
                   excluding
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border bg-card text-muted-foreground hover:text-foreground',
                 )}
               >
-                Exclude starters & legendaries
+                No starters & legendaries
               </button>
             )}
           </div>
