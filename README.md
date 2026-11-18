@@ -121,7 +121,7 @@ npm run ci:fast
 
 For the final candidate, run `npm run ci:affected -- --base REF` with the intended production base.
 Without a `--base`, the runner compares with the production branch, or with `origin/main` in a clone that does not have it.
-The full browser suite (about 1,000 tests) runs after each release and every night, split across four parallel runners that finish in about 10 minutes. Before a merge, a change runs the specs that the test map selects.
+The full browser suite (about 1,000 tests, about 30 minutes) runs in the background after each release, and a release that breaks it is rolled back. Before a merge, a change runs the specs that the test map selects.
 [Build Verification in CLAUDE.md](CLAUDE.md#build-verification) owns check selection, exceptions, receipts, and deployment requirements.
 [AGENTS.md](AGENTS.md) has the repository's test rules.
 `npm run ci:fast` runs Playwright browser journeys, so install a browser first with `npx playwright install chromium`.

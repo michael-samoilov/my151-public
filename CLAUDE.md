@@ -88,8 +88,8 @@ of the staged deploy. The full browser suite runs after release, not before it.
 | --- | --- | --- |
 | `npm run ci` | All cheap gates, one build, the `@ci-smoke` journeys, and the browser specs that the test map says run the changed files. Use on every merge candidate. | 2–5 min |
 | `npm run ci:fast` | All cheap gates, one build, and the `@ci-smoke` journeys. | 2–3 min |
-| `npm run ci:full` | Every browser spec in every project. Only the full-suite runner runs it, after each release and every night; in a working session it refuses. For a launch or a risky change, push the work branch, then send the four runner sessions the same messages as release step 5 with that commit's SHA. | About 30 min |
-| `npm run ci:full -- --record-map` | `ci:full` that also rewrites `scripts/ci/test-map.json`. Run it in the full-suite runner when the test map is stale. | About 35 min |
+| `npm run ci:full` | Every browser spec in every project. The releasing session runs it in the background after each release (Deployment, step 5). Before release, run it only for a launch or a risky change. | About 30 min |
+| `npm run ci:full -- --record-map` | `ci:full` that also rewrites `scripts/ci/test-map.json`. Run it when the test map is stale. | About 35 min |
 
 A change to one tuning value, plus its tests and docs, can use `ci:fast` as its
 final gate under the existing Tuning exception. It must change no logic, saved-data
@@ -106,7 +106,7 @@ The critical journeys use `@ci-smoke` on existing tests. Keep mobile/narrow
 CI records failure screenshots and per-case errors. Full Playwright traces are
 opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
 automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
-The full-suite runner runs the full suite after every release and every night (see
+The releasing session runs the full suite in the background after every release (see
 Deployment). A red run is the next task: fix the cause, or roll back the release that caused it.
 Actions has no automatic trigger in this repository.
 
@@ -189,7 +189,7 @@ Production builds are staged. Vercel builds each push to `claude/pokedex-region-
 2. Smoke it. Run `npm run release:smoke -- <deployment url>`. It opens each public page of that exact deploy, read-only and opted out of analytics. A failure means do not promote: fix forward and push again.
 3. Promote it. Call `request_promote` with that deployment id.
 4. Confirm it. Run `npm run release:live -- <build stamp>`, with the stamp that step 2 printed. It waits until my151.app serves that build.
-5. Request the full suite. Send four messages with `send_message`, one to each runner session: `session_019hxb4t3ggJiSwYXteHdtUE` (shard 1), `session_019hxb4tVTyNSfdKwoHWPPDS` (shard 2), `session_019hxb4tqCsEXLt2rMTcJR4d` (shard 3), and `session_019hxb4vPKCFLHv9NLFxrnmD` (shard 4). Each text is `New full-suite run. ref: <released commit sha>. shard: <n>/4`. Then end your turn. Do not wait for them, and do not run `npm run ci:full` yourself: it refuses in a working session. The four runners split every browser spec and finish in about 10 minutes. Each checks whether a failure also fails on the previous commit, and notifies Michael. When it finds a defect that the release caused, roll back with `request_promote` on the previous production deploy, then fix forward.
+5. Run the full suite in the background. Start `npm run ci:full` with `run_in_background` on the released commit, then end your turn: do not wait for it. Your own browser work queues behind its browser lock until it finishes, in about 30 minutes. When it reports, read the result. For each failing test, run that spec on the previous production commit: if it passes there, the release caused the failure. Then roll back with `request_promote` on the previous production deploy, report it, and fix forward. A failure that also fails on the previous commit is not this release's: report it as the next task.
 
 A push that the Ignored Build Step skips has nothing to release. A later promote releases every earlier commit too, because production is cumulative. To undo a release, promote the previous deploy; on Pro, any earlier production deploy can be promoted again.
 

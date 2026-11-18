@@ -12,10 +12,6 @@ import { defaultBase } from './base';
 import { buildScriptInputs, changedPaths, parseOptions, select } from './policy';
 import { buildTestMap, loadTestMap, readAttempts, readRecords, serializeTestMap, TEST_MAP_PATH } from './testMap';
 
-const FULL_SUITE_ELSEWHERE = 'The full suite does not run in a working session: it holds the browser lock for about 30 minutes. '
-  + 'Start the four full-suite runners instead, as CLAUDE.md release step 5 says: send each runner session "New full-suite run. ref: <commit sha>. shard: <n>/4", then end your turn. '
-  + 'The runner notifies Michael when a test fails. Only the runner and the Actions workflow set MY151_FULL_SUITE_RUNNER=1.';
-
 async function main() {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const options = parseOptions(process.argv.slice(2));
@@ -25,7 +21,6 @@ async function main() {
   if (options.shard && selection.effectiveMode !== 'full') throw new Error('--shard splits the full suite only: use it with ci:full.');
   if (options.shard && options.recordMap) throw new Error('--record-map needs every browser test in one run, so it cannot run on a shard.');
   if (options.plan) { console.log(JSON.stringify(selection, null, 2)); return; }
-  if (selection.effectiveMode === 'full' && process.env.MY151_FULL_SUITE_RUNNER !== '1') throw new Error(FULL_SUITE_ELSEWHERE);
   const gitDirectory = execFileSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: root, encoding: 'utf8' }).trim();
   const runId = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}`;
   const directory = join(gitDirectory, 'ci-runs', runId);

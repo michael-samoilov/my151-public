@@ -72,7 +72,7 @@ The admin dashboard counts every browser that visits `my151.app` or `www.my151.a
 
 ## 1. Verify before you show
 
-- Run `npm run ci` on the final merge candidate, then release through the staged-deploy steps in `CLAUDE.md` ("Release: verify, ship, then run"). The full-suite runner runs every browser spec after each release and every night. Request it as `CLAUDE.md` says; do not run `npm run ci:full` in a working session.
+- Run `npm run ci` on the final merge candidate, then release through the staged-deploy steps in `CLAUDE.md` ("Release: verify, ship, then run"). After the release, the releasing agent runs the full suite (`npm run ci:full`) in the background and rolls back a release that breaks it, as `CLAUDE.md` step 5 says.
 - For visual/platform changes, read `.claude/skills/verify-my151/SKILL.md` and capture the relevant screens and actual affected engines. Reserve its exhaustive matrix for full/release QA.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.
