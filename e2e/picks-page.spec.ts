@@ -178,7 +178,7 @@ test.describe('admin picks page', () => {
     await expect(evil.locator('[data-face-id="129"]')).toHaveCount(1);
   });
 
-  test('league tab opens league picks: aces, then gym types in type order, in league counts', async ({ page }, testInfo) => {
+  test('league tab opens league picks: aces, then gym types by gym count, in league counts', async ({ page }, testInfo) => {
     await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
     await page.goto('/?admin&demo');
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'League', exact: true }).click();
@@ -188,13 +188,23 @@ test.describe('admin picks page', () => {
     const sections = await page.locator('[data-section-id]').evaluateAll((els) =>
       els.map((el) => ({
         id: el.getAttribute('data-section-id') ?? '',
+        heading: el.firstElementChild?.textContent ?? '',
         counts: [...el.querySelectorAll('[data-index-meter]')].map((m) => m.getAttribute('data-index-meter')),
       })),
     );
     const ids = sections.map((s) => s.id);
     expect(ids[0]).toBe('ace');
     expect(ids).toContain('none');
-    expect(ids.slice(1)).toEqual([...TYPE_NAMES, 'none'].filter((t) => ids.includes(t)));
+    expect(sections[0].heading).toBe('Ace Pokémon');
+    const typed = sections.slice(1).map((s) => {
+      const match = /^(.+) \((\d+)\)$/.exec(s.heading);
+      expect(match, s.heading).not.toBeNull();
+      return { id: s.id, gyms: Number(match?.[2]) };
+    });
+    const typeOrder: string[] = [...TYPE_NAMES, 'none'];
+    const byGyms = [...typed].sort((a, b) => b.gyms - a.gyms || typeOrder.indexOf(a.id) - typeOrder.indexOf(b.id));
+    expect(typed.map((t) => t.id)).toEqual(byGyms.map((t) => t.id));
+    expect(typed.map((t) => t.id)).not.toEqual(typeOrder.filter((t) => ids.includes(t)));
     for (const s of sections) {
       expect(s.counts.length).toBeGreaterThan(0);
       for (const c of s.counts) expect(c).toMatch(/^[1-9]\d*$/);

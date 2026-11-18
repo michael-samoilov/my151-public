@@ -460,10 +460,10 @@ export function LeaguePicksPage({
         <p className="text-xs text-muted-foreground">No picks yet.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {sections.map(({ id, lines }) => {
+          {sections.map(({ id, lines, gyms }) => {
             const { name, color } = leagueSectionLook(id);
             return (
-              <SectionBox key={id} sectionId={id} name={name} color={color}>
+              <SectionBox key={id} sectionId={id} name={gyms === null ? name : `${name} (${gyms})`} color={color}>
                 <DualGrids columns={{ most: lines, least: [] }} barColor={color.stroke} countMode unit="leagues" />
               </SectionBox>
             );

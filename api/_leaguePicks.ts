@@ -5,6 +5,7 @@ export type LeaguePickRows = [pokemonId: string, leagues: number][];
 export interface LeaguePicks {
   ace: LeaguePickRows;
   byType: Record<string, LeaguePickRows>;
+  gyms: Record<string, number>;
 }
 
 function fieldedMember(line: LeagueLineShape): number {
@@ -33,6 +34,7 @@ function ranked(counts: Map<number, number>): LeaguePickRows {
 export function leaguePicks(records: readonly Pick<LeagueRecord, 'latestCards'>[]): LeaguePicks {
   const ace = new Map<number, number>();
   const byType = new Map<string, Map<number, number>>();
+  const gyms: Record<string, number> = {};
   const bump = (counts: Map<number, number>, ids: Set<number>) => {
     for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
   };
@@ -44,6 +46,7 @@ export function leaguePicks(records: readonly Pick<LeagueRecord, 'latestCards'>[
       const a = aceMember(card);
       if (a !== null) aces.add(a);
       if (card.t === undefined) continue;
+      gyms[card.t] = (gyms[card.t] ?? 0) + 1;
       let ids = seated.get(card.t);
       if (!ids) seated.set(card.t, (ids = new Set()));
       for (const line of card.l) ids.add(fieldedMember(line));
@@ -56,7 +59,7 @@ export function leaguePicks(records: readonly Pick<LeagueRecord, 'latestCards'>[
     }
   }
 
-  const out: LeaguePicks = { ace: ranked(ace), byType: {} };
+  const out: LeaguePicks = { ace: ranked(ace), byType: {}, gyms };
   for (const [type, counts] of byType) {
     if (counts.size > 0) out.byType[type] = ranked(counts);
   }

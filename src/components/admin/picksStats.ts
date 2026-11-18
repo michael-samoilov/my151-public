@@ -395,6 +395,7 @@ export type LeaguePicksSectionId = 'ace' | TypeName | 'none';
 interface LeaguePicksSection {
   id: LeaguePicksSectionId;
   lines: RankedLine[];
+  gyms: number | null;
 }
 
 function countLines(rows: LeaguePickRows): RankedLine[] {
@@ -408,15 +409,13 @@ function countLines(rows: LeaguePickRows): RankedLine[] {
 }
 
 export function leaguePicksSections(picks: LeaguePicks): LeaguePicksSection[] {
-  const order: [LeaguePicksSectionId, LeaguePickRows | undefined][] = [
-    ['ace', picks.ace],
-    ...TYPE_NAMES.map((t): [TypeName, LeaguePickRows | undefined] => [t, picks.byType[t]]),
-    ['none', picks.byType.none],
-  ];
-  const out: LeaguePicksSection[] = [];
-  for (const [id, rows] of order) {
-    const lines = countLines(rows ?? []).slice(0, LEAGUE_PICKS_MAX_ROWS * PICKS_OFF_COLS);
-    if (lines.length > 0) out.push({ id, lines });
-  }
-  return out;
+  const section = (id: LeaguePicksSectionId, rows: LeaguePickRows | undefined, gyms: number | null) => ({
+    id,
+    lines: countLines(rows ?? []).slice(0, LEAGUE_PICKS_MAX_ROWS * PICKS_OFF_COLS),
+    gyms,
+  });
+  const typed = [...TYPE_NAMES, 'none' as const]
+    .map((t) => section(t, picks.byType[t], picks.gyms[t] ?? 0))
+    .sort((a, b) => (b.gyms ?? 0) - (a.gyms ?? 0));
+  return [section('ace', picks.ace, null), ...typed].filter((s) => s.lines.length > 0);
 }

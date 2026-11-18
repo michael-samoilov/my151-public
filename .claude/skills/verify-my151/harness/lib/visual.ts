@@ -306,6 +306,14 @@ export const SCREENS: Screen[] = [
   },
   { id: 'not-found', path: '/404.html' },
   { id: 'admin-demo', path: '/?admin&demo' },
+  {
+    id: 'admin-league-picks', path: '/?admin&demo',
+    act: async (page) => {
+      await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'League', exact: true }).click();
+      await page.getByRole('button', { name: /Most picked/ }).click();
+      await page.locator('[data-section-id="ace"]').waitFor({ timeout: 30_000 });
+    },
+  },
   { id: 'favorites-selector', path: '/favorite-pokemon-picker', act: openPickerCell('water-1') },
   {
     id: 'favorites-selector-empty', path: '/favorite-pokemon-picker',

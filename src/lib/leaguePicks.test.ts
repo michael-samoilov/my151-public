@@ -16,6 +16,14 @@ describe('leaguePicks', () => {
     expect(picks.byType.electric).toEqual([['25', 2], ['82', 1]]);
   });
 
+  it('counts gyms, not leagues, per chosen type, and skips gyms with no type', () => {
+    const picks = leaguePicks([
+      league({ i: 0, t: 'electric', l: [{ b: [25] }] }, { i: 3, t: 'electric', l: [] }, { i: 4, l: [{ b: [1] }] }),
+      league({ i: 5, t: 'electric', l: [{ b: [81] }] }, { i: 6, t: 'none', l: [{ b: [4] }] }),
+    ]);
+    expect(picks.gyms).toEqual({ electric: 3, none: 1 });
+  });
+
   it('keeps an unchosen type out of every type section, and gives "no type" its own', () => {
     const picks = leaguePicks([
       league({ i: 0, l: [{ b: [1] }], ace: 1, aceId: 1 }, { i: 1, t: 'none', l: [{ b: [4] }] }),
