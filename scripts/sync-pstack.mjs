@@ -47,7 +47,11 @@ relink(skills, readdirSync(join(plugin, 'skills')).map(name => ({ name, path: jo
 relink(join(root, '.claude/agents'), ['agents'].flatMap(group =>
   readdirSync(join(plugin, group)).map(name => ({ name, path: join(plugin, group, name) }))))
 
-const review = join(skills, 'thermo-nuclear-code-quality-review/SKILL.md')
-writeFileSync(review, readFileSync(join(plugin, 'skills/thermo-nuclear-code-quality-review/SKILL.md'), 'utf8').replace(/^---\n/, '---\ndisable-model-invocation: true\n'))
+const reviewDir = join(skills, 'thermo-nuclear-code-quality-review')
+if (lstatSync(reviewDir).isSymbolicLink()) {
+  rmSync(reviewDir)
+  mkdirSync(reviewDir)
+}
+writeFileSync(join(reviewDir, 'SKILL.md'), readFileSync(join(plugin, 'skills/thermo-nuclear-code-quality-review/SKILL.md'), 'utf8').replace(/^---\n/, '---\ndisable-model-invocation: true\n'))
 
 console.log(`Synced pstack ${version} @ ${commit}: ${tracked.length} files`)
