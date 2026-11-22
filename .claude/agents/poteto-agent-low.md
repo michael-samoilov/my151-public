@@ -1,1 +1,0 @@
-../vendor/open-pstack/upstream/plugins/pstack/effort-agents/poteto-agent-low.md

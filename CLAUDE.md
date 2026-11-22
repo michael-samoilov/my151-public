@@ -260,7 +260,7 @@ routing instruction. Enter `/how`, `/architect`, `/interrogate`, `/tdd`, or
 
 Upstream plugin names use the `pstack:` prefix. This checkout exposes bare
 skill and agent names. Resolve `pstack:poteto-mode` as `poteto-mode` and
-`pstack:effort-high` as `effort-high`. Apply this mapping to every plugin skill
+`pstack:poteto-agent` as `poteto-agent`. Apply this mapping to every plugin skill
 and agent reference. The routing hook applies it to its own output.
 
 Two pstack names differ in this repository. Where pstack names `main` or trunk

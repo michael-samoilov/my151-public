@@ -10,7 +10,7 @@ paths:
 
 This extends "pstack" in `CLAUDE.md`.
 
-This repo vendors pstack-claude, a third-party MIT project, version 0.9.84.
+This repo vendors pstack-claude, a third-party MIT project, version 0.9.146.
 The complete upstream distribution lives in
 `.claude/vendor/open-pstack/upstream/`. Skills and agents link to that snapshot.
 Codex discovers the same skills through `.agents/skills`.

@@ -1,3 +1,4 @@
+import { classifySuite } from "./check-suites.ts";
 import { baseRefTargetOid, text } from "./landing.ts";
 import { spawn } from "node:child_process";
 import { DeadlineExceeded, type WatchDeadline } from "./deadline.ts";
@@ -114,16 +115,28 @@ export async function runJson(
   argv: readonly [string, ...string[]],
   deadline: WatchDeadline
 ): Promise<unknown> {
-  const result = await run(argv, deadline);
+  return commandJson(await run(argv, deadline), argv.join(" "));
+}
+function commandJson(result: CommandResult, label: string): unknown {
+  if (
+    result.code !== 0 &&
+    firstLine(result.stderr).includes(
+      "GitHub GraphQL is not available from Claude Code sessions"
+    )
+  )
+    throw new WatcherQueryError({
+      kind: "graphql-refused",
+      retryable: false,
+      detail: `This Claude Code session refuses GitHub GraphQL, which watch-pr and ship-pr read the PR through. ${firstLine(result.stderr)}`,
+    });
   if (result.code !== 0)
     throw new WatcherQueryError({
       kind: "command-exit",
       retryable: true,
       code: result.code,
-      detail:
-        firstLine(result.stderr) || `${argv.join(" ")} exited ${result.code}`,
+      detail: firstLine(result.stderr) || `${label} exited ${result.code}`,
     });
-  return parseJson(result.stdout, argv.join(" "));
+  return parseJson(result.stdout, label);
 }
 function raw(value: unknown): string {
   try {
@@ -134,7 +147,7 @@ function raw(value: unknown): string {
 }
 function missing(path: string, value?: unknown): never {
   throw new WatcherQueryError({
-    kind: "missing-key",
+    kind: "missing-field",
     retryable: true,
     detail:
       value === undefined
@@ -301,23 +314,22 @@ export function parseFastCheck(value: unknown): T.Check {
   const details = checkDetails(object, "name");
   const state = string(object.state, "check.state").toUpperCase();
   const bucket = string(object.bucket, "check.bucket");
-  if (
-    bucket === "fail" ||
-    ["FAILURE", "ERROR", "ACTION_REQUIRED"].includes(state)
-  )
+  if (state === "ACTION_REQUIRED") return gateOr("failed", details, state);
+  if (bucket === "fail" || ["FAILURE", "ERROR"].includes(state))
     return { ...details, kind: "failed", reportedState: state };
   if (bucket === "pending" && IN_FLIGHT_STATES.has(state))
-    return pendingOrGate(details, state);
+    return gateOr("pending", details, state);
   if (bucket === "pass")
     return { ...details, kind: "passed", reportedState: state };
   if (bucket === "skipping")
     return { ...details, kind: "skipped", reportedState: state };
   return { ...details, kind: "failed", reportedState: state };
 }
-// The owner-approval gate is excluded from pending everywhere, so the rule has
-// one home. Classifying it as pending on either read path makes the watcher
-// wait on a human, which is the behaviour #172004 removed from the Python.
-function pendingOrGate(
+// Every read path classifies the owner-approval gate here, so the rule has one
+// home. A gate that is pending or waits on an owner approval must not count as
+// pending or failed, or the watcher waits on a human.
+function gateOr(
+  kind: "pending" | "failed",
   details: {
     readonly name: string;
     readonly description: string;
@@ -333,7 +345,7 @@ function pendingOrGate(
         name: "Code Review Gate",
         reportedState,
       }
-    : { ...details, kind: "pending", reportedState };
+    : { ...details, kind, reportedState };
 }
 export function mapRollupNode(value: unknown): T.Check | null {
   const object = record(value, "rollup node");
@@ -353,22 +365,19 @@ export function mapRollupNode(value: unknown): T.Check | null {
         ? object.conclusion.toUpperCase()
         : "";
     if (status !== "COMPLETED")
-      return pendingOrGate({ ...details, link }, "PENDING");
+      return gateOr("pending", { ...details, link }, "PENDING");
     if (conclusion === "SUCCESS")
       return { ...details, link, kind: "passed", reportedState: "SUCCESS" };
     if (conclusion === "NEUTRAL" || conclusion === "SKIPPED")
       return { ...details, link, kind: "skipped", reportedState: conclusion };
-    return {
-      ...details,
-      link,
-      kind: "failed",
-      reportedState: conclusion === "ACTION_REQUIRED" ? conclusion : "FAILURE",
-    };
+    if (conclusion === "ACTION_REQUIRED")
+      return gateOr("failed", { ...details, link }, conclusion);
+    return { ...details, link, kind: "failed", reportedState: "FAILURE" };
   }
   const state =
     typeof object.state === "string" ? object.state.toUpperCase() : "";
   if (state === "PENDING" || state === "EXPECTED")
-    return pendingOrGate({ ...details, link }, "PENDING");
+    return gateOr("pending", { ...details, link }, "PENDING");
   return state === "SUCCESS"
     ? { ...details, link, kind: "passed", reportedState: state }
     : { ...details, link, kind: "failed", reportedState: state || "FAILURE" };
@@ -741,8 +750,90 @@ export class GhGitHubReader implements T.GitHubReader {
       };
     });
   }
+  async unsettledSuites(
+    context: T.PrContext,
+    head: string,
+    checksRead: T.CheckRead["kind"],
+    expectedApps: readonly string[]
+  ): Promise<T.SuiteRead> {
+    const result = await this.run([
+      "gh",
+      "api",
+      "--paginate",
+      "--slurp",
+      `repos/${context.owner}/${context.repo}/commits/${head}/check-suites?per_page=100`,
+    ]);
+    if (
+      result.code !== 0 &&
+      firstLine(result.stderr) === "unknown flag: --slurp"
+    )
+      throw new WatcherQueryError({
+        kind: "unsupported-gh",
+        retryable: false,
+        detail: "gh api rejected --slurp. Upgrade GitHub CLI to 2.48 or later.",
+      });
+    return unsettledSuiteChecks(
+      commandJson(result, "gh api check-suites"),
+      head,
+      checksRead,
+      expectedApps
+    );
+  }
 }
 
+export function unsettledSuiteChecks(
+  pages: unknown,
+  head: string,
+  checksRead: T.CheckRead["kind"],
+  expectedApps: readonly string[] = []
+): T.SuiteRead {
+  const checks: T.SuiteCheck[] = [];
+  const queuedWithoutRuns: T.SuiteApp[] = [];
+  const slurped = list(pages, "check suite pages");
+  if (slurped.length === 0) missing("check suite pages", slurped);
+  for (const page of slurped) {
+    for (const value of list(at(page, ["check_suites"]), "check_suites")) {
+      const suite = record(value, "check suite");
+      if (string(suite.head_sha, "check suite.head_sha") !== head)
+        missing(
+          "check suite.head_sha must match the queried head",
+          suite.head_sha
+        );
+      const runs = suite.latest_check_runs_count;
+      if (checksRead === "reported") {
+        if (typeof runs !== "number" || !Number.isSafeInteger(runs) || runs < 0)
+          missing("check suite.latest_check_runs_count", runs);
+        // Reported checks already cover these runs, including superseded ones.
+        if (runs > 0) continue;
+      }
+      const status = text(suite.status, "check suite.status");
+      const state =
+        status === "completed"
+          ? {
+              conclusion: text(
+                suite.conclusion,
+                "check suite.conclusion of a completed suite"
+              ),
+            }
+          : { status };
+      const app = isRecord(suite.app) ? suite.app : {};
+      const suiteApp = {
+        name: typeof app.name === "string" ? app.name : "Unknown app",
+        slug: typeof app.slug === "string" ? app.slug : null,
+      };
+      const check = classifySuite(
+        state,
+        suiteApp,
+        runs === 0,
+        checksRead,
+        suiteApp.slug !== null && expectedApps.includes(suiteApp.slug)
+      );
+      if (check === "uncounted") queuedWithoutRuns.push(suiteApp);
+      else if (check !== null) checks.push(check);
+    }
+  }
+  return { checks, queuedWithoutRuns };
+}
 export async function resolveChecks(
   reader: T.GitHubReader,
   context: T.PrContext
@@ -772,7 +863,7 @@ export async function resolveChecks(
   // credential that cannot see checks, and a rollup that exists but maps to no
   // check can hold a context type this reader does not know.
   if (fast.kind === "none-reported" && !headHasRollup)
-    return { kind: "no-checks" };
+    return { kind: "no-checks", checks: [] };
   const suffix =
     fast.kind === "unusable"
       ? `fast path exit=${fast.exitCode}; GraphQL rollup was empty${firstLine(fast.stderr) ? `; ${firstLine(fast.stderr)}` : ""}`

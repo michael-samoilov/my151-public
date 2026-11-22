@@ -30,13 +30,14 @@ for (const skill of readdirSync(join(plugin, 'skills'))) {
     assert.equal(realpathSync(local), upstream, `Skill discovery drift: ${skill}`)
   }
 }
-for (const group of ['agents', 'effort-agents']) {
+for (const group of ['agents']) {
   for (const name of readdirSync(join(plugin, group))) {
     assert.equal(realpathSync(join(root, '.claude/agents', name)), join(plugin, group, name))
   }
 }
 assert.equal(realpathSync(join(root, '.agents/skills')), join(root, '.claude/skills'))
-assert.equal(readdirSync(join(root, '.claude/agents')).filter(name => /^pstack-(fable|opus)-/.test(name)).length, 0, 'Obsolete model agents remain')
+for (const name of readdirSync(join(root, '.claude/agents'))) assert(existsSync(join(root, '.claude/agents', name)), `Dangling agent link: ${name}`)
+for (const name of readdirSync(join(root, '.claude/skills'))) assert(existsSync(join(root, '.claude/skills', name)), `Dangling skill link: ${name}`)
 const settings = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8'))
 const commands = settings.hooks.SessionStart.flatMap(entry => entry.hooks.map(hook => hook.command))
 assert(commands.some(command => command.includes('google-style action-first-replies work-report')), 'Project style hook missing')
