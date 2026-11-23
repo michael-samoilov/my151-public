@@ -35,9 +35,17 @@ const brotli = (file) =>
     params: { [constants.BROTLI_PARAM_QUALITY]: VERCEL_BROTLI_QUALITY },
   }).length;
 
-// platform: Rolldown can merge a dynamic catalog into a shared chunk with no source key, so this resolves its emitted glob loader.
+function sharedChunkNamedFor(key) {
+  const name = basename(key, extname(key));
+  const matches = Object.entries(manifest).filter(([id, chunk]) => id.startsWith('_') && !chunk.src && chunk.name === name);
+  return matches.length === 1 ? matches[0][1] : undefined;
+}
+
+// platform: Rolldown can key a lazy module's chunk by its file name, or merge a dynamic catalog into a shared chunk with no source key, so this resolves both.
 function manifestChunk(key) {
   if (manifest[key]) return manifest[key];
+  const named = sharedChunkNamedFor(key);
+  if (named) return named;
   const catalog = /^src\/i18n\/(names|picker-names)\/(.+)$/.exec(key);
   if (!catalog) return undefined;
   const [, directory, filename] = catalog;
