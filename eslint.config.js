@@ -44,7 +44,7 @@ export default defineConfig([
         paths: builtinModules.map(name => ({ name, allowTypeImports: true })),
         patterns: [
           {
-            regex: '^(?:node:|@upstash(?:/|$)|@vercel/node(?:/|$))',
+            regex: '^(?:node:|@upstash(?:/|$))',
             allowTypeImports: true,
             message: 'Keep server runtime dependencies out of browser code.',
           },

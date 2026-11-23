@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { redis, isReadOnlyDeployment, parseClientId, requireAdmin } from './_shared.js';
 import { ARCHIVED_KEY, bareCid } from './_archive.js';
 import { adjustFunnelExclusions } from './_funnelExclusions.js';

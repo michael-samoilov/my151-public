@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getNetworkKey, isReadOnlyDeployment, parseClientId } from './_shared.js';
 import { parseAutoFlag } from './_automation.js';

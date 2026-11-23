@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { bearerMatches } from './_shared.js';
 import { runRetention } from './_retention.js';
 

@@ -132,7 +132,6 @@ The full browser suite (about 1,000 tests, about 30 minutes) runs in the backgro
 - **One browser per save.** Each tool saves to one browser's local storage. There is no sync or backup, so a cleared browser or a new device starts empty.
 - **No local API.** Vite does not run the functions in `api/`. The admin reports need an Upstash Redis database and an admin token, or the synthetic data at `/?admin&demo`.
 - **One user per browser.** The dashboard counts a user for each browser ID, so one person on two devices counts as two users.
-- **Development-tool advisories.** `npm audit` lists findings in build and test tools only. `npm audit --omit=dev` reports none.
 - **Unverified counts.** The dashboard counts come from unauthenticated beacons, rate-limited per network. They are not verified identities.
 
 ## About this repository

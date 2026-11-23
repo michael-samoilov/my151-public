@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../../api/_vercel';
 const mocks=vi.hoisted(()=>({hget:vi.fn(),eval:vi.fn(),hincrby:vi.fn(),limit:vi.fn(),readOnly:vi.fn()}));
 vi.mock('@upstash/ratelimit',()=>({Ratelimit:class{static fixedWindow(){return{};}limit=mocks.limit;}}));
 vi.mock('../../api/_shared',()=>({redis:{hget:mocks.hget,eval:mocks.eval,hincrby:mocks.hincrby},MAX_CLIENTS:50_000,parseClientId:(v:unknown)=>v,bodyTooLarge:()=>false,admitNewClient:async()=>true,noteNewClient:async()=>undefined,

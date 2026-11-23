@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView.js';
 import type { SearchPerformanceSnapshot, SearchSnapshotPart } from '../src/lib/searchPerformance.js';
 import { buildDailySearchSnapshot, buildHourlySearchSnapshot } from './_searchPerformance.js';

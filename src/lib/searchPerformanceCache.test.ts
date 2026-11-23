@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../../api/_vercel';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SearchProviderKey, SearchProviderSnapshot, SearchProviderStatus, SearchSnapshotPart } from './searchPerformance';
 

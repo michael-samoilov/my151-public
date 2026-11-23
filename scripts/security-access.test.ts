@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {mkdirSync, writeFileSync, existsSync} from 'node:fs';
 import {Socket} from 'node:net';
 import {join} from 'node:path';
-import type {VercelRequest, VercelResponse} from '@vercel/node';
+import type {VercelRequest, VercelResponse} from '../api/_vercel';
 
 const local = vi.hoisted(() => ({
   hashes: new Map<string, Record<string, unknown>>(),

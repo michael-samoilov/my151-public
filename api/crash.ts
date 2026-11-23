@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { Ratelimit } from '@upstash/ratelimit';
 import { MAX_CONTEXT_CODE_UNITS, sanitizeContext } from './feedback.js';
 import { CRASH_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';

@@ -1,4 +1,4 @@
-import type { VercelRequest } from '@vercel/node';
+import type { VercelRequest } from './_vercel.js';
 import { randomUUID } from 'node:crypto';
 import { redis, CLIENTS_KEY } from './_shared.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../api/_vercel';
 
 type Value = string | number | Map<string, unknown> | unknown[] | Set<string>;
 const store = new Map<string, Value>();

@@ -1,5 +1,5 @@
 import {afterEach, beforeAll, describe, expect, it, vi} from 'vitest';
-import type {VercelRequest, VercelResponse} from '@vercel/node';
+import type {VercelRequest, VercelResponse} from '../../api/_vercel';
 import {recordRedisCommands} from './recordRedisCommands';
 import type {ClientRecord} from '../../api/_shared';
 let dexHandler: (req: VercelRequest,res: VercelResponse)=>Promise<unknown>;

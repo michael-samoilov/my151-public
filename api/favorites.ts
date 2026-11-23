@@ -1,6 +1,6 @@
 import {parseAttentionForIngest} from './_attention.js';
 import {acknowledgeUnstored,appendMinuteActivity} from './_activityHistoryStore.js';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { redis, requireAdmin, firstQueryValue } from './_shared.js';
 import { FEEDBACK_LISTS } from './_feedbackStore.js';
 

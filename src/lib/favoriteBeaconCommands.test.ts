@@ -1,6 +1,6 @@
 // keeps: Upstash bills each command, and browser specs stub /api/favorites, so only this sees the route's Redis bill.
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../../api/_vercel';
 import { recordRedisCommands } from './recordRedisCommands';
 import { mergeFavoriteRecord, parseFavoriteSnapshot, type FavoriteRecord } from '../../api/_favoriteRecord';
 

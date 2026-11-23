@@ -1,5 +1,5 @@
 import {FAVORITE_CLIENTS_KEY} from './_favoriteRecord.js';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_vercel.js';
 import { redis, requireAdmin, firstQueryValue, CLIENTS_KEY } from './_shared.js';
 import { EXPORT_SURVEY_SKIPS_KEY } from './_events.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';

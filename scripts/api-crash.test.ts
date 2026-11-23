@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../api/_vercel';
 vi.mock('../api/_shared.js', () => ({ redis: {}, getNetworkKey: () => 'network', isReadOnlyDeployment: () => true, parseClientId: () => undefined }));
 import handler from '../api/crash';
 import { sanitizeContext } from '../api/feedback';

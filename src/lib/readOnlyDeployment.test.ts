@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { VercelRequest } from '@vercel/node';
+import type { VercelRequest } from '../../api/_vercel';
 
 let isReadOnlyDeployment: (req: VercelRequest) => boolean;
 

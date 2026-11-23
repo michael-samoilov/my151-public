@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '../api/_vercel';
 
 import retention from '../api/retention';
 import { FORGET_BROWSERS, PERSIST_TOTALS, RETIRE_RECORDS } from '../api/_retention';
